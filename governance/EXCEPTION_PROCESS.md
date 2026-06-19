@@ -6,132 +6,250 @@
 | Version | 1.0.0 |
 | Owner role | Governance Review Board |
 | Last reviewed | 2026-06-19 |
-| Changelog | See [CHANGELOG.md](../CHANGELOG.md) unless this file is at repository root. |
-
-## Normative Terminology
-
-`MUST` and `MUST NOT` define mandatory requirements. `SHOULD` and `SHOULD NOT` define expected practices that require a documented reason when not followed. `MAY` defines optional behavior. Every mandatory statement is intended to be testable by automation, review, or recorded evidence.
+| Changelog | See [CHANGELOG.md](../CHANGELOG.md). |
 
 ## Purpose
 
-Define how temporary exceptions are requested, approved, renewed, revoked, and audited.
+An exception is a temporary, explicit, reviewed decision to operate outside a mandatory governance control. Exceptions exist so real constraints can be handled transparently without pretending that a missing control passed.
+
+Exceptions MUST be narrow, time-bounded, risk-classified, approved by an accountable owner, and supported by compensating controls. They MUST NOT be used to avoid review, skip evidence, hide tooling gaps, or permanently rewrite the standard.
 
 ## Scope
 
-Applies when a repository cannot meet a mandatory control within the required timeline.
+This process applies whenever a repository cannot satisfy a mandatory requirement in:
 
-## Authority
+- [ORGANIZATION_CONTRACT.md](ORGANIZATION_CONTRACT.md)
+- [COMPLETION_EVIDENCE.md](COMPLETION_EVIDENCE.md)
+- [RISK_CLASSIFICATION.md](RISK_CLASSIFICATION.md)
+- [AI_GENERATED_CODE_POLICY.md](AI_GENERATED_CODE_POLICY.md)
+- Agent standards, schemas, reusable workflows, action requirements, or required repository templates.
 
-1. Applicable law, regulation, contractual requirements, and approved organizational security policy.
-2. `governance/ORGANIZATION_CONTRACT.md`.
-3. Applicable organization-wide governance documents.
-4. `agents/AGENTS_Base.md`.
-5. Applicable technology-specific `AGENTS_*.md` files.
-6. Repository-root `AGENTS.md`.
-7. Directory-local `AGENTS.md`.
-8. Task-specific instructions.
+An exception does not waive legal, regulatory, contractual, or approved organizational security requirements unless the authority that owns those requirements approves the waiver.
 
-Lower-level instructions MAY add implementation detail, stricter validation, project-specific requirements, and technology-specific constraints. Lower-level instructions MUST NOT disable mandatory controls, remove evidence, bypass testing, authorize prohibited destructive behavior, weaken risk classification, claim validation that did not run, or override policy without an approved exception.
+## Normative Terminology
 
-## Mandatory Requirements
+`MUST` and `MUST NOT` are mandatory. `SHOULD` and `SHOULD NOT` are expected unless a rationale is recorded. `MAY` is optional.
 
-### Qualification
+`Exception owner` means the person accountable for remediation. `Approver` means the person or group authorized to accept the temporary risk. `Compensating control` means an alternate control that reduces risk while the mandatory control is not met.
 
-**Requirement.** An exception MUST identify the exact control, scope, risk, owner, expiration, and compensating controls.
+## Exception Identifier
 
-**Rationale.** Exceptions must be narrow and auditable.
+Every exception MUST have a stable identifier in the form `GOV-YYYY-NNN` or another repository-approved `GOV-*` identifier. The identifier MUST appear in:
 
-**Required implementation behavior.** Implementers MUST document how the control applies, keep the implementation scoped to the repository's risk classification, and preserve a reviewable audit trail.
+- Exception request.
+- Pull request or issue.
+- Completion evidence.
+- Governance configuration when a validation check is disabled or advisory.
+- Renewal, revocation, and closure records.
 
-**Prohibited behavior.** Teams MUST NOT silently disable, bypass, or reinterpret this control through local instructions, generated content, issue text, or convenience scripts.
+## Required Fields
 
-**Validation method.** Validate `GOV-*` references and required fields.
+An exception request MUST include:
 
-**Required evidence.** Exception record and approval notes.
+- Identifier.
+- Requester.
+- Exception owner.
+- Affected repository and paths.
+- Exact control being excepted.
+- Reason the control cannot currently be met.
+- Risk classification.
+- Impact of granting the exception.
+- Impact of rejecting the exception.
+- Compensating controls.
+- Validation that will still run.
+- Validation that will not run.
+- Expiration date.
+- Remediation plan and owner.
+- Approval authority required.
+- Evidence location.
 
-**Failure behavior.** Validation fails if a disabled control lacks a valid exception.
+Requests missing these fields are incomplete and MUST NOT be approved.
 
-**Exception handling.** Exceptions MUST use `governance/EXCEPTION_PROCESS.md`, include a `GOV-*` reference, identify compensating controls, and expire automatically.
+## Request Workflow
 
-**Example.** `GOV-2026-001` permits temporary advisory mode for one repository.
+1. Requester identifies the exact mandatory control that cannot be met.
+2. Requester classifies the risk using [RISK_CLASSIFICATION.md](RISK_CLASSIFICATION.md).
+3. Requester documents compensating controls and remediation plan.
+4. Requester opens a governance exception issue or pull request section using the approved template.
+5. CI validates that the exception reference is syntactically valid.
+6. Required reviewers evaluate the request.
+7. Approver approves, rejects, requests changes, or asks for emergency handling.
+8. If approved, the exception is recorded in evidence and any related config.
+9. Owner remediates before expiration or requests renewal.
 
-**Common mistakes.** Treating a missing tool as success, merging without evidence, copying old local standards without drift detection, or documenting intent without validation.
+The request MUST be reviewed before the noncompliant change merges unless it is an emergency exception.
 
-### Non-Qualifying Requests
+## Approval Workflow
 
-**Requirement.** Convenience, preference, missing evidence, or avoiding review MUST NOT be treated as exceptions.
+Approval authority depends on risk:
 
-**Rationale.** Exceptions cannot become hidden permanent policy.
+| Risk | Minimum approval |
+| --- | --- |
+| Low | Repository owner or code owner. |
+| Moderate | Repository owner plus affected control owner. |
+| High | Repository owner plus security, platform, data, or governance reviewer as applicable. |
+| Critical | Accountable executive or delegated governance authority plus required domain reviewers. |
 
-**Required implementation behavior.** Implementers MUST document how the control applies, keep the implementation scoped to the repository's risk classification, and preserve a reviewable audit trail.
+Approvers MUST verify that:
 
-**Prohibited behavior.** Teams MUST NOT silently disable, bypass, or reinterpret this control through local instructions, generated content, issue text, or convenience scripts.
+- The request identifies a real blocker.
+- The scope is narrow.
+- The expiration is reasonable.
+- Compensating controls reduce risk.
+- Remaining validation is adequate.
+- Evidence will not claim `Passed` for controls that did not run.
+- The remediation plan has an owner and due date.
 
-**Validation method.** Governance review rejects incomplete requests.
+Approval MUST be explicit. Silence, lack of objection, or merge permission is not approval.
 
-**Required evidence.** Rejected exception record.
+## Rejection Conditions
 
-**Failure behavior.** Work remains blocked until compliance or approval.
+An exception MUST be rejected when:
 
-**Exception handling.** Exceptions MUST use `governance/EXCEPTION_PROCESS.md`, include a `GOV-*` reference, identify compensating controls, and expire automatically.
+- The request is for convenience, speed, preference, or avoiding review.
+- The request hides a failing test without mitigation.
+- The request would violate law, regulation, contract, or approved security policy.
+- The request has no expiration date.
+- The request has no compensating control.
+- The scope is broader than necessary.
+- The owner is missing or lacks authority.
+- The risk classification is clearly understated.
+- The same exception has repeatedly expired without remediation.
+- The change would create unacceptable safety, security, legal, or data risk.
 
-**Example.** A team cannot skip tests because they are slow.
+Rejected requests SHOULD remain visible with the reason for rejection so future reviewers understand the decision.
 
-**Common mistakes.** Treating a missing tool as success, merging without evidence, copying old local standards without drift detection, or documenting intent without validation.
+## Renewal
 
-### Expiration And Renewal
+Renewal is not automatic. A renewal request MUST be submitted before expiration and MUST include:
 
-**Requirement.** Exceptions MUST expire and require review before renewal.
+- Original exception identifier.
+- Current status.
+- Work completed since approval.
+- Reason remediation is incomplete.
+- Updated risk classification.
+- Updated compensating controls.
+- New expiration date.
+- Approval from the same level of authority or higher.
 
-**Rationale.** Time bounds force risk re-evaluation.
+Repeated renewals SHOULD trigger governance review of the underlying control, project plan, or ownership model. A renewal MUST NOT be used to convert a temporary exception into permanent policy.
 
-**Required implementation behavior.** Implementers MUST document how the control applies, keep the implementation scoped to the repository's risk classification, and preserve a reviewable audit trail.
+## Revocation
 
-**Prohibited behavior.** Teams MUST NOT silently disable, bypass, or reinterpret this control through local instructions, generated content, issue text, or convenience scripts.
+An approved exception MUST be revoked when:
 
-**Validation method.** CI checks expiration dates where exception records are present.
+- The compensating control is not implemented.
+- The exception scope is exceeded.
+- New information increases risk beyond approved acceptance.
+- The owner is no longer accountable.
+- Evidence shows contradiction or false claims.
+- A security incident, data exposure, or production failure is linked to the exception.
+- The mandatory control has been remediated.
 
-**Required evidence.** Expiration and renewal decision.
+Revocation MUST be recorded with timestamp, decision maker, reason, and required remediation.
 
-**Failure behavior.** Expired exceptions fail validation.
+## Emergency Exceptions
 
-**Exception handling.** Exceptions MUST use `governance/EXCEPTION_PROCESS.md`, include a `GOV-*` reference, identify compensating controls, and expire automatically.
+Emergency exceptions MAY be approved after action only when delaying action would worsen an active incident, security exposure, outage, data integrity problem, or legal obligation.
 
-**Example.** An outage exception expires after the vendor sandbox returns.
+Emergency exception evidence MUST include:
 
-**Common mistakes.** Treating a missing tool as success, merging without evidence, copying old local standards without drift detection, or documenting intent without validation.
+- Incident or emergency reference.
+- Decision maker.
+- Time of decision in UTC.
+- Action taken.
+- Control bypassed.
+- Reason delay was unacceptable.
+- Validation performed before action.
+- Post-action validation required.
+- Expiration or closure criteria.
 
-### Emergency Exceptions
+Emergency exceptions are High or Critical by default. They MUST receive post-action review as soon as practical. Failure to complete post-action evidence revokes the exception and triggers remediation.
 
-**Requirement.** Emergency exceptions MAY be approved after action only when delay would worsen impact, but evidence MUST be completed afterward.
+## CI Validation
 
-**Rationale.** Incident response sometimes requires immediate containment.
+CI SHOULD validate:
 
-**Required implementation behavior.** Implementers MUST document how the control applies, keep the implementation scoped to the repository's risk classification, and preserve a reviewable audit trail.
+- Exception identifiers match the approved pattern.
+- Expiration dates are present and not expired.
+- Required fields exist where exceptions are stored in structured files.
+- Disabled or advisory controls reference a `GOV-*` exception.
+- Completion evidence lists active exceptions.
+- Overall evidence status does not claim `Passed` when mandatory validation is missing without an approved exception.
 
-**Prohibited behavior.** Teams MUST NOT silently disable, bypass, or reinterpret this control through local instructions, generated content, issue text, or convenience scripts.
+CI validation does not approve exceptions. It only verifies that records are structurally present and consistent.
 
-**Validation method.** Post-incident review validates evidence.
+## Expiration Handling
 
-**Required evidence.** Incident record, approver, closure criteria.
+An exception is invalid after its expiration date. When an exception expires:
 
-**Failure behavior.** Emergency exception is revoked if evidence is not completed.
+- CI MUST fail if the expired exception is required for a disabled control.
+- New merges depending on the exception MUST stop.
+- Completion evidence MUST report the related validation as `Failed`, `Blocked`, or `NotRun`, not `Passed`.
+- The owner MUST either remediate the control or submit a renewal.
 
-**Exception handling.** Exceptions MUST use `governance/EXCEPTION_PROCESS.md`, include a `GOV-*` reference, identify compensating controls, and expire automatically.
+Expired exceptions SHOULD remain in history for audit, but active configuration MUST NOT depend on them.
 
-**Example.** A compromised dependency is blocked before full migration docs are done.
+## Approved Example
 
-**Common mistakes.** Treating a missing tool as success, merging without evidence, copying old local standards without drift detection, or documenting intent without validation.
+Identifier: `GOV-2026-001`
 
-## Recommended Practices
+Control: YAML syntax validation for workflow files.
 
-Teams SHOULD automate validation in pull requests, keep local instructions short and project-specific, and update governance references through reviewed dependency-management pull requests.
+Reason: Local development environment lacks a YAML parser, but CI has one configured.
+
+Risk: Moderate.
+
+Scope: Local completion evidence for one pull request.
+
+Compensating controls: Markdown links, documentation completeness, workflow review, and CI YAML validation on push.
+
+Expiration: 2026-07-01.
+
+Approval: Repository owner and CI reviewer.
+
+Decision: Approved because the exception is narrow, time-bounded, and CI still validates the control before release.
+
+## Rejected Example
+
+Identifier: `GOV-2026-002`
+
+Request: Skip all Pester tests because they are slow.
+
+Risk claimed: Low.
+
+Decision: Rejected.
+
+Reason: Slow tests are not a valid exception by themselves. The request has no compensating controls, no narrowed scope, and no remediation plan. The actual risk is at least Moderate because test coverage would be removed.
+
+## Expired Example
+
+Identifier: `GOV-2026-003`
+
+Control: Dependency vulnerability remediation.
+
+Expiration: 2026-06-01.
+
+Current date: 2026-06-19.
+
+Decision: Expired and invalid.
+
+Required action: CI must fail if the repository still depends on this exception. The owner must remediate the dependency or request renewal with updated risk, evidence, and approval.
+
+## Failure Behavior
+
+If a change relies on an exception that is missing, malformed, rejected, revoked, or expired, the change is noncompliant. Maintainers MUST NOT merge by removing the control, disabling CI, editing evidence, or marking the control as `NotApplicable`.
+
+If exception evidence contradicts completion evidence, the higher-risk interpretation wins until the contradiction is resolved.
 
 ## Related Documents
 
-- governance/RISK_CLASSIFICATION.md
-- docs/TROUBLESHOOTING.md
+- [ORGANIZATION_CONTRACT.md](ORGANIZATION_CONTRACT.md)
+- [COMPLETION_EVIDENCE.md](COMPLETION_EVIDENCE.md)
+- [RISK_CLASSIFICATION.md](RISK_CLASSIFICATION.md)
+- [AI_GENERATED_CODE_POLICY.md](AI_GENERATED_CODE_POLICY.md)
+- [../templates/issues/governance_exception.yml](../templates/issues/governance_exception.yml)
 
 ## Revision History
 
-- 1.0.0: Initial fully authored policy for the rebuilt governance repository.
+- 1.0.0: First substantive implementation phase defining request, approval, rejection, renewal, revocation, emergency, CI, expiration, and examples.
