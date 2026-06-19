@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0.0",
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "commitSha": "unknown",
+  "branch": "unknown",
+  "pullRequest": null,
+  "governanceVersion": "1.0.0",
+  "riskClassification": "High",
+  "status": "NotRun",
+  "startedAtUtc": "2026-06-19T21:03:08.1557583Z",
+  "completedAtUtc": "2026-06-19T21:03:08.1622632Z",
+  "summary": "Governance repository generated and local validation completed with YAML syntax validation NotRun because no YAML parser is installed.",
+  "changedFiles": [
+    ".editorconfig",
+    ".gitattributes",
+    ".github/",
+    ".gitignore",
+    ".markdownlint.json",
+    ".yamllint.yml",
+    "AGENTS.md",
+    "CHANGELOG.md",
+    "CODEOWNERS",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "README.md",
+    "SECURITY.md",
+    "VERSION",
+    "actions/",
+    "agents/",
+    "docs/",
+    "examples/",
+    "governance.config.json",
+    "governance/",
+    "project-manifest.json",
+    "schemas/",
+    "scripts/",
+    "templates/",
+    "tests/",
+    "workflows/"
+  ],
+  "commandsExecuted": [
+    "python _generate.py",
+    "pwsh scripts/Test-JsonSchemas.ps1",
+    "pwsh actions/validate-contract/Invoke-ContractValidation.ps1",
+    "pwsh scripts/Test-MarkdownLinks.ps1",
+    "pwsh actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1",
+    "pwsh actions/repository-health/Invoke-RepositoryHealth.ps1",
+    "pwsh scripts/Invoke-GovernanceValidation.ps1",
+    "Invoke-Pester -Path tests",
+    "PowerShell parser validation",
+    "Python JSON parse validation"
+  ],
+  "commandsNotExecuted": [
+    "YAML syntax validation: NotRun because PyYAML, powershell-yaml, yamllint, yq, and ruby are unavailable."
+  ],
+  "tests": [],
+  "artifacts": [],
+  "warnings": [
+    "CODEOWNERS contains placeholder owners by design and must be replaced before production enforcement.",
+    "Forbidden-pattern scan reports warning for documented pull_request_target guidance.",
+    "YAML syntax validation NotRun due missing local tooling."
+  ],
+  "knownLimitations": [
+    "Local JSON schema validation is structural and offline, not a full external JSON Schema validator.",
+    "The forbidden-pattern scanner is heuristic and not a complete secret scanner."
+  ],
+  "remainingRisks": [
+    "YAML syntax should be validated in CI or after installing a YAML parser.",
+    "Placeholder CODEOWNERS must be replaced before production use."
+  ],
+  "exceptions": [],
+  "approvals": []
+}

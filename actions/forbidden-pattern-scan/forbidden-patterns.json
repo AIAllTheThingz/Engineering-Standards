@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0.0",
+  "patterns": [
+    {
+      "id": "embedded-credential-assignment",
+      "description": "Possible embedded credential assignment.",
+      "severity": "error",
+      "regex": "(?i)(password|passwd|pwd|secret|api[_-]?key|token)\\s*[:=]\\s*\\S{8,}"
+    },
+    {
+      "id": "private-key-block",
+      "description": "Private key marker.",
+      "severity": "error",
+      "regex": "-----BEGIN [A-Z ]*PRIVATE KEY-----"
+    },
+    {
+      "id": "disabled-tls-validation",
+      "description": "TLS validation disabled.",
+      "severity": "error",
+      "regex": "(?i)(TrustServerCertificate\\s*=\\s*true|ServerCertificateValidationCallback)"
+    },
+    {
+      "id": "dangerous-powershell-expression",
+      "description": "Dynamic PowerShell execution.",
+      "severity": "warning",
+      "regex": "(?i)Invoke-Expression|iex\\b"
+    },
+    {
+      "id": "broad-workflow-permissions",
+      "description": "Workflow grants broad write permissions.",
+      "severity": "error",
+      "regex": "(?m)^\\s*permissions:\\s*write-all\\s*$"
+    },
+    {
+      "id": "pull-request-target",
+      "description": "pull_request_target requires security review.",
+      "severity": "warning",
+      "regex": "pull_request_target"
+    }
+  ]
+}

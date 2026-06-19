@@ -1,0 +1,19 @@
+name: Validate completion evidence
+description: Validate completion evidence files.
+inputs:
+  path:
+    description: Repository path.
+    required: false
+    default: .
+  output-json:
+    description: Optional report path.
+    required: false
+outputs:
+  report-path:
+    description: Report path.
+runs:
+  using: composite
+  steps:
+    - name: Run Validate completion evidence
+      shell: pwsh
+      run: ${{ github.action_path }}/Invoke-EvidenceValidation.ps1 -Path '${{ inputs.path }}' -OutputJson '${{ inputs.output-json }}'

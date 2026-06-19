@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectName": "database-project",
+  "repository": "example-org/database-project",
+  "description": "Minimal database-project example.",
+  "governanceVersion": "1.0.0",
+  "riskClassification": "Moderate",
+  "applicableStandards": [
+    "agents/AGENTS_Base.md",
+    "agents/AGENTS_Database.md"
+  ],
+  "owners": [
+    "example-owner"
+  ],
+  "evidence": {
+    "completionEvidencePath": "evidence/completion-result.json",
+    "testEvidencePath": "evidence/test-evidence.json"
+  },
+  "exceptions": []
+}

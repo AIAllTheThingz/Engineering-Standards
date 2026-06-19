@@ -1,0 +1,1 @@
+Describe "Forbidden scan" { It "runs advisory" { & pwsh -NoProfile -File "$PSScriptRoot/../../actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1" -Path "$PSScriptRoot/../.." -Advisory; $LASTEXITCODE | Should -Be 0 } }

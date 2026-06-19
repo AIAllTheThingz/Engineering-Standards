@@ -1,0 +1,11 @@
+name: bug_report
+description: Governance issue form
+title: "bug_report: "
+labels: [governance]
+body:
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+    validations:
+      required: true

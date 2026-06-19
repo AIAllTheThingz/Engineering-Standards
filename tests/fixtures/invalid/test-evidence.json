@@ -1,0 +1,12 @@
+{
+  "name": "Schema validation",
+  "category": "schema",
+  "status": "Green",
+  "command": "pwsh -File scripts/Test-JsonSchemas.ps1",
+  "workingDirectory": ".",
+  "startedAtUtc": "2026-06-19T00:00:00Z",
+  "completedAtUtc": "2026-06-19T00:00:01Z",
+  "durationSeconds": 1,
+  "runtime": "PowerShell 7",
+  "toolVersion": "7.x"
+}

@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aiallthethingz.example/test-evidence.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "category",
+    "status",
+    "command",
+    "workingDirectory",
+    "startedAtUtc",
+    "completedAtUtc",
+    "durationSeconds",
+    "runtime",
+    "toolVersion"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "unit",
+        "integration",
+        "security",
+        "build",
+        "lint",
+        "schema",
+        "workflow",
+        "manual",
+        "other"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Passed",
+        "Failed",
+        "NotRun",
+        "NotApplicable",
+        "Blocked"
+      ]
+    },
+    "command": {
+      "type": "string"
+    },
+    "workingDirectory": {
+      "type": "string"
+    },
+    "startedAtUtc": {
+      "type": "string"
+    },
+    "completedAtUtc": {
+      "type": "string"
+    },
+    "durationSeconds": {
+      "type": "number"
+    },
+    "runtime": {
+      "type": "string"
+    },
+    "toolVersion": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "warnings": {
+      "type": "array"
+    }
+  }
+}

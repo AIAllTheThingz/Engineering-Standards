@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aiallthethingz.example/completion-result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "repository",
+    "commitSha",
+    "branch",
+    "governanceVersion",
+    "riskClassification",
+    "status",
+    "startedAtUtc",
+    "completedAtUtc",
+    "summary",
+    "changedFiles",
+    "commandsExecuted",
+    "commandsNotExecuted",
+    "tests",
+    "artifacts",
+    "warnings",
+    "knownLimitations",
+    "remainingRisks",
+    "exceptions",
+    "approvals"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "repository": {
+      "type": "string"
+    },
+    "commitSha": {
+      "type": "string"
+    },
+    "branch": {
+      "type": "string"
+    },
+    "governanceVersion": {
+      "type": "string"
+    },
+    "riskClassification": {
+      "type": "string",
+      "enum": [
+        "Low",
+        "Moderate",
+        "High",
+        "Critical"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Passed",
+        "Failed",
+        "NotRun",
+        "NotApplicable",
+        "Blocked"
+      ]
+    },
+    "startedAtUtc": {
+      "type": "string"
+    },
+    "completedAtUtc": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "changedFiles": {
+      "type": "array"
+    },
+    "commandsExecuted": {
+      "type": "array"
+    },
+    "commandsNotExecuted": {
+      "type": "array"
+    },
+    "tests": {
+      "type": "array"
+    },
+    "artifacts": {
+      "type": "array"
+    },
+    "warnings": {
+      "type": "array"
+    },
+    "knownLimitations": {
+      "type": "array"
+    },
+    "remainingRisks": {
+      "type": "array"
+    },
+    "exceptions": {
+      "type": "array"
+    },
+    "approvals": {
+      "type": "array"
+    },
+    "pullRequest": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

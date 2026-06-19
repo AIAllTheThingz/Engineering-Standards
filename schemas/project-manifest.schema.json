@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aiallthethingz.example/project-manifest.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "projectName",
+    "repository",
+    "description",
+    "governanceVersion",
+    "riskClassification",
+    "applicableStandards",
+    "owners",
+    "evidence",
+    "exceptions"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "projectName": {
+      "type": "string"
+    },
+    "repository": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "governanceVersion": {
+      "type": "string"
+    },
+    "riskClassification": {
+      "type": "string",
+      "enum": [
+        "Low",
+        "Moderate",
+        "High",
+        "Critical"
+      ]
+    },
+    "applicableStandards": {
+      "type": "array"
+    },
+    "owners": {
+      "type": "array"
+    },
+    "evidence": {
+      "type": "object"
+    },
+    "exceptions": {
+      "type": "array"
+    }
+  }
+}

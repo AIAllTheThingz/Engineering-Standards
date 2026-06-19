@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectName": "Example Project",
+  "repository": "example-org/example-repository",
+  "description": "Central engineering-governance standards repository.",
+  "governanceVersion": "1.0.0",
+  "riskClassification": "Moderate",
+  "applicableStandards": [
+    "agents/AGENTS_Base.md",
+    "agents/AGENTS_PowerShell.md",
+    "agents/AGENTS_Integration.md",
+    "agents/AGENTS_Infrastructure.md"
+  ],
+  "owners": [
+    "example-owner"
+  ],
+  "evidence": {
+    "completionEvidencePath": "evidence/completion-result.json",
+    "testEvidencePath": "evidence/test-evidence.json"
+  },
+  "exceptions": []
+}

@@ -1,0 +1,10 @@
+.tmp/
+tmp/
+out/
+coverage/
+TestResults/
+evidence/*.local.json
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

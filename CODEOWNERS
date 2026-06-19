@@ -1,0 +1,8 @@
+# Replace example owners before production use. Validation warns while placeholders remain.
+* @example-org/REPLACE-ME-governance-maintainers
+/governance/ @example-org/REPLACE-ME-governance-owners
+/agents/ @example-org/REPLACE-ME-agent-standards-owners
+/schemas/ @example-org/REPLACE-ME-schema-owners
+/actions/ @example-org/REPLACE-ME-action-security-owners
+/workflows/ @example-org/REPLACE-ME-ci-owners
+/actions/forbidden-pattern-scan/forbidden-patterns.json @example-org/REPLACE-ME-security-scanner-owners

@@ -1,0 +1,11 @@
+name: feature_request
+description: Governance issue form
+title: "feature_request: "
+labels: [governance]
+body:
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+    validations:
+      required: true

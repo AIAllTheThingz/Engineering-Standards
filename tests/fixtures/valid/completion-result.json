@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0.0",
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "commitSha": "unknown",
+  "branch": "main",
+  "pullRequest": null,
+  "governanceVersion": "1.0.0",
+  "riskClassification": "High",
+  "status": "Passed",
+  "startedAtUtc": "2026-06-19T00:00:00Z",
+  "completedAtUtc": "2026-06-19T00:00:02Z",
+  "summary": "Valid completion fixture.",
+  "changedFiles": [],
+  "commandsExecuted": [
+    "fixture"
+  ],
+  "commandsNotExecuted": [],
+  "tests": [
+    {
+      "name": "Schema validation",
+      "category": "schema",
+      "status": "Passed",
+      "command": "pwsh -File scripts/Test-JsonSchemas.ps1",
+      "workingDirectory": ".",
+      "startedAtUtc": "2026-06-19T00:00:00Z",
+      "completedAtUtc": "2026-06-19T00:00:01Z",
+      "durationSeconds": 1,
+      "runtime": "PowerShell 7",
+      "toolVersion": "7.x"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "evidence/report.json",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "artifactType": "report",
+      "description": "Example report"
+    }
+  ],
+  "warnings": [],
+  "knownLimitations": [],
+  "remainingRisks": [],
+  "exceptions": [],
+  "approvals": []
+}

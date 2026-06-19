@@ -1,0 +1,6 @@
+{
+  "path": "evidence/report.json",
+  "sha256": "bad",
+  "artifactType": "report",
+  "description": "Example report"
+}

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aiallthethingz.example/artifact-record.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "path",
+    "sha256",
+    "artifactType",
+    "description"
+  ],
+  "properties": {
+    "path": {
+      "type": "string"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "artifactType": {
+      "type": "string",
+      "enum": [
+        "log",
+        "report",
+        "test-result",
+        "coverage",
+        "package",
+        "screenshot",
+        "other"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "generatedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "examples": [
+    {
+      "path": "evidence/report.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "artifactType": "report",
+      "description": "Validation report"
+    }
+  ]
+}

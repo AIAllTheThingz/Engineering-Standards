@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectName": "worker-service-project",
+  "repository": "example-org/worker-service-project",
+  "description": "Minimal worker-service-project example.",
+  "governanceVersion": "1.0.0",
+  "riskClassification": "Moderate",
+  "applicableStandards": [
+    "agents/AGENTS_Base.md",
+    "agents/AGENTS_WorkerService.md"
+  ],
+  "owners": [
+    "example-owner"
+  ],
+  "evidence": {
+    "completionEvidencePath": "evidence/completion-result.json",
+    "testEvidencePath": "evidence/test-evidence.json"
+  },
+  "exceptions": []
+}

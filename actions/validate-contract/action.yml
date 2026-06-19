@@ -1,0 +1,19 @@
+name: Validate governance contract
+description: Validate downstream repository governance files.
+inputs:
+  path:
+    description: Repository path.
+    required: false
+    default: .
+  output-json:
+    description: Optional report path.
+    required: false
+outputs:
+  report-path:
+    description: Report path.
+runs:
+  using: composite
+  steps:
+    - name: Run Validate governance contract
+      shell: pwsh
+      run: ${{ github.action_path }}/Invoke-ContractValidation.ps1 -Path '${{ inputs.path }}' -OutputJson '${{ inputs.output-json }}'

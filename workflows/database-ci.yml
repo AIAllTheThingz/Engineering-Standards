@@ -1,0 +1,21 @@
+name: Reusable Database CI
+on:
+  workflow_call:
+    inputs:
+      project-path:
+        type: string
+        required: false
+        default: .
+permissions:
+  contents: read
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - name: Governance validation
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path '${{ inputs.project-path }}' -Category Contract,ForbiddenPatterns,RepositoryHealth
+      - name: SQL lint placeholder
+        shell: pwsh
+        run: Write-Output 'NotRun: configure project-specific SQL linting and ephemeral database validation.'

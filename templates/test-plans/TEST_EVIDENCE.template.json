@@ -1,0 +1,16 @@
+{
+  "name": "Example validation",
+  "category": "other",
+  "status": "NotRun",
+  "command": "<command>",
+  "workingDirectory": ".",
+  "startedAtUtc": "2026-06-19T00:00:00Z",
+  "completedAtUtc": "2026-06-19T00:00:00Z",
+  "durationSeconds": 0,
+  "runtime": "<runtime>",
+  "toolVersion": "<version>",
+  "summary": "Template only.",
+  "warnings": [
+    "Not executed."
+  ]
+}

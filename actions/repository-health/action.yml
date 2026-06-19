@@ -1,0 +1,19 @@
+name: Repository health
+description: Inspect repository maintenance health.
+inputs:
+  path:
+    description: Repository path.
+    required: false
+    default: .
+  output-json:
+    description: Optional report path.
+    required: false
+outputs:
+  report-path:
+    description: Report path.
+runs:
+  using: composite
+  steps:
+    - name: Run Repository health
+      shell: pwsh
+      run: ${{ github.action_path }}/Invoke-RepositoryHealth.ps1 -Path '${{ inputs.path }}' -OutputJson '${{ inputs.output-json }}'

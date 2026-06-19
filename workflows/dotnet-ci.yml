@@ -1,0 +1,25 @@
+name: Reusable DotNet CI
+on:
+  workflow_call:
+    inputs:
+      project-path:
+        type: string
+        required: false
+        default: .
+      dotnet-version:
+        type: string
+        required: false
+        default: 8.0.x
+permissions:
+  contents: read
+jobs:
+  dotnet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+      - run: dotnet restore '${{ inputs.project-path }}' --locked-mode
+      - run: dotnet build '${{ inputs.project-path }}' --configuration Release -warnaserror
+      - run: dotnet test '${{ inputs.project-path }}' --configuration Release

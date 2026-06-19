@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectName": "web-project",
+  "repository": "example-org/web-project",
+  "description": "Minimal web-project example.",
+  "governanceVersion": "1.0.0",
+  "riskClassification": "Moderate",
+  "applicableStandards": [
+    "agents/AGENTS_Base.md",
+    "agents/AGENTS_WebFrontend.md"
+  ],
+  "owners": [
+    "example-owner"
+  ],
+  "evidence": {
+    "completionEvidencePath": "evidence/completion-result.json",
+    "testEvidencePath": "evidence/test-evidence.json"
+  },
+  "exceptions": []
+}

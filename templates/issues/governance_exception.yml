@@ -1,0 +1,11 @@
+name: governance_exception
+description: Governance issue form
+title: "governance_exception: "
+labels: [governance]
+body:
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+    validations:
+      required: true

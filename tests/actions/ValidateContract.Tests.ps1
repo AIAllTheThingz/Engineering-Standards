@@ -1,0 +1,1 @@
+Describe "Validate contract" { It "rejects traversal" { & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-contract/Invoke-ContractValidation.ps1" -Path "$PSScriptRoot/../.." -ManifestPath "../outside.json"; $LASTEXITCODE | Should -Not -Be 0 } }

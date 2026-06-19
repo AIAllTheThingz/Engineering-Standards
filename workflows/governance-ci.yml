@@ -1,0 +1,27 @@
+name: Reusable Governance CI
+on:
+  workflow_call:
+    inputs:
+      project-path:
+        type: string
+        required: false
+        default: .
+      governance-version:
+        type: string
+        required: false
+        default: 1.0.0
+permissions:
+  contents: read
+jobs:
+  governance-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - name: Run governance validation
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path '${{ inputs.project-path }}'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: governance-evidence
+          path: evidence/

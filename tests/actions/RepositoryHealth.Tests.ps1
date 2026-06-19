@@ -1,0 +1,1 @@
+Describe "Repository health" { It "runs" { & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path "$PSScriptRoot/../.."; $LASTEXITCODE | Should -Be 0 } }

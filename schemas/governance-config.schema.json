@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aiallthethingz.example/governance-config.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "manifestPath",
+    "evidencePath",
+    "requiredDocumentationPaths",
+    "applicableAgentStandards",
+    "controls",
+    "exceptions"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "manifestPath": {
+      "type": "string"
+    },
+    "evidencePath": {
+      "type": "string"
+    },
+    "requiredDocumentationPaths": {
+      "type": "array"
+    },
+    "applicableAgentStandards": {
+      "type": "array"
+    },
+    "additionalForbiddenPatterns": {
+      "type": "array"
+    },
+    "reviewedAllowlist": {
+      "type": "array"
+    },
+    "optionalValidationCategories": {
+      "type": "array"
+    },
+    "controls": {
+      "type": "object"
+    },
+    "exceptions": {
+      "type": "array"
+    }
+  }
+}

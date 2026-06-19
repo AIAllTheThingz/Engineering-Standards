@@ -1,0 +1,19 @@
+name: Forbidden pattern scan
+description: Run defensive pattern scan.
+inputs:
+  path:
+    description: Repository path.
+    required: false
+    default: .
+  output-json:
+    description: Optional report path.
+    required: false
+outputs:
+  report-path:
+    description: Report path.
+runs:
+  using: composite
+  steps:
+    - name: Run Forbidden pattern scan
+      shell: pwsh
+      run: ${{ github.action_path }}/Invoke-ForbiddenPatternScan.ps1 -Path '${{ inputs.path }}' -OutputJson '${{ inputs.output-json }}'

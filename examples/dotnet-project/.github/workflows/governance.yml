@@ -1,0 +1,13 @@
+name: Governance
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  governance:
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci.yml@<immutable-reference>
+    with:
+      project-path: .
+      governance-version: 1.0.0
