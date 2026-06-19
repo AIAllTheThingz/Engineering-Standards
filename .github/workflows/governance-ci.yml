@@ -1,12 +1,18 @@
 name: Governance CI
+
 on:
   pull_request:
   push:
-    branches: [master, main]
+    branches:
+      - master
+      - main
+
 permissions:
   contents: read
+
 jobs:
   governance:
+    name: Governance
     uses: ./.github/workflows/governance-ci-reusable.yml
     with:
       project-path: .

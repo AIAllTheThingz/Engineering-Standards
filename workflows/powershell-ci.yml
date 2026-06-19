@@ -1,4 +1,5 @@
-name: Reusable PowerShell CI
+name: PowerShell CI
+
 on:
   workflow_call:
     inputs:
@@ -6,29 +7,51 @@ on:
         type: string
         required: false
         default: .
+
 permissions:
   contents: read
+
 jobs:
   powershell:
+    name: Validate PowerShell
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
       - name: Governance validation
         shell: pwsh
-        run: pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path '${{ inputs.project-path }}' -Category Contract,DocumentationCompleteness,ForbiddenPatterns,RepositoryHealth
+        run: |
+          $categories = @('Contract','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth')
+          & pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path '${{ inputs.project-path }}' -Category $categories
+
       - name: PowerShell parser validation
         shell: pwsh
         run: |
           $failed = $false
-          Get-ChildItem -Path '${{ inputs.project-path }}' -Recurse -Include *.ps1,*.psm1 | ForEach-Object {
+          Get-ChildItem -LiteralPath '${{ inputs.project-path }}' -Recurse -File -Include *.ps1,*.psm1,*.psd1 | ForEach-Object {
             $tokens = $null
             $errors = $null
             [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
-            if ($errors) { $failed = $true; Write-Error "Parse errors in $($_.FullName)" }
+            if ($errors) {
+              $failed = $true
+              Write-Error "Parse errors in $($_.FullName)"
+            }
           }
           if ($failed) { exit 1 }
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+
+      - name: Pester
+        shell: pwsh
+        run: |
+          if (Get-ChildItem -LiteralPath '${{ inputs.project-path }}' -Recurse -File -Filter '*.Tests.ps1') {
+            Invoke-Pester -Path '${{ inputs.project-path }}' -Output Detailed
+          }
+
+      - name: Upload PowerShell evidence
         if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: powershell-evidence
+          name: powershell-evidence-${{ github.run_id }}
           path: evidence/
+          if-no-files-found: warn
+          retention-days: 30

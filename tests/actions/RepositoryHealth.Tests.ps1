@@ -5,4 +5,23 @@ Describe 'Repository health' {
             $LASTEXITCODE | Should -Be 0
         }
     }
+
+    Context 'invalid repository' {
+        BeforeAll {
+            $script:tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("repo-health-tests-" + [guid]::NewGuid())
+            New-Item -ItemType Directory -Path $script:tempRoot -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $script:tempRoot 'README.md') -Value '# Incomplete'
+        }
+
+        AfterAll {
+            if ($script:tempRoot -and (Test-Path -LiteralPath $script:tempRoot)) {
+                Remove-Item -LiteralPath $script:tempRoot -Recurse -Force
+            }
+        }
+
+        It 'fails when required governance files are absent' {
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $script:tempRoot
+            $LASTEXITCODE | Should -Not -Be 0
+        }
+    }
 }

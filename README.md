@@ -1,6 +1,6 @@
 # Engineering Standards
 
-`AIAllTheThingz/Engineering-Standards` is the authoritative source for reusable engineering standards, AI-agent instructions, governance contracts, JSON schemas, repository templates, validation actions, and reusable CI workflows.
+`AIAllTheThingz/Engineering-Standards` is the authoritative source for reusable engineering standards, AI-agent instructions, governance contracts, JSON schemas, repository templates, validation actions, reusable CI workflows, and release evidence.
 
 ## Why Centralized Governance Is Needed
 
@@ -13,6 +13,7 @@ Copied governance files drift. A security requirement added to one repository is
 - Provides schemas for project manifests, governance configuration, test evidence, artifact records, and completion results.
 - Provides composite actions and reusable workflows for pull-request and release validation.
 - Provides templates and examples that downstream repositories can adapt without copying central policy as the synchronization mechanism.
+- Records release evidence so maintainers can inspect what was validated and what was not run.
 
 ## What This Repository Does Not Do
 
@@ -69,6 +70,7 @@ flowchart TD
 - `scripts/`: local validation and evidence tooling.
 - `tests/`: Pester tests and schema fixtures.
 - `docs/`: adoption, configuration, architecture, security, release, branch protection, and troubleshooting guidance.
+- `evidence/`: final completion evidence and supporting test-result records for the current repository state.
 
 ## Major Documents
 
@@ -85,6 +87,8 @@ flowchart TD
 - [Release Process](docs/RELEASE_PROCESS.md)
 - [Branch Protection](docs/BRANCH_PROTECTION.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Templates](docs/TEMPLATES.md)
+- [Changelog](CHANGELOG.md)
 
 ## Downstream Adoption Flow
 
@@ -102,15 +106,15 @@ name: Governance
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [master, main]
 permissions:
   contents: read
 jobs:
   governance:
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci.yml@<commit-sha>
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<commit-sha>
     with:
       project-path: .
-      governance-version: v1.0.0
+      governance-version: 1.0.0
 ```
 
 ## Example Local AGENTS.md
@@ -132,10 +136,30 @@ Local rules may add stricter validation and repository-specific commands. Local 
   "schemaVersion": "1.0.0",
   "projectName": "Example Service",
   "repository": "example-org/example-service",
-  "projectType": "service",
+  "description": "Example service used to demonstrate governance adoption.",
+  "projectType": "dotnet",
+  "technologies": ["dotnet", "github-actions"],
+  "governanceVersion": "1.0.0",
   "riskClassification": "Moderate",
-  "governanceVersion": "v1.0.0",
-  "applicableStandards": ["agents/AGENTS_Base.md", "agents/AGENTS_DotNet.md"]
+  "dataClassification": "Internal",
+  "environments": [
+    {
+      "name": "local",
+      "type": "development",
+      "production": false
+    }
+  ],
+  "applicableStandards": ["agents/AGENTS_Base.md", "agents/AGENTS_DotNet.md"],
+  "requiredWorkflows": ["governance"],
+  "externalIntegrations": [],
+  "secretsProvider": "example-secrets-provider",
+  "productionApprovalRequired": false,
+  "owners": ["@example-org/example-owners"],
+  "evidence": {
+    "completionEvidencePath": "evidence/completion-result.json",
+    "testEvidencePath": "evidence/test-evidence.json"
+  },
+  "exceptions": []
 }
 ```
 
@@ -149,20 +173,33 @@ pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path .
 Invoke-Pester -Path tests -Output Detailed
 ```
 
+## Functional Examples
+
+The PowerShell example at `examples/powershell-project` is functional and includes a module manifest, script module, Pester tests, validation script, workflow wiring, and generated test evidence. Run it from the repository root:
+
+```powershell
+pwsh -NoProfile -File examples/powershell-project/tools/Test-Example.ps1
+```
+
+Other examples are present as adoption targets and should be completed one at a time before they are treated as functional references.
+
 ## Release And Versioning
 
-The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Downstream CI SHOULD pin exact release tags or commit SHAs; commit SHAs are preferred for maximum supply-chain integrity.
+The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Downstream CI SHOULD pin commit SHAs for maximum supply-chain integrity. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md), and release procedure is defined in [Release Process](docs/RELEASE_PROCESS.md).
+
+Current version: `1.0.0`.
 
 ## Security Reporting And Contributions
 
 Security issues are handled through [SECURITY.md](SECURITY.md). Contributions must follow [CONTRIBUTING.md](CONTRIBUTING.md), include evidence, and avoid false completion claims.
 
-## Roadmap
+## Release Readiness Notes
 
-- Publish signed release notes.
-- Add generated schema reference pages.
-- Expand examples for additional languages and infrastructure providers.
-- Add optional integration with organization policy engines.
+- Final evidence is stored in `evidence/completion-result.json`.
+- Local YAML parser validation is not configured and is recorded honestly as `NotRun`.
+- PSScriptAnalyzer is not installed locally and is recorded honestly as `NotRun`.
+- Branch protection must still be verified in GitHub settings because local file validation cannot prove repository settings.
+- Functional examples beyond PowerShell remain future work.
 
 ## Related Documents
 

@@ -1,4 +1,5 @@
-name: Reusable Database CI
+name: Database CI
+
 on:
   workflow_call:
     inputs:
@@ -6,16 +7,38 @@ on:
         type: string
         required: false
         default: .
+
 permissions:
   contents: read
+
 jobs:
   database:
+    name: Validate database project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
       - name: Governance validation
         shell: pwsh
-        run: pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path '${{ inputs.project-path }}' -Category Contract,DocumentationCompleteness,ForbiddenPatterns,RepositoryHealth
+        run: |
+          $categories = @('Contract','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth')
+          & pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path '${{ inputs.project-path }}' -Category $categories
+
       - name: Migration validation
         shell: pwsh
-        run: pwsh -NoProfile -File '${{ inputs.project-path }}/tools/Test-Migrations.ps1' -Path '${{ inputs.project-path }}'
+        run: |
+          $validator = Join-Path '${{ inputs.project-path }}' 'tools/Test-Migrations.ps1'
+          if (-not (Test-Path -LiteralPath $validator -PathType Leaf)) {
+            throw "Migration validator not found at $validator"
+          }
+          & pwsh -NoProfile -File $validator -Path '${{ inputs.project-path }}'
+
+      - name: Upload database evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: database-evidence-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: warn
+          retention-days: 30

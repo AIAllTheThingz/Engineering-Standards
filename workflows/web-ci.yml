@@ -1,4 +1,5 @@
-name: Reusable Web CI
+name: Web CI
+
 on:
   workflow_call:
     inputs:
@@ -10,23 +11,46 @@ on:
         type: string
         required: false
         default: '22'
+
 permissions:
   contents: read
+
 jobs:
   web:
+    name: Build and test web project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: ${{ inputs.node-version }}
           cache: npm
           cache-dependency-path: ${{ inputs.project-path }}/package-lock.json
-      - run: npm ci
+
+      - name: Install
+        run: npm ci
         working-directory: ${{ inputs.project-path }}
-      - run: npm run lint
+
+      - name: Lint
+        run: npm run lint
         working-directory: ${{ inputs.project-path }}
-      - run: npm test
+
+      - name: Test
+        run: npm test
         working-directory: ${{ inputs.project-path }}
-      - run: npm run build
+
+      - name: Build
+        run: npm run build
         working-directory: ${{ inputs.project-path }}
+
+      - name: Upload web evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: web-evidence-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: warn
+          retention-days: 30

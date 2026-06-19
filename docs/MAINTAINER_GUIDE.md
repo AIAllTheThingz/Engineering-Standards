@@ -5,44 +5,112 @@
 | Owner role | Engineering Standards Maintainers |
 | Last reviewed | 2026-06-19 |
 
-## Responsibilities
+## Purpose
 
-Maintainers own governance policy integrity, schema compatibility, action safety, workflow correctness, examples, release notes, downstream communication, and incident response.
+This guide defines how maintainers operate the engineering standards repository. Maintainers protect the integrity of governance documents, schemas, actions, reusable workflows, examples, templates, evidence, and release artifacts.
 
-## Change Review
+Maintainers are not only document editors. They own the control system that downstream repositories rely on for safe review, validation, and change governance.
 
-Schema changes require valid and invalid fixtures. Action changes require Pester tests and security review. Workflow changes require pinned actions, least privilege, evidence upload, and failure behavior review.
+## Maintainer Responsibilities
 
-## Release Checklist
+Maintainers MUST keep governance documents authoritative, validators executable, schemas compatible with fixtures, workflows pinned, examples current, and evidence honest. A maintainer review must consider both policy language and whether the policy is actually enforced by automation or reviewer process.
 
-1. Update `VERSION` and `CHANGELOG.md`.
-2. Run all validation commands.
-3. Run Pester.
-4. Validate documentation completeness.
-5. Generate completion evidence.
-6. Review diff for secrets and fake commands.
-7. Publish migration notes.
+Maintainers also own downstream communication. Breaking changes, new mandatory controls, deprecations, and emergency fixes must be documented in release notes and migration guidance.
 
-## Emergency Fixes
+## Stewardship Model
 
-Emergency fixes may bypass normal release batching but not evidence generation. Record incident context, affected versions, and downstream action required.
+Each major area SHOULD have a named steward: governance policy, schemas, PowerShell validation, GitHub Actions, templates, security review, examples, and releases. A single person can hold multiple steward roles, but no critical release should depend on undocumented ownership.
 
-## Governance Operating Requirements
+When a maintainer leaves or changes responsibilities, update CODEOWNERS, release notes contacts, and repository health expectations in the same maintenance cycle.
 
-Teams MUST apply this document together with the organization contract, completion evidence policy, exception process, and risk classification model. Validation MUST include the automated checks that apply to the repository type plus a reviewer assessment of any material risk that automation cannot prove. Evidence MUST be stored in the repository or attached to the pull request, and it must distinguish Passed, Failed, Blocked, Skipped, and NotRun results without contradiction.
+## Change Intake
+
+Changes enter through pull requests, issues, security reports, or emergency maintainer action. Every change must identify its reason, affected control area, risk classification, validation plan, and downstream impact.
+
+Requests that weaken a mandatory control MUST be treated as exceptions or breaking governance changes. They cannot be merged as routine documentation edits.
+
+## Review Requirements
+
+Policy changes require review from a governance maintainer. Schema changes require valid and invalid fixtures. Validator changes require Pester tests. Workflow changes require action pin review, permission review, evidence review, and artifact behavior review.
+
+Security-sensitive changes require review against `docs/ACTION_SECURITY.md`. Changes that affect AI-generated code, secrets, dependency review, authentication, authorization, cryptography, infrastructure, database migrations, or destructive operations require heightened scrutiny.
+
+## Schema Maintenance
+
+When changing a schema, update the schema file, at least one valid fixture, at least one invalid fixture when the rule changes, validator expectations, documentation, and completion evidence. Removing an allowed value or adding a required field is a breaking change unless a compatibility path exists.
+
+Schemas MUST reject ambiguous evidence. For example, overall Passed status cannot coexist with failed mandatory tests.
+
+## Validator Maintenance
+
+Validators MUST fail closed for malformed required inputs and write structured output when an output path is requested. They must not leak secrets in logs. They should distinguish `Failed`, `Blocked`, and `NotRun` instead of flattening everything into failure.
+
+When updating validators, run Pester and the aggregate governance validation. Tests must cover positive cases, negative cases, and any edge case that caused a bug or regression.
+
+## Workflow Maintenance
+
+Reusable workflows MUST use least-privilege permissions, pinned third-party actions, explicit checkout behavior, deterministic job names, clear artifact retention, and evidence generation on failure using `if: always()` where appropriate.
+
+Entry workflows should call reusable workflows. Reusable workflows must not call entry workflows. Avoid circular invocation and avoid branch filters that exclude the repository's active protected branch.
+
+## Template Maintenance
+
+Templates must be usable as starting points, not decorative examples. Repository templates must prompt for owners, risk, evidence, validation commands, rollback, security reporting, and exceptions. Issue and pull request templates must collect enough information for maintainers to triage without asking for secrets.
+
+Template placeholders are allowed inside `templates/`, but they must be explicit, safe, and easy to replace. Templates must not include fake success commands.
+
+## Evidence Maintenance
+
+Every substantive pull request MUST refresh completion evidence or explain why evidence is intentionally unchanged. Evidence is generated after validation, records actual outcomes, and includes skipped or blocked checks honestly.
+
+Maintainers MUST reject evidence that claims success without commands, exit codes, scope, timestamps, or reviewer context. Contradictory evidence is a governance failure.
+
+## Release Preparation
+
+Before release, update `VERSION`, changelog or release notes, migration guidance, examples, schemas, templates, and documentation as needed. Confirm that downstream invocation examples reference the correct reusable workflow.
+
+Release candidates should be tested from a clean checkout. If local tooling is unavailable, record the missing tool as `NotRun` or `Blocked` and decide whether release can proceed based on risk.
+
+## Emergency Maintenance
+
+Emergency changes are allowed for security fixes, broken validation affecting many repositories, or incorrect standards that create production risk. Emergency changes still require evidence, reviewer sign-off after the fact when immediate review is impossible, and a follow-up issue for any skipped validation.
+
+Emergency releases MUST identify affected versions, downstream action required, rollback guidance, and whether existing evidence should be considered stale.
+
+## Drift Management
+
+Governance drift occurs when documentation, schemas, workflows, templates, and examples disagree. Maintainers SHOULD run drift checks during each release and whenever a central control is changed.
+
+Common drift examples include a schema field that documentation does not describe, an example workflow that calls the wrong reusable file, a template that omits required evidence, or a branch protection guide that names checks that no longer exist.
+
+## Validation
+
+Run the maintainer validation set before merging substantive changes:
+
+```powershell
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
+pwsh -NoProfile -Command "Invoke-Pester -Path tests -Output Detailed"
+```
+
+If Pester is unavailable, record `NotRun` with the reason, tool version context, and compensating review.
+
+## Evidence
+
+Maintainer evidence must include command output or structured reports for the validation set, Pester when applicable, manual review notes for policy-only changes, and artifact hashes when release artifacts are produced.
+
+Evidence must identify known warnings. Warnings are acceptable only when reviewed and understood.
 
 ## Exception Handling
 
-Exceptions MUST follow `governance/EXCEPTION_PROCESS.md`. An exception request needs a `GOV-*` reference, owner, expiry date, compensating control, rollback plan when applicable, and approval from the accountable maintainer. Expired exceptions are treated as failures until renewed or remediated.
+Maintainers may approve exceptions only within their authority. Exceptions must be scoped, temporary, justified, and tied to compensating controls. A maintainer who owns the affected change should not be the only approver for a High or Critical exception.
 
-## Related Documents
+Expired exceptions must be removed, renewed, or converted into tracked remediation work before release.
 
-- `governance/ORGANIZATION_CONTRACT.md`
-- `governance/COMPLETION_EVIDENCE.md`
-- `governance/RISK_CLASSIFICATION.md`
+## Related
+
+- `docs/VERSIONING.md`
+- `docs/RELEASE_PROCESS.md`
+- `docs/ACTION_SECURITY.md`
 - `governance/EXCEPTION_PROCESS.md`
-- `docs/ADOPTION_GUIDE.md`
-
-## Reviewer Guidance
-
-Reviewers MUST verify that the described control is implemented in executable automation, reviewer workflow, or maintained documentation. A passing result is only credible when the evidence identifies the command that ran, the relevant version or configuration, the exit code, and any environment limitation. When a tool is unavailable, the result is `NotRun` or `Blocked`; it is not converted into success. Teams SHOULD prefer small, reviewable changes that improve one control at a time, then update this repository after the evidence proves the behavior. Related implementation details live in the reusable workflows, action README files, schemas, and examples. Exceptions remain temporary and must be removed from active evidence when the underlying issue is remediated.
+- `governance/COMPLETION_EVIDENCE.md`
+- `docs/TROUBLESHOOTING.md`

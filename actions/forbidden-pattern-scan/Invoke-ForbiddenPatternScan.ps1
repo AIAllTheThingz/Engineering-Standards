@@ -2,57 +2,156 @@
 .SYNOPSIS
 Runs defensive forbidden-pattern scanning.
 .DESCRIPTION
-Applies configurable regex patterns, supports reviewed allowlists, redacts findings, skips binary or large files, and emits JSON reports.
-.PARAMETER Path
-Repository path.
-.PARAMETER PatternFile
-Pattern JSON path.
-.PARAMETER AllowlistFile
-Optional allowlist JSON path.
-.PARAMETER OutputJson
-Optional JSON report.
-.PARAMETER Advisory
-Return success while recording findings.
-.EXAMPLE
-pwsh -File Invoke-ForbiddenPatternScan.ps1 -Path .
-.OUTPUTS
-Console and optional JSON.
-.NOTES
-This is not a complete secret scanner or SAST product.
+Applies configured regex patterns to repository text files, supports reviewed expiring allowlists, redacts matches, skips binary or large files, and emits structured JSON reports.
 #>
 [CmdletBinding()]
-param([string]$Path='.', [string]$PatternFile, [string]$AllowlistFile, [string]$OutputJson, [switch]$Advisory)
+param(
+    [string]$Path = '.',
+    [string]$PatternFile,
+    [string]$AllowlistFile,
+    [string]$OutputJson,
+    [switch]$Advisory
+)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot '../../scripts/GovernanceValidation.psm1') -Force
+
 $root = (Resolve-Path -LiteralPath $Path).Path
-if (-not $PatternFile) { $PatternFile = Join-Path $PSScriptRoot 'forbidden-patterns.json' }
-$patterns = (Read-JsonFile $PatternFile).patterns
+$defaultPatternFile = Join-Path $PSScriptRoot 'forbidden-patterns.json'
+$patternPath = if ($PatternFile) { Resolve-SafePath -Root $root -ChildPath $PatternFile } elseif (Test-Path -LiteralPath $defaultPatternFile) { $defaultPatternFile } else { throw 'Pattern file missing.' }
+$allowlistPath = $null
+if ($AllowlistFile) { $allowlistPath = Resolve-SafePath -Root $root -ChildPath $AllowlistFile }
+
+$patternDocument = Read-JsonFile -Path $patternPath
+$patterns = @($patternDocument.patterns)
 $allowlist = @()
-if ($AllowlistFile -and (Test-Path $AllowlistFile)) { $allowlist = @((Read-JsonFile $AllowlistFile).entries) }
+if ($allowlistPath -and (Test-Path -LiteralPath $allowlistPath -PathType Leaf)) {
+    $allowlist = @((Read-JsonFile -Path $allowlistPath).entries)
+}
+
 $findings = [System.Collections.Generic.List[object]]::new()
-$files = Get-ChildItem -LiteralPath $root -Recurse -File | Where-Object { $_.FullName -notmatch '\\.git\\|node_modules|bin\\|obj\\|TestResults' -and $_.Name -ne 'forbidden-patterns.json' }
-foreach ($file in $files) {
-    if ($file.Length -gt 1048576) { continue }
-    try { $content = Get-Content -LiteralPath $file.FullName -Raw -ErrorAction Stop } catch { continue }
-    if ($content -match "`0") { continue }
-    $relative = [System.IO.Path]::GetRelativePath($root, $file.FullName).Replace('\','/')
-    foreach ($pattern in $patterns) {
-        $allowed = $false
-        foreach ($entry in $allowlist) {
-            if ($entry.patternId -eq $pattern.id -and $relative -like $entry.path -and $entry.reason -and $entry.reason.Length -ge 10) { $allowed = $true }
+$skipped = [System.Collections.Generic.List[object]]::new()
+$scanned = 0
+$maxBytes = 1048576
+$excludedPathPattern = '\\.git\\|/\\.git/|node_modules|packages[/\\]|bin[/\\]|obj[/\\]|dist[/\\]|TestResults'
+
+function Test-AllowlistedFinding {
+    param(
+        [Parameter(Mandatory)][object]$Pattern,
+        [Parameter(Mandatory)][string]$RelativePath
+    )
+    foreach ($entry in $allowlist) {
+        if ($entry.patternId -ne $Pattern.id) { continue }
+        if (-not $entry.reason -or $entry.reason.Length -lt 10) { continue }
+        if ($entry.expiresOn) {
+            try {
+                if ([datetime]$entry.expiresOn -lt (Get-Date).Date) { continue }
+            }
+            catch {
+                continue
+            }
         }
-        foreach ($match in [regex]::Matches($content, $pattern.regex)) {
-            if ($allowed) { continue }
-            $snippet = $match.Value
-            if ($snippet.Length -gt 12) { $snippet = $snippet.Substring(0,4) + '...[redacted]...' + $snippet.Substring($snippet.Length-4) } else { $snippet = '[redacted]' }
-            $findings.Add([ordered]@{ patternId=$pattern.id; severity=$pattern.severity; path=$relative; description=$pattern.description; redactedMatch=$snippet })
+        if ($RelativePath -like $entry.path) { return $true }
+    }
+    $false
+}
+
+function Get-RedactedSnippet {
+    param([Parameter(Mandatory)][string]$Value)
+    if ($Value.Length -le 12) { return '[redacted]' }
+    $Value.Substring(0, 4) + '...[redacted]...' + $Value.Substring($Value.Length - 4)
+}
+
+foreach ($file in Get-ChildItem -LiteralPath $root -Recurse -File) {
+    $relative = [System.IO.Path]::GetRelativePath($root, $file.FullName).Replace('\','/')
+    if ($relative -eq 'actions/forbidden-pattern-scan/forbidden-patterns.json') { continue }
+    if ($relative -match $excludedPathPattern) {
+        $skipped.Add([ordered]@{ path = $relative; reason = 'excluded-path' })
+        continue
+    }
+    if ($file.Length -gt $maxBytes) {
+        $skipped.Add([ordered]@{ path = $relative; reason = 'too-large'; sizeBytes = $file.Length })
+        continue
+    }
+
+    try {
+        $content = Get-Content -LiteralPath $file.FullName -Raw -ErrorAction Stop
+    }
+    catch {
+        $skipped.Add([ordered]@{ path = $relative; reason = 'unreadable' })
+        continue
+    }
+    if ($content -match "`0") {
+        $skipped.Add([ordered]@{ path = $relative; reason = 'binary' })
+        continue
+    }
+
+    $scanned++
+    foreach ($pattern in $patterns) {
+        try {
+            $matches = [regex]::Matches($content, [string]$pattern.regex)
+        }
+        catch {
+            $findings.Add([ordered]@{
+                patternId = $pattern.id
+                severity = 'error'
+                path = $relative
+                line = 0
+                description = "Invalid scanner regex for pattern '$($pattern.id)'."
+                redactedMatch = '[invalid-regex]'
+                allowlisted = $false
+            })
+            continue
+        }
+        foreach ($match in $matches) {
+            $allowlisted = Test-AllowlistedFinding -Pattern $pattern -RelativePath $relative
+            if ($allowlisted) { continue }
+            $prefix = $content.Substring(0, $match.Index)
+            $line = ([regex]::Matches($prefix, "`n")).Count + 1
+            $findings.Add([ordered]@{
+                patternId = $pattern.id
+                severity = $pattern.severity
+                path = $relative
+                line = $line
+                description = $pattern.description
+                redactedMatch = Get-RedactedSnippet -Value $match.Value
+                allowlisted = $false
+            })
         }
     }
 }
-$failed = @($findings | Where-Object severity -eq 'error').Count
-$report = [ordered]@{ generatedAtUtc=(Get-Date).ToUniversalTime().ToString('o'); completeSecretScanner=$false; findings=@($findings); failed=$failed }
-if ($OutputJson) { $report | ConvertTo-OrderedJson | Set-Content -LiteralPath $OutputJson -Encoding utf8 }
-if ($findings.Count) { $findings | ForEach-Object { "[$($_.severity)] $($_.path) $($_.patternId): $($_.redactedMatch)" } } else { Write-Output '[Passed] No forbidden-pattern findings.' }
-if ($failed -gt 0 -and -not $Advisory) { exit 1 }
+
+$errorCount = @($findings | Where-Object severity -eq 'error').Count
+$warningCount = @($findings | Where-Object severity -eq 'warning').Count
+$report = [ordered]@{
+    generatedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+    scanner = 'forbidden-pattern-scan'
+    schemaVersion = '1.0.0'
+    completeSecretScanner = $false
+    root = $root
+    patternFile = $patternPath
+    allowlistFile = $allowlistPath
+    advisory = [bool]$Advisory
+    scannedFiles = $scanned
+    skippedFiles = @($skipped)
+    findings = @($findings)
+    failed = $errorCount
+    warnings = $warningCount
+}
+
+if ($OutputJson) {
+    $outPath = Resolve-SafePath -Root $root -ChildPath $OutputJson -AllowMissingLeaf
+    New-Item -ItemType Directory -Path (Split-Path -Parent $outPath) -Force | Out-Null
+    $report | ConvertTo-OrderedJson | Set-Content -LiteralPath $outPath -Encoding utf8
+}
+
+if ($findings.Count) {
+    $findings | ForEach-Object { "[$($_.severity)] $($_.path):$($_.line) $($_.patternId): $($_.redactedMatch)" }
+}
+else {
+    Write-Output '[Passed] No forbidden-pattern findings.'
+}
+
+if ($errorCount -gt 0 -and -not $Advisory) { exit 1 }
 exit 0

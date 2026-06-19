@@ -42,17 +42,20 @@
     },
     "branch": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "maxLength": 255,
+      "pattern": "^(?!/)(?!.*\\.\\.)(?!.*//)(?!.*@$).+"
     },
     "pullRequest": {
       "type": [
         "string",
         "null"
-      ]
+      ],
+      "pattern": "^(https://github\\.com/[^/]+/[^/]+/pull/[0-9]+|#[0-9]+)$"
     },
     "governanceVersion": {
       "type": "string",
-      "minLength": 1
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$"
     },
     "riskClassification": {
       "type": "string",
@@ -83,26 +86,33 @@
     },
     "summary": {
       "type": "string",
-      "minLength": 20
+      "minLength": 40,
+      "maxLength": 4000
     },
     "changedFiles": {
       "type": "array",
       "items": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?!.*\\.\\.)(?![A-Za-z]:)(?!/).+"
       },
-      "minItems": 1
+      "minItems": 1,
+      "uniqueItems": true
     },
     "commandsExecuted": {
       "type": "array",
       "items": {
-        "type": "string"
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 2000
       },
       "minItems": 1
     },
     "commandsNotExecuted": {
       "type": "array",
       "items": {
-        "type": "string"
+        "type": "string",
+        "minLength": 10,
+        "maxLength": 2000
       }
     },
     "tests": {
@@ -121,20 +131,26 @@
     "warnings": {
       "type": "array",
       "items": {
-        "type": "string"
-      }
+        "type": "string",
+        "minLength": 10
+      },
+      "uniqueItems": true
     },
     "knownLimitations": {
       "type": "array",
       "items": {
-        "type": "string"
-      }
+        "type": "string",
+        "minLength": 10
+      },
+      "uniqueItems": true
     },
     "remainingRisks": {
       "type": "array",
       "items": {
-        "type": "string"
-      }
+        "type": "string",
+        "minLength": 10
+      },
+      "uniqueItems": true
     },
     "exceptions": {
       "type": "array",
@@ -155,10 +171,12 @@
         ],
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "minLength": 2
           },
           "role": {
-            "type": "string"
+            "type": "string",
+            "minLength": 2
           },
           "approvedAtUtc": {
             "type": "string",
@@ -167,5 +185,39 @@
         }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "NotRun"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "commandsNotExecuted": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "Passed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "remainingRisks": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ]
 }

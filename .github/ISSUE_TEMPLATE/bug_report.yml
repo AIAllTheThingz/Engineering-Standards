@@ -1,24 +1,45 @@
 name: Bug Report
-description: Submit a bug report.
-title: "Bug Report: "
-labels: [governance]
+description: Report a defect in governance documentation, validation, workflows, schemas, or templates.
+title: "Bug: "
+labels: [governance, bug]
 body:
+  - type: input
+    id: version
+    attributes:
+      label: Governance version or commit
+      description: Identify the standards version, release tag, or commit SHA.
+    validations:
+      required: true
   - type: textarea
     id: context
     attributes:
       label: Context
-      description: Describe the affected repository, governance version, and observed behavior.
+      description: Describe the affected repository, file, workflow, action, schema, or template.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Describe the expected validation, documentation, or workflow behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: Describe what happened, including sanitized command output or workflow logs.
     validations:
       required: true
   - type: textarea
     id: impact
     attributes:
       label: Impact and risk
-      description: Describe risk, security impact, data impact, and urgency.
+      description: Describe security, data, release, downstream, or production impact.
     validations:
       required: true
   - type: textarea
     id: evidence
     attributes:
       label: Sanitized evidence
-      description: Include logs or evidence without secrets.
+      description: Attach logs, evidence paths, screenshots, or reproduction steps without secrets or customer data.

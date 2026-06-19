@@ -32,7 +32,7 @@
   ],
   "externalIntegrations": [],
   "secretsProvider": "none-required-for-example",
-  "productionApprovalRequired": false,
+  "productionApprovalRequired": true,
   "evidence": {
     "completionEvidencePath": "evidence/completion-result.json",
     "testEvidencePath": "evidence/test-evidence.json"

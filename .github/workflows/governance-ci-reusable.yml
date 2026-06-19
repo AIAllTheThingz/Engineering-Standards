@@ -1,20 +1,112 @@
-name: Local Governance Reusable Entry
+name: Reusable Governance CI
+
 on:
   workflow_call:
     inputs:
       project-path:
+        description: Repository-relative project path to validate.
         type: string
         required: false
         default: .
       governance-version:
+        description: Governance standard version used for evidence.
         type: string
         required: false
         default: 1.0.0
+    outputs:
+      evidence-path:
+        description: Completion evidence path.
+        value: ${{ jobs.governance.outputs.evidence-path }}
+
 permissions:
   contents: read
+
 jobs:
   governance:
-    uses: ./.github/workflows/governance-ci.yml
-    with:
-      project-path: ${{ inputs.project-path }}
-      governance-version: ${{ inputs.governance-version }}
+    name: Governance validation
+    runs-on: ubuntu-latest
+    outputs:
+      evidence-path: ${{ steps.evidence.outputs.evidence-path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Prepare evidence directory
+        shell: pwsh
+        run: New-Item -ItemType Directory -Path evidence -Force | Out-Null
+
+      - name: Validate schemas and fixtures
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/Test-JsonSchemas.ps1 -Path '${{ inputs.project-path }}' -OutputJson evidence/json-schemas.json
+
+      - name: Validate Markdown links
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/Test-MarkdownLinks.ps1 -Path '${{ inputs.project-path }}' -OutputJson evidence/markdown-links.json
+
+      - name: Validate documentation completeness
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path '${{ inputs.project-path }}' -OutputJson evidence/documentation-completeness.json
+
+      - name: Validate governance contract
+        shell: pwsh
+        run: pwsh -NoProfile -File actions/validate-contract/Invoke-ContractValidation.ps1 -Path '${{ inputs.project-path }}' -OutputJson evidence/contract.json
+
+      - name: Run forbidden-pattern scan
+        shell: pwsh
+        run: pwsh -NoProfile -File actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1 -Path '${{ inputs.project-path }}' -OutputJson evidence/forbidden-patterns.json
+
+      - name: Validate repository health
+        shell: pwsh
+        run: pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path '${{ inputs.project-path }}' -OutputJson evidence/repository-health.json
+
+      - name: Generate completion evidence
+        id: evidence
+        if: always()
+        shell: pwsh
+        run: |
+          $status = if ('${{ job.status }}' -eq 'success') { 'Passed' } else { 'Failed' }
+          $exitCode = if ($status -eq 'Passed') { 0 } else { 1 }
+          $failureReason = if ($status -eq 'Passed') { $null } else { 'One or more governance workflow steps failed. Review uploaded validation reports.' }
+          $now = (Get-Date).ToUniversalTime().ToString('o')
+          @(
+            [ordered]@{
+              schemaVersion = '1.0.0'
+              name = 'GitHub Actions governance job'
+              category = 'workflow'
+              status = $status
+              command = 'governance-ci-reusable.yml'
+              workingDirectory = '.'
+              startedAtUtc = $now
+              completedAtUtc = $now
+              durationSeconds = 0
+              runtime = 'GitHub Actions ubuntu-latest / pwsh'
+              toolVersion = '${{ runner.os }}'
+              exitCode = $exitCode
+              summary = "Governance workflow completed with job status ${{ job.status }}."
+              warnings = @()
+              failureReason = $failureReason
+            }
+          ) | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath evidence/ci-test-results.json -Encoding utf8
+          & pwsh -NoProfile -File scripts/New-CompletionEvidence.ps1 `
+            -RepositoryPath . `
+            -OutputPath evidence/completion-result.json `
+            -GovernanceVersion '${{ inputs.governance-version }}' `
+            -RiskClassification High `
+            -Status $status `
+            -Summary "GitHub Actions governance validation completed with job status ${{ job.status }}." `
+            -TestResultPath evidence/ci-test-results.json
+          "evidence-path=evidence/completion-result.json" >> $env:GITHUB_OUTPUT
+
+      - name: Validate completion evidence
+        if: always()
+        shell: pwsh
+        run: pwsh -NoProfile -File actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path . -EvidencePath evidence/completion-result.json -OutputJson evidence/evidence-validation.json
+
+      - name: Upload governance evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: governance-evidence-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30

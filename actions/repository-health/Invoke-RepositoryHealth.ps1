@@ -2,42 +2,133 @@
 .SYNOPSIS
 Checks repository governance health.
 .DESCRIPTION
-Checks required files, JSON parsing, documentation completeness, schema fixtures, tests, CODEOWNERS, Dependabot, and branch-protection documentation.
-.PARAMETER Path
-Repository path.
-.PARAMETER OutputJson
-Optional JSON report.
-.PARAMETER Advisory
-Return success while recording findings.
-.EXAMPLE
-pwsh -File Invoke-RepositoryHealth.ps1 -Path .
-.OUTPUTS
-Console and optional JSON.
-.NOTES
-Does not execute repository content beyond local validators.
+Checks required governance files, JSON parsing, schemas and fixtures, documentation completeness, tests, CODEOWNERS, Dependabot, workflows, action metadata, and evidence presence.
 #>
 [CmdletBinding()]
-param([string]$Path='.', [string]$OutputJson, [switch]$Advisory)
+param(
+    [string]$Path = '.',
+    [string]$OutputJson,
+    [switch]$Advisory
+)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot '../../scripts/GovernanceValidation.psm1') -Force
+
 $root = (Resolve-Path -LiteralPath $Path).Path
 $results = [System.Collections.Generic.List[object]]::new()
-$required = @('README.md','LICENSE','SECURITY.md','CONTRIBUTING.md','CODEOWNERS','project-manifest.json','governance.config.json','AGENTS.md','.github/dependabot.yml','.github/workflows/governance-ci.yml','.github/pull_request_template.md','docs/BRANCH_PROTECTION.md','scripts/Test-DocumentationCompleteness.ps1')
-foreach ($item in $required) {
-    $full = Resolve-SafePath $root $item
-    if (Test-Path $full) { $results.Add((New-ValidationResult Passed 'Required health file exists.' $item info)) } else { $results.Add((New-ValidationResult Failed 'Required health file missing.' $item)) }
+
+function Add-RequiredFileResult {
+    param([Parameter(Mandatory)][string]$RelativePath)
+    try {
+        $full = Resolve-SafePath -Root $root -ChildPath $RelativePath -AllowMissingLeaf
+        if (Test-Path -LiteralPath $full -PathType Leaf) {
+            $results.Add((New-ValidationResult -Status Passed -Message 'Required health file exists.' -Path $RelativePath -Severity info))
+        }
+        else {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Required health file missing.' -Path $RelativePath))
+        }
+    }
+    catch {
+        $results.Add((New-ValidationResult -Status Failed -Message $_.Exception.Message -Path $RelativePath))
+    }
 }
-foreach ($json in Get-ChildItem -LiteralPath $root -Filter '*.json' -Recurse -File | Where-Object { $_.FullName -notmatch '\\.git\\' }) {
-    try { Read-JsonFile $json.FullName | Out-Null } catch { $results.Add((New-ValidationResult Failed "Invalid JSON: $($_.Exception.Message)" ([System.IO.Path]::GetRelativePath($root,$json.FullName)))) }
+
+$required = @(
+    'README.md',
+    'LICENSE',
+    'SECURITY.md',
+    'CONTRIBUTING.md',
+    'CODEOWNERS',
+    'project-manifest.json',
+    'governance.config.json',
+    'AGENTS.md',
+    '.github/dependabot.yml',
+    '.github/workflows/governance-ci.yml',
+    '.github/pull_request_template.md',
+    'docs/BRANCH_PROTECTION.md',
+    'docs/ACTION_SECURITY.md',
+    'scripts/GovernanceValidation.psm1',
+    'scripts/Test-DocumentationCompleteness.ps1'
+)
+$required | ForEach-Object { Add-RequiredFileResult -RelativePath $_ }
+
+foreach ($json in Get-ChildItem -LiteralPath $root -Filter '*.json' -Recurse -File | Where-Object { $_.FullName -notmatch '\\.git\\|node_modules|bin\\|obj\\|dist\\' }) {
+    try {
+        Read-JsonFile -Path $json.FullName | Out-Null
+    }
+    catch {
+        $results.Add((New-ValidationResult -Status Failed -Message "Invalid JSON: $($_.Exception.Message)" -Path ([System.IO.Path]::GetRelativePath($root, $json.FullName).Replace('\','/'))))
+    }
 }
-& pwsh -NoProfile -File (Join-Path $root 'scripts/Test-DocumentationCompleteness.ps1') -Path $root | Out-Null
-if ($LASTEXITCODE -ne 0) { $results.Add((New-ValidationResult Failed 'Documentation completeness failed.' $root)) }
-if (-not (Get-ChildItem -LiteralPath (Join-Path $root 'tests') -Recurse -Filter '*.Tests.ps1')) { $results.Add((New-ValidationResult Failed 'No Pester tests found.' 'tests')) }
-$failed = @($results | Where-Object status -eq 'Failed').Count
-if ($failed -eq 0) { $results.Add((New-ValidationResult Passed 'Repository health validation completed.' $root info)) }
-$report = [ordered]@{ generatedAtUtc=(Get-Date).ToUniversalTime().ToString('o'); results=@($results); failed=$failed }
-if ($OutputJson) { $report | ConvertTo-OrderedJson | Set-Content -LiteralPath $OutputJson -Encoding utf8 }
+
+if (Test-Path -LiteralPath (Join-Path $root 'project-manifest.json')) {
+    foreach ($item in @(Test-GovernanceJsonDocument -Path (Join-Path $root 'project-manifest.json') -Kind 'project-manifest')) { $results.Add($item) }
+}
+if (Test-Path -LiteralPath (Join-Path $root 'governance.config.json')) {
+    foreach ($item in @(Test-GovernanceJsonDocument -Path (Join-Path $root 'governance.config.json') -Kind 'governance-config')) { $results.Add($item) }
+}
+
+$documentationValidator = Join-Path $root 'scripts/Test-DocumentationCompleteness.ps1'
+if (Test-Path -LiteralPath $documentationValidator -PathType Leaf) {
+    & pwsh -NoProfile -File $documentationValidator -Path $root | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Documentation completeness failed.' -Path $root))
+    }
+}
+else {
+    $results.Add((New-ValidationResult -Status Failed -Message 'Documentation completeness validator missing.' -Path 'scripts/Test-DocumentationCompleteness.ps1'))
+}
+
+$schemaValidator = Join-Path $root 'scripts/Test-JsonSchemas.ps1'
+if (Test-Path -LiteralPath $schemaValidator -PathType Leaf) {
+    & pwsh -NoProfile -File $schemaValidator -Path $root | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'JSON schema and fixture validation failed.' -Path 'schemas'))
+    }
+}
+else {
+    $results.Add((New-ValidationResult -Status Failed -Message 'JSON schema validator missing.' -Path 'scripts/Test-JsonSchemas.ps1'))
+}
+
+$testFiles = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests') -Recurse -Filter '*.Tests.ps1' -File -ErrorAction SilentlyContinue)
+if ($testFiles.Count -lt 1) {
+    $results.Add((New-ValidationResult -Status Failed -Message 'No Pester tests found.' -Path 'tests'))
+}
+else {
+    $results.Add((New-ValidationResult -Status Passed -Message "Pester test files found: $($testFiles.Count)." -Path 'tests' -Severity info))
+}
+
+$codeowners = Join-Path $root 'CODEOWNERS'
+if (Test-Path -LiteralPath $codeowners) {
+    $text = Get-Content -LiteralPath $codeowners -Raw
+    if ($text -notmatch '@[^/\s]+/[^/\s]+') {
+        $results.Add((New-ValidationResult -Status Failed -Message 'CODEOWNERS must include at least one GitHub team owner.' -Path 'CODEOWNERS'))
+    }
+    if ($text -match '(?i)replace|placeholder') {
+        $results.Add((New-ValidationResult -Status Warning -Message 'CODEOWNERS contains language that may need organization-specific confirmation.' -Path 'CODEOWNERS' -Severity warning))
+    }
+}
+
+foreach ($actionDir in Get-ChildItem -LiteralPath (Join-Path $root 'actions') -Directory -ErrorAction SilentlyContinue) {
+    foreach ($requiredActionFile in @('action.yml','README.md')) {
+        $candidate = Join-Path $actionDir.FullName $requiredActionFile
+        if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Action is missing $requiredActionFile." -Path ([System.IO.Path]::GetRelativePath($root, $candidate).Replace('\','/'))))
+        }
+    }
+}
+
+if (-not @($results | Where-Object status -eq 'Failed')) {
+    $results.Add((New-ValidationResult -Status Passed -Message 'Repository health validation completed.' -Path $root -Severity info))
+}
+
+$report = New-ValidationReport -Results @($results)
+if ($OutputJson) {
+    $outPath = Resolve-SafePath -Root $root -ChildPath $OutputJson -AllowMissingLeaf
+    New-Item -ItemType Directory -Path (Split-Path -Parent $outPath) -Force | Out-Null
+    $report | ConvertTo-OrderedJson | Set-Content -LiteralPath $outPath -Encoding utf8
+}
 $report.results | ForEach-Object { "[$($_.status)] $($_.path) $($_.message)" }
-if ($failed -gt 0 -and -not $Advisory) { exit 1 }
+if ($report.failed -gt 0 -and -not $Advisory) { exit 1 }
 exit 0

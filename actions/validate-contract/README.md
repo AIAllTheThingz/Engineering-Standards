@@ -6,40 +6,41 @@
 | Version | 1.0.0 |
 | Owner role | GitHub Actions Maintainers |
 | Last reviewed | 2026-06-19 |
-| Changelog | See [CHANGELOG.md](../../CHANGELOG.md) unless this file is at repository root. |
-
-## Normative Terminology
-
-`MUST` and `MUST NOT` define mandatory requirements. `SHOULD` and `SHOULD NOT` define expected practices that require a documented reason when not followed. `MAY` defines optional behavior. Every mandatory statement is intended to be testable by automation, review, or recorded evidence.
+| Changelog | See [../../CHANGELOG.md](../../CHANGELOG.md). |
 
 ## Purpose
 
-Validates manifest, governance config, required documentation, standards, exceptions, and documentation completeness.
+This action validates governance contract adoption. It checks the project manifest, governance configuration, required documentation paths, applicable agent standards, evidence path syntax, and exception references.
+
+For the standards repository itself, it also runs documentation completeness. For downstream example or consuming repositories, it validates configured required documentation and resolves applicable agent standards from the downstream repository first, then from the central standards repository.
 
 ## Inputs
 
-- `path`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
-- `manifest-path`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
-- `config-path`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
-- `output-json`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
-- `advisory`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
+- `path`: repository root. Defaults to `.`.
+- `manifest-path`: manifest path relative to repository root. Defaults to `project-manifest.json`.
+- `config-path`: governance config path relative to repository root. Defaults to `governance.config.json`.
+- `output-json`: optional repository-relative JSON report path.
+- `advisory`: when `true`, records findings but returns success.
 
 ## Outputs
 
-- `report-path`: emitted through `$GITHUB_OUTPUT` when running inside GitHub Actions and included in the JSON report.
-- `failed-count`: emitted through `$GITHUB_OUTPUT` when running inside GitHub Actions and included in the JSON report.
+- `report-path`: JSON report path when configured.
+- `failed-count`: intended count of blocking findings. The JSON report is authoritative.
 
 ## Exit Codes
 
-- `0`: no mandatory failures were found.
-- `1`: one or more mandatory failures were found.
-- Advisory mode records findings but returns `0` so teams can adopt the check before making it blocking.
+- `0`: contract validation passed, or advisory mode was used.
+- `1`: manifest, config, documentation, standard, evidence path, or exception validation failed.
 
 ## Security Boundaries
 
-The action treats repository files, paths, configuration, and evidence as untrusted input. It validates paths, avoids executing repository-provided code, redacts suspected secrets, and does not require repository secrets.
+Inputs are treated as untrusted. Paths must resolve under the repository root. The action validates JSON and file presence; it does not execute downstream repository code.
 
-## Usage Examples
+## Evidence
+
+Evidence SHOULD include the command, exit code, report JSON, manifest/config versions, and any blocked or missing contract requirements.
+
+## Example
 
 ```yaml
 - uses: AIAllTheThingz/Engineering-Standards/actions/validate-contract@<commit-sha>
@@ -48,11 +49,9 @@ The action treats repository files, paths, configuration, and evidence as untrus
     output-json: evidence/validate-contract.json
 ```
 
-## Troubleshooting
+## Related Documents
 
-Check the JSON report first. Path failures usually mean a configured path escaped the workspace or a required file is missing. Schema failures usually identify the field name. Scanner findings require either remediation or a reviewed allowlist entry with a reason and expiration.
-
-## Known Limitations
-
-This action validates governance contracts and evidence; it does not replace code review, threat modeling, dependency scanning, or production approval.
-
+- [../../governance/ORGANIZATION_CONTRACT.md](../../governance/ORGANIZATION_CONTRACT.md)
+- [../../governance/EXCEPTION_PROCESS.md](../../governance/EXCEPTION_PROCESS.md)
+- [../../schemas/project-manifest.schema.json](../../schemas/project-manifest.schema.json)
+- [../../schemas/governance-config.schema.json](../../schemas/governance-config.schema.json)

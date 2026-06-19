@@ -10,9 +10,7 @@
   ],
   "applicableAgentStandards": [
     "agents/AGENTS_Base.md",
-    "agents/AGENTS_PowerShell.md",
-    "agents/AGENTS_Integration.md",
-    "agents/AGENTS_Infrastructure.md"
+    "agents/AGENTS_PowerShell.md"
   ],
   "additionalForbiddenPatterns": [],
   "reviewedAllowlist": [],

@@ -6,40 +6,59 @@
 | Version | 1.0.0 |
 | Owner role | GitHub Actions Maintainers |
 | Last reviewed | 2026-06-19 |
-| Changelog | See [CHANGELOG.md](../../CHANGELOG.md) unless this file is at repository root. |
-
-## Normative Terminology
-
-`MUST` and `MUST NOT` define mandatory requirements. `SHOULD` and `SHOULD NOT` define expected practices that require a documented reason when not followed. `MAY` defines optional behavior. Every mandatory statement is intended to be testable by automation, review, or recorded evidence.
+| Changelog | See [../../CHANGELOG.md](../../CHANGELOG.md). |
 
 ## Purpose
 
-Scans for defensive forbidden patterns with redaction and advisory mode.
+This action scans repository text files for defensive forbidden patterns such as embedded credential assignments, private key markers, disabled TLS validation, dangerous PowerShell execution, broad destructive commands, unsafe workflow permissions, and download-and-execute patterns.
+
+It is a governance guardrail, not a complete secret scanner or SAST product. Repositories SHOULD still use dedicated secret scanning, dependency scanning, and code review.
 
 ## Inputs
 
-- `path`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
-- `pattern-file`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
-- `allowlist-file`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
-- `output-json`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
-- `advisory`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
+- `path`: repository or workspace path to scan. Defaults to `.`.
+- `pattern-file`: optional repository-relative custom pattern file. Defaults to this action's `forbidden-patterns.json`.
+- `allowlist-file`: optional repository-relative allowlist file.
+- `output-json`: optional repository-relative JSON report path.
+- `advisory`: when `true`, records findings but returns success.
+
+All repository-provided paths are resolved under the scan root. Traversal outside the workspace is rejected.
 
 ## Outputs
 
-- `report-path`: emitted through `$GITHUB_OUTPUT` when running inside GitHub Actions and included in the JSON report.
-- `failed-count`: emitted through `$GITHUB_OUTPUT` when running inside GitHub Actions and included in the JSON report.
+- `report-path`: JSON report path when configured.
+- `failed-count`: intended count of blocking findings. The PowerShell report is authoritative when consuming this value outside the composite action.
+
+## Report Contents
+
+The report includes scanner version, root path, pattern file, allowlist file, advisory mode, scanned file count, skipped files, findings, failed count, and warning count. Findings include pattern id, severity, path, line number, description, and redacted match snippet.
+
+## Allowlist Requirements
+
+Allowlist entries must include:
+
+- `patternId`
+- `path`
+- `owner`
+- `reason`
+- `expiresOn`
+
+Expired entries are ignored. Entries with short or missing reasons are ignored. Allowlists should be narrow and temporary.
 
 ## Exit Codes
 
-- `0`: no mandatory failures were found.
-- `1`: one or more mandatory failures were found.
-- Advisory mode records findings but returns `0` so teams can adopt the check before making it blocking.
+- `0`: no blocking findings, or advisory mode was used.
+- `1`: one or more `error` severity findings occurred.
+
+## Validation And Evidence
+
+Evidence SHOULD include the exact scanner command, exit code, JSON report, any allowlist entries used, and reviewer rationale for remaining warnings. A warning is not proof of safety; it is a prompt for review.
 
 ## Security Boundaries
 
-The action treats repository files, paths, configuration, and evidence as untrusted input. It validates paths, avoids executing repository-provided code, redacts suspected secrets, and does not require repository secrets.
+The action does not execute repository files. It reads text files, skips binary and large files, redacts matches, and treats pattern and allowlist files as untrusted configuration. The scanner does not need repository secrets.
 
-## Usage Examples
+## Example
 
 ```yaml
 - uses: AIAllTheThingz/Engineering-Standards/actions/forbidden-pattern-scan@<commit-sha>
@@ -48,11 +67,8 @@ The action treats repository files, paths, configuration, and evidence as untrus
     output-json: evidence/forbidden-pattern-scan.json
 ```
 
-## Troubleshooting
+## Related Documents
 
-Check the JSON report first. Path failures usually mean a configured path escaped the workspace or a required file is missing. Schema failures usually identify the field name. Scanner findings require either remediation or a reviewed allowlist entry with a reason and expiration.
-
-## Known Limitations
-
-This action validates governance contracts and evidence; it does not replace code review, threat modeling, dependency scanning, or production approval.
-
+- [../../docs/ACTION_SECURITY.md](../../docs/ACTION_SECURITY.md)
+- [../../governance/COMPLETION_EVIDENCE.md](../../governance/COMPLETION_EVIDENCE.md)
+- [../../governance/EXCEPTION_PROCESS.md](../../governance/EXCEPTION_PROCESS.md)

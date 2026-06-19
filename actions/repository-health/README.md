@@ -6,38 +6,50 @@
 | Version | 1.0.0 |
 | Owner role | GitHub Actions Maintainers |
 | Last reviewed | 2026-06-19 |
-| Changelog | See [CHANGELOG.md](../../CHANGELOG.md) unless this file is at repository root. |
-
-## Normative Terminology
-
-`MUST` and `MUST NOT` define mandatory requirements. `SHOULD` and `SHOULD NOT` define expected practices that require a documented reason when not followed. `MAY` defines optional behavior. Every mandatory statement is intended to be testable by automation, review, or recorded evidence.
+| Changelog | See [../../CHANGELOG.md](../../CHANGELOG.md). |
 
 ## Purpose
 
-Checks required files, docs, schema validity, tests, fixtures, CODEOWNERS, Dependabot, and governance freshness.
+This action validates that a repository has the minimum governance structure needed to adopt the Engineering Standards model. It checks required files, JSON parseability, manifest/config semantics, documentation completeness, schema fixtures, Pester test presence, CODEOWNERS signals, action metadata, and action documentation.
 
 ## Inputs
 
-- `path`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
-- `output-json`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
-- `advisory`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
+- `path`: repository root. Defaults to `.`.
+- `output-json`: optional repository-relative JSON report path.
+- `advisory`: when `true`, records findings but returns success.
 
 ## Outputs
 
-- `report-path`: emitted through `$GITHUB_OUTPUT` when running inside GitHub Actions and included in the JSON report.
-- `failed-count`: emitted through `$GITHUB_OUTPUT` when running inside GitHub Actions and included in the JSON report.
+- `report-path`: JSON report path when configured.
+- `failed-count`: intended count of blocking findings. The JSON report is authoritative.
+
+## Checks
+
+The action checks:
+
+- Required root files such as `README.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODEOWNERS`, `AGENTS.md`, `project-manifest.json`, and `governance.config.json`.
+- Required governance docs such as `docs/BRANCH_PROTECTION.md` and `docs/ACTION_SECURITY.md`.
+- JSON parsing for repository JSON files.
+- `project-manifest.json` and `governance.config.json` semantic validation.
+- Documentation completeness.
+- Schema and fixture validation.
+- Presence of Pester tests.
+- Presence of action metadata and README files for local actions.
 
 ## Exit Codes
 
-- `0`: no mandatory failures were found.
-- `1`: one or more mandatory failures were found.
-- Advisory mode records findings but returns `0` so teams can adopt the check before making it blocking.
+- `0`: no blocking health failures, or advisory mode was used.
+- `1`: one or more required health checks failed.
+
+## Validation And Evidence
+
+Evidence SHOULD include the command, exit code, JSON report, failed checks, warnings, and remediation plan. Repository health passing does not mean production readiness; it means the repository has the required governance structure.
 
 ## Security Boundaries
 
-The action treats repository files, paths, configuration, and evidence as untrusted input. It validates paths, avoids executing repository-provided code, redacts suspected secrets, and does not require repository secrets.
+The action reads repository files and runs repository-local validators from this standards package. It does not require secrets and does not perform network operations.
 
-## Usage Examples
+## Example
 
 ```yaml
 - uses: AIAllTheThingz/Engineering-Standards/actions/repository-health@<commit-sha>
@@ -46,11 +58,8 @@ The action treats repository files, paths, configuration, and evidence as untrus
     output-json: evidence/repository-health.json
 ```
 
-## Troubleshooting
+## Related Documents
 
-Check the JSON report first. Path failures usually mean a configured path escaped the workspace or a required file is missing. Schema failures usually identify the field name. Scanner findings require either remediation or a reviewed allowlist entry with a reason and expiration.
-
-## Known Limitations
-
-This action validates governance contracts and evidence; it does not replace code review, threat modeling, dependency scanning, or production approval.
-
+- [../../docs/ACTION_SECURITY.md](../../docs/ACTION_SECURITY.md)
+- [../../governance/ORGANIZATION_CONTRACT.md](../../governance/ORGANIZATION_CONTRACT.md)
+- [../../governance/COMPLETION_EVIDENCE.md](../../governance/COMPLETION_EVIDENCE.md)

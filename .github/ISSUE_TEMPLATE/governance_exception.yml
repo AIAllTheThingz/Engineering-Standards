@@ -1,24 +1,63 @@
 name: Governance Exception
-description: Submit a governance exception.
+description: Request a temporary exception to a governance requirement.
 title: "Governance Exception: "
-labels: [governance]
+labels: [governance, exception]
 body:
-  - type: textarea
-    id: context
+  - type: input
+    id: exception_id
     attributes:
-      label: Context
-      description: Describe the affected repository, governance version, and observed behavior.
+      label: Exception identifier
+      description: Use the assigned GOV-* identifier, or write "requested" if one has not been assigned.
     validations:
       required: true
   - type: textarea
-    id: impact
+    id: scope
     attributes:
-      label: Impact and risk
-      description: Describe risk, security impact, data impact, and urgency.
+      label: Scope
+      description: Identify affected repository, files, controls, workflows, environments, and duration.
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk classification
+      options:
+        - Low
+        - Moderate
+        - High
+        - Critical
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: Reason
+      description: Explain why the standard cannot currently be met.
+    validations:
+      required: true
+  - type: textarea
+    id: compensating_controls
+    attributes:
+      label: Compensating controls
+      description: Describe temporary controls that reduce risk while the exception is active.
+    validations:
+      required: true
+  - type: input
+    id: expiration
+    attributes:
+      label: Expiration date
+      description: Use YYYY-MM-DD.
+    validations:
+      required: true
+  - type: textarea
+    id: remediation
+    attributes:
+      label: Remediation plan
+      description: Describe owner, milestones, and evidence required to close the exception.
     validations:
       required: true
   - type: textarea
     id: evidence
     attributes:
       label: Sanitized evidence
-      description: Include logs or evidence without secrets.
+      description: Include evidence without secrets, customer data, private keys, or production tokens.

@@ -31,7 +31,9 @@
     },
     "projectName": {
       "type": "string",
-      "minLength": 1
+      "minLength": 3,
+      "maxLength": 120,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9 ._-]*$"
     },
     "repository": {
       "type": "string",
@@ -39,7 +41,8 @@
     },
     "description": {
       "type": "string",
-      "minLength": 20
+      "minLength": 40,
+      "maxLength": 1000
     },
     "projectType": {
       "type": "string",
@@ -58,13 +61,15 @@
     "technologies": {
       "type": "array",
       "items": {
-        "type": "string"
+        "type": "string",
+        "minLength": 2
       },
-      "minItems": 1
+      "minItems": 1,
+      "uniqueItems": true
     },
     "governanceVersion": {
       "type": "string",
-      "minLength": 1
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$"
     },
     "riskClassification": {
       "type": "string",
@@ -81,16 +86,18 @@
         "Public",
         "Internal",
         "Confidential",
-        "Restricted"
+        "Regulated"
       ]
     },
     "owners": {
       "type": "array",
       "items": {
         "type": "string",
-        "minLength": 1
+        "minLength": 3,
+        "pattern": "^(@[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+|[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,})$"
       },
-      "minItems": 1
+      "minItems": 1,
+      "uniqueItems": true
     },
     "environments": {
       "type": "array",
@@ -104,7 +111,9 @@
         ],
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
           },
           "type": {
             "type": "string",
@@ -127,13 +136,15 @@
         "type": "string",
         "pattern": "^agents/AGENTS_[A-Za-z]+\\.md$"
       },
-      "minItems": 1
+      "minItems": 1,
+      "uniqueItems": true
     },
     "requiredWorkflows": {
       "type": "array",
       "items": {
         "type": "string"
-      }
+      },
+      "uniqueItems": true
     },
     "externalIntegrations": {
       "type": "array",
@@ -146,11 +157,13 @@
           "dataClassification"
         ],
         "properties": {
-          "name": {
-            "type": "string"
+            "name": {
+            "type": "string",
+            "minLength": 2
           },
           "purpose": {
-            "type": "string"
+            "type": "string",
+            "minLength": 20
           },
           "dataClassification": {
             "type": "string",
@@ -158,7 +171,7 @@
               "Public",
               "Internal",
               "Confidential",
-              "Restricted"
+              "Regulated"
             ]
           }
         }
@@ -166,7 +179,8 @@
     },
     "secretsProvider": {
       "type": "string",
-      "minLength": 1
+      "minLength": 3,
+      "maxLength": 120
     },
     "productionApprovalRequired": {
       "type": "boolean"
@@ -180,10 +194,12 @@
       ],
       "properties": {
         "completionEvidencePath": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?!.*\\.\\.)(?![A-Za-z]:)(?!/).+\\.json$"
         },
         "testEvidencePath": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?!.*\\.\\.)(?![A-Za-z]:)(?!/).+\\.json$"
         }
       }
     },
@@ -194,5 +210,26 @@
         "pattern": "^GOV-[A-Z0-9-]+$"
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "riskClassification": {
+            "enum": [
+              "High",
+              "Critical"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "productionApprovalRequired": {
+            "const": true
+          }
+        }
+      }
+    }
+  ]
 }

@@ -83,6 +83,11 @@ $commit = (& git -C $root rev-parse HEAD 2>$null)
 if ($LASTEXITCODE -ne 0 -or -not $commit) { $commit = 'unknown' }
 $branch = (& git -C $root rev-parse --abbrev-ref HEAD 2>$null)
 if ($LASTEXITCODE -ne 0 -or -not $branch) { $branch = 'unknown' }
+$changedFiles = @(& git -C $root status --short 2>$null | ForEach-Object { $_.Substring(3) })
+if ($changedFiles.Count -eq 0 -and $commit -ne 'unknown') {
+    $changedFiles = @(& git -C $root diff-tree --no-commit-id --name-only -r $commit 2>$null)
+}
+if ($changedFiles.Count -eq 0) { $changedFiles = @('unknown') }
 $evidence = [ordered]@{
     schemaVersion = '1.0.0'
     repository = 'AIAllTheThingz/Engineering-Standards'
@@ -95,7 +100,7 @@ $evidence = [ordered]@{
     startedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
     completedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
     summary = $Summary
-    changedFiles = @(& git -C $root status --short 2>$null | ForEach-Object { $_.Substring(3) })
+    changedFiles = @($changedFiles)
     commandsExecuted = @($CommandsExecuted)
     commandsNotExecuted = @($CommandsNotExecuted)
     tests = @($tests)

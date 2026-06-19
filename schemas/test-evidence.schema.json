@@ -28,7 +28,9 @@
     },
     "name": {
       "type": "string",
-      "minLength": 3
+      "minLength": 3,
+      "maxLength": 120,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9 ._:/()#-]*$"
     },
     "category": {
       "type": "string",
@@ -57,11 +59,13 @@
     },
     "command": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "maxLength": 2000
     },
     "workingDirectory": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "pattern": "^(?!.*\\.\\.)(?![A-Za-z]:)(?!/).+"
     },
     "startedAtUtc": {
       "type": "string",
@@ -77,11 +81,13 @@
     },
     "runtime": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "maxLength": 120
     },
     "toolVersion": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "maxLength": 120
     },
     "exitCode": {
       "type": [
@@ -91,7 +97,8 @@
     },
     "summary": {
       "type": "string",
-      "minLength": 1
+      "minLength": 10,
+      "maxLength": 2000
     },
     "warnings": {
       "type": "array",
@@ -103,7 +110,66 @@
       "type": [
         "string",
         "null"
-      ]
+      ],
+      "minLength": 10
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "Passed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "exitCode": {
+            "const": 0
+          },
+          "failureReason": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "Failed",
+              "NotRun",
+              "Blocked"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "failureReason": {
+            "type": "string",
+            "minLength": 10
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "NotRun"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "exitCode": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
 }

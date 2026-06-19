@@ -1,4 +1,5 @@
-name: Reusable DotNet CI
+name: DotNet CI
+
 on:
   workflow_call:
     inputs:
@@ -10,16 +11,37 @@ on:
         type: string
         required: false
         default: 8.0.x
+
 permissions:
   contents: read
+
 jobs:
   dotnet:
+    name: Build and test .NET
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
         with:
           dotnet-version: ${{ inputs.dotnet-version }}
-      - run: dotnet restore '${{ inputs.project-path }}'
-      - run: dotnet build '${{ inputs.project-path }}' --configuration Release -warnaserror
-      - run: dotnet test '${{ inputs.project-path }}' --configuration Release --no-build
+
+      - name: Restore
+        run: dotnet restore '${{ inputs.project-path }}'
+
+      - name: Build
+        run: dotnet build '${{ inputs.project-path }}' --configuration Release --no-restore -warnaserror
+
+      - name: Test
+        run: dotnet test '${{ inputs.project-path }}' --configuration Release --no-build
+
+      - name: Upload .NET evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: dotnet-evidence-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: warn
+          retention-days: 30

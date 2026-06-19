@@ -2,17 +2,16 @@
   "schemaVersion": "1.0.0",
   "projectName": "Example Project",
   "repository": "example-org/example-repository",
-  "description": "Central engineering-governance standards repository.",
+  "description": "Describe the repository purpose, production impact, and primary users.",
   "governanceVersion": "1.0.0",
   "riskClassification": "Moderate",
   "applicableStandards": [
     "agents/AGENTS_Base.md",
-    "agents/AGENTS_PowerShell.md",
-    "agents/AGENTS_Integration.md",
-    "agents/AGENTS_Infrastructure.md"
+    "agents/AGENTS_PowerShell.md"
   ],
   "owners": [
-    "example-owner"
+    "example-owner",
+    "example-security-reviewer"
   ],
   "evidence": {
     "completionEvidencePath": "evidence/completion-result.json",

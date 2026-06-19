@@ -29,6 +29,8 @@ runs:
       shell: pwsh
       run: |
         $argsList = @('-Path', '${{ inputs.path }}')
+        if ('${{ inputs.pattern-file }}') { $argsList += @('-PatternFile', '${{ inputs.pattern-file }}') }
+        if ('${{ inputs.allowlist-file }}') { $argsList += @('-AllowlistFile', '${{ inputs.allowlist-file }}') }
         if ('${{ inputs.output-json }}') { $argsList += @('-OutputJson', '${{ inputs.output-json }}') }
         if ('${{ inputs.advisory }}' -eq 'true') { $argsList += '-Advisory' }
         & '${{ github.action_path }}/Invoke-ForbiddenPatternScan.ps1' @argsList

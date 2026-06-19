@@ -3,15 +3,15 @@
   "name": "example validation",
   "category": "manual",
   "status": "NotRun",
-  "command": "<command>",
+  "command": "replace with the exact command or manual review method",
   "workingDirectory": ".",
   "startedAtUtc": "2026-06-19T00:00:00Z",
   "completedAtUtc": "2026-06-19T00:00:00Z",
   "durationSeconds": 0,
-  "runtime": "<runtime>",
-  "toolVersion": "<version>",
-  "summary": "Template record; replace before use.",
+  "runtime": "replace with runtime and operating system",
+  "toolVersion": "replace with tool version or reviewer",
+  "summary": "Replace this record with evidence from an actual validation run.",
   "warnings": [
-    "Template only"
+    "Template record must not be used as completed evidence."
   ]
 }
