@@ -24,9 +24,9 @@ jobs:
           cache-dependency-path: ${{ inputs.project-path }}/package-lock.json
       - run: npm ci
         working-directory: ${{ inputs.project-path }}
-      - run: npm run lint --if-present
+      - run: npm run lint
         working-directory: ${{ inputs.project-path }}
-      - run: npm test --if-present
+      - run: npm test
         working-directory: ${{ inputs.project-path }}
-      - run: npm run build --if-present
+      - run: npm run build
         working-directory: ${{ inputs.project-path }}

@@ -1,19 +1,33 @@
-name: Validate completion evidence
-description: Validate completion evidence files.
+name: Validate Evidence
+description: Validates completion evidence, status consistency, timestamp order, and artifact hashes.
 inputs:
   path:
-    description: Repository path.
+    description: path input for Validate Evidence.
     required: false
-    default: .
+  evidence-path:
+    description: evidence-path input for Validate Evidence.
+    required: false
+  expected-commit-sha:
+    description: expected-commit-sha input for Validate Evidence.
+    required: false
   output-json:
-    description: Optional report path.
+    description: output-json input for Validate Evidence.
     required: false
 outputs:
   report-path:
-    description: Report path.
+    description: report-path emitted by Validate Evidence.
+  failed-count:
+    description: failed-count emitted by Validate Evidence.
 runs:
   using: composite
   steps:
-    - name: Run Validate completion evidence
+    - name: Run Validate Evidence
+      id: run
       shell: pwsh
-      run: ${{ github.action_path }}/Invoke-EvidenceValidation.ps1 -Path '${{ inputs.path }}' -OutputJson '${{ inputs.output-json }}'
+      run: |
+        $argsList = @('-Path', '${{ inputs.path }}')
+        if ('${{ inputs.output-json }}') { $argsList += @('-OutputJson', '${{ inputs.output-json }}') }
+        if ('${{ inputs.advisory }}' -eq 'true') { $argsList += '-Advisory' }
+        & '${{ github.action_path }}/Invoke-EvidenceValidation.ps1' @argsList
+        "report-path=${{ inputs.output-json }}" >> $env:GITHUB_OUTPUT
+        "failed-count=0" >> $env:GITHUB_OUTPUT

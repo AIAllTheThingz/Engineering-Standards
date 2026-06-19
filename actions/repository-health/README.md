@@ -1,17 +1,56 @@
-# Repository health
+# Repository Health
+
+| Field | Value |
+| --- | --- |
+| Status | Active |
+| Version | 1.0.0 |
+| Owner role | GitHub Actions Maintainers |
+| Last reviewed | 2026-06-19 |
+| Changelog | See [CHANGELOG.md](../../CHANGELOG.md) unless this file is at repository root. |
+
+## Normative Terminology
+
+`MUST` and `MUST NOT` define mandatory requirements. `SHOULD` and `SHOULD NOT` define expected practices that require a documented reason when not followed. `MAY` defines optional behavior. Every mandatory statement is intended to be testable by automation, review, or recorded evidence.
 
 ## Purpose
 
-Inspect repository maintenance health.
+Checks required files, docs, schema validity, tests, fixtures, CODEOWNERS, Dependabot, and governance freshness.
 
-## Mandatory Requirements
+## Inputs
 
-Use `contents: read`; no secrets or write permissions are required. The action exits nonzero on mandatory failure, supports PowerShell 7 on GitHub-hosted runners, validates paths, treats input as untrusted, and writes optional JSON reports.
+- `path`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
+- `output-json`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
+- `advisory`: required behavior and validation are documented in `action.yml`; paths are resolved beneath the workspace.
 
-## Validation And Evidence
+## Outputs
 
-Validation MUST run or be reported honestly as `Failed`, `NotRun`, `NotApplicable`, or `Blocked`. Evidence MUST include commands, results, UTC timestamps, tool versions, commit or branch context, generated artifacts, hashes where available, warnings, skipped or unavailable tests, remaining risks, and approvals where applicable.
+- `report-path`: emitted through `$GITHUB_OUTPUT` when running inside GitHub Actions and included in the JSON report.
+- `failed-count`: emitted through `$GITHUB_OUTPUT` when running inside GitHub Actions and included in the JSON report.
 
-## Security Notes
+## Exit Codes
 
-Use least privilege, protect secrets, treat repository files and generated artifacts as untrusted input, and avoid destructive behavior unless risk classification and explicit approval allow it.
+- `0`: no mandatory failures were found.
+- `1`: one or more mandatory failures were found.
+- Advisory mode records findings but returns `0` so teams can adopt the check before making it blocking.
+
+## Security Boundaries
+
+The action treats repository files, paths, configuration, and evidence as untrusted input. It validates paths, avoids executing repository-provided code, redacts suspected secrets, and does not require repository secrets.
+
+## Usage Examples
+
+```yaml
+- uses: AIAllTheThingz/Engineering-Standards/actions/repository-health@<commit-sha>
+  with:
+    path: .
+    output-json: evidence/repository-health.json
+```
+
+## Troubleshooting
+
+Check the JSON report first. Path failures usually mean a configured path escaped the workspace or a required file is missing. Schema failures usually identify the field name. Scanner findings require either remediation or a reviewed allowlist entry with a reason and expiration.
+
+## Known Limitations
+
+This action validates governance contracts and evidence; it does not replace code review, threat modeling, dependency scanning, or production approval.
+

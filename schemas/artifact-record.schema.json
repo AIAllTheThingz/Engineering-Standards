@@ -1,21 +1,31 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aiallthethingz.example/artifact-record.schema.json",
+  "$id": "https://schemas.aiallthethingz.example/engineering-standards/artifact-record.schema.json",
+  "title": "Artifact Record",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "path",
-    "sha256",
+    "schemaVersion",
+    "name",
     "artifactType",
-    "description"
+    "path",
+    "mediaType",
+    "sizeBytes",
+    "sha256",
+    "createdAtUtc",
+    "producer",
+    "retention",
+    "sensitivity",
+    "relatedTest"
   ],
   "properties": {
-    "path": {
-      "type": "string"
-    },
-    "sha256": {
+    "schemaVersion": {
       "type": "string",
-      "pattern": "^[A-Fa-f0-9]{64}$"
+      "pattern": "^1\\.0\\.0$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
     },
     "artifactType": {
       "type": "string",
@@ -26,23 +36,58 @@
         "coverage",
         "package",
         "screenshot",
+        "evidence",
         "other"
       ]
     },
-    "description": {
-      "type": "string"
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!.*\\.\\.).+"
     },
-    "generatedAtUtc": {
+    "mediaType": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sizeBytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "createdAtUtc": {
       "type": "string",
       "format": "date-time"
+    },
+    "producer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "retention": {
+      "type": "string",
+      "enum": [
+        "ci-run",
+        "release",
+        "audit",
+        "temporary"
+      ]
+    },
+    "sensitivity": {
+      "type": "string",
+      "enum": [
+        "Public",
+        "Internal",
+        "Confidential",
+        "Restricted"
+      ]
+    },
+    "relatedTest": {
+      "type": [
+        "string",
+        "null"
+      ]
     }
-  },
-  "examples": [
-    {
-      "path": "evidence/report.json",
-      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-      "artifactType": "report",
-      "description": "Validation report"
-    }
-  ]
+  }
 }

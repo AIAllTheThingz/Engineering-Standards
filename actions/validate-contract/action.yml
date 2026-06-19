@@ -1,19 +1,36 @@
-name: Validate governance contract
-description: Validate downstream repository governance files.
+name: Validate Contract
+description: Validates manifest, governance config, required documentation, standards, exceptions, and documentation completeness.
 inputs:
   path:
-    description: Repository path.
+    description: path input for Validate Contract.
     required: false
-    default: .
+  manifest-path:
+    description: manifest-path input for Validate Contract.
+    required: false
+  config-path:
+    description: config-path input for Validate Contract.
+    required: false
   output-json:
-    description: Optional report path.
+    description: output-json input for Validate Contract.
+    required: false
+  advisory:
+    description: advisory input for Validate Contract.
     required: false
 outputs:
   report-path:
-    description: Report path.
+    description: report-path emitted by Validate Contract.
+  failed-count:
+    description: failed-count emitted by Validate Contract.
 runs:
   using: composite
   steps:
-    - name: Run Validate governance contract
+    - name: Run Validate Contract
+      id: run
       shell: pwsh
-      run: ${{ github.action_path }}/Invoke-ContractValidation.ps1 -Path '${{ inputs.path }}' -OutputJson '${{ inputs.output-json }}'
+      run: |
+        $argsList = @('-Path', '${{ inputs.path }}')
+        if ('${{ inputs.output-json }}') { $argsList += @('-OutputJson', '${{ inputs.output-json }}') }
+        if ('${{ inputs.advisory }}' -eq 'true') { $argsList += '-Advisory' }
+        & '${{ github.action_path }}/Invoke-ContractValidation.ps1' @argsList
+        "report-path=${{ inputs.output-json }}" >> $env:GITHUB_OUTPUT
+        "failed-count=0" >> $env:GITHUB_OUTPUT

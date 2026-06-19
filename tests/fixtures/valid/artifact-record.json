@@ -1,6 +1,14 @@
 {
-  "path": "evidence/report.json",
-  "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "schemaVersion": "1.0.0",
+  "name": "validation-report",
   "artifactType": "report",
-  "description": "Example report"
+  "path": "evidence/report.json",
+  "mediaType": "application/json",
+  "sizeBytes": 2,
+  "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "createdAtUtc": "2026-06-19T00:00:00Z",
+  "producer": "fixture",
+  "retention": "audit",
+  "sensitivity": "Internal",
+  "relatedTest": "Documentation completeness"
 }

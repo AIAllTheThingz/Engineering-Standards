@@ -1,3 +1,3 @@
-# Worker Example
+# Worker State Model
 
-Documents idempotency, retry, timeout, and dead-letter expectations without external systems.
+States are `Queued`, `Running`, `Completed`, `Failed`, and `DeadLettered`. Jobs use an idempotency key of `job:<JobId>` and retry with bounded attempts.

@@ -1,19 +1,36 @@
-name: Forbidden pattern scan
-description: Run defensive pattern scan.
+name: Forbidden Pattern Scan
+description: Scans for defensive forbidden patterns with redaction and advisory mode.
 inputs:
   path:
-    description: Repository path.
+    description: path input for Forbidden Pattern Scan.
     required: false
-    default: .
+  pattern-file:
+    description: pattern-file input for Forbidden Pattern Scan.
+    required: false
+  allowlist-file:
+    description: allowlist-file input for Forbidden Pattern Scan.
+    required: false
   output-json:
-    description: Optional report path.
+    description: output-json input for Forbidden Pattern Scan.
+    required: false
+  advisory:
+    description: advisory input for Forbidden Pattern Scan.
     required: false
 outputs:
   report-path:
-    description: Report path.
+    description: report-path emitted by Forbidden Pattern Scan.
+  failed-count:
+    description: failed-count emitted by Forbidden Pattern Scan.
 runs:
   using: composite
   steps:
-    - name: Run Forbidden pattern scan
+    - name: Run Forbidden Pattern Scan
+      id: run
       shell: pwsh
-      run: ${{ github.action_path }}/Invoke-ForbiddenPatternScan.ps1 -Path '${{ inputs.path }}' -OutputJson '${{ inputs.output-json }}'
+      run: |
+        $argsList = @('-Path', '${{ inputs.path }}')
+        if ('${{ inputs.output-json }}') { $argsList += @('-OutputJson', '${{ inputs.output-json }}') }
+        if ('${{ inputs.advisory }}' -eq 'true') { $argsList += '-Advisory' }
+        & '${{ github.action_path }}/Invoke-ForbiddenPatternScan.ps1' @argsList
+        "report-path=${{ inputs.output-json }}" >> $env:GITHUB_OUTPUT
+        "failed-count=0" >> $env:GITHUB_OUTPUT

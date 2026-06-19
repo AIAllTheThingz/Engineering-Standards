@@ -7,7 +7,7 @@ permissions:
   contents: read
 jobs:
   governance:
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci.yml@<immutable-reference>
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci.yml@<commit-sha>
     with:
       project-path: .
       governance-version: 1.0.0

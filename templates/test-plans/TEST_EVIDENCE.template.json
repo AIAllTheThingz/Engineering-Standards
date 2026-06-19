@@ -1,6 +1,7 @@
 {
-  "name": "Example validation",
-  "category": "other",
+  "schemaVersion": "1.0.0",
+  "name": "example validation",
+  "category": "manual",
   "status": "NotRun",
   "command": "<command>",
   "workingDirectory": ".",
@@ -9,8 +10,8 @@
   "durationSeconds": 0,
   "runtime": "<runtime>",
   "toolVersion": "<version>",
-  "summary": "Template only.",
+  "summary": "Template record; replace before use.",
   "warnings": [
-    "Not executed."
+    "Template only"
   ]
 }

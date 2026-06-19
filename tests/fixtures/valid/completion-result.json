@@ -2,39 +2,54 @@
   "schemaVersion": "1.0.0",
   "repository": "AIAllTheThingz/Engineering-Standards",
   "commitSha": "unknown",
-  "branch": "main",
+  "branch": "master",
   "pullRequest": null,
   "governanceVersion": "1.0.0",
   "riskClassification": "High",
   "status": "Passed",
   "startedAtUtc": "2026-06-19T00:00:00Z",
-  "completedAtUtc": "2026-06-19T00:00:02Z",
-  "summary": "Valid completion fixture.",
-  "changedFiles": [],
+  "completedAtUtc": "2026-06-19T00:00:10Z",
+  "summary": "Valid completion fixture with real test and artifact records.",
+  "changedFiles": [
+    "README.md"
+  ],
   "commandsExecuted": [
-    "fixture"
+    "pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path ."
   ],
   "commandsNotExecuted": [],
   "tests": [
     {
-      "name": "Schema validation",
-      "category": "schema",
+      "schemaVersion": "1.0.0",
+      "name": "Documentation completeness",
+      "category": "documentation",
       "status": "Passed",
-      "command": "pwsh -File scripts/Test-JsonSchemas.ps1",
+      "command": "pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .",
       "workingDirectory": ".",
       "startedAtUtc": "2026-06-19T00:00:00Z",
       "completedAtUtc": "2026-06-19T00:00:01Z",
       "durationSeconds": 1,
       "runtime": "PowerShell 7",
-      "toolVersion": "7.x"
+      "toolVersion": "7.x",
+      "exitCode": 0,
+      "summary": "Documentation completeness passed.",
+      "warnings": [],
+      "failureReason": null
     }
   ],
   "artifacts": [
     {
-      "path": "evidence/report.json",
-      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "schemaVersion": "1.0.0",
+      "name": "validation-report",
       "artifactType": "report",
-      "description": "Example report"
+      "path": "evidence/report.json",
+      "mediaType": "application/json",
+      "sizeBytes": 2,
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "createdAtUtc": "2026-06-19T00:00:00Z",
+      "producer": "fixture",
+      "retention": "audit",
+      "sensitivity": "Internal",
+      "relatedTest": "Documentation completeness"
     }
   ],
   "warnings": [],

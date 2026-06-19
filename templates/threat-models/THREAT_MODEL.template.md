@@ -1,3 +1,29 @@
 # Threat Model
 
-Include overview, trust boundaries, assets, actors, entry points, data flows, dependencies, threats, mitigations, residual risk, assumptions, abuse cases, and review history. STRIDE may be used where helpful.
+## System Overview
+
+## Trust Boundaries
+
+## Assets
+
+## Actors
+
+## Entry Points
+
+## Data Flows
+
+## Dependencies
+
+## Threats
+
+Use STRIDE where helpful: spoofing, tampering, repudiation, information disclosure, denial of service, elevation of privilege.
+
+## Mitigations
+
+## Residual Risk
+
+## Security Assumptions
+
+## Abuse Cases
+
+## Review History

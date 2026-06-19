@@ -12,11 +12,16 @@
     "agents/AGENTS_Base.md",
     "agents/AGENTS_WebFrontend.md"
   ],
+  "validationCategories": [
+    "Contract",
+    "JsonSchemas",
+    "MarkdownLinks",
+    "DocumentationCompleteness",
+    "ForbiddenPatterns",
+    "RepositoryHealth"
+  ],
   "additionalForbiddenPatterns": [],
   "reviewedAllowlist": [],
-  "optionalValidationCategories": [
-    "ExternalLinks"
-  ],
   "controls": {
     "mandatoryControlsDisabled": []
   },

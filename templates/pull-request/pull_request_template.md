@@ -10,17 +10,22 @@
 
 ## Testing Performed
 
+Include exact commands and exit codes.
+
 ## Tests Not Performed
+
+Record `NotRun`, `Blocked`, or `NotApplicable` with reasons.
 
 ## Evidence
 
-## Rollback Plan
+Link completion evidence and artifacts.
 
-## Screenshots Or Artifacts
+## Rollback Plan
 
 ## Governance Exceptions
 
-## Reviewer Notes
+## Checklist
 
-- [ ] No secrets were added.
-- [ ] Validation status is honest.
+- [ ] No secrets or production endpoints were added.
+- [ ] Documentation completeness passed or is recorded honestly.
+- [ ] Evidence matches actual validation.

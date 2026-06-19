@@ -14,15 +14,20 @@
     "agents/AGENTS_Integration.md",
     "agents/AGENTS_Infrastructure.md"
   ],
+  "validationCategories": [
+    "Contract",
+    "JsonSchemas",
+    "MarkdownLinks",
+    "DocumentationCompleteness",
+    "ForbiddenPatterns",
+    "RepositoryHealth"
+  ],
   "additionalForbiddenPatterns": [],
   "reviewedAllowlist": [],
-  "optionalValidationCategories": [
-    "ExternalLinks"
-  ],
   "controls": {
     "mandatoryControlsDisabled": [
       {
-        "control": "tests",
+        "control": "testing",
         "exceptionReference": ""
       }
     ]

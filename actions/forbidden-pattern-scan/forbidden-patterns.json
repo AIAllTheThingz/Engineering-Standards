@@ -15,7 +15,7 @@
     },
     {
       "id": "disabled-tls-validation",
-      "description": "TLS validation disabled.",
+      "description": "TLS validation appears disabled.",
       "severity": "error",
       "regex": "(?i)(TrustServerCertificate\\s*=\\s*true|ServerCertificateValidationCallback)"
     },
@@ -23,7 +23,25 @@
       "id": "dangerous-powershell-expression",
       "description": "Dynamic PowerShell execution.",
       "severity": "warning",
-      "regex": "(?i)Invoke-Expression|iex\\b"
+      "regex": "(?i)Invoke-Expression|\\biex\\b"
+    },
+    {
+      "id": "broad-destructive-command",
+      "description": "Broad destructive command.",
+      "severity": "error",
+      "regex": "(?i)(Remove-Item|rm|del)\\s+.*(-Recurse|/s).*(\\*|[A-Z]:\\\\)"
+    },
+    {
+      "id": "empty-catch",
+      "description": "Empty catch block.",
+      "severity": "warning",
+      "regex": "(?s)catch\\s*\\{\\s*\\}"
+    },
+    {
+      "id": "hardcoded-production-endpoint",
+      "description": "Hardcoded production endpoint.",
+      "severity": "warning",
+      "regex": "(?i)https?://[^\\s\\\"']*(prod|production)[^\\s\\\"']*"
     },
     {
       "id": "broad-workflow-permissions",
@@ -33,9 +51,15 @@
     },
     {
       "id": "pull-request-target",
-      "description": "pull_request_target requires security review.",
+      "description": "pull_request_target requires review.",
       "severity": "warning",
       "regex": "pull_request_target"
+    },
+    {
+      "id": "download-execute",
+      "description": "Downloaded content piped to execution.",
+      "severity": "error",
+      "regex": "(?i)(curl|wget|Invoke-WebRequest|iwr).*(\\||;).*?(sh|bash|pwsh|powershell|iex)"
     }
   ]
 }

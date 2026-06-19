@@ -1,19 +1,30 @@
-name: Repository health
-description: Inspect repository maintenance health.
+name: Repository Health
+description: Checks required files, docs, schema validity, tests, fixtures, CODEOWNERS, Dependabot, and governance freshness.
 inputs:
   path:
-    description: Repository path.
+    description: path input for Repository Health.
     required: false
-    default: .
   output-json:
-    description: Optional report path.
+    description: output-json input for Repository Health.
+    required: false
+  advisory:
+    description: advisory input for Repository Health.
     required: false
 outputs:
   report-path:
-    description: Report path.
+    description: report-path emitted by Repository Health.
+  failed-count:
+    description: failed-count emitted by Repository Health.
 runs:
   using: composite
   steps:
-    - name: Run Repository health
+    - name: Run Repository Health
+      id: run
       shell: pwsh
-      run: ${{ github.action_path }}/Invoke-RepositoryHealth.ps1 -Path '${{ inputs.path }}' -OutputJson '${{ inputs.output-json }}'
+      run: |
+        $argsList = @('-Path', '${{ inputs.path }}')
+        if ('${{ inputs.output-json }}') { $argsList += @('-OutputJson', '${{ inputs.output-json }}') }
+        if ('${{ inputs.advisory }}' -eq 'true') { $argsList += '-Advisory' }
+        & '${{ github.action_path }}/Invoke-RepositoryHealth.ps1' @argsList
+        "report-path=${{ inputs.output-json }}" >> $env:GITHUB_OUTPUT
+        "failed-count=0" >> $env:GITHUB_OUTPUT

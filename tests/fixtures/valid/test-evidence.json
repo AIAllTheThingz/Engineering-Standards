@@ -1,12 +1,17 @@
 {
-  "name": "Schema validation",
-  "category": "schema",
+  "schemaVersion": "1.0.0",
+  "name": "Documentation completeness",
+  "category": "documentation",
   "status": "Passed",
-  "command": "pwsh -File scripts/Test-JsonSchemas.ps1",
+  "command": "pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .",
   "workingDirectory": ".",
   "startedAtUtc": "2026-06-19T00:00:00Z",
   "completedAtUtc": "2026-06-19T00:00:01Z",
   "durationSeconds": 1,
   "runtime": "PowerShell 7",
-  "toolVersion": "7.x"
+  "toolVersion": "7.x",
+  "exitCode": 0,
+  "summary": "Documentation completeness passed.",
+  "warnings": [],
+  "failureReason": null
 }

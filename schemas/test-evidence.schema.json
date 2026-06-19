@@ -1,9 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aiallthethingz.example/test-evidence.schema.json",
+  "$id": "https://schemas.aiallthethingz.example/engineering-standards/test-evidence.schema.json",
+  "title": "Test Evidence",
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "schemaVersion",
     "name",
     "category",
     "status",
@@ -13,11 +15,20 @@
     "completedAtUtc",
     "durationSeconds",
     "runtime",
-    "toolVersion"
+    "toolVersion",
+    "exitCode",
+    "summary",
+    "warnings",
+    "failureReason"
   ],
   "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^1\\.0\\.0$"
+    },
     "name": {
-      "type": "string"
+      "type": "string",
+      "minLength": 3
     },
     "category": {
       "type": "string",
@@ -29,6 +40,7 @@
         "lint",
         "schema",
         "workflow",
+        "documentation",
         "manual",
         "other"
       ]
@@ -44,31 +56,54 @@
       ]
     },
     "command": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "workingDirectory": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "startedAtUtc": {
-      "type": "string"
+      "type": "string",
+      "format": "date-time"
     },
     "completedAtUtc": {
-      "type": "string"
+      "type": "string",
+      "format": "date-time"
     },
     "durationSeconds": {
-      "type": "number"
+      "type": "number",
+      "minimum": 0
     },
     "runtime": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "toolVersion": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
+    },
+    "exitCode": {
+      "type": [
+        "integer",
+        "null"
+      ]
     },
     "summary": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "warnings": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "failureReason": {
+      "type": [
+        "string",
+        "null"
+      ]
     }
   }
 }

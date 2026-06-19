@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aiallthethingz.example/project-manifest.schema.json",
+  "$id": "https://schemas.aiallthethingz.example/engineering-standards/project-manifest.schema.json",
+  "title": "Project Manifest",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -8,28 +9,62 @@
     "projectName",
     "repository",
     "description",
+    "projectType",
+    "technologies",
     "governanceVersion",
     "riskClassification",
-    "applicableStandards",
+    "dataClassification",
     "owners",
+    "environments",
+    "applicableStandards",
+    "requiredWorkflows",
+    "externalIntegrations",
+    "secretsProvider",
+    "productionApprovalRequired",
     "evidence",
     "exceptions"
   ],
   "properties": {
     "schemaVersion": {
-      "type": "string"
+      "type": "string",
+      "pattern": "^1\\.0\\.0$"
     },
     "projectName": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "repository": {
-      "type": "string"
+      "type": "string",
+      "pattern": "^[^/]+/[^/]+$"
     },
     "description": {
-      "type": "string"
+      "type": "string",
+      "minLength": 20
+    },
+    "projectType": {
+      "type": "string",
+      "enum": [
+        "powershell",
+        "dotnet",
+        "web",
+        "database",
+        "worker-service",
+        "integration",
+        "infrastructure",
+        "governance",
+        "mixed"
+      ]
+    },
+    "technologies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
     },
     "governanceVersion": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "riskClassification": {
       "type": "string",
@@ -40,17 +75,124 @@
         "Critical"
       ]
     },
-    "applicableStandards": {
-      "type": "array"
+    "dataClassification": {
+      "type": "string",
+      "enum": [
+        "Public",
+        "Internal",
+        "Confidential",
+        "Restricted"
+      ]
     },
     "owners": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "environments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "type",
+          "production"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "development",
+              "test",
+              "staging",
+              "production"
+            ]
+          },
+          "production": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "applicableStandards": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^agents/AGENTS_[A-Za-z]+\\.md$"
+      },
+      "minItems": 1
+    },
+    "requiredWorkflows": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "externalIntegrations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "purpose",
+          "dataClassification"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "dataClassification": {
+            "type": "string",
+            "enum": [
+              "Public",
+              "Internal",
+              "Confidential",
+              "Restricted"
+            ]
+          }
+        }
+      }
+    },
+    "secretsProvider": {
+      "type": "string",
+      "minLength": 1
+    },
+    "productionApprovalRequired": {
+      "type": "boolean"
     },
     "evidence": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "completionEvidencePath",
+        "testEvidencePath"
+      ],
+      "properties": {
+        "completionEvidencePath": {
+          "type": "string"
+        },
+        "testEvidencePath": {
+          "type": "string"
+        }
+      }
     },
     "exceptions": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^GOV-[A-Z0-9-]+$"
+      }
     }
   }
 }

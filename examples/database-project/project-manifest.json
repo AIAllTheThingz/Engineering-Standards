@@ -2,16 +2,35 @@
   "schemaVersion": "1.0.0",
   "projectName": "database-project",
   "repository": "example-org/database-project",
-  "description": "Minimal database-project example.",
+  "description": "database-project demonstrates adoption of the Engineering Standards repository with real validation commands.",
+  "projectType": "database",
+  "technologies": [
+    "database",
+    "github-actions"
+  ],
   "governanceVersion": "1.0.0",
   "riskClassification": "Moderate",
+  "dataClassification": "Internal",
+  "owners": [
+    "@AIAllTheThingz/engineering-standards-maintainers"
+  ],
+  "environments": [
+    {
+      "name": "local",
+      "type": "development",
+      "production": false
+    }
+  ],
   "applicableStandards": [
     "agents/AGENTS_Base.md",
     "agents/AGENTS_Database.md"
   ],
-  "owners": [
-    "example-owner"
+  "requiredWorkflows": [
+    "governance"
   ],
+  "externalIntegrations": [],
+  "secretsProvider": "none-required-for-example",
+  "productionApprovalRequired": false,
   "evidence": {
     "completionEvidencePath": "evidence/completion-result.json",
     "testEvidencePath": "evidence/test-evidence.json"

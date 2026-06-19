@@ -2,4 +2,4 @@ blank_issues_enabled: false
 contact_links:
   - name: Private security report
     url: https://example.invalid/security-contact
-    about: Replace before production use.
+    about: Replace with the approved private security intake before production use.

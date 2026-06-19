@@ -1,19 +1,38 @@
 {
   "schemaVersion": "1.0.0",
-  "projectName": "Engineering Standards",
-  "repository": "AIAllTheThingz/Engineering-Standards",
-  "description": "Central engineering-governance standards repository.",
+  "projectName": "Fixture Project",
+  "repository": "example-org/fixture",
+  "description": "Fixture Project demonstrates adoption of the Engineering Standards repository with real validation commands.",
+  "projectType": "governance",
+  "technologies": [
+    "governance",
+    "github-actions"
+  ],
   "governanceVersion": "1.0.0",
   "riskClassification": "High",
+  "dataClassification": "Internal",
+  "owners": [
+    "@AIAllTheThingz/engineering-standards-maintainers"
+  ],
+  "environments": [
+    {
+      "name": "local",
+      "type": "development",
+      "production": false
+    }
+  ],
   "applicableStandards": [
     "agents/AGENTS_Base.md",
     "agents/AGENTS_PowerShell.md",
     "agents/AGENTS_Integration.md",
     "agents/AGENTS_Infrastructure.md"
   ],
-  "owners": [
-    "@example-org/REPLACE-ME-governance-maintainers"
+  "requiredWorkflows": [
+    "governance"
   ],
+  "externalIntegrations": [],
+  "secretsProvider": "none-required-for-example",
+  "productionApprovalRequired": false,
   "evidence": {
     "completionEvidencePath": "evidence/completion-result.json",
     "testEvidencePath": "evidence/test-evidence.json"

@@ -15,7 +15,20 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - name: Governance validation
         shell: pwsh
-        run: pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path '${{ inputs.project-path }}' -Category Contract,ForbiddenPatterns,RepositoryHealth
-      - name: Parser validation
+        run: pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path '${{ inputs.project-path }}' -Category Contract,DocumentationCompleteness,ForbiddenPatterns,RepositoryHealth
+      - name: PowerShell parser validation
         shell: pwsh
-        run: Get-ChildItem -Path '${{ inputs.project-path }}' -Filter *.ps1 -Recurse | ForEach-Object { [System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$null,[ref]$null) | Out-Null }
+        run: |
+          $failed = $false
+          Get-ChildItem -Path '${{ inputs.project-path }}' -Recurse -Include *.ps1,*.psm1 | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors) { $failed = $true; Write-Error "Parse errors in $($_.FullName)" }
+          }
+          if ($failed) { exit 1 }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: powershell-evidence
+          path: evidence/

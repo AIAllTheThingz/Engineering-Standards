@@ -2,16 +2,35 @@
   "schemaVersion": "1.0.0",
   "projectName": "dotnet-project",
   "repository": "example-org/dotnet-project",
-  "description": "Minimal dotnet-project example.",
+  "description": "dotnet-project demonstrates adoption of the Engineering Standards repository with real validation commands.",
+  "projectType": "dotnet",
+  "technologies": [
+    "dotnet",
+    "github-actions"
+  ],
   "governanceVersion": "1.0.0",
   "riskClassification": "Moderate",
+  "dataClassification": "Internal",
+  "owners": [
+    "@AIAllTheThingz/engineering-standards-maintainers"
+  ],
+  "environments": [
+    {
+      "name": "local",
+      "type": "development",
+      "production": false
+    }
+  ],
   "applicableStandards": [
     "agents/AGENTS_Base.md",
     "agents/AGENTS_DotNet.md"
   ],
-  "owners": [
-    "example-owner"
+  "requiredWorkflows": [
+    "governance"
   ],
+  "externalIntegrations": [],
+  "secretsProvider": "none-required-for-example",
+  "productionApprovalRequired": false,
   "evidence": {
     "completionEvidencePath": "evidence/completion-result.json",
     "testEvidencePath": "evidence/test-evidence.json"

@@ -1,3 +1,3 @@
 # Contributing
 
-Run validation and record evidence.
+Run the documented validation command, update evidence, and classify risk before submitting changes.

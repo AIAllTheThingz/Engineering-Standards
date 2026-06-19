@@ -2,16 +2,54 @@
 .SYNOPSIS
 Validates internal Markdown links.
 .DESCRIPTION
-Checks relative links and skips external links.
+Checks relative Markdown links and skips external URLs because network availability is not guaranteed.
 .PARAMETER Path
 Repository root.
 .PARAMETER OutputJson
-Optional report path.
+Optional JSON report path.
 .EXAMPLE
-pwsh -File scripts/Test-MarkdownLinks.ps1 -Path .
+pwsh -NoProfile -File scripts/Test-MarkdownLinks.ps1 -Path .
 .OUTPUTS
-Console and optional JSON.
+Console report and optional JSON.
 .NOTES
-External links are not fetched.
+External-link validation should be run separately when network access is available.
 #>
-[CmdletBinding()]param([string]$Path='.',[string]$OutputJson)Set-StrictMode -Version Latest;$ErrorActionPreference='Stop';Import-Module (Join-Path $PSScriptRoot 'GovernanceValidation.psm1') -Force;$root=(Resolve-Path $Path).Path;$res=[Collections.Generic.List[object]]::new();foreach($f in Get-ChildItem $root -Filter *.md -Recurse|?{$_.FullName -notmatch '\\.git\\'}){$c=Get-Content $f.FullName -Raw;foreach($m in [regex]::Matches($c,'(?<!!)\[[^\]]+\]\((?<t>[^)]+)\)')){$t=$m.Groups['t'].Value.Trim();if($t -match '^(https?:|mailto:|#)' -or $t -eq ''){continue};$t=$t.Split('#')[0].Trim('<','>');if($t){try{$r=Resolve-SafePath $f.DirectoryName $t;if(-not(Test-Path $r)){$res.Add((New-ValidationResult Failed "Missing Markdown target '$t'." $f.FullName))}}catch{$res.Add((New-ValidationResult Failed $_.Exception.Message $f.FullName))}}}};if($res.Count -eq 0){$res.Add((New-ValidationResult Passed 'Internal Markdown links validated.' $root info))};$rep=[ordered]@{generatedAtUtc=(Get-Date).ToUniversalTime().ToString('o');results=@($res);failed=@($res|? status -eq Failed).Count};if($OutputJson){$rep|ConvertTo-OrderedJson|Set-Content $OutputJson -Encoding utf8};$rep.results|%{"[$($_.status)] $($_.path) $($_.message)"};if($rep.failed){exit 1};exit 0
+[CmdletBinding()]
+param([string]$Path='.', [string]$OutputJson)
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+Import-Module (Join-Path $PSScriptRoot 'GovernanceValidation.psm1') -Force
+$root = (Resolve-Path -LiteralPath $Path).Path
+$results = [System.Collections.Generic.List[object]]::new()
+foreach ($file in Get-ChildItem -LiteralPath $root -Filter '*.md' -Recurse -File | Where-Object { $_.FullName -notmatch '\\.git\\' }) {
+    $content = Get-Content -LiteralPath $file.FullName -Raw
+    foreach ($match in [regex]::Matches($content, '(?<!!)\[[^\]]+\]\((?<target>[^)]+)\)')) {
+        $target = $match.Groups['target'].Value.Trim()
+        if ($target -match '^(https?:|mailto:|#)' -or $target -eq '') { continue }
+        $target = $target.Split('#')[0].Trim('<','>')
+        if ($target -eq '') { continue }
+        try {
+            if ([System.IO.Path]::IsPathRooted($target)) {
+                $resolved = [System.IO.Path]::GetFullPath($target)
+            }
+            else {
+                $resolved = [System.IO.Path]::GetFullPath((Join-Path $file.DirectoryName $target))
+            }
+            if (-not $resolved.StartsWith($root, [System.StringComparison]::OrdinalIgnoreCase)) {
+                throw "Path '$target' resolves outside repository root '$root'."
+            }
+            if (-not (Test-Path -LiteralPath $resolved)) {
+                $results.Add((New-ValidationResult -Status Failed -Message "Missing Markdown target '$target'." -Path $file.FullName))
+            }
+        }
+        catch {
+            $results.Add((New-ValidationResult -Status Failed -Message $_.Exception.Message -Path $file.FullName))
+        }
+    }
+}
+if ($results.Count -eq 0) { $results.Add((New-ValidationResult -Status Passed -Message 'Internal Markdown links validated.' -Path $root -Severity info)) }
+$report = [ordered]@{ generatedAtUtc=(Get-Date).ToUniversalTime().ToString('o'); results=@($results); failed=@($results | Where-Object status -eq 'Failed').Count }
+if ($OutputJson) { $report | ConvertTo-OrderedJson | Set-Content -LiteralPath $OutputJson -Encoding utf8 }
+$report.results | ForEach-Object { "[$($_.status)] $($_.path) $($_.message)" }
+if ($report.failed -gt 0) { exit 1 }
+exit 0

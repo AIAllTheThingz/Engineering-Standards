@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - name: Governance validation
         shell: pwsh
-        run: pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path '${{ inputs.project-path }}' -Category Contract,ForbiddenPatterns,RepositoryHealth
-      - name: SQL lint placeholder
+        run: pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path '${{ inputs.project-path }}' -Category Contract,DocumentationCompleteness,ForbiddenPatterns,RepositoryHealth
+      - name: Migration validation
         shell: pwsh
-        run: Write-Output 'NotRun: configure project-specific SQL linting and ephemeral database validation.'
+        run: pwsh -NoProfile -File '${{ inputs.project-path }}/tools/Test-Migrations.ps1' -Path '${{ inputs.project-path }}'

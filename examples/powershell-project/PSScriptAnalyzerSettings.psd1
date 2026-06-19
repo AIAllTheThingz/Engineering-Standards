@@ -1,0 +1,1 @@
+@{ Rules = @{ PSUseDeclaredVarsMoreThanAssignments = @{ Enable = $true } } }

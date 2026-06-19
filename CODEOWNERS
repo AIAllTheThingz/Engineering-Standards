@@ -1,8 +1,8 @@
-# Replace example owners before production use. Validation warns while placeholders remain.
-* @example-org/REPLACE-ME-governance-maintainers
-/governance/ @example-org/REPLACE-ME-governance-owners
-/agents/ @example-org/REPLACE-ME-agent-standards-owners
-/schemas/ @example-org/REPLACE-ME-schema-owners
-/actions/ @example-org/REPLACE-ME-action-security-owners
-/workflows/ @example-org/REPLACE-ME-ci-owners
-/actions/forbidden-pattern-scan/forbidden-patterns.json @example-org/REPLACE-ME-security-scanner-owners
+# Governance review boundaries. Replace team names if the organization uses different ownership.
+* @AIAllTheThingz/engineering-standards-maintainers
+/governance/ @AIAllTheThingz/governance-reviewers
+/agents/ @AIAllTheThingz/agent-standards-reviewers
+/schemas/ @AIAllTheThingz/schema-reviewers
+/actions/ @AIAllTheThingz/action-security-reviewers
+/workflows/ @AIAllTheThingz/ci-reviewers
+/actions/forbidden-pattern-scan/forbidden-patterns.json @AIAllTheThingz/security-reviewers

@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aiallthethingz.example/completion-result.schema.json",
+  "$id": "https://schemas.aiallthethingz.example/engineering-standards/completion-result.schema.json",
+  "title": "Completion Result",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -8,6 +9,7 @@
     "repository",
     "commitSha",
     "branch",
+    "pullRequest",
     "governanceVersion",
     "riskClassification",
     "status",
@@ -27,19 +29,30 @@
   ],
   "properties": {
     "schemaVersion": {
-      "type": "string"
+      "type": "string",
+      "pattern": "^1\\.0\\.0$"
     },
     "repository": {
-      "type": "string"
+      "type": "string",
+      "pattern": "^[^/]+/[^/]+$"
     },
     "commitSha": {
-      "type": "string"
+      "type": "string",
+      "pattern": "^([A-Fa-f0-9]{40}|unknown)$"
     },
     "branch": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
+    },
+    "pullRequest": {
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "governanceVersion": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "riskClassification": {
       "type": "string",
@@ -61,49 +74,98 @@
       ]
     },
     "startedAtUtc": {
-      "type": "string"
+      "type": "string",
+      "format": "date-time"
     },
     "completedAtUtc": {
-      "type": "string"
+      "type": "string",
+      "format": "date-time"
     },
     "summary": {
-      "type": "string"
+      "type": "string",
+      "minLength": 20
     },
     "changedFiles": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
     },
     "commandsExecuted": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
     },
     "commandsNotExecuted": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "tests": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "$ref": "test-evidence.schema.json"
+      },
+      "minItems": 1
     },
     "artifacts": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "$ref": "artifact-record.schema.json"
+      }
     },
     "warnings": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "knownLimitations": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "remainingRisks": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "exceptions": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^GOV-[A-Z0-9-]+$"
+      }
     },
     "approvals": {
-      "type": "array"
-    },
-    "pullRequest": {
-      "type": [
-        "string",
-        "null"
-      ]
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "role",
+          "approvedAtUtc"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "approvedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
     }
   }
 }

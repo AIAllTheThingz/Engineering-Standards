@@ -14,7 +14,7 @@ permissions:
   contents: read
 jobs:
   governance:
-    uses: ../../workflows/governance-ci.yml
+    uses: ./.github/workflows/governance-ci.yml
     with:
       project-path: ${{ inputs.project-path }}
       governance-version: ${{ inputs.governance-version }}

@@ -4,3 +4,5 @@ Inherited standards:
 
 - agents/AGENTS_Base.md
 - agents/AGENTS_WebFrontend.md
+
+Local rules may strengthen but not weaken central governance.

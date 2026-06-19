@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aiallthethingz.example/governance-config.schema.json",
+  "$id": "https://schemas.aiallthethingz.example/engineering-standards/governance-config.schema.json",
+  "title": "Governance Configuration",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -9,39 +10,155 @@
     "evidencePath",
     "requiredDocumentationPaths",
     "applicableAgentStandards",
+    "validationCategories",
+    "additionalForbiddenPatterns",
+    "reviewedAllowlist",
     "controls",
     "exceptions"
   ],
   "properties": {
     "schemaVersion": {
-      "type": "string"
+      "type": "string",
+      "pattern": "^1\\.0\\.0$"
     },
     "manifestPath": {
-      "type": "string"
+      "type": "string",
+      "pattern": "^(?!.*\\.\\.).+"
     },
     "evidencePath": {
-      "type": "string"
+      "type": "string",
+      "pattern": "^(?!.*\\.\\.).+"
     },
     "requiredDocumentationPaths": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
     },
     "applicableAgentStandards": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^agents/AGENTS_[A-Za-z]+\\.md$"
+      },
+      "minItems": 1
+    },
+    "validationCategories": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Contract",
+          "JsonSchemas",
+          "MarkdownLinks",
+          "DocumentationCompleteness",
+          "ForbiddenPatterns",
+          "RepositoryHealth",
+          "Evidence",
+          "Examples"
+        ]
+      }
     },
     "additionalForbiddenPatterns": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "description",
+          "severity",
+          "regex"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "warning",
+              "error"
+            ]
+          },
+          "regex": {
+            "type": "string"
+          }
+        }
+      }
     },
     "reviewedAllowlist": {
-      "type": "array"
-    },
-    "optionalValidationCategories": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "patternId",
+          "path",
+          "owner",
+          "reason",
+          "expiresOn"
+        ],
+        "properties": {
+          "patternId": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 10
+          },
+          "expiresOn": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
     },
     "controls": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mandatoryControlsDisabled"
+      ],
+      "properties": {
+        "mandatoryControlsDisabled": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "control",
+              "exceptionReference"
+            ],
+            "properties": {
+              "control": {
+                "type": "string"
+              },
+              "exceptionReference": {
+                "type": "string",
+                "pattern": "^GOV-[A-Z0-9-]+$"
+              }
+            }
+          }
+        }
+      }
     },
     "exceptions": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^GOV-[A-Z0-9-]+$"
+      }
     }
   }
 }

@@ -10,16 +10,26 @@ on:
         type: string
         required: false
         default: 1.0.0
+    outputs:
+      evidence-path:
+        description: Completion evidence path.
+        value: ${{ jobs.governance-validation.outputs.evidence-path }}
 permissions:
   contents: read
 jobs:
   governance-validation:
     runs-on: ubuntu-latest
+    outputs:
+      evidence-path: evidence/completion-result.json
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - name: Run governance validation
         shell: pwsh
         run: pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path '${{ inputs.project-path }}'
+      - name: Generate evidence
+        if: always()
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/New-CompletionEvidence.ps1 -RepositoryPath . -OutputPath evidence/completion-result.json -GovernanceVersion '${{ inputs.governance-version }}' -RiskClassification High -Status NotRun -Summary 'CI evidence records final status from workflow logs.'
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
