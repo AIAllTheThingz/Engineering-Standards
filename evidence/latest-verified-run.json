@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0.0",
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "workflow": "Governance CI",
+  "workflowFile": ".github/workflows/governance-ci.yml",
+  "runId": 27864137259,
+  "runAttempt": 1,
+  "validatedCommitSha": "02b80f1b8f5994d223bb46e92f5384c2b1da4f26",
+  "branch": "master",
+  "trigger": "workflow_dispatch",
+  "conclusion": "success",
+  "checkName": "Governance validation",
+  "artifactName": "governance-evidence-27864137259",
+  "artifactId": 7763206977,
+  "artifactSha256": "ed2f912fb784a6206a73b0364eae2cc437ed43b9bc1de0bd55873ca88c9ee18b",
+  "verifiedAtUtc": "2026-06-20T07:28:23.9538820Z",
+  "verifiedBy": "Codex",
+  "controlledFailureRunId": 27864201100,
+  "controlledFailureConclusion": "failure",
+  "notes": [
+    "Success and controlled-failure artifacts were downloaded into isolated temporary directories and independently verified.",
+    "Artifact evidence uses evidenceCommitSha null because workflow artifacts are immutable GitHub Actions downloads and are not committed back to the validated source commit.",
+    "The metadata file is committed after verification and records the validated commit rather than attempting an infinite evidence-commit rerun."
+  ]
+}
