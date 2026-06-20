@@ -4,6 +4,14 @@ Describe 'Repository health' {
             & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path "$PSScriptRoot/../.."
             $LASTEXITCODE | Should -Be 0
         }
+
+        It 'does not track generated build output directories' {
+            $root = Resolve-Path "$PSScriptRoot/../.."
+            $tracked = @(& git -C $root ls-files | Where-Object {
+                $_ -match '(^|/)(bin|obj|dist)(/|$)' -or $_ -match '^(coverage|TestResults)(/|$)'
+            })
+            $tracked.Count | Should -Be 0
+        }
     }
 
     Context 'invalid repository' {

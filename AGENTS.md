@@ -89,7 +89,7 @@ pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-JsonSchemas.ps1 -Path .
 pwsh -NoProfile -File actions/validate-contract/Invoke-ContractValidation.ps1 -Path .
 pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path .
-pwsh -NoProfile -File actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path . -EvidencePath evidence/completion-result.json
+pwsh -NoProfile -File actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path . -EvidencePath evidence/local-completion-result.json
 ```
 
 For broader changes, run:
@@ -103,7 +103,7 @@ For PowerShell changes, run parser validation and Pester when available. If `PSS
 
 ## Evidence Requirements
 
-Substantive changes SHOULD refresh [evidence/completion-result.json](evidence/completion-result.json). If evidence is refreshed, validate it before reporting completion.
+Substantive changes SHOULD refresh [evidence/local-completion-result.json](evidence/local-completion-result.json). GitHub-hosted completion evidence is authoritative in uploaded workflow artifacts. If evidence is refreshed, validate it before reporting completion.
 
 The evidence status MUST remain honest. If YAML validation or PSScriptAnalyzer is unavailable locally, keep those checks as `NotRun` unless they actually run elsewhere and the evidence points to that result.
 

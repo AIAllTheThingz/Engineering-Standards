@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-20T02:01:38.7828079Z",
+  "generatedAtUtc": "2026-06-20T06:32:11.0151127Z",
   "results": [
     {
       "status": "Passed",
@@ -124,14 +124,14 @@
       "status": "Passed",
       "severity": "info",
       "message": "project-manifest validation passed.",
-      "path": "project-manifest.json",
+      "path": "F:\\repos\\Engineering-Standards\\project-manifest.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "governance-config validation passed.",
-      "path": "governance.config.json",
+      "path": "F:\\repos\\Engineering-Standards\\governance.config.json",
       "data": null
     },
     {
@@ -145,7 +145,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "Repository health validation completed.",
-      "path": ".",
+      "path": "F:\\repos\\Engineering-Standards",
       "data": null
     }
   ],
@@ -154,9 +154,3 @@
   "blocked": 0,
   "notRun": 0
 }
-
-
-
-
-
-

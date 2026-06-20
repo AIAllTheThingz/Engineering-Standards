@@ -55,6 +55,13 @@ $required = @(
 )
 $required | ForEach-Object { Add-RequiredFileResult -RelativePath $_ }
 
+$trackedGenerated = @(& git -C $root ls-files 2>$null | Where-Object {
+    $_ -match '(^|/)(bin|obj|dist)(/|$)' -or $_ -match '^(coverage|TestResults)(/|$)'
+})
+foreach ($generated in $trackedGenerated) {
+    $results.Add((New-ValidationResult -Status Failed -Message 'Generated build output must not be tracked.' -Path $generated))
+}
+
 foreach ($json in Get-ChildItem -LiteralPath $root -Filter '*.json' -Recurse -File | Where-Object { $_.FullName -notmatch '\\.git\\|node_modules|bin\\|obj\\|dist\\' }) {
     try {
         Read-JsonFile -Path $json.FullName | Out-Null

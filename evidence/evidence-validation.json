@@ -1,18 +1,18 @@
 {
-  "generatedAtUtc": "2026-06-20T02:02:52.0089726Z",
+  "generatedAtUtc": "2026-06-20T06:36:24.5595247Z",
   "results": [
     {
       "status": "Passed",
       "severity": "info",
       "message": "completion-result validation passed.",
-      "path": "evidence/completion-result.json",
+      "path": "evidence/local-completion-result.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Evidence validation completed.",
-      "path": "evidence/completion-result.json",
+      "path": "evidence/local-completion-result.json",
       "data": null
     }
   ],
@@ -21,7 +21,3 @@
   "blocked": 0,
   "notRun": 0
 }
-
-
-
-

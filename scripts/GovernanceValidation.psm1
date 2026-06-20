@@ -213,7 +213,7 @@ function Test-GovernanceJsonDocument {
     $risks = @('Low','Moderate','High','Critical')
     $dataClasses = @('Public','Internal','Confidential','Regulated')
     $required = switch ($Kind) {
-        'completion-result' { @('schemaVersion','repository','commitSha','branch','pullRequest','governanceVersion','riskClassification','status','startedAtUtc','completedAtUtc','summary','changedFiles','commandsExecuted','commandsNotExecuted','tests','artifacts','warnings','knownLimitations','remainingRisks','exceptions','approvals') }
+        'completion-result' { @('schemaVersion','executionContext','repository','commitSha','branch','pullRequest','governanceVersion','riskClassification','status','startedAtUtc','completedAtUtc','summary','changedFiles','commandsExecuted','commandsNotExecuted','tests','artifacts','warnings','knownLimitations','remainingRisks','exceptions','approvals') }
         'test-evidence' { @('schemaVersion','name','category','status','command','workingDirectory','startedAtUtc','completedAtUtc','durationSeconds','runtime','toolVersion','exitCode','summary','warnings','failureReason') }
         'artifact-record' { @('schemaVersion','name','artifactType','path','mediaType','sizeBytes','sha256','createdAtUtc','producer','retention','sensitivity','relatedTest') }
         'project-manifest' { @('schemaVersion','projectName','repository','description','projectType','technologies','governanceVersion','riskClassification','dataClassification','owners','environments','applicableStandards','requiredWorkflows','externalIntegrations','secretsProvider','productionApprovalRequired','evidence','exceptions') }
@@ -263,6 +263,15 @@ function Test-GovernanceJsonDocument {
                 if ($test.status -in @('Failed','NotRun','Blocked')) {
                     $results.Add((New-ValidationResult -Status Failed -Message "Overall Passed conflicts with test '$($test.name)' status '$($test.status)'." -Path $Path))
                 }
+            }
+        }
+        $githubExecution = @($json.tests | Where-Object name -eq 'GitHub-hosted workflow execution' | Select-Object -First 1)
+        if ($json.executionContext -eq 'Local') {
+            if ($githubExecution.Count -eq 0 -or $githubExecution[0].status -ne 'NotRun') {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Local completion evidence must record GitHub-hosted workflow execution as NotRun.' -Path $Path))
+            }
+            if ($json.status -eq 'Passed') {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Local completion evidence cannot be Passed while GitHub-hosted execution is mandatory.' -Path $Path))
             }
         }
         foreach ($item in @(Test-UniqueValues -Items @($json.changedFiles) -Name 'changedFiles' -Path $Path)) { $results.Add($item) }
@@ -364,8 +373,8 @@ function Test-TestEvidenceObject {
             $results.Add((New-ValidationResult -Status Failed -Message "Test '$($Test.name)' must include a meaningful failure reason for status '$($Test.status)'." -Path $Path))
         }
     }
-    if ($Test.status -eq 'NotRun' -and $null -ne $Test.exitCode) {
-        $results.Add((New-ValidationResult -Status Failed -Message "NotRun test '$($Test.name)' must have null exitCode." -Path $Path))
+    if ($Test.status -eq 'NotRun' -and $null -ne $Test.exitCode -and [int]$Test.exitCode -ne 3) {
+        $results.Add((New-ValidationResult -Status Failed -Message "NotRun test '$($Test.name)' must have null exitCode or policy exitCode 3." -Path $Path))
     }
     if ($Test.completedAtUtc -and $Test.startedAtUtc -and [datetime]$Test.completedAtUtc -lt [datetime]$Test.startedAtUtc) {
         $results.Add((New-ValidationResult -Status Failed -Message "Test '$($Test.name)' completion timestamp precedes start timestamp." -Path $Path))

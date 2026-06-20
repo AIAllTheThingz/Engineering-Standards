@@ -34,7 +34,7 @@
   "secretsProvider": "none-required-for-example",
   "productionApprovalRequired": true,
   "evidence": {
-    "completionEvidencePath": "evidence/completion-result.json",
+    "completionEvidencePath": "evidence/local-completion-result.json",
     "testEvidencePath": "evidence/test-evidence.json"
   },
   "exceptions": []

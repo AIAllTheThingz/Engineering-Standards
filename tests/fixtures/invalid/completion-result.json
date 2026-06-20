@@ -1,5 +1,10 @@
 {
   "schemaVersion": "1.0.0",
+  "executionContext": "Release",
+  "githubRunId": null,
+  "githubRunAttempt": null,
+  "githubWorkflow": null,
+  "artifactName": null,
   "repository": "AIAllTheThingz/Engineering-Standards",
   "commitSha": "unknown",
   "branch": "master",
@@ -13,6 +18,16 @@
   "changedFiles": [
     "README.md"
   ],
+  "changedFileCategories": {
+    "source": [],
+    "documentation": [
+      "README.md"
+    ],
+    "configuration": [],
+    "tests": [],
+    "generatedEvidence": [],
+    "generatedBuildOutput": []
+  },
   "commandsExecuted": [
     "pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path ."
   ],

@@ -163,7 +163,7 @@ Local rules may add stricter validation and repository-specific commands. Local 
   "productionApprovalRequired": false,
   "owners": ["@example-org/example-owners"],
   "evidence": {
-    "completionEvidencePath": "evidence/completion-result.json",
+    "completionEvidencePath": "evidence/local-completion-result.json",
     "testEvidencePath": "evidence/test-evidence.json"
   },
   "exceptions": []
@@ -204,7 +204,7 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 
 ## Release Readiness Notes
 
-- Final evidence is stored in `evidence/completion-result.json`.
+- Local checked-in evidence is stored in `evidence/local-completion-result.json`; GitHub-hosted completion evidence is stored in workflow artifacts.
 - Local YAML parser validation is not configured and is recorded honestly as `NotRun`.
 - PSScriptAnalyzer is not installed locally and is recorded honestly as `NotRun`.
 - Branch protection must still be verified in GitHub settings because local file validation cannot prove repository settings.

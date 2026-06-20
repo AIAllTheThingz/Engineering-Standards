@@ -6,6 +6,7 @@
   "additionalProperties": false,
   "required": [
     "schemaVersion",
+    "executionContext",
     "repository",
     "commitSha",
     "branch",
@@ -31,6 +32,44 @@
     "schemaVersion": {
       "type": "string",
       "pattern": "^1\\.0\\.0$"
+    },
+    "executionContext": {
+      "type": "string",
+      "enum": [
+        "Local",
+        "GitHubActions",
+        "PullRequest",
+        "Scheduled",
+        "Release"
+      ]
+    },
+    "githubRunId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]+$"
+    },
+    "githubRunAttempt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]+$"
+    },
+    "githubWorkflow": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "artifactName": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 3
     },
     "repository": {
       "type": "string",
@@ -97,6 +136,26 @@
       },
       "minItems": 1,
       "uniqueItems": true
+    },
+    "changedFileCategories": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "documentation",
+        "configuration",
+        "tests",
+        "generatedEvidence",
+        "generatedBuildOutput"
+      ],
+      "properties": {
+        "source": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "documentation": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "configuration": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "tests": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "generatedEvidence": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "generatedBuildOutput": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+      }
     },
     "commandsExecuted": {
       "type": "array",

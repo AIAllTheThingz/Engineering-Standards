@@ -3,6 +3,9 @@ tmp/
 out/
 coverage/
 TestResults/
+**/bin/
+**/obj/
+**/dist/
 evidence/*.local.json
 .vscode/
 .idea/

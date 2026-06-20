@@ -287,7 +287,7 @@ jobs:
             psscriptanalyzer='${{ steps.psscriptanalyzer.outcome }}'
             examples='${{ steps.examples.outcome }}'
             evidence_validation='NotRun'
-            github_execution='success'
+            github_execution='notrun'
           }
           & ./scripts/New-WorkflowTestEvidence.ps1 -RepositoryPath . -OutputPath evidence/ci-test-results.json -Outcomes $outcomes -RunPester -RunDocumentation -RunExamples -Runtime 'GitHub Actions ubuntu-latest / pwsh' -ToolVersion $PSVersionTable.PSVersion.ToString() -AllowControlledFailure:('${{ inputs.controlled-failure-test }}' -eq 'true')
 
@@ -314,7 +314,7 @@ jobs:
             'evidence/examples.json',
             'evidence/ci-test-results.json'
           )
-          & ./scripts/New-CompletionEvidence.ps1 -RepositoryPath . -OutputPath evidence/completion-result.json -GovernanceVersion '${{ inputs.governance-version }}' -RiskClassification High -Summary 'GitHub Actions governance validation generated completion evidence from individual workflow test records.' -TestResultPath evidence/ci-test-results.json -ArtifactPath $artifactPaths -CommandsExecuted @('Governance CI reusable workflow') -CommandsNotExecuted @()
+          & ./scripts/New-CompletionEvidence.ps1 -RepositoryPath . -OutputPath evidence/completion-result.json -GovernanceVersion '${{ inputs.governance-version }}' -RiskClassification High -ExecutionContext GitHubActions -ArtifactName 'governance-evidence-${{ github.run_id }}' -Summary 'GitHub Actions governance validation generated pre-final completion evidence from individual workflow test records.' -TestResultPath evidence/ci-test-results.json -ArtifactPath $artifactPaths -CommandsExecuted @('Governance CI reusable workflow') -CommandsNotExecuted @('Final GitHub workflow enforcement had not completed when pre-final evidence was generated.')
           "evidence-path=evidence/completion-result.json" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Validate completion evidence
@@ -329,6 +329,22 @@ jobs:
         if: always()
         shell: pwsh
         run: |
+          $mandatoryOutcomes = @(
+            '${{ steps.yaml.outcome }}',
+            '${{ steps.workflow_architecture.outcome }}',
+            '${{ steps.json_schemas.outcome }}',
+            '${{ steps.markdown_links.outcome }}',
+            '${{ steps.documentation.outcome }}',
+            '${{ steps.contract.outcome }}',
+            '${{ steps.forbidden_patterns.outcome }}',
+            '${{ steps.repository_health.outcome }}',
+            '${{ steps.powershell_parser.outcome }}',
+            '${{ steps.pester.outcome }}',
+            '${{ steps.psscriptanalyzer.outcome }}',
+            '${{ steps.examples.outcome }}',
+            '${{ steps.evidence_validation.outcome }}'
+          )
+          $githubExecutionOutcome = if (@($mandatoryOutcomes | Where-Object { $_ -ne 'success' }).Count -eq 0) { 'success' } else { 'failure' }
           $outcomes = @{
             yaml='${{ steps.yaml.outcome }}'
             workflow_architecture='${{ steps.workflow_architecture.outcome }}'
@@ -343,7 +359,7 @@ jobs:
             psscriptanalyzer='${{ steps.psscriptanalyzer.outcome }}'
             examples='${{ steps.examples.outcome }}'
             evidence_validation='${{ steps.evidence_validation.outcome }}'
-            github_execution='success'
+            github_execution=$githubExecutionOutcome
           }
           & ./scripts/New-WorkflowTestEvidence.ps1 -RepositoryPath . -OutputPath evidence/ci-test-results.json -Outcomes $outcomes -RunPester -RunDocumentation -RunExamples -Runtime 'GitHub Actions ubuntu-latest / pwsh' -ToolVersion $PSVersionTable.PSVersion.ToString() -AllowControlledFailure:('${{ inputs.controlled-failure-test }}' -eq 'true')
 
@@ -371,7 +387,7 @@ jobs:
             'evidence/ci-test-results.json',
             'evidence/evidence-validation.json'
           )
-          & ./scripts/New-CompletionEvidence.ps1 -RepositoryPath . -OutputPath evidence/completion-result.json -GovernanceVersion '${{ inputs.governance-version }}' -RiskClassification High -Summary 'GitHub Actions governance validation generated final completion evidence from individual workflow test records.' -TestResultPath evidence/ci-test-results.json -ArtifactPath $artifactPaths -CommandsExecuted @('Governance CI reusable workflow') -CommandsNotExecuted @()
+          & ./scripts/New-CompletionEvidence.ps1 -RepositoryPath . -OutputPath evidence/completion-result.json -GovernanceVersion '${{ inputs.governance-version }}' -RiskClassification High -ExecutionContext GitHubActions -ArtifactName 'governance-evidence-${{ github.run_id }}' -Summary 'GitHub Actions governance validation generated final completion evidence from individual workflow test records.' -TestResultPath evidence/ci-test-results.json -ArtifactPath $artifactPaths -CommandsExecuted @('Governance CI reusable workflow') -CommandsNotExecuted @()
           "evidence-path=evidence/completion-result.json" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Validate final completion evidence

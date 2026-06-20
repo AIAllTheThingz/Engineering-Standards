@@ -50,6 +50,27 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
         $results.Add((New-ValidationResult -Status Failed -Message 'Branch/ref mismatch.' -Path $EvidencePath))
     }
 
+    $githubExecution = @($evidence.tests | Where-Object name -eq 'GitHub-hosted workflow execution' | Select-Object -First 1)
+    if ($evidence.executionContext -eq 'Local') {
+        if ($githubExecution.Count -eq 0 -or $githubExecution[0].status -ne 'NotRun') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Local evidence must record GitHub-hosted workflow execution as NotRun.' -Path $EvidencePath))
+        }
+        if ($evidence.status -eq 'Passed') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Local evidence cannot be overall Passed when GitHub-hosted execution is mandatory.' -Path $EvidencePath))
+        }
+        if ($evidence.githubRunId -or $evidence.artifactName) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Local evidence must not claim GitHub run or artifact metadata.' -Path $EvidencePath))
+        }
+    }
+    elseif ($evidence.executionContext -eq 'GitHubActions') {
+        if (-not $evidence.githubRunId -or -not $evidence.githubRunAttempt -or -not $evidence.githubWorkflow) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'GitHubActions evidence must include run id, run attempt, and workflow name.' -Path $EvidencePath))
+        }
+        if ($evidence.status -eq 'Passed' -and ($githubExecution.Count -eq 0 -or $githubExecution[0].status -ne 'Passed')) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'GitHubActions Passed evidence requires a passed GitHub-hosted workflow execution record.' -Path $EvidencePath))
+        }
+    }
+
     $knownTestNames = @{}
     foreach ($test in @($evidence.tests)) {
         if ($knownTestNames.ContainsKey($test.name)) {

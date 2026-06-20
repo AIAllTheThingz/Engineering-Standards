@@ -166,7 +166,10 @@
       "then": {
         "properties": {
           "exitCode": {
-            "type": "null"
+            "type": [
+              "integer",
+              "null"
+            ]
           }
         }
       }

@@ -24,7 +24,7 @@ Describe 'GovernanceValidation module' {
     }
 
     Context 'test evidence semantics' {
-        It 'rejects NotRun evidence with an exit code' {
+        It 'accepts NotRun evidence with policy exit code 3' {
             $doc = [ordered]@{
                 schemaVersion = '1.0.0'
                 name = 'Analyzer validation'
@@ -45,7 +45,7 @@ Describe 'GovernanceValidation module' {
             $path = Join-Path $script:tempRoot 'bad-test-evidence.json'
             $doc | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path
             $results = Test-GovernanceJsonDocument -Path $path -Kind 'test-evidence'
-            @($results | Where-Object status -eq 'Failed').Count | Should -BeGreaterThan 0
+            @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
         }
 
         It 'accepts valid Passed test evidence' {

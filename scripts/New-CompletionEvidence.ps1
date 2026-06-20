@@ -45,7 +45,11 @@ param(
     [string[]]$Warnings=@(),
     [string[]]$KnownLimitations=@(),
     [string[]]$RemainingRisks=@(),
-    [string[]]$Exceptions=@()
+    [string[]]$Exceptions=@(),
+    [Alias('ExecutionContext')]
+    [ValidateSet('Local','GitHubActions','PullRequest','Scheduled','Release')]
+    [string]$EvidenceExecutionContext = $(if ($env:GITHUB_ACTIONS -eq 'true') { 'GitHubActions' } else { 'Local' }),
+    [string]$ArtifactName
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -113,6 +117,45 @@ foreach ($artifact in $ArtifactPath) {
         }
     }
 }
+function Get-OriginRepositoryName {
+    param([string]$RepositoryRoot)
+    $origin = (& git -C $RepositoryRoot remote get-url origin 2>$null)
+    if ($LASTEXITCODE -ne 0 -or -not $origin) { return 'AIAllTheThingz/Engineering-Standards' }
+    $value = [string]$origin
+    if ($value -match 'github\.com[:/]([^/]+)/([^/.]+)(\.git)?$') { return "$($Matches[1])/$($Matches[2])" }
+    return 'AIAllTheThingz/Engineering-Standards'
+}
+
+function Test-GeneratedBuildOutputPath {
+    param([string]$Path)
+    $normalized = $Path.Replace('\','/')
+    $normalized -match '(^|/)(bin|obj|dist)(/|$)' -or $normalized -match '^(coverage|TestResults)(/|$)'
+}
+
+function Get-ChangedFileCategories {
+    param([string[]]$Files)
+    $categories = [ordered]@{
+        source = @()
+        documentation = @()
+        configuration = @()
+        tests = @()
+        generatedEvidence = @()
+        generatedBuildOutput = @()
+    }
+    foreach ($file in @($Files)) {
+        if ([string]::IsNullOrWhiteSpace($file) -or $file -eq 'unknown') { continue }
+        $path = $file.Replace('\','/')
+        if (Test-GeneratedBuildOutputPath -Path $path) { $categories.generatedBuildOutput += $path; continue }
+        if ($path -match '^evidence/' -or $path -match '/evidence/') { $categories.generatedEvidence += $path; continue }
+        if ($path -match '(^|/)tests?/' -or $path -match '\.Tests\.ps1$') { $categories.tests += $path; continue }
+        if ($path -match '\.md$') { $categories.documentation += $path; continue }
+        if ($path -match '(^|/)(\.github|schemas|actions|scripts)/' -or $path -match '\.(json|ya?ml|ps1|psm1|psd1|gitignore)$') { $categories.configuration += $path; continue }
+        $categories.source += $path
+    }
+    foreach ($key in @($categories.Keys)) { $categories[$key] = @($categories[$key] | Sort-Object -Unique) }
+    $categories
+}
+
 $commit = $env:GITHUB_SHA
 if (-not $commit) {
     $commit = (& git -C $root rev-parse HEAD 2>$null)
@@ -120,17 +163,27 @@ if (-not $commit) {
 }
 $branch = $env:GITHUB_REF_NAME
 if (-not $branch) {
-    $branch = (& git -C $root rev-parse --abbrev-ref HEAD 2>$null)
+    $branch = (& git -C $root branch --show-current 2>$null)
     if ($LASTEXITCODE -ne 0 -or -not $branch) { $branch = 'unknown' }
 }
-$changedFiles = @(& git -C $root status --short 2>$null | ForEach-Object { $_.Substring(3) })
+$changedFiles = @(& git -C $root status --short 2>$null | ForEach-Object { $_.Substring(3).Replace('\','/') })
 if ($changedFiles.Count -eq 0 -and $commit -ne 'unknown') {
-    $changedFiles = @(& git -C $root diff-tree --no-commit-id --name-only -r $commit 2>$null)
+    $changedFiles = @(& git -C $root diff-tree --no-commit-id --name-only -r $commit 2>$null | ForEach-Object { $_.Replace('\','/') })
 }
+$changedFiles = @($changedFiles | Where-Object { -not (Test-GeneratedBuildOutputPath -Path $_) } | Sort-Object -Unique)
 if ($changedFiles.Count -eq 0) { $changedFiles = @('unknown') }
+$changedFileCategories = Get-ChangedFileCategories -Files $changedFiles
+$githubRunId = if ($env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID } else { $null }
+$githubRunAttempt = if ($env:GITHUB_RUN_ATTEMPT) { $env:GITHUB_RUN_ATTEMPT } else { $null }
+$githubWorkflow = if ($env:GITHUB_WORKFLOW) { $env:GITHUB_WORKFLOW } else { $null }
 $evidence = [ordered]@{
     schemaVersion = '1.0.0'
-    repository = $(if ($env:GITHUB_REPOSITORY) { $env:GITHUB_REPOSITORY } else { 'AIAllTheThingz/Engineering-Standards' })
+    executionContext = $EvidenceExecutionContext
+    githubRunId = $githubRunId
+    githubRunAttempt = $githubRunAttempt
+    githubWorkflow = $githubWorkflow
+    artifactName = $(if ($ArtifactName) { $ArtifactName } else { $null })
+    repository = $(if ($env:GITHUB_REPOSITORY) { $env:GITHUB_REPOSITORY } else { Get-OriginRepositoryName -RepositoryRoot $root })
     commitSha = $commit.Trim()
     branch = $branch.Trim()
     pullRequest = $null
@@ -141,6 +194,7 @@ $evidence = [ordered]@{
     completedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
     summary = $Summary
     changedFiles = @($changedFiles)
+    changedFileCategories = $changedFileCategories
     commandsExecuted = @($CommandsExecuted)
     commandsNotExecuted = @($CommandsNotExecuted)
     tests = @($tests)

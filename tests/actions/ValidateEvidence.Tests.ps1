@@ -154,6 +154,27 @@ Describe 'Validate evidence action' {
     }
 
     Context 'completion evidence generation' {
+        It 'marks local GitHub-hosted execution NotRun and overall NotRun' {
+            & $script:NewTempEvidence
+            $outcomes = @{
+                yaml='success'; workflow_architecture='success'; json_schemas='success'; markdown_links='success'
+                documentation='success'; contract='success'; forbidden_patterns='success'; repository_health='success'
+                powershell_parser='success'; pester='success'; psscriptanalyzer='success'; examples='success'
+                evidence_validation='success'
+            }
+            $reports = @{
+                yaml=''; workflow_architecture=''; json_schemas=''; markdown_links=''
+                documentation=''; contract=''; forbidden_patterns=''; repository_health=''
+                powershell_parser=''; pester=''; psscriptanalyzer=''; examples=''
+                evidence_validation=''; github_execution=''
+            }
+            & "$PSScriptRoot/../../scripts/New-WorkflowTestEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/local-tests.json' -Outcomes $outcomes -Reports $reports -RunPester -RunDocumentation -RunExamples -Runtime 'Local PowerShell validation' -ToolVersion 'test'
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/local-completion-result.json' -ExecutionContext Local -Summary 'Local evidence must not claim GitHub-hosted workflow execution succeeded.' -TestResultPath 'evidence/local-tests.json' -ArtifactPath @('evidence/report.json','evidence/local-tests.json') -CommandsExecuted @('local test command') -CommandsNotExecuted @('GitHub-hosted Governance CI workflow execution')
+            $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/local-completion-result.json') -Raw | ConvertFrom-Json
+            $generated.status | Should -Be 'NotRun'
+            ($generated.tests | Where-Object name -eq 'GitHub-hosted workflow execution').status | Should -Be 'NotRun'
+        }
+
         It 'computes Failed when a mandatory test failed' {
             & $script:NewTempEvidence -Status Failed -TestStatus Failed
             & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'Generated evidence should preserve failed mandatory test status.' -TestResultPath 'evidence/test-results.json' -ArtifactPath @('evidence/report.json') -CommandsExecuted @('test command')

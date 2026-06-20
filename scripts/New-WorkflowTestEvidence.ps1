@@ -11,6 +11,7 @@ param(
     [Parameter(Mandatory)][string]$OutputPath,
     [hashtable]$Outcomes = @{},
     [hashtable]$Reports = @{},
+    [hashtable]$Timings = @{},
     [switch]$RunPester,
     [switch]$RunDocumentation,
     [switch]$RunExamples,
@@ -50,6 +51,14 @@ function Get-OutcomeStatus {
     }
 
     if ([string]::IsNullOrWhiteSpace($Outcome)) { $Outcome = 'missing' }
+    if ($Outcome -eq 'notrun') {
+        return [ordered]@{
+            status = 'NotRun'
+            exitCode = 3
+            failureReason = "$Name was not performed in this execution context."
+            summary = "$Name was not run."
+        }
+    }
     $reportExists = $false
     if ($ReportPath -and (Test-RelativeEvidencePath -Path $ReportPath)) {
         $resolved = Resolve-SafePath -Root $root -ChildPath $ReportPath -AllowMissingLeaf
@@ -119,13 +128,26 @@ $definitions = @(
 
 $records = [System.Collections.Generic.List[object]]::new()
 foreach ($definition in $definitions) {
-    $started = (Get-Date).ToUniversalTime()
-    Start-Sleep -Milliseconds 5
-    $completed = (Get-Date).ToUniversalTime()
     $key = [string]$definition.key
     $report = if ($Reports.ContainsKey($key)) { [string]$Reports[$key] } else { [string]$definition.report }
-    $outcome = if ($Outcomes.ContainsKey($key)) { [string]$Outcomes[$key] } else { 'missing' }
+    $outcome = if ($Outcomes.ContainsKey($key)) { [string]$Outcomes[$key] } elseif ($key -eq 'github_execution' -and $env:GITHUB_ACTIONS -ne 'true') { 'notrun' } else { 'missing' }
     $computed = Get-OutcomeStatus -Name $definition.name -Outcome $outcome -ReportPath $report -Required ([bool]$definition.required)
+    $timing = if ($Timings.ContainsKey($key)) { $Timings[$key] } else { $null }
+    if ($timing) {
+        $started = [datetime]$timing.startedAtUtc
+        $completed = [datetime]$timing.completedAtUtc
+        $duration = [double]$timing.durationSeconds
+    }
+    else {
+        $artifactTime = $null
+        if ($report -and (Test-RelativeEvidencePath -Path $report)) {
+            $resolvedReport = Resolve-SafePath -Root $root -ChildPath $report -AllowMissingLeaf
+            if (Test-Path -LiteralPath $resolvedReport -PathType Leaf) { $artifactTime = (Get-Item -LiteralPath $resolvedReport).LastWriteTimeUtc }
+        }
+        $completed = if ($artifactTime) { [datetime]$artifactTime } else { (Get-Date).ToUniversalTime() }
+        $started = $completed
+        $duration = 0
+    }
 
     if ($AllowControlledFailure -and $key -eq 'markdown_links' -and $computed.status -eq 'Failed') {
         $computed.summary = 'Controlled failure path produced expected mandatory failure evidence.'
@@ -140,7 +162,7 @@ foreach ($definition in $definitions) {
         workingDirectory = '.'
         startedAtUtc = $started.ToString('o')
         completedAtUtc = $completed.ToString('o')
-        durationSeconds = [math]::Round(($completed - $started).TotalSeconds, 3)
+        durationSeconds = [math]::Round($duration, 3)
         runtime = $Runtime
         toolVersion = $ToolVersion
         exitCode = $computed.exitCode
