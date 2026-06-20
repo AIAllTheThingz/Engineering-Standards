@@ -419,3 +419,26 @@ Describe 'Composite action output wiring' {
         }
     }
 }
+
+Describe 'Governance workflow enforcement ordering' {
+    It 'uploads artifacts before final enforcement and validates final evidence first' {
+        $workflow = Get-Content -LiteralPath (Join-Path $script:repoRoot '.github/workflows/governance-ci-reusable.yml') -Raw
+        $ordered = @(
+            'Generate workflow test evidence',
+            'Generate completion evidence',
+            'Validate completion evidence',
+            'Finalize workflow test evidence',
+            'Generate final completion evidence',
+            'Validate final completion evidence',
+            'Upload governance evidence',
+            'Enforce mandatory governance result'
+        )
+        $last = -1
+        foreach ($name in $ordered) {
+            $index = $workflow.IndexOf("name: $name", [StringComparison]::Ordinal)
+            $index | Should -BeGreaterThan $last
+            $last = $index
+        }
+        $workflow | Should -Match "steps\.final_evidence_validation\.outcome"
+    }
+}

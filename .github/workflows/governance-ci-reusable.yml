@@ -229,9 +229,14 @@ jobs:
           $config = New-PesterConfiguration
           $config.Run.Path = 'tests'
           $config.Output.Verbosity = 'Detailed'
+          New-Item -ItemType Directory -Path .tmp -Force | Out-Null
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputPath = '.tmp/pester-results.xml'
+          $config.TestResult.OutputFormat = 'NUnitXml'
           $config.Run.PassThru = $true
           $result = Invoke-Pester -Configuration $config
           $result | Select-Object Result,PassedCount,FailedCount,SkippedCount,NotRunCount,Duration | ConvertTo-Json -Depth 10 | Set-Content evidence/pester-summary.json
+          pwsh -NoProfile -File scripts/Convert-PesterResultToSanitizedJson.ps1 -InputPath .tmp/pester-results.xml -OutputPath evidence/pester-details.json -RepositoryPath .
           if ($result.FailedCount -gt 0) { exit 1 }
 
       - name: Run PSScriptAnalyzer
@@ -312,6 +317,7 @@ jobs:
             'evidence/repository-health.json',
             'evidence/powershell-parser.json',
             'evidence/pester-summary.json',
+            'evidence/pester-details.json',
             'evidence/psscriptanalyzer.json',
             'evidence/examples.json',
             'evidence/ci-test-results.json'
@@ -389,6 +395,7 @@ jobs:
             'evidence/repository-health.json',
             'evidence/powershell-parser.json',
             'evidence/pester-summary.json',
+            'evidence/pester-details.json',
             'evidence/psscriptanalyzer.json',
             'evidence/examples.json',
             'evidence/ci-test-results.json',

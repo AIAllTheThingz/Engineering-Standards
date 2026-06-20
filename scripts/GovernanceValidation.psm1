@@ -198,7 +198,7 @@ function Test-GovernanceJsonDocument {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Path,
-        [Parameter(Mandatory)][ValidateSet('completion-result','test-evidence','artifact-record','project-manifest','governance-config')][string]$Kind
+        [Parameter(Mandatory)][ValidateSet('completion-result','test-evidence','artifact-record','project-manifest','governance-config','verified-run')][string]$Kind
     )
 
     $results = [System.Collections.Generic.List[object]]::new()
@@ -213,11 +213,12 @@ function Test-GovernanceJsonDocument {
     $risks = @('Low','Moderate','High','Critical')
     $dataClasses = @('Public','Internal','Confidential','Regulated')
     $required = switch ($Kind) {
-        'completion-result' { @('schemaVersion','executionContext','repository','commitSha','branch','pullRequest','governanceVersion','riskClassification','status','startedAtUtc','completedAtUtc','summary','changedFiles','commandsExecuted','commandsNotExecuted','tests','artifacts','warnings','knownLimitations','remainingRisks','exceptions','approvals') }
+        'completion-result' { @('schemaVersion','executionContext','repository','commitSha','validatedCommitSha','evidenceCommitSha','branch','pullRequest','governanceVersion','riskClassification','status','startedAtUtc','completedAtUtc','summary','changedFiles','commandsExecuted','commandsNotExecuted','tests','artifacts','warnings','knownLimitations','remainingRisks','exceptions','approvals') }
         'test-evidence' { @('schemaVersion','name','category','status','command','workingDirectory','startedAtUtc','completedAtUtc','durationSeconds','runtime','toolVersion','exitCode','summary','warnings','failureReason') }
         'artifact-record' { @('schemaVersion','name','artifactType','path','mediaType','sizeBytes','sha256','createdAtUtc','producer','retention','sensitivity','relatedTest') }
         'project-manifest' { @('schemaVersion','projectName','repository','description','projectType','technologies','governanceVersion','riskClassification','dataClassification','owners','environments','applicableStandards','requiredWorkflows','externalIntegrations','secretsProvider','productionApprovalRequired','evidence','exceptions') }
         'governance-config' { @('schemaVersion','manifestPath','evidencePath','requiredDocumentationPaths','applicableAgentStandards','validationCategories','additionalForbiddenPatterns','reviewedAllowlist','controls','exceptions') }
+        'verified-run' { @('schemaVersion','repository','workflow','workflowFile','runId','runAttempt','validatedCommitSha','branch','trigger','conclusion','checkName','artifactName','artifactId','artifactSha256','verifiedAtUtc','verifiedBy','controlledFailureRunId','controlledFailureConclusion','notes') }
     }
 
     foreach ($name in $required) {
@@ -245,7 +246,22 @@ function Test-GovernanceJsonDocument {
         foreach ($item in @(Test-ArtifactRecordObject -Artifact $json -Path $Path)) { $results.Add($item) }
     }
 
+    if ($Kind -eq 'verified-run') {
+        foreach ($item in @(Test-VerifiedRunObject -Run $json -Path $Path)) { $results.Add($item) }
+    }
+
     if ($Kind -eq 'completion-result') {
+        if ($json.commitSha -ne $json.validatedCommitSha) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'commitSha must match validatedCommitSha for backward compatibility.' -Path $Path))
+        }
+        foreach ($shaField in @('commitSha','validatedCommitSha')) {
+            if ($json[$shaField] -notmatch '^[A-Fa-f0-9]{40}$') {
+                $results.Add((New-ValidationResult -Status Failed -Message "$shaField must be a full 40-character commit SHA." -Path $Path))
+            }
+        }
+        if ($null -ne $json.evidenceCommitSha -and $json.evidenceCommitSha -notmatch '^[A-Fa-f0-9]{40}$') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'evidenceCommitSha must be null or a full 40-character commit SHA.' -Path $Path))
+        }
         if ($json.governanceVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$') {
             $results.Add((New-ValidationResult -Status Failed -Message 'Governance version must be semantic version format.' -Path $Path))
         }
@@ -273,6 +289,9 @@ function Test-GovernanceJsonDocument {
             if ($json.status -eq 'Passed') {
                 $results.Add((New-ValidationResult -Status Failed -Message 'Local completion evidence cannot be Passed while GitHub-hosted execution is mandatory.' -Path $Path))
             }
+        }
+        if ($json.executionContext -eq 'GitHubActions' -and $null -ne $json.evidenceCommitSha) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'GitHubActions artifact evidence must not claim a committed evidence SHA.' -Path $Path))
         }
         foreach ($item in @(Test-UniqueValues -Items @($json.changedFiles) -Name 'changedFiles' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.warnings) -Name 'warnings' -Path $Path)) { $results.Add($item) }
@@ -412,6 +431,63 @@ function Test-ArtifactRecordObject {
     @($results)
 }
 
+function Test-VerifiedRunObject {
+    <#
+    .SYNOPSIS
+    Validates verified GitHub run metadata.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]$Run,
+        [Parameter(Mandatory)][string]$Path
+    )
+
+    $results = [System.Collections.Generic.List[object]]::new()
+    if ($Run.repository -ne 'AIAllTheThingz/Engineering-Standards') {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Verified run repository must be AIAllTheThingz/Engineering-Standards.' -Path $Path))
+    }
+    if ($Run.workflow -ne 'Governance CI') {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Verified run workflow must be Governance CI.' -Path $Path))
+    }
+    if ($Run.workflowFile -ne '.github/workflows/governance-ci.yml') {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Verified run workflowFile must point to the entry workflow.' -Path $Path))
+    }
+    if ([int64]$Run.runId -le 0 -or [int64]$Run.runAttempt -le 0 -or [int64]$Run.artifactId -le 0 -or [int64]$Run.controlledFailureRunId -le 0) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Verified run IDs, attempts, and artifact IDs must be positive.' -Path $Path))
+    }
+    if ($Run.validatedCommitSha -notmatch '^[A-Fa-f0-9]{40}$') {
+        $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitSha must be a full 40-character commit SHA.' -Path $Path))
+    }
+    if ($Run.branch -ne 'master') {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Verified run branch must be master.' -Path $Path))
+    }
+    if (@('workflow_dispatch','push','pull_request','schedule') -notcontains $Run.trigger) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Verified run trigger is not allowed.' -Path $Path))
+    }
+    if (@('success','failure','cancelled','timed_out','neutral','skipped') -notcontains $Run.conclusion) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Verified run conclusion is not allowed.' -Path $Path))
+    }
+    if ($Run.conclusion -eq 'success' -and [string]::IsNullOrWhiteSpace([string]$Run.artifactName)) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Successful verified run metadata must include an artifact name.' -Path $Path))
+    }
+    if ($Run.controlledFailureConclusion -ne 'failure') {
+        $results.Add((New-ValidationResult -Status Failed -Message 'controlledFailureConclusion must be failure.' -Path $Path))
+    }
+    if ($Run.artifactSha256 -notmatch '^[A-Fa-f0-9]{64}$') {
+        $results.Add((New-ValidationResult -Status Failed -Message 'artifactSha256 must be a SHA-256 digest.' -Path $Path))
+    }
+    try {
+        [datetime]$Run.verifiedAtUtc | Out-Null
+    }
+    catch {
+        $results.Add((New-ValidationResult -Status Failed -Message 'verifiedAtUtc must be a date-time value.' -Path $Path))
+    }
+    if ([string]::IsNullOrWhiteSpace([string]$Run.verifiedBy)) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'verifiedBy must identify the verifier.' -Path $Path))
+    }
+    @($results)
+}
+
 function ConvertTo-OrderedJson {
     <#
     .SYNOPSIS
@@ -433,5 +509,6 @@ Export-ModuleMember -Function @(
     'Test-GovernanceJsonDocument',
     'Test-TestEvidenceObject',
     'Test-ArtifactRecordObject',
+    'Test-VerifiedRunObject',
     'ConvertTo-OrderedJson'
 )

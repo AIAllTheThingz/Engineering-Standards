@@ -1,0 +1,498 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAtUtc": "2026-06-20T07:21:11.1268685Z",
+  "source": "Pester NUnit XML",
+  "total": 54,
+  "passed": 54,
+  "failed": 0,
+  "skipped": 0,
+  "tests": [
+    {
+      "describe": "Forbidden pattern scan",
+      "context": "advisory mode",
+      "name": "runs without failing the repository in advisory mode",
+      "result": "Success",
+      "durationSeconds": 1.761,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Forbidden pattern scan",
+      "context": "blocking findings",
+      "name": "excludes generated evidence by default and avoids scanner-output recursion",
+      "result": "Success",
+      "durationSeconds": 0.996,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Forbidden pattern scan",
+      "context": "blocking findings",
+      "name": "includes generated evidence when requested",
+      "result": "Success",
+      "durationSeconds": 1.075,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Forbidden pattern scan",
+      "context": "blocking findings",
+      "name": "still scans source files by default",
+      "result": "Success",
+      "durationSeconds": 1.047,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Forbidden pattern scan",
+      "context": "blocking findings",
+      "name": "fails on an embedded credential assignment",
+      "result": "Success",
+      "durationSeconds": 0.966,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Forbidden pattern scan",
+      "context": "blocking findings",
+      "name": "honors an unexpired allowlist entry",
+      "result": "Success",
+      "durationSeconds": 1.016,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Forbidden pattern scan",
+      "context": "blocking findings",
+      "name": "does not honor expired allowlist entries",
+      "result": "Success",
+      "durationSeconds": 0.973,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Repository health",
+      "context": "rebuilt repository",
+      "name": "passes repository health validation",
+      "result": "Success",
+      "durationSeconds": 4.425,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Repository health",
+      "context": "rebuilt repository",
+      "name": "does not track generated build output directories",
+      "result": "Success",
+      "durationSeconds": 0.099,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Repository health",
+      "context": "invalid repository",
+      "name": "fails when required governance files are absent",
+      "result": "Success",
+      "durationSeconds": 1.532,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate contract action",
+      "context": "path safety",
+      "name": "rejects traversal",
+      "result": "Success",
+      "durationSeconds": 0.964,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate contract action",
+      "context": "valid repository",
+      "name": "passes contract validation",
+      "result": "Success",
+      "durationSeconds": 2.778,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate contract action",
+      "context": "invalid downstream repository",
+      "name": "fails when required documentation is missing",
+      "result": "Success",
+      "durationSeconds": 1.26,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate evidence action",
+      "context": "contradictory status",
+      "name": "rejects Passed evidence with NotRun tests",
+      "result": "Success",
+      "durationSeconds": 1.2,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate evidence action",
+      "context": "artifact integrity",
+      "name": "accepts a valid artifact hash and size",
+      "result": "Success",
+      "durationSeconds": 1.298,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate evidence action",
+      "context": "artifact integrity",
+      "name": "rejects an artifact hash mismatch",
+      "result": "Success",
+      "durationSeconds": 1.202,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate evidence action",
+      "context": "artifact integrity",
+      "name": "rejects a missing artifact",
+      "result": "Success",
+      "durationSeconds": 1.266,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate evidence action",
+      "context": "artifact integrity",
+      "name": "rejects incorrect artifact size",
+      "result": "Success",
+      "durationSeconds": 1.393,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate evidence action",
+      "context": "artifact integrity",
+      "name": "rejects duplicate artifact records",
+      "result": "Success",
+      "durationSeconds": 1.333,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate evidence action",
+      "context": "artifact integrity",
+      "name": "json\")",
+      "result": "Success",
+      "durationSeconds": 1.09,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate evidence action",
+      "context": "artifact integrity",
+      "name": "json\")",
+      "result": "Success",
+      "durationSeconds": 1.143,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate evidence action",
+      "context": "artifact integrity",
+      "name": "json\")",
+      "result": "Success",
+      "durationSeconds": 1.115,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate evidence action",
+      "context": "artifact integrity",
+      "name": "json\")",
+      "result": "Success",
+      "durationSeconds": 1.24,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate evidence action",
+      "context": "completion evidence generation",
+      "name": "marks local GitHub-hosted execution NotRun and overall NotRun",
+      "result": "Success",
+      "durationSeconds": 1.553,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate evidence action",
+      "context": "completion evidence generation",
+      "name": "computes Failed when a mandatory test failed",
+      "result": "Success",
+      "durationSeconds": 1.354,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Validate evidence action",
+      "context": "completion evidence generation",
+      "name": "rejects a contradictory caller-supplied status",
+      "result": "Success",
+      "durationSeconds": 1.544,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "JSON schema validation",
+      "context": "fixtures",
+      "name": "accepts valid fixtures and rejects invalid fixtures",
+      "result": "Success",
+      "durationSeconds": 1.22,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Documentation completeness",
+      "context": "repository documents",
+      "name": "passes for the rebuilt repository",
+      "result": "Success",
+      "durationSeconds": 1.746,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Documentation completeness",
+      "context": "invalid documentation",
+      "name": "fails shallow authoritative documents",
+      "result": "Success",
+      "durationSeconds": 1.95,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GitHub workflow architecture validation",
+      "context": null,
+      "name": "passes a valid one-way workflow call with a pinned action",
+      "result": "Success",
+      "durationSeconds": 1.497,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GitHub workflow architecture validation",
+      "context": null,
+      "name": "fails direct self-reference",
+      "result": "Success",
+      "durationSeconds": 1.552,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GitHub workflow architecture validation",
+      "context": null,
+      "name": "fails two-file recursion",
+      "result": "Success",
+      "durationSeconds": 1.486,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GitHub workflow architecture validation",
+      "context": null,
+      "name": "fails missing reusable workflow target",
+      "result": "Success",
+      "durationSeconds": 1.304,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GitHub workflow architecture validation",
+      "context": null,
+      "name": "fails a reusable workflow target missing workflow_call",
+      "result": "Success",
+      "durationSeconds": 1.468,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GitHub workflow architecture validation",
+      "context": null,
+      "name": "fails unsupported inputs passed to reusable workflow",
+      "result": "Success",
+      "durationSeconds": 1.418,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GitHub workflow architecture validation",
+      "context": null,
+      "name": "fails unpinned third-party action references",
+      "result": "Success",
+      "durationSeconds": 1.514,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GitHub workflow architecture validation",
+      "context": null,
+      "name": "fails broad permissions",
+      "result": "Success",
+      "durationSeconds": 1.298,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GitHub workflow architecture validation",
+      "context": null,
+      "name": "fails default branch trigger mismatch",
+      "result": "Success",
+      "durationSeconds": 1.215,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GitHub workflow architecture validation",
+      "context": null,
+      "name": "fails invalid local reusable workflow locations",
+      "result": "Success",
+      "durationSeconds": 1.231,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GitHub workflow architecture validation",
+      "context": null,
+      "name": "treats valid root distribution templates as informational",
+      "result": "Success",
+      "durationSeconds": 1.779,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GitHub workflow architecture validation",
+      "context": null,
+      "name": "fails a mislabeled root distribution template",
+      "result": "Success",
+      "durationSeconds": 1.684,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Composite action output wiring",
+      "context": null,
+      "name": "passes validate-evidence inputs and writes declared outputs safely",
+      "result": "Success",
+      "durationSeconds": 0.014,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Composite action output wiring",
+      "context": null,
+      "name": "writes declared outputs in all composite action definitions",
+      "result": "Success",
+      "durationSeconds": 0.024,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Governance workflow enforcement ordering",
+      "context": null,
+      "name": "uploads artifacts before final enforcement and validates final evidence first",
+      "result": "Success",
+      "durationSeconds": 0.016,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GovernanceValidation module",
+      "context": "safe path resolution",
+      "name": "resolves a child path inside the root",
+      "result": "Success",
+      "durationSeconds": 0.014,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GovernanceValidation module",
+      "context": "safe path resolution",
+      "name": "rejects traversal outside the root",
+      "result": "Success",
+      "durationSeconds": 0.042,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GovernanceValidation module",
+      "context": "test evidence semantics",
+      "name": "accepts NotRun evidence with policy exit code 3",
+      "result": "Success",
+      "durationSeconds": 0.053,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GovernanceValidation module",
+      "context": "test evidence semantics",
+      "name": "accepts valid Passed test evidence",
+      "result": "Success",
+      "durationSeconds": 0.006,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "GovernanceValidation module",
+      "context": "manifest semantics",
+      "name": "requires production approval for High risk manifests",
+      "result": "Success",
+      "durationSeconds": 0.037,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Markdown link validation",
+      "context": "relative links",
+      "name": "passes for repository markdown",
+      "result": "Success",
+      "durationSeconds": 1.188,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Pester result conversion",
+      "context": null,
+      "name": "converts passing, failing, and skipped tests while sanitizing paths and secret-like output",
+      "result": "Success",
+      "durationSeconds": 1.1,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Pester result conversion",
+      "context": null,
+      "name": "fails missing and malformed XML",
+      "result": "Success",
+      "durationSeconds": 2.406,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Workflow evidence artifact verification",
+      "context": null,
+      "name": "accepts a valid successful artifact",
+      "result": "Success",
+      "durationSeconds": 1.084,
+      "failureMessage": null,
+      "stackTrace": null
+    },
+    {
+      "describe": "Workflow evidence artifact verification",
+      "context": null,
+      "name": "rejects wrong commit, wrong run id, modified file, absolute path, and unexpected executable",
+      "result": "Success",
+      "durationSeconds": 1.072,
+      "failureMessage": null,
+      "stackTrace": null
+    }
+  ]
+}
+

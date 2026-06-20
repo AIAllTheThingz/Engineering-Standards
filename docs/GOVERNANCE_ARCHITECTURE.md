@@ -50,9 +50,17 @@ Pull-request content, filenames, configuration, evidence, and generated artifact
 
 Mandatory failures return nonzero. The reusable workflow generates evidence with `if: always()` and uploads validation reports even when a mandatory step fails. Missing tools are `NotRun` and must be shown in evidence; mandatory local workflow validation includes YAML syntax and workflow architecture checks.
 
+The workflow ordering is validation steps, initial test evidence, initial completion evidence, initial evidence validation, final test evidence, final completion evidence, final evidence validation, artifact upload, then final enforcement. Success requires all mandatory steps, final evidence validation, and artifact upload to pass. Controlled failure runs intentionally fail only after failure evidence is generated, evidence validates, and the artifact uploads.
+
 ## Reusable Inputs And Outputs
 
 Inputs are `project-path`, `governance-version`, `run-examples`, `run-pester`, `run-documentation-validation`, and `artifact-retention-days`. Outputs are `evidence-path` and `artifact-name`. Artifact uploads include validation reports, scanner reports, Pester output, and completion evidence.
+
+Pester output is split into `pester-summary.json` and sanitized `pester-details.json`. Raw Pester XML is generated only as a temporary conversion input and is not uploaded unless it passes path-sanitization validation.
+
+Generated evidence, build output, package directories, coverage, and test result folders are excluded from ordinary forbidden-pattern scans. `-IncludeGeneratedEvidence` exists for explicit diagnostic scans.
+
+Completion evidence uses `validatedCommitSha` for the validated repository content and `evidenceCommitSha` for checked-in evidence files when supplied. GitHub artifact evidence leaves `evidenceCommitSha` null and is tied to `githubRunId` plus `githubRunAttempt`.
 
 ## Governance Operating Requirements
 

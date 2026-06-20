@@ -9,6 +9,8 @@
     "executionContext",
     "repository",
     "commitSha",
+    "validatedCommitSha",
+    "evidenceCommitSha",
     "branch",
     "pullRequest",
     "governanceVersion",
@@ -77,7 +79,18 @@
     },
     "commitSha": {
       "type": "string",
-      "pattern": "^([A-Fa-f0-9]{40}|unknown)$"
+      "pattern": "^[A-Fa-f0-9]{40}$"
+    },
+    "validatedCommitSha": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{40}$"
+    },
+    "evidenceCommitSha": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Fa-f0-9]{40}$"
     },
     "branch": {
       "type": "string",

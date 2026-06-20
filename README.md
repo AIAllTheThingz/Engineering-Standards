@@ -205,10 +205,16 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 ## Release Readiness Notes
 
 - Local checked-in evidence is stored in `evidence/local-completion-result.json`; GitHub-hosted completion evidence is stored in workflow artifacts.
-- Local YAML parser validation is not configured and is recorded honestly as `NotRun`.
-- PSScriptAnalyzer is not installed locally and is recorded honestly as `NotRun`.
+- `commitSha` and `validatedCommitSha` identify the repository commit that was validated. `evidenceCommitSha` identifies the commit containing a checked-in evidence file when that value is intentionally recorded. GitHub artifact evidence leaves `evidenceCommitSha` null because the artifact is not committed.
+- Local evidence remains `NotRun` overall when GitHub-hosted execution was not performed locally. It is not authoritative proof of a GitHub run.
+- `evidence/latest-verified-run.json` records metadata for the most recently downloaded and independently verified GitHub success artifact plus the controlled-failure run.
+- To trigger the success proof run: `gh workflow run "Governance CI" --ref master -f controlled-failure-test=false -f run-examples=true -f run-pester=true -f run-documentation-validation=true`.
+- To trigger the controlled failure proof run: `gh workflow run "Governance CI" --ref master -f controlled-failure-test=true`.
+- Download workflow evidence with `gh run download <run-id> --name governance-evidence-<run-id> --dir <safe-temp-dir>` and verify it with `scripts/Test-WorkflowEvidenceArtifact.ps1`.
+- Forbidden-pattern scanning excludes generated evidence and build output by default. Use `-IncludeGeneratedEvidence` only for diagnostics.
+- Detailed Pester audit evidence is stored as sanitized JSON in `evidence/pester-details.json`; raw Pester XML is temporary and is not uploaded.
+- Final workflow enforcement occurs after final evidence validation and artifact upload, so controlled failures still produce downloadable evidence.
 - Branch protection must still be verified in GitHub settings because local file validation cannot prove repository settings.
-- Functional examples beyond PowerShell remain future work.
 
 ## Related Documents
 

@@ -47,7 +47,7 @@ if ($Category -contains 'Examples') {
         Invoke-ValidationCommand "Example $($example.Name)" (Join-Path $root 'actions/validate-contract/Invoke-ContractValidation.ps1') @('-Path',$example.FullName)
     }
 }
-if ($Category -contains 'Evidence' -and (Test-Path (Join-Path $root 'evidence/completion-result.json'))) { Invoke-ValidationCommand Evidence (Join-Path $root 'actions/validate-evidence/Invoke-EvidenceValidation.ps1') @('-Path',$root,'-EvidencePath','evidence/completion-result.json') }
+if ($Category -contains 'Evidence' -and (Test-Path (Join-Path $root 'evidence/local-completion-result.json'))) { Invoke-ValidationCommand Evidence (Join-Path $root 'actions/validate-evidence/Invoke-EvidenceValidation.ps1') @('-Path',$root,'-EvidencePath','evidence/local-completion-result.json') }
 $failed = @($items | Where-Object status -eq 'Failed').Count
 $report = [ordered]@{ generatedAtUtc=(Get-Date).ToUniversalTime().ToString('o'); results=@($items); failed=$failed }
 if ($OutputJson) { $report | ConvertTo-OrderedJson | Set-Content -LiteralPath $OutputJson -Encoding utf8 }

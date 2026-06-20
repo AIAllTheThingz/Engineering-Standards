@@ -279,6 +279,28 @@ Evidence validation MUST fail when required fields are missing, timestamps are i
 
 When evidence validation fails, maintainers MUST correct the evidence or downgrade the completion claim. They MUST NOT edit validation scripts, delete records, or reclassify tests merely to obtain a successful result.
 
+## Commit Semantics
+
+Completion evidence distinguishes the commit that was validated from the commit that contains the evidence record.
+
+- `validatedCommitSha` is the repository commit whose contents were validated.
+- `commitSha` is retained for compatibility and MUST match `validatedCommitSha`.
+- `evidenceCommitSha` is the commit containing a checked-in evidence file when that relationship is intentionally recorded. It MAY be null to avoid infinite evidence-regeneration commits.
+- When `evidenceCommitSha` is supplied, `validatedCommitSha` MUST be an ancestor of or equal to it.
+- GitHub Actions artifact evidence MUST use `executionContext: GitHubActions`, MUST set `validatedCommitSha` to `GITHUB_SHA`, and MUST leave `evidenceCommitSha` null.
+
+Checked-in local evidence is not authoritative proof of GitHub execution. It may remain overall `NotRun` because GitHub-hosted execution, controlled-failure execution, and artifact verification occur outside the local context.
+
+## Verified Run Metadata
+
+`evidence/latest-verified-run.json` stores metadata for the most recently downloaded and independently verified GitHub evidence artifact. It records run IDs, artifact IDs, artifact ZIP hash, branch, trigger, conclusion, controlled-failure run, verifier, and verification timestamp. It MUST NOT store temporary artifact URLs, credentials, or copied artifact payloads.
+
+## Pester And Scanner Evidence
+
+Detailed Pester evidence MUST be sanitized before upload. `evidence/pester-details.json` preserves individual test results while replacing repository, runner, user-profile, and temporary absolute paths. Raw XML is temporary unless it passes the same sanitization checks.
+
+Forbidden-pattern scanning excludes generated evidence and build output by default so scanner reports do not recursively scan their own prior findings. Maintainers may use `-IncludeGeneratedEvidence` only for targeted diagnostics.
+
 ## Related Documents
 
 - [ORGANIZATION_CONTRACT.md](ORGANIZATION_CONTRACT.md)

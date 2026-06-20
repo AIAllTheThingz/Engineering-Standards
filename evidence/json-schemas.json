@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-20T06:46:42.4502796Z",
+  "generatedAtUtc": "2026-06-20T07:19:48.1260721Z",
   "results": [
     {
       "status": "Passed",
@@ -34,6 +34,13 @@
       "severity": "info",
       "message": "Schema parsed and declares required metadata.",
       "path": "schemas\\test-evidence.schema.json",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Schema parsed and declares required metadata.",
+      "path": "schemas\\verified-run.schema.json",
       "data": null
     },
     {
@@ -74,6 +81,13 @@
     {
       "status": "Passed",
       "severity": "info",
+      "message": "Valid fixture accepted.",
+      "path": "tests\\fixtures\\valid\\verified-run.json",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
       "message": "Invalid fixture rejected as expected.",
       "path": "tests\\fixtures\\invalid\\artifact-record.json",
       "data": [
@@ -92,6 +106,13 @@
       "message": "Invalid fixture rejected as expected.",
       "path": "tests\\fixtures\\invalid\\completion-result.json",
       "data": [
+        {
+          "status": "Failed",
+          "severity": "error",
+          "message": "commitSha must match validatedCommitSha for backward compatibility.",
+          "path": "tests\\fixtures\\invalid\\completion-result.json",
+          "data": null
+        },
         {
           "status": "Failed",
           "severity": "error",
@@ -156,6 +177,35 @@
           "severity": "error",
           "message": "Unknown status 'Green'.",
           "path": "tests\\fixtures\\invalid\\test-evidence.json",
+          "data": null
+        }
+      ]
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Invalid fixture rejected as expected.",
+      "path": "tests\\fixtures\\invalid\\verified-run.json",
+      "data": [
+        {
+          "status": "Failed",
+          "severity": "error",
+          "message": "Verified run IDs, attempts, and artifact IDs must be positive.",
+          "path": "tests\\fixtures\\invalid\\verified-run.json",
+          "data": null
+        },
+        {
+          "status": "Failed",
+          "severity": "error",
+          "message": "Verified run branch must be master.",
+          "path": "tests\\fixtures\\invalid\\verified-run.json",
+          "data": null
+        },
+        {
+          "status": "Failed",
+          "severity": "error",
+          "message": "artifactSha256 must be a SHA-256 digest.",
+          "path": "tests\\fixtures\\invalid\\verified-run.json",
           "data": null
         }
       ]

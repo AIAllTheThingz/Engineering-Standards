@@ -6,7 +6,7 @@
   "githubWorkflow": null,
   "artifactName": null,
   "repository": "AIAllTheThingz/Engineering-Standards",
-  "commitSha": "unknown",
+  "commitSha": "1111111111111111111111111111111111111111",
   "branch": "master",
   "pullRequest": null,
   "governanceVersion": "1.0.0",
@@ -71,5 +71,7 @@
   "knownLimitations": [],
   "remainingRisks": [],
   "exceptions": [],
-  "approvals": []
+  "approvals": [],
+  "validatedCommitSha": "1111111111111111111111111111111111111111",
+  "evidenceCommitSha": null
 }

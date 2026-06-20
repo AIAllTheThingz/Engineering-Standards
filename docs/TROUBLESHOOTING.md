@@ -83,6 +83,27 @@ uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusa
 
 Entry workflows should call reusable workflows. Reusable workflows should not call entry workflows.
 
+For final evidence verification, trigger a success run with:
+
+```powershell
+gh workflow run "Governance CI" --ref master -f controlled-failure-test=false -f run-examples=true -f run-pester=true -f run-documentation-validation=true
+```
+
+Trigger a controlled failure run with:
+
+```powershell
+gh workflow run "Governance CI" --ref master -f controlled-failure-test=true
+```
+
+Download evidence into a temporary directory and verify it without extracting over the repository:
+
+```powershell
+gh run download <run-id> --name governance-evidence-<run-id> --dir <safe-temp-dir>
+pwsh -NoProfile -File scripts/Test-WorkflowEvidenceArtifact.ps1 -ArtifactPath <safe-temp-dir> -ExpectedRepository AIAllTheThingz/Engineering-Standards -ExpectedCommitSha <sha> -ExpectedBranch master -ExpectedRunId <run-id> -ExpectedConclusion success
+```
+
+`evidence/latest-verified-run.json` is metadata for the most recent independently verified success artifact and controlled-failure run. It is not a copy of the artifact.
+
 ## Pester Failures
 
 Pester failures indicate validator behavior changed or a regression was introduced. Read the failing test name before changing implementation. If a test is obsolete because governance policy changed, update the policy, validator, and test together.
@@ -92,6 +113,10 @@ Run:
 ```powershell
 pwsh -NoProfile -Command "Invoke-Pester -Path tests -Output Detailed"
 ```
+
+Workflow artifacts include sanitized Pester detail in `evidence/pester-details.json`. If that file contains runner, user-profile, repository-root, or temporary absolute paths, fix `scripts/Convert-PesterResultToSanitizedJson.ps1` before trusting the artifact.
+
+If forbidden-pattern output appears to recursively report old scanner findings, confirm the scan excluded generated evidence. Use `-IncludeGeneratedEvidence` only when intentionally diagnosing evidence output.
 
 ## YAML Parsing Gaps
 

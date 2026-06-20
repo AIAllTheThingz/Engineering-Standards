@@ -12,6 +12,21 @@ on:
         type: boolean
         required: false
         default: false
+      run-examples:
+        description: Run mandatory example-project validation.
+        type: boolean
+        required: false
+        default: true
+      run-pester:
+        description: Run mandatory Pester validation.
+        type: boolean
+        required: false
+        default: true
+      run-documentation-validation:
+        description: Run mandatory documentation validation.
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: read
@@ -24,3 +39,6 @@ jobs:
       project-path: .
       governance-version: 1.0.0
       controlled-failure-test: ${{ inputs.controlled-failure-test || false }}
+      run-examples: ${{ github.event_name != 'workflow_dispatch' || inputs.run-examples }}
+      run-pester: ${{ github.event_name != 'workflow_dispatch' || inputs.run-pester }}
+      run-documentation-validation: ${{ github.event_name != 'workflow_dispatch' || inputs.run-documentation-validation }}

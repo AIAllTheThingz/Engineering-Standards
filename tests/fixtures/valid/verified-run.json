@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0.0",
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "workflow": "Governance CI",
+  "workflowFile": ".github/workflows/governance-ci.yml",
+  "runId": 1,
+  "runAttempt": 1,
+  "validatedCommitSha": "1111111111111111111111111111111111111111",
+  "branch": "master",
+  "trigger": "workflow_dispatch",
+  "conclusion": "success",
+  "checkName": "Governance validation",
+  "artifactName": "governance-evidence-1",
+  "artifactId": 1,
+  "artifactSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "verifiedAtUtc": "2026-06-20T00:00:00Z",
+  "verifiedBy": "Codex",
+  "controlledFailureRunId": 2,
+  "controlledFailureConclusion": "failure",
+  "notes": [
+    "Fixture metadata only."
+  ]
+}

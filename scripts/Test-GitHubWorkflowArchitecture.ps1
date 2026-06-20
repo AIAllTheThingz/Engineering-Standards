@@ -282,6 +282,33 @@ if ($workflows.ContainsKey($reusable)) {
             $results.Add((New-ValidationResult -Status Failed -Message "Reusable governance workflow is missing input '$inputName'." -Path $reusable))
         }
     }
+    if (Test-Path -LiteralPath (Join-Path $root 'project-manifest.json') -PathType Leaf) {
+        $steps = @()
+        if ($workflows[$reusable].ContainsKey('jobs') -and $workflows[$reusable].jobs.ContainsKey('governance')) {
+            $steps = @($workflows[$reusable].jobs.governance.steps | ForEach-Object { if ($_ -is [hashtable] -and $_.ContainsKey('name')) { [string]$_.name } })
+        }
+        $requiredOrder = @(
+            'Generate workflow test evidence',
+            'Generate completion evidence',
+            'Validate completion evidence',
+            'Finalize workflow test evidence',
+            'Generate final completion evidence',
+            'Validate final completion evidence',
+            'Upload governance evidence',
+            'Enforce mandatory governance result'
+        )
+        $lastIndex = -1
+        foreach ($stepName in $requiredOrder) {
+            $index = [array]::IndexOf($steps, $stepName)
+            if ($index -lt 0) {
+                $results.Add((New-ValidationResult -Status Failed -Message "Reusable governance workflow is missing ordered step '$stepName'." -Path $reusable))
+            }
+            elseif ($index -le $lastIndex) {
+                $results.Add((New-ValidationResult -Status Failed -Message "Reusable governance workflow step '$stepName' is out of order." -Path $reusable))
+            }
+            $lastIndex = $index
+        }
+    }
 }
 else {
     $results.Add((New-ValidationResult -Status Failed -Message 'Reusable governance workflow is missing.' -Path $reusable))

@@ -38,8 +38,30 @@ if ($results.Count -eq 0) {
 
 if (-not @($results | Where-Object status -eq 'Failed')) {
     $evidence = Read-JsonFile -Path $full
-    if ($ExpectedCommitSha -and $evidence.commitSha -ne $ExpectedCommitSha) {
+    $validatedSha = if ($evidence.validatedCommitSha) { [string]$evidence.validatedCommitSha } else { [string]$evidence.commitSha }
+    $evidenceSha = if ($evidence.evidenceCommitSha) { [string]$evidence.evidenceCommitSha } else { $null }
+    if ($evidence.commitSha -ne $validatedSha) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'commitSha must match validatedCommitSha.' -Path $EvidencePath))
+    }
+    if ($ExpectedCommitSha -and $validatedSha -ne $ExpectedCommitSha) {
         $results.Add((New-ValidationResult -Status Failed -Message 'Commit SHA mismatch.' -Path $EvidencePath))
+    }
+    & git -C $root rev-parse --is-inside-work-tree 2>$null | Out-Null
+    $hasGitRepository = ($LASTEXITCODE -eq 0)
+    if ($hasGitRepository) {
+        foreach ($shaCheck in @(@{ name='validatedCommitSha'; value=$validatedSha }, @{ name='evidenceCommitSha'; value=$evidenceSha })) {
+            if (-not $shaCheck.value) { continue }
+            & git -C $root cat-file -e "$($shaCheck.value)^{commit}" 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                $results.Add((New-ValidationResult -Status Failed -Message "$($shaCheck.name) does not exist in this repository." -Path $EvidencePath))
+            }
+        }
+        if ($validatedSha -and $evidenceSha) {
+            & git -C $root merge-base --is-ancestor $validatedSha $evidenceSha 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitSha must be an ancestor of or equal to evidenceCommitSha.' -Path $EvidencePath))
+            }
+        }
     }
     $repositoryToCheck = if ($ExpectedRepository) { $ExpectedRepository } else { $env:GITHUB_REPOSITORY }
     if ($repositoryToCheck -and $evidence.repository -ne $repositoryToCheck) {
@@ -63,6 +85,9 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
         }
     }
     elseif ($evidence.executionContext -eq 'GitHubActions') {
+        if ($evidenceSha) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'GitHubActions artifact evidence must have null evidenceCommitSha.' -Path $EvidencePath))
+        }
         if (-not $evidence.githubRunId -or -not $evidence.githubRunAttempt -or -not $evidence.githubWorkflow) {
             $results.Add((New-ValidationResult -Status Failed -Message 'GitHubActions evidence must include run id, run attempt, and workflow name.' -Path $EvidencePath))
         }

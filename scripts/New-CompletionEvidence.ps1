@@ -49,7 +49,9 @@ param(
     [Alias('ExecutionContext')]
     [ValidateSet('Local','GitHubActions','PullRequest','Scheduled','Release')]
     [string]$EvidenceExecutionContext = $(if ($env:GITHUB_ACTIONS -eq 'true') { 'GitHubActions' } else { 'Local' }),
-    [string]$ArtifactName
+    [string]$ArtifactName,
+    [string]$ValidatedCommitSha,
+    [AllowNull()][string]$EvidenceCommitSha = $null
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -161,6 +163,7 @@ if (-not $commit) {
     $commit = (& git -C $root rev-parse HEAD 2>$null)
     if ($LASTEXITCODE -ne 0 -or -not $commit) { $commit = 'unknown' }
 }
+$validatedCommit = if ($ValidatedCommitSha) { $ValidatedCommitSha } else { $commit }
 $branch = $env:GITHUB_REF_NAME
 if (-not $branch) {
     $branch = (& git -C $root branch --show-current 2>$null)
@@ -184,7 +187,9 @@ $evidence = [ordered]@{
     githubWorkflow = $githubWorkflow
     artifactName = $(if ($ArtifactName) { $ArtifactName } else { $null })
     repository = $(if ($env:GITHUB_REPOSITORY) { $env:GITHUB_REPOSITORY } else { Get-OriginRepositoryName -RepositoryRoot $root })
-    commitSha = $commit.Trim()
+    commitSha = $validatedCommit.Trim()
+    validatedCommitSha = $validatedCommit.Trim()
+    evidenceCommitSha = $(if ($EvidenceCommitSha) { $EvidenceCommitSha.Trim() } else { $null })
     branch = $branch.Trim()
     pullRequest = $null
     governanceVersion = $GovernanceVersion

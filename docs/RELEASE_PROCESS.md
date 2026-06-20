@@ -64,6 +64,12 @@ Generate completion evidence after validation. Evidence must include the validat
 
 For release artifacts, include artifact hashes. For manual approvals, include reviewer identity, approval location, and approval date.
 
+For governance workflow releases, verify both the success path and controlled-failure path in GitHub Actions. The success run must use `workflow_dispatch` on `master` with mandatory examples, Pester, and documentation validation enabled. The controlled-failure run must use `controlled-failure-test=true` and must fail only after evidence validation and artifact upload.
+
+Download both evidence artifacts into isolated temporary directories, verify them with `scripts/Test-WorkflowEvidenceArtifact.ps1`, and record the successful artifact ZIP SHA-256 plus controlled-failure run metadata in `evidence/latest-verified-run.json`.
+
+`validatedCommitSha` identifies the commit validated by the workflow. `evidenceCommitSha` identifies a commit containing checked-in local evidence when supplied. Do not require those fields to be equal for checked-in local evidence.
+
 ## Security Review
 
 Security review is mandatory when the release changes GitHub Actions, PowerShell scripts, secret scanning, dependency controls, branch protection, authentication standards, infrastructure standards, database standards, or AI-generated code policy.
@@ -75,6 +81,8 @@ The reviewer MUST check for excessive permissions, untrusted input execution, un
 Release approval requires passing mandatory checks or documented approved exceptions. A maintainer must verify that release notes, versioning, evidence, and migration guidance agree.
 
 Do not approve a release when evidence contradicts the stated status, required files are missing, mandatory controls are disabled without exception, or a known secret exposure is unresolved.
+
+Do not approve a workflow-evidence release until `latest-verified-run.json` validates, the success artifact hash is independently recorded, the controlled-failure artifact is downloadable, absolute-path scans pass, secret-pattern scans pass, and sanitized Pester details are present.
 
 ## Tagging
 

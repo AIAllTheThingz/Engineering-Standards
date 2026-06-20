@@ -53,6 +53,8 @@ Reusable workflows MUST use least-privilege permissions, pinned third-party acti
 
 Entry workflows should call reusable workflows. Reusable workflows must not call entry workflows. Avoid circular invocation and avoid branch filters that exclude the repository's active protected branch.
 
+Final enforcement MUST run after final test evidence, final completion evidence, final evidence validation, and artifact upload. A controlled failure must still upload evidence before enforcement fails the job.
+
 ## Template Maintenance
 
 Templates must be usable as starting points, not decorative examples. Repository templates must prompt for owners, risk, evidence, validation commands, rollback, security reporting, and exceptions. Issue and pull request templates must collect enough information for maintainers to triage without asking for secrets.
@@ -64,6 +66,12 @@ Template placeholders are allowed inside `templates/`, but they must be explicit
 Every substantive pull request MUST refresh completion evidence or explain why evidence is intentionally unchanged. Evidence is generated after validation, records actual outcomes, and includes skipped or blocked checks honestly.
 
 Maintainers MUST reject evidence that claims success without commands, exit codes, scope, timestamps, or reviewer context. Contradictory evidence is a governance failure.
+
+Checked-in local evidence and GitHub artifact evidence have different authority. Local evidence records the local execution context and may remain `NotRun` for GitHub-hosted execution. GitHub artifact evidence is authoritative only after a real workflow run, artifact download, independent hash verification, metadata verification, absolute-path scan, and secret-pattern scan.
+
+Use `validatedCommitSha` for the commit validated by commands. Use `evidenceCommitSha` only when recording the commit that contains a checked-in evidence file. Do not repeatedly regenerate evidence solely to make those fields equal.
+
+After proving a workflow run, update `evidence/latest-verified-run.json` with metadata only: run ID, attempt, artifact ID, artifact ZIP SHA-256, validated commit, controlled-failure run, verification timestamp, and verifier.
 
 ## Release Preparation
 

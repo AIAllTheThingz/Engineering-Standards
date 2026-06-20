@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aiallthethingz.example/engineering-standards/verified-run.schema.json",
+  "title": "Verified Run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "repository",
+    "workflow",
+    "workflowFile",
+    "runId",
+    "runAttempt",
+    "validatedCommitSha",
+    "branch",
+    "trigger",
+    "conclusion",
+    "checkName",
+    "artifactName",
+    "artifactId",
+    "artifactSha256",
+    "verifiedAtUtc",
+    "verifiedBy",
+    "controlledFailureRunId",
+    "controlledFailureConclusion",
+    "notes"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "pattern": "^1\\.0\\.0$" },
+    "repository": { "type": "string", "const": "AIAllTheThingz/Engineering-Standards" },
+    "workflow": { "type": "string", "const": "Governance CI" },
+    "workflowFile": { "type": "string", "const": ".github/workflows/governance-ci.yml" },
+    "runId": { "type": "integer", "minimum": 1 },
+    "runAttempt": { "type": "integer", "minimum": 1 },
+    "validatedCommitSha": { "type": "string", "pattern": "^[A-Fa-f0-9]{40}$" },
+    "branch": { "type": "string", "const": "master" },
+    "trigger": { "type": "string", "enum": [ "workflow_dispatch", "push", "pull_request", "schedule" ] },
+    "conclusion": { "type": "string", "enum": [ "success", "failure", "cancelled", "timed_out", "neutral", "skipped" ] },
+    "checkName": { "type": "string", "minLength": 3 },
+    "artifactName": { "type": "string", "minLength": 3 },
+    "artifactId": { "type": "integer", "minimum": 1 },
+    "artifactSha256": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" },
+    "verifiedAtUtc": { "type": "string", "format": "date-time" },
+    "verifiedBy": { "type": "string", "minLength": 2 },
+    "controlledFailureRunId": { "type": "integer", "minimum": 1 },
+    "controlledFailureConclusion": { "type": "string", "const": "failure" },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

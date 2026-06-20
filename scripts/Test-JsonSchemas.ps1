@@ -41,6 +41,7 @@ $map = @{
     'artifact-record' = 'artifact-record'
     'project-manifest' = 'project-manifest'
     'governance-config' = 'governance-config'
+    'verified-run' = 'verified-run'
 }
 foreach ($mode in @('valid','invalid')) {
     $fixtureRoot = Join-Path $root "tests/fixtures/$mode"

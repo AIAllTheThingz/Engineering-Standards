@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-20T06:46:54.1068917Z",
+  "generatedAtUtc": "2026-06-20T07:19:55.5633983Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -7,8 +7,93 @@
   "patternFile": "actions/forbidden-pattern-scan/forbidden-patterns.json",
   "allowlistFile": null,
   "advisory": false,
-  "scannedFiles": 197,
-  "skippedFiles": [],
+  "scannedFiles": 185,
+  "skippedFiles": [
+    {
+      "path": ".tmp/pester-results.xml",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/aggregate-governance.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/contract.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/dependencies.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/documentation-completeness.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/environment.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/evidence-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/examples.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/forbidden-patterns.json",
+      "reason": "scanner-output"
+    },
+    {
+      "path": "evidence/json-schemas.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/local-completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/local-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/markdown-links.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/pester-details.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/pester-summary.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/powershell-parser.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/psscriptanalyzer.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/repository-health.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/workflow-architecture.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/yaml-syntax.json",
+      "reason": "excluded-path"
+    }
+  ],
   "findings": [
     {
       "patternId": "pull-request-target",
@@ -77,448 +162,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/RELEASE_PROCESS.md",
-      "line": 71,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 18,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 54,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 63,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 72,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 81,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 90,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 99,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 108,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 117,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 126,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 135,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 144,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 153,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 162,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 171,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 180,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 189,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 198,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 207,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 216,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 225,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 234,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 243,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 252,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 261,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 270,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 279,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 288,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 297,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 306,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 315,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 324,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 333,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 342,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 351,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 360,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 369,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 378,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 387,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 396,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 405,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 414,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 423,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 432,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 441,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 450,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 459,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 477,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "evidence/forbidden-patterns.json",
-      "line": 486,
+      "line": 77,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -552,6 +196,6 @@
     }
   ],
   "failed": 0,
-  "warnings": 60
+  "warnings": 11
 }
 

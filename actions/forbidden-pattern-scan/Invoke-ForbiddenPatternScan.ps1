@@ -10,7 +10,9 @@ param(
     [string]$PatternFile,
     [string]$AllowlistFile,
     [string]$OutputJson,
-    [switch]$Advisory
+    [switch]$Advisory,
+    [switch]$IncludeGeneratedEvidence,
+    [switch]$ExcludeTestFixtures
 )
 
 Set-StrictMode -Version Latest
@@ -34,7 +36,10 @@ $findings = [System.Collections.Generic.List[object]]::new()
 $skipped = [System.Collections.Generic.List[object]]::new()
 $scanned = 0
 $maxBytes = 1048576
-$excludedPathPattern = '\\.git\\|/\\.git/|node_modules|packages[/\\]|bin[/\\]|obj[/\\]|dist[/\\]|TestResults'
+$excludedPathPattern = '(^|/)(\.git|\.tmp|node_modules|packages|bin|obj|dist|TestResults|coverage)(/|$)'
+if (-not $IncludeGeneratedEvidence) {
+    $excludedPathPattern = $excludedPathPattern + '|^evidence/'
+}
 
 function Test-AllowlistedFinding {
     param(
@@ -66,6 +71,14 @@ function Get-RedactedSnippet {
 foreach ($file in Get-ChildItem -LiteralPath $root -Recurse -File) {
     $relative = [System.IO.Path]::GetRelativePath($root, $file.FullName).Replace('\','/')
     if ($relative -eq 'actions/forbidden-pattern-scan/forbidden-patterns.json') { continue }
+    if ($OutputJson -and $relative -eq $OutputJson.Replace('\','/')) {
+        $skipped.Add([ordered]@{ path = $relative; reason = 'scanner-output' })
+        continue
+    }
+    if ($ExcludeTestFixtures -and $relative -match '(^|/)(tests|test|fixtures)(/|$)') {
+        $skipped.Add([ordered]@{ path = $relative; reason = 'test-fixture-excluded' })
+        continue
+    }
     if ($relative -match $excludedPathPattern) {
         $skipped.Add([ordered]@{ path = $relative; reason = 'excluded-path' })
         continue
