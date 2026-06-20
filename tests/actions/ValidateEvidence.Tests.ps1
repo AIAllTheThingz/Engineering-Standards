@@ -160,7 +160,7 @@ Describe 'Validate evidence action' {
                 yaml='success'; workflow_architecture='success'; json_schemas='success'; markdown_links='success'
                 documentation='success'; contract='success'; forbidden_patterns='success'; repository_health='success'
                 powershell_parser='success'; pester='success'; psscriptanalyzer='success'; examples='success'
-                evidence_validation='success'
+                evidence_validation='success'; github_execution='notrun'
             }
             $reports = @{
                 yaml=''; workflow_architecture=''; json_schemas=''; markdown_links=''
