@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Status | Active |
-| Version | 1.1.0 |
+| Version | 1.1.1 |
 | Owner role | Engineering Standards Maintainers |
 | Last reviewed | 2026-06-20 |
 | Changelog | See [../CHANGELOG.md](../CHANGELOG.md). |
@@ -119,9 +119,51 @@ Agents MUST enforce:
 
 If a build requires private feeds, workloads, native dependencies, certificates, or environment services, evidence MUST record the requirement and the command status honestly.
 
+## Validation Commands
+
+Repository-root [../AGENTS.md](../AGENTS.md) is the source of truth for repository validation commands. The commands in this section are safe examples for .NET work and apply conditionally based on the repository's actual SDK, solution, project, package lockfile, test, browser, IIS, container, OpenAPI, and database configuration.
+
+Evidence MUST record exact commands, working directory, exit codes, status, and summary. Unsupported commands, unavailable tools, missing SDKs, private feeds, absent browsers, missing IIS hosts, unavailable container runtimes, or unavailable databases MUST be reported as `NotRun` or `Blocked` with the exact reason. Agents MUST NOT claim a check passed when it did not run.
+
+Repository-governance validation MUST use the applicable command set required by root [../AGENTS.md](../AGENTS.md), including agent-standard validation, Markdown links, documentation completeness, forbidden-pattern scanning, Pester, ScriptAnalyzer when available, and git diff review.
+
+Safe .NET command examples:
+
+```powershell
+dotnet --info
+```
+
+```powershell
+dotnet restore
+```
+
+```powershell
+dotnet restore --locked-mode
+```
+
+```powershell
+dotnet format --verify-no-changes
+```
+
+```powershell
+dotnet build --no-restore --configuration Release
+```
+
+```powershell
+dotnet test --no-build --configuration Release
+```
+
+```powershell
+dotnet list package --vulnerable
+```
+
+`dotnet restore --locked-mode` applies only where lockfiles and repository policy support locked restore. `--no-restore` and `--no-build` apply only after successful prerequisite restore and build steps. `dotnet format` may require SDK support or a committed tool manifest. Vulnerability audit commands vary by SDK version and package-management configuration.
+
+Playwright, container, IIS, OpenAPI, migration, package-signing, SBOM, and deployment validation require their own applicable commands and evidence. A successful `dotnet build` does not prove deployment, IIS hosting, browser behavior, database migration, OpenAPI compatibility, container build, container scan, or runtime health.
+
 ## Configuration And Options Validation
 
-Configuration contracts MUST be explicit. New or changed configuration SHOULD use strongly typed options classes with startup validation through `ValidateOnStart`, `IValidateOptions<T>`, data annotations, custom validators, or equivalent fail-fast checks.
+Configuration contracts MUST be explicit. New or materially changed configuration contracts MUST use strongly typed options classes or an explicitly approved equivalent. Startup validation MUST be used for critical configuration through `ValidateOnStart`, `IValidateOptions<T>`, data annotations, custom validators, or equivalent fail-fast checks. A deviation requires documented rationale and evidence.
 
 Agents MUST ensure:
 
@@ -133,6 +175,7 @@ Agents MUST ensure:
 - Sensitive configuration is redacted from logs, traces, exceptions, screenshots, and evidence.
 - Synthetic example configuration exists for public keys and safe placeholders only.
 - README, runbooks, deployment docs, and options classes remain synchronized.
+- Raw `IConfiguration` lookups scattered through business code are prohibited when a stable options contract is appropriate.
 
 Safe pattern:
 
@@ -159,7 +202,7 @@ Certificate and key handling MUST include explicit selection, validation, expira
 
 Constructor injection is the default for application services. Agents MUST declare and review service lifetimes explicitly. They MUST NOT introduce captive dependencies, resolve scoped services from singletons without an explicit scope, use `IServiceProvider` as ordinary application service locator, perform async work in constructors, or perform hidden network/database calls during service registration.
 
-Container-owned disposables SHOULD be disposed by the container. External clients SHOULD use `IHttpClientFactory` or an approved equivalent. External systems SHOULD use typed or named clients with explicit timeouts and policies. Retry policies MUST account for operation idempotency and MUST NOT retry unsafe mutations by default.
+Container-owned disposables SHOULD be disposed by the container. Managed outbound HTTP clients MUST use `IHttpClientFactory`, a typed client, a named client, or an approved equivalent ownership model. Direct `HttpClient` construction is allowed only when lifetime, disposal, DNS refresh, handler ownership, and testability are explicitly controlled and documented. External systems SHOULD use typed or named clients with explicit timeouts and policies. Retry policies MUST account for operation idempotency and MUST NOT retry unsafe mutations by default.
 
 ## API Design And Compatibility
 
@@ -180,7 +223,7 @@ Controllers, Razor handlers, Minimal API endpoint lambdas, and middleware SHOULD
 
 ## Authentication And Authorization
 
-Authentication and authorization are separate controls and MUST be reviewed separately. Protected resources MUST enforce server-side authorization and SHOULD be deny-by-default. Client-side checks MAY improve user experience but MUST NOT be the only access control.
+Authentication and authorization are separate controls and MUST be reviewed separately. Protected resources MUST enforce server-side authorization. Protected resources MUST be deny-by-default. Anonymous or unauthenticated access MUST be explicitly declared. Public endpoints MUST be intentionally marked and reviewed. New endpoints inherit protection unless explicitly documented as public. Authorization MUST be evaluated before access to protected data or side effects. Authorization policies MUST NOT be weakened for test convenience. Client-side checks MAY improve user experience but MUST NOT be the only access control.
 
 Agents MUST require:
 
@@ -230,6 +273,16 @@ All untrusted input MUST be validated at trust boundaries. This includes body, q
 Agents MUST use explicit DTOs to prevent overposting and MUST validate identifiers, lengths, ranges, formats, collections, collection sizes, allowed values, external targets, command names, configurable actions, and normalized values. Agents MUST NOT trust filenames, MIME types, extensions, route values, headers, claims, serialized type names, or client-provided IDs.
 
 Validation errors MUST avoid sensitive raw model-binding details. Normalization rules for casing, whitespace, Unicode, file paths, culture, time zones, and identifiers MUST be explicit where they affect security or persistence.
+
+## Serialization And Deserialization Safety
+
+All deserialized data MUST be treated as untrusted input until validated. Serialization contracts MUST use explicit DTOs, payload size limits, object depth limits, intentional unknown-field behavior, and versioning behavior. Public serialization contracts MUST be tested for backward compatibility where compatibility is promised.
+
+Polymorphism MUST be allowlisted, use stable type discriminators, and avoid arbitrary runtime type resolution. Agents MUST NOT accept executable type metadata, untrusted type names, arbitrary binder behavior, or dynamic deserialization into executable or privileged types from untrusted input. XML parsers MUST disable external entity resolution unless an approved use case and compensating controls exist. Archive and compressed payload limits MUST align with file upload and download controls.
+
+For untrusted data, agents MUST NOT use `BinaryFormatter`, `NetDataContractSerializer`, `LosFormatter`, unsafe `TypeNameHandling` values that allow arbitrary type creation, arbitrary binder behavior, untrusted type names, XML external entity expansion, or unbounded recursive object graphs. Library-specific serializers MAY be acceptable only when configured to avoid these unsafe patterns and validated for the trust boundary.
+
+Negative tests MUST cover unexpected type discriminators, excessive depth, oversized payloads, unknown or duplicate properties where relevant, malformed XML or JSON, and disallowed polymorphic types.
 
 ## File Upload And Download Safety
 
@@ -282,6 +335,16 @@ Retries MUST target transient failures only, include limits, exponential backoff
 
 Partial failures MUST be surfaced through result contracts, logs, metrics, events, health checks, or evidence as appropriate.
 
+## Native Process And Command Execution
+
+Native process and command execution controls apply to `System.Diagnostics.Process`, `ProcessStartInfo`, shell execution, CLI integrations, build tools, administrative commands, and native utilities. Process execution is security-sensitive when any executable path, argument, working directory, environment variable, input file, output file, or command behavior is derived from untrusted input or configuration.
+
+Agents MUST use an explicit executable path or trusted resolution, validate executable existence, use argument separation through `ProcessStartInfo.ArgumentList` where supported or another safe argument model, set `UseShellExecute = false` by default unless a documented requirement exists, validate exit codes against defined accepted exit codes, configure timeouts and cancellation, define process termination and cleanup behavior, and use a safe working directory without implicit current-directory trust.
+
+Stdout and stderr MUST be redirected when evidence, diagnostics, or failure classification require them. Sensitive arguments MUST be redacted, secrets MUST NOT be passed in visible command-line arguments, and environment-variable handling MUST be reviewed for secrets and injection. Child-process behavior MUST be documented for workers, services, IIS, and containers when applicable.
+
+Agents MUST NOT concatenate untrusted input into command strings, rely on shell metacharacters, ignore exit codes, wait forever, assume process launch success means operation success, use download-and-execute behavior, or invoke `cmd.exe`, `powershell.exe`, `pwsh`, `bash`, `sh`, or similar shells merely to avoid proper argument handling. Tests SHOULD use safe fakes or harmless tools where practical.
+
 ## Error Handling
 
 Applications MUST have central exception boundaries appropriate to their host, such as ASP.NET Core exception middleware, worker loop exception handling, CLI top-level handling, or library-specific contracts. APIs MUST return `ProblemDetails` or stable error contracts without raw stack traces.
@@ -312,11 +375,21 @@ Agents MUST define expiration, invalidation, consistency, stampede protection, d
 
 ## Email And External Integrations
 
-External integration work MUST also apply [AGENTS_Integration.md](AGENTS_Integration.md). Agents MUST use typed clients or explicit interfaces, approved secret sources, TLS certificate validation, explicit timeouts, cancellation, safe retries, API version handling, contract tests where applicable, and sandbox or mock validation when available.
+External integration work MUST also apply [AGENTS_Integration.md](AGENTS_Integration.md). Agents MUST use typed clients or explicit interfaces, approved secret sources, TLS certificate validation, explicit timeouts, cancellation, safe retries, API version handling, contract tests where applicable, and sandbox or mock validation when available. External clients defined in this section MUST also comply with [Outbound Request And SSRF Safety](#outbound-request-and-ssrf-safety).
 
 SMTP settings MUST be externalized and secrets protected. Notification failure MUST be separated from core-operation failure unless notification is required for the operation. Agents MUST avoid sensitive subject lines, validate attachments, encode templates, and prevent header injection.
 
 Webhook handlers MUST validate signatures or authenticity where the provider supports it, reject replayed events where possible, and test malformed, unauthorized, duplicate, and replayed payloads.
+
+## Outbound Request And SSRF Safety
+
+Outbound request and SSRF controls apply whenever .NET code accepts or derives URLs, hostnames, IP addresses, callback URLs, webhook destinations, redirect targets, proxy settings, download locations, or remote resource identifiers from users, tenants, partners, configuration, queues, files, webhooks, or other untrusted sources.
+
+Agents MUST validate allowed schemes, use destination allowlists where feasible, restrict ports, reject or strictly control loopback, private, link-local, multicast, reserved, and cloud metadata-service destinations, and explicitly protect cloud metadata endpoints. Documentation examples MAY refer generically to loopback and link-local ranges; they MUST NOT include secrets or environment-specific metadata credentials.
+
+Agents MUST consider DNS resolution and rebinding risk, validate every redirect target rather than only the original URL, limit redirect count, set response size limits, configure download timeout and cancellation, validate content type where applicable, and avoid user-controlled proxy configuration without explicit approval. DNS names alone MUST NOT be trusted where IP-range restrictions matter, and the final resolved destination SHOULD be revalidated where practical.
+
+Security-sensitive outbound requests MUST emit safe audit logs with actor, target class, result, and correlation ID without logging secrets or sensitive full URLs. Negative tests MUST cover blocked loopback, private, link-local, metadata-service, disallowed scheme, disallowed port, redirect-to-blocked-destination, excessive redirect, oversized response, and timeout cases where applicable.
 
 ## Static Files And Frontend Integration
 
@@ -384,7 +457,11 @@ Agents MUST NOT add floating or wildcard production versions, unreviewed prerele
 
 ## Code Quality, Analyzers, And Formatting
 
-New .NET projects SHOULD enable nullable reference types unless a documented compatibility constraint prevents it. Warnings SHOULD be governed as errors for product code. Roslyn analyzers, `.editorconfig`, deterministic formatting, async naming conventions, cancellation conventions, disposal correctness, culture-aware parsing, and UTC persisted/cross-system timestamps SHOULD be enforced.
+New .NET projects MUST enable nullable reference types unless a documented compatibility constraint exists. Existing projects that disable nullable reference types MUST record the gap. Agents MUST NOT silence nullable warnings broadly.
+
+CI MUST treat the repository's governed warning set as errors. Broad warning suppression is prohibited, and scoped suppressions require rationale. Governed .NET projects MUST use Roslyn analyzers and `.editorconfig` or a repository-approved equivalent. Analyzer configuration MUST be committed and reproducible. Security, reliability, and correctness rules MUST NOT be disabled without review.
+
+Deterministic formatting, async naming conventions, cancellation conventions, disposal correctness, and culture-aware parsing SHOULD be enforced. Persisted and cross-system timestamps MUST use UTC or another explicitly documented interoperable contract. Local time MUST NOT be persisted without documented reason and conversion behavior. Date/time parsing MUST specify culture and time-zone assumptions.
 
 Agents MUST NOT add blanket `NoWarn`, broad analyzer suppression, dead code, fake success paths, swallowed exceptions, unexplained constants, synchronous blocking in async paths, or performance claims without measurement. Suppressions MUST be scoped, justified, and reviewed.
 
@@ -476,5 +553,6 @@ Exceptions MUST NOT allow plaintext secrets, fabricated evidence, disabled issue
 
 ## Revision History
 
+- 1.1.1: Corrected remaining .NET standard gaps by making deny-by-default authorization mandatory, strengthening modern coding requirements for options, HTTP clients, nullable, warnings, analyzers, and time handling, adding validation commands, adding outbound request and SSRF controls, adding serialization and deserialization safety, adding native process execution safety, and hardening validator expectations.
 - 1.1.0: Rebuilt as a comprehensive enterprise .NET standard covering runtime policy, architecture, reproducible builds, configuration, secrets, DI, APIs, authentication, authorization, JWT, ASP.NET Core security, validation, uploads, Data Protection, EF Core, workers, reliability, logging, health, caching, integrations, static files, IIS, containers, testing, Playwright, supply chain, code quality, documentation, packaging, deployment, rollback, evidence, failures, and exceptions.
 - 1.0.0: Initial .NET agent standard with baseline requirements for discovery, risk, configuration, dependencies, EF Core, observability, testing, deployment, and evidence.

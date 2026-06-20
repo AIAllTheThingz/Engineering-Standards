@@ -153,6 +153,41 @@ Describe 'Agent standards validation' {
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
 
+        It 'fails a .NET standard version below the corrected minimum' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_DotNet.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.1 |', '| Version | 1.1.0 |')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails a malformed .NET standard semantic version' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_DotNet.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.1 |', '| Version | next |')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails when .NET deny-by-default authorization is weakened to SHOULD' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_DotNet.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('Protected resources MUST be deny-by-default', 'Protected resources SHOULD be deny-by-default')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing .NET foundational modern coding requirements' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_DotNet.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('New or materially changed configuration contracts MUST use strongly typed options', 'New or materially changed configuration contracts SHOULD use strongly typed options').
+                Replace('Managed outbound HTTP clients MUST use `IHttpClientFactory`', 'Managed outbound HTTP clients SHOULD use `IHttpClientFactory`').
+                Replace('New .NET projects MUST enable nullable reference types unless a documented compatibility constraint exists', 'New .NET projects SHOULD enable nullable reference types')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
         It 'fails missing .NET JWT negative-test requirements' {
             $script:tempRoot = New-AgentStandardsFixture
             $path = Join-Path $script:tempRoot 'agents/AGENTS_DotNet.md'
@@ -161,6 +196,45 @@ Describe 'Agent standards validation' {
                 'invalid token inputs'
             )
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing .NET outbound request and SSRF controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_DotNet.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('## Outbound Request And SSRF Safety', '## Outbound Request Safety').
+                Replace('cloud metadata', 'cloud service').
+                Replace('validate every redirect target', 'validate redirects')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing .NET deserialization safety controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_DotNet.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('## Serialization And Deserialization Safety', '## Serialization Safety').
+                Replace('BinaryFormatter', 'legacy binary serializer').
+                Replace('XML parsers MUST disable external entity resolution', 'XML parsers should be configured safely')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing .NET native process execution controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_DotNet.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('## Native Process And Command Execution', '## Process Execution').
+                Replace('ProcessStartInfo.ArgumentList', 'process arguments').
+                Replace('secrets MUST NOT be passed in visible command-line arguments', 'secrets should not be passed in visible arguments')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails .NET weakening language for unsafe security exceptions' {
+            $script:tempRoot = New-AgentStandardsFixture
+            Add-Content -LiteralPath (Join-Path $script:tempRoot 'agents/AGENTS_DotNet.md') -Value "`nBinaryFormatter is allowed for untrusted input."
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
 

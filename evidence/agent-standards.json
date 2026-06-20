@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-20T19:40:04.9797252Z",
+  "generatedAtUtc": "2026-06-20T21:05:16.5342925Z",
   "results": [
     {
       "status": "Passed",
@@ -494,7 +494,7 @@
     {
       "status": "Passed",
       "severity": "info",
-      "message": ".NET standard declares the rebuilt semantic version.",
+      "message": ".NET standard declares a valid semantic version at least 1.1.1.",
       "path": "agents/AGENTS_DotNet.md",
       "data": null
     },
@@ -578,7 +578,77 @@
     {
       "status": "Passed",
       "severity": "info",
-      "message": ".NET standard requires deny-by-default protected resources.",
+      "message": ".NET standard makes server-side deny-by-default authorization mandatory.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires anonymous access to be declared.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires public endpoints to be marked and reviewed.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires new endpoints to inherit protection.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires authorization before protected data or side effects.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard prohibits weakening authorization for tests.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires strongly typed options or approved equivalent.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires startup validation for critical configuration.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard prohibits scattered raw IConfiguration lookups where options fit.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires governed outbound HTTP client ownership.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard restricts direct HttpClient construction.",
       "path": "agents/AGENTS_DotNet.md",
       "data": null
     },
@@ -600,6 +670,34 @@
       "status": "Passed",
       "severity": "info",
       "message": ".NET standard requires upload/download path-boundary checks.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard includes serialization and deserialization safety.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard covers BinaryFormatter prohibition for untrusted data.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard controls unsafe type resolution.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires XML external entity protection.",
       "path": "agents/AGENTS_DotNet.md",
       "data": null
     },
@@ -641,6 +739,41 @@
     {
       "status": "Passed",
       "severity": "info",
+      "message": ".NET standard includes native process and command execution safety.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires safe process argument separation.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard prohibits secrets in command-line arguments.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires process exit-code validation.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires timeout and cancellation controls.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
       "message": ".NET standard requires distinct health-check semantics.",
       "path": "agents/AGENTS_DotNet.md",
       "data": null
@@ -649,6 +782,34 @@
       "status": "Passed",
       "severity": "info",
       "message": ".NET standard hands off integrations to Integration standard.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard includes outbound request and SSRF safety.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires cloud metadata destination protection.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires redirect target revalidation.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard controls loopback, private, and link-local destinations.",
       "path": "agents/AGENTS_DotNet.md",
       "data": null
     },
@@ -690,7 +851,42 @@
     {
       "status": "Passed",
       "severity": "info",
+      "message": ".NET standard includes validation commands section.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
       "message": ".NET standard requires dotnet --info evidence or reason.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard includes restore validation command.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard includes build validation command.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard includes test validation command.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard includes vulnerability audit command.",
       "path": "agents/AGENTS_DotNet.md",
       "data": null
     },
@@ -711,7 +907,56 @@
     {
       "status": "Passed",
       "severity": "info",
+      "message": ".NET standard requires nullable reference types for new projects.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires nullable gaps to be recorded.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires governed warnings as errors in CI.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires analyzers and editorconfig or approved equivalent.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires governed UTC/time handling.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard does not weaken deny-by-default to SHOULD.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
       "message": ".NET standard does not weaken JWT issuer/audience validation.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard does not allow issuer/audience validation skips for convenience.",
       "path": "agents/AGENTS_DotNet.md",
       "data": null
     },
@@ -726,6 +971,27 @@
       "status": "Passed",
       "severity": "info",
       "message": ".NET standard does not allow assumed IIS validation.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard does not allow untrusted shell command construction.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard does not allow BinaryFormatter for untrusted input.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard does not allow metadata endpoints without validation.",
       "path": "agents/AGENTS_DotNet.md",
       "data": null
     },

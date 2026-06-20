@@ -59,6 +59,37 @@ function Test-Contains {
     }
 }
 
+function Test-MinimumSemanticVersion {
+    param(
+        [string]$Text,
+        [string]$MinimumVersion,
+        [string]$Message,
+        [string]$RelativePath
+    )
+
+    if ($Text -notmatch '(?im)^\|\s*Version\s*\|\s*(?<version>[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)\s*\|') {
+        Add-Result Failed $Message $RelativePath
+        return
+    }
+
+    $rawVersion = $Matches['version']
+    $versionCore = ($rawVersion -split '[-+]')[0]
+    $minimumCore = ($MinimumVersion -split '[-+]')[0]
+    try {
+        $actual = [version]$versionCore
+        $minimum = [version]$minimumCore
+        if ($actual -ge $minimum) {
+            Add-Result Passed $Message $RelativePath
+        }
+        else {
+            Add-Result Failed $Message $RelativePath
+        }
+    }
+    catch {
+        Add-Result Failed $Message $RelativePath
+    }
+}
+
 function Test-MarkdownRelativeLinks {
     param(
         [string]$Text,
@@ -265,8 +296,9 @@ if ($powerShellAgents) {
 }
 
 if ($dotNetAgents) {
+    Test-MinimumSemanticVersion -Text $dotNetAgents -MinimumVersion '1.1.1' -Message '.NET standard declares a valid semantic version at least 1.1.1.' -RelativePath 'agents/AGENTS_DotNet.md'
+
     $dotNetRequiredPatterns = @(
-        @{ Pattern = 'Version\s*\|\s*1\.1\.0'; Message = '.NET standard declares the rebuilt semantic version.' },
         @{ Pattern = 'Target framework monikers'; Message = '.NET standard requires target framework monikers.' },
         @{ Pattern = 'Supported runtime versions'; Message = '.NET standard requires supported runtime versions.' },
         @{ Pattern = 'rollForward'; Message = '.NET standard requires documented SDK/runtime rollForward behavior.' },
@@ -278,34 +310,72 @@ if ($dotNetAgents) {
         @{ Pattern = 'dotnet user-secrets'; Message = '.NET standard limits dotnet user-secrets to local development.' },
         @{ Pattern = 'IHttpClientFactory'; Message = '.NET standard requires IHttpClientFactory or approved equivalent.' },
         @{ Pattern = 'ProblemDetails'; Message = '.NET standard requires stable API error contracts.' },
-        @{ Pattern = 'Deny-by-default|deny-by-default'; Message = '.NET standard requires deny-by-default protected resources.' },
+        @{ Pattern = '(?is)Protected resources\s+MUST\s+enforce server-side authorization.*Protected resources\s+MUST\s+be deny-by-default'; Message = '.NET standard makes server-side deny-by-default authorization mandatory.' },
+        @{ Pattern = 'Anonymous or unauthenticated access MUST be explicitly declared'; Message = '.NET standard requires anonymous access to be declared.' },
+        @{ Pattern = 'Public endpoints MUST be intentionally marked and reviewed'; Message = '.NET standard requires public endpoints to be marked and reviewed.' },
+        @{ Pattern = 'New endpoints inherit protection unless explicitly documented as public'; Message = '.NET standard requires new endpoints to inherit protection.' },
+        @{ Pattern = 'Authorization MUST be evaluated before access to protected data or side effects'; Message = '.NET standard requires authorization before protected data or side effects.' },
+        @{ Pattern = 'Authorization policies MUST NOT be weakened for test convenience'; Message = '.NET standard prohibits weakening authorization for tests.' },
+        @{ Pattern = 'New or materially changed configuration contracts MUST use strongly typed options.*approved equivalent'; Message = '.NET standard requires strongly typed options or approved equivalent.' },
+        @{ Pattern = 'Startup validation MUST be used for critical configuration'; Message = '.NET standard requires startup validation for critical configuration.' },
+        @{ Pattern = 'Raw `IConfiguration` lookups scattered through business code are prohibited'; Message = '.NET standard prohibits scattered raw IConfiguration lookups where options fit.' },
+        @{ Pattern = 'Managed outbound HTTP clients MUST use `IHttpClientFactory`.*approved equivalent ownership model'; Message = '.NET standard requires governed outbound HTTP client ownership.' },
+        @{ Pattern = 'Direct `HttpClient` construction is allowed only when lifetime, disposal, DNS refresh, handler ownership, and testability are explicitly controlled and documented'; Message = '.NET standard restricts direct HttpClient construction.' },
         @{ Pattern = 'invalid signature, issuer, audience, expiration'; Message = '.NET standard requires JWT negative tests.' },
         @{ Pattern = 'wildcard-with-credentials'; Message = '.NET standard prohibits wildcard CORS with credentials.' },
         @{ Pattern = 'Path normalization and approved-root boundary checks'; Message = '.NET standard requires upload/download path-boundary checks.' },
+        @{ Pattern = 'Serialization And Deserialization Safety'; Message = '.NET standard includes serialization and deserialization safety.' },
+        @{ Pattern = 'BinaryFormatter'; Message = '.NET standard covers BinaryFormatter prohibition for untrusted data.' },
+        @{ Pattern = 'TypeNameHandling|arbitrary runtime type resolution'; Message = '.NET standard controls unsafe type resolution.' },
+        @{ Pattern = 'XML parsers MUST disable external entity resolution'; Message = '.NET standard requires XML external entity protection.' },
         @{ Pattern = 'Data Protection'; Message = '.NET standard covers ASP.NET Core Data Protection.' },
         @{ Pattern = 'Scoped DbContext|DbContext.*scoped'; Message = '.NET standard requires scoped DbContext lifetime.' },
         @{ Pattern = 'Automatic production migration-on-startup is prohibited'; Message = '.NET standard prohibits unapproved production migration-on-startup.' },
         @{ Pattern = 'AGENTS_WorkerService\.md'; Message = '.NET standard hands off worker behavior to Worker Service standard.' },
         @{ Pattern = 'OpenTelemetry'; Message = '.NET standard covers telemetry expectations.' },
+        @{ Pattern = 'Native Process And Command Execution'; Message = '.NET standard includes native process and command execution safety.' },
+        @{ Pattern = 'ProcessStartInfo\.ArgumentList|safe argument model'; Message = '.NET standard requires safe process argument separation.' },
+        @{ Pattern = 'secrets MUST NOT be passed in visible command-line arguments'; Message = '.NET standard prohibits secrets in command-line arguments.' },
+        @{ Pattern = 'validate exit codes against defined accepted exit codes'; Message = '.NET standard requires process exit-code validation.' },
+        @{ Pattern = 'timeouts and cancellation'; Message = '.NET standard requires timeout and cancellation controls.' },
         @{ Pattern = 'liveness and readiness'; Message = '.NET standard requires distinct health-check semantics.' },
         @{ Pattern = 'AGENTS_Integration\.md'; Message = '.NET standard hands off integrations to Integration standard.' },
+        @{ Pattern = 'Outbound Request And SSRF Safety'; Message = '.NET standard includes outbound request and SSRF safety.' },
+        @{ Pattern = 'cloud metadata'; Message = '.NET standard requires cloud metadata destination protection.' },
+        @{ Pattern = 'validate every redirect target'; Message = '.NET standard requires redirect target revalidation.' },
+        @{ Pattern = 'loopback, private, link-local'; Message = '.NET standard controls loopback, private, and link-local destinations.' },
         @{ Pattern = 'AGENTS_WebFrontend\.md'; Message = '.NET standard hands off static frontend work to Web Frontend standard.' },
         @{ Pattern = 'IIS-hosted'; Message = '.NET standard covers IIS hosting.' },
         @{ Pattern = 'No `latest` production tags|no `latest` production tags'; Message = '.NET standard prohibits latest container production tags.' },
         @{ Pattern = 'Playwright'; Message = '.NET standard requires browser E2E guidance.' },
         @{ Pattern = 'NuGet package source mapping'; Message = '.NET standard covers NuGet source mapping.' },
+        @{ Pattern = 'Validation Commands'; Message = '.NET standard includes validation commands section.' },
         @{ Pattern = 'dotnet --info'; Message = '.NET standard requires dotnet --info evidence or reason.' },
+        @{ Pattern = 'dotnet restore'; Message = '.NET standard includes restore validation command.' },
+        @{ Pattern = 'dotnet build --no-restore --configuration Release'; Message = '.NET standard includes build validation command.' },
+        @{ Pattern = 'dotnet test --no-build --configuration Release'; Message = '.NET standard includes test validation command.' },
+        @{ Pattern = 'dotnet list package --vulnerable'; Message = '.NET standard includes vulnerability audit command.' },
         @{ Pattern = 'Permitted statuses are `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable`'; Message = '.NET standard declares evidence statuses.' },
-        @{ Pattern = 'AGENTS_Database\.md'; Message = '.NET standard hands off data work to Database standard.' }
+        @{ Pattern = 'AGENTS_Database\.md'; Message = '.NET standard hands off data work to Database standard.' },
+        @{ Pattern = 'New \.NET projects MUST enable nullable reference types unless a documented compatibility constraint exists'; Message = '.NET standard requires nullable reference types for new projects.' },
+        @{ Pattern = 'Existing projects that disable nullable reference types MUST record the gap'; Message = '.NET standard requires nullable gaps to be recorded.' },
+        @{ Pattern = 'CI MUST treat the repository''s governed warning set as errors'; Message = '.NET standard requires governed warnings as errors in CI.' },
+        @{ Pattern = 'Governed \.NET projects MUST use Roslyn analyzers and `\.editorconfig` or a repository-approved equivalent'; Message = '.NET standard requires analyzers and editorconfig or approved equivalent.' },
+        @{ Pattern = 'Persisted and cross-system timestamps MUST use UTC or another explicitly documented interoperable contract'; Message = '.NET standard requires governed UTC/time handling.' }
     )
     foreach ($item in $dotNetRequiredPatterns) {
         Test-Contains $dotNetAgents $item.Pattern $item.Message 'agents/AGENTS_DotNet.md'
     }
 
     $dotNetProhibitedWeakeningPatterns = @(
+        @{ Pattern = 'SHOULD be deny-by-default'; Message = '.NET standard does not weaken deny-by-default to SHOULD.' },
         @{ Pattern = 'validate issuer and audience only when convenient'; Message = '.NET standard does not weaken JWT issuer/audience validation.' },
+        @{ Pattern = 'issuer/audience validation may be skipped for convenience'; Message = '.NET standard does not allow issuer/audience validation skips for convenience.' },
         @{ Pattern = 'production migration-on-startup is allowed by default'; Message = '.NET standard does not allow production migration-on-startup by default.' },
-        @{ Pattern = 'IIS validation may be assumed'; Message = '.NET standard does not allow assumed IIS validation.' }
+        @{ Pattern = 'IIS validation may be assumed'; Message = '.NET standard does not allow assumed IIS validation.' },
+        @{ Pattern = 'direct shell command construction from untrusted input is acceptable'; Message = '.NET standard does not allow untrusted shell command construction.' },
+        @{ Pattern = 'BinaryFormatter is allowed for untrusted input'; Message = '.NET standard does not allow BinaryFormatter for untrusted input.' },
+        @{ Pattern = 'metadata endpoints are allowed without validation'; Message = '.NET standard does not allow metadata endpoints without validation.' }
     )
     foreach ($item in $dotNetProhibitedWeakeningPatterns) {
         if ($dotNetAgents -match $item.Pattern) {

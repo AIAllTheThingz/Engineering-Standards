@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-20T19:40:17.5410939Z",
+  "generatedAtUtc": "2026-06-20T21:06:18.0248913Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -11,6 +11,106 @@
   "skippedFiles": [
     {
       "path": ".tmp/pester-results.xml",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/agent-standards.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/aggregate-governance.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/ci-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/contract.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/dependencies.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/documentation-completeness.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/environment.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/evidence-validation-final.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/evidence-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/examples.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/forbidden-patterns.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/json-schemas.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/latest-verified-run.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/local-completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/local-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/markdown-links.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/pester-details.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/pester-summary.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/powershell-parser.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/psscriptanalyzer.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/repository-health.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/workflow-architecture.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27882026684/yaml-syntax.json",
       "reason": "excluded-path"
     },
     {

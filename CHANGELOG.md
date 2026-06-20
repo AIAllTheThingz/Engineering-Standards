@@ -9,6 +9,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 - Rebuilt `agents/AGENTS_PowerShell.md` as a comprehensive enterprise PowerShell standard covering runtime compatibility, PSD1-first configuration, CSV/manual target input, phased safe development, credential/reporting/email module patterns, remoting, destructive-operation controls, Authenticode signing, scheduled execution, validation, and completion evidence.
 - Corrected `agents/AGENTS_PowerShell.md` path-boundary guidance to avoid prefix-collision sibling paths, strengthened README public-parameter documentation requirements, and hardened Authenticode certificate-selection guidance to require uniqueness and approved selectors.
 - Rebuilt `agents/AGENTS_DotNet.md` as a comprehensive enterprise .NET standard covering runtime and SDK policy, architecture, reproducible builds, configuration, secrets, dependency injection, APIs, authentication, authorization, JWT validation, ASP.NET Core security, uploads, Data Protection, EF Core, workers, reliability, telemetry, health checks, integrations, IIS, containers, testing, supply chain, packaging, deployment, rollback, and completion evidence.
+- Corrected `agents/AGENTS_DotNet.md` remaining issues by making deny-by-default authorization mandatory, strengthening modern .NET coding controls, adding validation commands, adding outbound request and SSRF safety, adding serialization/deserialization safety, adding native process execution safety, and hardening standards validation checks.
 
 ## [1.0.0] - 2026-06-19
 
