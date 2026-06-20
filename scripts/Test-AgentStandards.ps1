@@ -125,6 +125,7 @@ $basePath = Join-Path $root 'agents/AGENTS_Base.md'
 $rootPath = Join-Path $root 'AGENTS.md'
 $powerShellPath = Join-Path $root 'agents/AGENTS_PowerShell.md'
 $dotNetPath = Join-Path $root 'agents/AGENTS_DotNet.md'
+$databasePath = Join-Path $root 'agents/AGENTS_Database.md'
 
 if (-not (Test-Path -LiteralPath $basePath -PathType Leaf)) {
     Add-Result Failed 'AGENTS_Base.md exists.' 'agents/AGENTS_Base.md'
@@ -150,6 +151,7 @@ $base = Get-Content -LiteralPath $basePath -Raw
 $rootAgents = Get-Content -LiteralPath $rootPath -Raw
 $powerShellAgents = if (Test-Path -LiteralPath $powerShellPath -PathType Leaf) { Get-Content -LiteralPath $powerShellPath -Raw } else { '' }
 $dotNetAgents = if (Test-Path -LiteralPath $dotNetPath -PathType Leaf) { Get-Content -LiteralPath $dotNetPath -Raw } else { '' }
+$databaseAgents = if (Test-Path -LiteralPath $databasePath -PathType Leaf) { Get-Content -LiteralPath $databasePath -Raw } else { '' }
 
 if ($base -match '(?im)\binherits?\s+(?:\[[^\]]+\]\()?AGENTS_Base\.md|inherits?\s+itself|inherits?\s+this\s+base') {
     Add-Result Failed 'Base standard does not claim to inherit itself.' 'agents/AGENTS_Base.md'
@@ -383,6 +385,84 @@ if ($dotNetAgents) {
         }
         else {
             Add-Result Passed $item.Message 'agents/AGENTS_DotNet.md'
+        }
+    }
+}
+
+if ($databaseAgents) {
+    Test-MinimumSemanticVersion -Text $databaseAgents -MinimumVersion '1.1.0' -Message 'Database standard declares a valid semantic version at least 1.1.0.' -RelativePath 'agents/AGENTS_Database.md'
+
+    $databaseRequiredPatterns = @(
+        @{ Pattern = 'SQL Server.*Azure SQL Database.*Azure SQL Managed Instance.*PostgreSQL.*MySQL.*MariaDB.*Oracle Database.*SQLite'; Message = 'Database standard declares supported engine coverage.' },
+        @{ Pattern = 'Supported Database Engines And Versions'; Message = 'Database standard includes supported engine and version policy.' },
+        @{ Pattern = 'Compatibility levels, dialects, required extensions'; Message = 'Database standard requires compatibility and dialect discovery.' },
+        @{ Pattern = 'authoritative schema model'; Message = 'Database standard requires one authoritative schema source of truth.' },
+        @{ Pattern = 'Migration-first'; Message = 'Database standard covers migration-first development.' },
+        @{ Pattern = 'State-based database project'; Message = 'Database standard covers state-based database projects.' },
+        @{ Pattern = 'already-applied immutable migrations'; Message = 'Database standard protects already-applied migrations.' },
+        @{ Pattern = 'Expand-And-Contract And Rolling Deployment Compatibility'; Message = 'Database standard includes expand-and-contract rollout controls.' },
+        @{ Pattern = 'Automatic production migration-on-startup is prohibited'; Message = 'Database standard prohibits unapproved production migration-on-startup.' },
+        @{ Pattern = 'Destructive Operations'; Message = 'Database standard includes destructive operation controls.' },
+        @{ Pattern = 'preview or `DryRun`'; Message = 'Database standard requires preview or DryRun for destructive/data changes.' },
+        @{ Pattern = 'maximum affected-row threshold'; Message = 'Database standard requires maximum affected-row thresholds.' },
+        @{ Pattern = 'Empty input MUST NOT mean all rows'; Message = 'Database standard prevents empty input from meaning all rows.' },
+        @{ Pattern = 'parameterized queries, bound parameters'; Message = 'Database standard requires parameterized SQL.' },
+        @{ Pattern = 'identifier allowlists'; Message = 'Database standard requires dynamic identifier allowlists.' },
+        @{ Pattern = 'SELECT \*` MUST NOT be introduced into stable production contracts'; Message = 'Database standard restricts SELECT * in stable contracts.' },
+        @{ Pattern = 'execution-plan review'; Message = 'Database standard requires query-plan review for high-impact queries.' },
+        @{ Pattern = 'NOLOCK` MUST NOT be used as a generic performance fix'; Message = 'Database standard rejects NOLOCK as a generic fix.' },
+        @{ Pattern = 'Every new index requires a query or use-case justification'; Message = 'Database standard requires index justification.' },
+        @{ Pattern = 'transaction boundaries'; Message = 'Database standard requires transaction-boundary definition.' },
+        @{ Pattern = 'isolation level, lock duration, lock escalation, blocking chains, deadlock risk'; Message = 'Database standard covers isolation, locking, blocking, and deadlocks.' },
+        @{ Pattern = 'idempotency'; Message = 'Database standard covers idempotency.' },
+        @{ Pattern = 'Triggers.*MUST handle multi-row operations'; Message = 'Database standard requires multi-row-safe triggers.' },
+        @{ Pattern = 'least privilege'; Message = 'Database standard requires least privilege.' },
+        @{ Pattern = 'Application accounts MUST NOT use `sysadmin`, `dbo`-equivalent, `superuser`'; Message = 'Database standard prohibits privileged application accounts.' },
+        @{ Pattern = 'Public, Internal, Confidential, Regulated, or Secret/Restricted'; Message = 'Database standard requires data classification.' },
+        @{ Pattern = 'TLS.*Certificate validation MUST NOT be bypassed'; Message = 'Database standard requires TLS and certificate validation controls.' },
+        @{ Pattern = 'Backup, Restore, And Recovery'; Message = 'Database standard includes backup, restore, and recovery.' },
+        @{ Pattern = 'restore test status'; Message = 'Database standard requires restore-test status.' },
+        @{ Pattern = 'Before destructive production work.*verify backup status through an authoritative mechanism'; Message = 'Database standard requires authoritative backup verification.' },
+        @{ Pattern = 'Replication, High Availability, And Disaster Recovery'; Message = 'Database standard includes replication and HA review.' },
+        @{ Pattern = 'Validation Commands'; Message = 'Database standard includes validation commands section.' },
+        @{ Pattern = 'sqlcmd -S "<server>" -d "<database>" -E -b -i'; Message = 'Database standard includes SQL Server validation example.' },
+        @{ Pattern = 'sqlpackage /Action:Script'; Message = 'Database standard includes DACPAC validation example.' },
+        @{ Pattern = 'dotnet ef migrations list'; Message = 'Database standard includes EF Core validation example.' },
+        @{ Pattern = 'flyway validate'; Message = 'Database standard includes Flyway validation example.' },
+        @{ Pattern = 'liquibase validate'; Message = 'Database standard includes Liquibase validation example.' },
+        @{ Pattern = 'psql --set ON_ERROR_STOP=on'; Message = 'Database standard includes PostgreSQL validation example.' },
+        @{ Pattern = 'CI MUST NOT use fake commands that only print success'; Message = 'Database standard prohibits fake validation commands.' },
+        @{ Pattern = 'ephemeral or isolated databases'; Message = 'Database standard requires ephemeral or isolated database testing where feasible.' },
+        @{ Pattern = 'Permitted statuses are `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable`'; Message = 'Database standard declares completion statuses.' },
+        @{ Pattern = 'AGENTS_DotNet\.md'; Message = 'Database standard hands off application data access to .NET standard.' },
+        @{ Pattern = 'AGENTS_PowerShell\.md'; Message = 'Database standard hands off PowerShell automation to PowerShell standard.' },
+        @{ Pattern = 'AGENTS_WorkerService\.md'; Message = 'Database standard hands off workers to Worker Service standard.' },
+        @{ Pattern = 'AGENTS_Integration\.md'; Message = 'Database standard hands off integrations to Integration standard.' },
+        @{ Pattern = 'AGENTS_Infrastructure\.md'; Message = 'Database standard hands off hosting and managed services to Infrastructure standard.' }
+    )
+    foreach ($item in $databaseRequiredPatterns) {
+        Test-Contains $databaseAgents $item.Pattern $item.Message 'agents/AGENTS_Database.md'
+    }
+
+    $databaseProhibitedWeakeningPatterns = @(
+        @{ Pattern = 'Production migration-on-startup is allowed by default'; Message = 'Database standard does not allow production migration-on-startup by default.' },
+        @{ Pattern = 'DELETE without a predicate is acceptable'; Message = 'Database standard does not allow DELETE without a predicate.' },
+        @{ Pattern = 'Empty input means all rows'; Message = 'Database standard does not allow empty input to mean all rows.' },
+        @{ Pattern = 'SELECT \* is preferred'; Message = 'Database standard does not prefer SELECT *.' },
+        @{ Pattern = 'NOLOCK should be used to solve blocking generally'; Message = 'Database standard does not use NOLOCK as a general blocking fix.' },
+        @{ Pattern = 'Backup existence may be assumed'; Message = 'Database standard does not allow assumed backup evidence.' },
+        @{ Pattern = 'Production data may be copied into tests'; Message = 'Database standard does not allow production data in tests.' },
+        @{ Pattern = 'Application accounts may use sysadmin'; Message = 'Database standard does not allow application sysadmin accounts.' },
+        @{ Pattern = 'Dynamic table names may come directly from users'; Message = 'Database standard does not allow direct user-provided dynamic table names.' },
+        @{ Pattern = 'Constraints may be disabled for convenience'; Message = 'Database standard does not allow disabling constraints for convenience.' },
+        @{ Pattern = 'Missing database validation may be marked Passed'; Message = 'Database standard does not allow missing database validation to be marked Passed.' }
+    )
+    foreach ($item in $databaseProhibitedWeakeningPatterns) {
+        if ($databaseAgents -match $item.Pattern) {
+            Add-Result Failed $item.Message 'agents/AGENTS_Database.md'
+        }
+        else {
+            Add-Result Passed $item.Message 'agents/AGENTS_Database.md'
         }
     }
 }

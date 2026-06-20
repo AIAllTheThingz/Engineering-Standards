@@ -1,5 +1,11 @@
 {
-  "parsedAtUtc": "2026-06-20T01:59:02.0741148Z",
-  "status": "Passed"
+  "generatedAtUtc": "2026-06-20T21:41:55.9863729Z",
+  "results": [
+    {
+      "status": "Passed",
+      "path": "scripts/Test-AgentStandards.ps1",
+      "message": "Changed PowerShell files parsed successfully."
+    }
+  ],
+  "failed": 0
 }
-

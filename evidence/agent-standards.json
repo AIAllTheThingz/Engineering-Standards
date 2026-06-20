@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-20T21:05:16.5342925Z",
+  "generatedAtUtc": "2026-06-20T21:35:42.1744830Z",
   "results": [
     {
       "status": "Passed",
@@ -993,6 +993,412 @@
       "severity": "info",
       "message": ".NET standard does not allow metadata endpoints without validation.",
       "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard declares a valid semantic version at least 1.1.0.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard declares supported engine coverage.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard includes supported engine and version policy.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires compatibility and dialect discovery.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires one authoritative schema source of truth.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard covers migration-first development.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard covers state-based database projects.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard protects already-applied migrations.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard includes expand-and-contract rollout controls.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard prohibits unapproved production migration-on-startup.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard includes destructive operation controls.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires preview or DryRun for destructive/data changes.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires maximum affected-row thresholds.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard prevents empty input from meaning all rows.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires parameterized SQL.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires dynamic identifier allowlists.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard restricts SELECT * in stable contracts.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires query-plan review for high-impact queries.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard rejects NOLOCK as a generic fix.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires index justification.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires transaction-boundary definition.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard covers isolation, locking, blocking, and deadlocks.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard covers idempotency.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires multi-row-safe triggers.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires least privilege.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard prohibits privileged application accounts.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires data classification.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires TLS and certificate validation controls.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard includes backup, restore, and recovery.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires restore-test status.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires authoritative backup verification.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard includes replication and HA review.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard includes validation commands section.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard includes SQL Server validation example.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard includes DACPAC validation example.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard includes EF Core validation example.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard includes Flyway validation example.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard includes Liquibase validation example.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard includes PostgreSQL validation example.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard prohibits fake validation commands.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires ephemeral or isolated database testing where feasible.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard declares completion statuses.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard hands off application data access to .NET standard.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard hands off PowerShell automation to PowerShell standard.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard hands off workers to Worker Service standard.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard hands off integrations to Integration standard.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard hands off hosting and managed services to Infrastructure standard.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow production migration-on-startup by default.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow DELETE without a predicate.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow empty input to mean all rows.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not prefer SELECT *.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not use NOLOCK as a general blocking fix.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow assumed backup evidence.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow production data in tests.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow application sysadmin accounts.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow direct user-provided dynamic table names.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow disabling constraints for convenience.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow missing database validation to be marked Passed.",
+      "path": "agents/AGENTS_Database.md",
       "data": null
     },
     {

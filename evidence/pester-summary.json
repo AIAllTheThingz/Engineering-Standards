@@ -1,24 +1,11 @@
 {
-  "Result": "Passed",
-  "PassedCount": 78,
-  "FailedCount": 0,
-  "SkippedCount": 0,
-  "NotRunCount": 0,
-  "Duration": {
-    "Ticks": 1112464095,
-    "Days": 0,
-    "Hours": 0,
-    "Milliseconds": 246,
-    "Microseconds": 409,
-    "Nanoseconds": 500,
-    "Minutes": 1,
-    "Seconds": 51,
-    "TotalDays": 0.0012875741840277777,
-    "TotalHours": 0.030901780416666667,
-    "TotalMilliseconds": 111246.4095,
-    "TotalMicroseconds": 111246409.5,
-    "TotalNanoseconds": 111246409500.0,
-    "TotalMinutes": 1.854106825,
-    "TotalSeconds": 111.2464095
-  }
+  "generatedAtUtc": "2026-06-20T21:38:47.2150764Z",
+  "status": "Passed",
+  "total": 86,
+  "passed": 86,
+  "failed": 0,
+  "skipped": 0,
+  "inconclusive": 0,
+  "notRun": 0,
+  "duration": "00:02:29.0284048"
 }

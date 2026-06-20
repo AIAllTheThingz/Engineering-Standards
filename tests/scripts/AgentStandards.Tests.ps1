@@ -248,5 +248,86 @@ Describe 'Agent standards validation' {
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
+
+        It 'fails a database standard version below the required minimum' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Database.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | 1.0.0 |')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails a malformed database standard semantic version' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Database.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | current |')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing database engine and development-model requirements' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Database.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('SQL Server, Azure SQL Database, Azure SQL Managed Instance, PostgreSQL, MySQL, MariaDB, Oracle Database, SQLite', 'common database engines').
+                Replace('authoritative schema model', 'main schema approach').
+                Replace('already-applied immutable migrations', 'old migrations')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing database rollout and destructive-operation controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Database.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('## Expand-And-Contract And Rolling Deployment Compatibility', '## Rolling Deployment Compatibility').
+                Replace('Automatic production migration-on-startup is prohibited', 'Automatic production migrations are discouraged').
+                Replace('Empty input MUST NOT mean all rows', 'Empty input should not mean all rows').
+                Replace('maximum affected-row threshold', 'affected-row limit')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing database SQL safety and performance controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Database.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('parameterized queries, bound parameters', 'safe queries').
+                Replace('identifier allowlists', 'identifier checks').
+                Replace('`SELECT *` MUST NOT be introduced into stable production contracts', 'SELECT star should be avoided').
+                Replace('`NOLOCK` MUST NOT be used as a generic performance fix', 'NOLOCK needs care')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing database security, backup, and HA controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Database.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Application accounts MUST NOT use `sysadmin`, `dbo`-equivalent, `superuser`', 'Application accounts should avoid broad permissions').
+                Replace('TLS where supported and required. Certificate validation MUST NOT be bypassed', 'TLS should be considered').
+                Replace('Before destructive production work, agents MUST verify backup status through an authoritative mechanism', 'Backups should be checked before destructive work').
+                Replace('## Replication, High Availability, And Disaster Recovery', '## Availability')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing database validation command and evidence honesty requirements' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Database.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('sqlcmd -S "<server>" -d "<database>" -E -b -i', 'sqlcmd example').
+                Replace('dotnet ef migrations list', 'ef migration command').
+                Replace('CI MUST NOT use fake commands that only print success', 'CI should avoid fake commands').
+                Replace('Permitted statuses are `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable`', 'Use evidence statuses')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails database weakening language for unsafe exceptions' {
+            $script:tempRoot = New-AgentStandardsFixture
+            Add-Content -LiteralPath (Join-Path $script:tempRoot 'agents/AGENTS_Database.md') -Value "`nMissing database validation may be marked Passed."
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
     }
 }

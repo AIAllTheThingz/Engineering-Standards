@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-20T21:06:18.0248913Z",
+  "generatedAtUtc": "2026-06-20T21:35:42.8084833Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -111,6 +111,106 @@
     },
     {
       "path": ".tmp/github-run-27882026684/yaml-syntax.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/agent-standards.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/aggregate-governance.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/ci-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/contract.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/dependencies.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/documentation-completeness.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/environment.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/evidence-validation-final.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/evidence-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/examples.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/forbidden-patterns.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/json-schemas.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/latest-verified-run.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/local-completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/local-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/markdown-links.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/pester-details.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/pester-summary.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/powershell-parser.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/psscriptanalyzer.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/repository-health.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/workflow-architecture.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884064235/yaml-syntax.json",
       "reason": "excluded-path"
     },
     {

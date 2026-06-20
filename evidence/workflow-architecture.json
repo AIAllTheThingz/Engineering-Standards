@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-20T07:19:46.4724161Z",
+  "generatedAtUtc": "2026-06-20T21:36:01.2747811Z",
   "results": [
     {
       "status": "Passed",
@@ -37,12 +37,12 @@
       "data": {
         "callGraph": {
           "workflows/powershell-ci.yml": null,
+          ".github/workflows/governance-ci-reusable.yml": null,
+          ".github/workflows/governance-ci.yml": ".github/workflows/governance-ci-reusable.yml",
           "workflows/dotnet-ci.yml": null,
           "workflows/database-ci.yml": null,
-          ".github/workflows/governance-ci.yml": ".github/workflows/governance-ci-reusable.yml",
-          "workflows/governance-ci.yml": null,
-          ".github/workflows/governance-ci-reusable.yml": null,
-          "workflows/web-ci.yml": null
+          "workflows/web-ci.yml": null,
+          "workflows/governance-ci.yml": null
         }
       }
     }
@@ -52,4 +52,3 @@
   "blocked": 0,
   "notRun": 0
 }
-
