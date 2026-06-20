@@ -5,21 +5,21 @@
   "SkippedCount": 0,
   "NotRunCount": 0,
   "Duration": {
-    "Ticks": 882928153,
+    "Ticks": 932822024,
     "Days": 0,
     "Hours": 0,
-    "Milliseconds": 292,
-    "Microseconds": 815,
-    "Nanoseconds": 300,
+    "Milliseconds": 282,
+    "Microseconds": 202,
+    "Nanoseconds": 400,
     "Minutes": 1,
-    "Seconds": 28,
-    "TotalDays": 0.0010219075844907408,
-    "TotalHours": 0.024525782027777776,
-    "TotalMilliseconds": 88292.8153,
-    "TotalMicroseconds": 88292815.3,
-    "TotalNanoseconds": 88292815300.0,
-    "TotalMinutes": 1.4715469216666666,
-    "TotalSeconds": 88.2928153
+    "Seconds": 33,
+    "TotalDays": 0.0010796551203703705,
+    "TotalHours": 0.025911722888888888,
+    "TotalMilliseconds": 93282.2024,
+    "TotalMicroseconds": 93282202.4,
+    "TotalNanoseconds": 93282202400.0,
+    "TotalMinutes": 1.5547033733333333,
+    "TotalSeconds": 93.2822024
   }
 }
 

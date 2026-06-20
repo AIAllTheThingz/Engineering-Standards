@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-20T15:43:13.9271704Z",
+  "generatedAtUtc": "2026-06-20T16:08:57.7845950Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -316,7 +316,7 @@
       "patternId": "dangerous-powershell-expression",
       "severity": "warning",
       "path": "agents/AGENTS_PowerShell.md",
-      "line": 203,
+      "line": 546,
       "description": "Dynamic PowerShell execution.",
       "redactedMatch": "Invo...[redacted]...sion",
       "allowlisted": false
@@ -325,7 +325,7 @@
       "patternId": "dangerous-powershell-expression",
       "severity": "warning",
       "path": "agents/AGENTS_PowerShell.md",
-      "line": 213,
+      "line": 567,
       "description": "Dynamic PowerShell execution.",
       "redactedMatch": "Invo...[redacted]...sion",
       "allowlisted": false

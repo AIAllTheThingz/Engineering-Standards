@@ -2,6 +2,12 @@
 
 All notable changes to the Engineering Standards repository are recorded here. This project follows [Versioning](docs/VERSIONING.md) and the release process in [Release Process](docs/RELEASE_PROCESS.md).
 
+## [Unreleased]
+
+### Changed
+
+- Rebuilt `agents/AGENTS_PowerShell.md` as a comprehensive enterprise PowerShell standard covering runtime compatibility, PSD1-first configuration, CSV/manual target input, phased safe development, credential/reporting/email module patterns, remoting, destructive-operation controls, Authenticode signing, scheduled execution, validation, and completion evidence.
+
 ## [1.0.0] - 2026-06-19
 
 ### Release Status
