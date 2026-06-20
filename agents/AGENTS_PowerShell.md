@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Status | Active |
-| Version | 1.1.0 |
+| Version | 1.1.1 |
 | Owner role | Engineering Standards Maintainers |
 | Last reviewed | 2026-06-20 |
 | Changelog | See [../CHANGELOG.md](../CHANGELOG.md). |
@@ -483,7 +483,13 @@ Scripts and modules MUST include a top-level header describing purpose, safety m
 
 Private functions SHOULD include comment-based help or a concise purpose contract when nontrivial. Inline comments SHOULD explain non-obvious safety gates, credential flow, retries, API behavior, data normalization, reporting, rollback, and cleanup. Agents MUST NOT comment obvious syntax line by line.
 
-README documentation MUST explain prerequisites, supported PowerShell versions, required modules, installation, configuration, credential modes and precedence, input CSV schema, manual target usage, discovery mode, validation mode, `DryRun` versus `WhatIf`, execution mode, reporting, email, scheduling, code signing, exit codes, troubleshooting, security considerations, rollback, and recovery. Examples MUST be safe by default and MUST NOT target real production systems.
+README documentation MUST explain prerequisites, supported PowerShell versions, required modules, installation, configuration, credential modes and precedence, input CSV schema, manual target usage, discovery mode, validation mode, `DryRun` versus `WhatIf`, execution mode, reporting, email, scheduling, code signing, exit codes, troubleshooting, security considerations, rollback, and recovery.
+
+README documentation MUST include every public entry-point parameter and switch. For each public parameter or switch, the README MUST document the parameter set, default value, accepted value or `ValidateSet` choice, required or optional status, mutually exclusive combinations, interaction constraints, safety implications, and at least one safe example. Public parameters MUST NOT exist only in comment-based help without corresponding operator-facing README documentation. README examples MUST cover every operational mode. State-changing examples MUST remain safe by default and MUST use `-WhatIf` or `-DryRun` before `-Mode Execute` or equivalent execution mode. Deprecated parameters and aliases MUST be clearly marked.
+
+Hidden, undocumented, or behavior-changing public switches are prohibited. If a parameter is intentionally internal, it MUST NOT be exposed as a public entry-point parameter. README parameter documentation and comment-based help MUST remain synchronized. Tests or documentation-completeness validation SHOULD detect undocumented public parameters where practical.
+
+Examples MUST be safe by default and MUST NOT target real production systems.
 
 ## Error Handling And Exit Behavior
 
@@ -526,18 +532,43 @@ Safe path-boundary validation example:
 function Resolve-ChildPath {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$Root,
-        [Parameter(Mandatory)][string]$ChildPath
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Root,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ChildPath,
+
+        [switch]$AllowRoot
     )
 
-    $resolvedRoot = (Resolve-Path -LiteralPath $Root).Path
-    $candidate = [System.IO.Path]::GetFullPath((Join-Path $resolvedRoot $ChildPath))
-    if (-not $candidate.StartsWith($resolvedRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
-        throw 'Target path resolves outside the approved root.'
+    Set-StrictMode -Version Latest
+    $ErrorActionPreference = 'Stop'
+
+    $separatorChars = @(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar
+    )
+
+    $resolvedRoot = (Resolve-Path -LiteralPath $Root).Path.TrimEnd($separatorChars)
+    $candidate = [System.IO.Path]::GetFullPath(
+        (Join-Path -Path $resolvedRoot -ChildPath $ChildPath)
+    )
+
+    $rootBoundary = $resolvedRoot + [System.IO.Path]::DirectorySeparatorChar
+    $isRoot = $candidate.Equals($resolvedRoot, [System.StringComparison]::OrdinalIgnoreCase)
+    $isChild = $candidate.StartsWith($rootBoundary, [System.StringComparison]::OrdinalIgnoreCase)
+
+    if (($isRoot -and -not $AllowRoot) -or (-not $isRoot -and -not $isChild)) {
+        throw 'Target path resolves outside the approved root or root access is not permitted.'
     }
+
     $candidate
 }
 ```
+
+Prefix matching without a directory boundary is unsafe because sibling paths can share the same leading text as an approved root. Root access MUST be explicitly allowed for the specific operation. Destructive operations MUST revalidate the target immediately before mutation. Cross-platform tools MUST account for platform-specific case sensitivity instead of assuming Windows comparison behavior everywhere. Lexical path validation alone is not sufficient for reparse points, symlinks, junctions, UNC paths, or time-of-check/time-of-use changes; those cases may require additional filesystem and security validation. Path authorization and filesystem authorization are separate concerns.
 
 Recursive delete and move operations MUST verify the resolved absolute path before execution and MUST support preview, confirmation, or explicit execution mode.
 
@@ -730,22 +761,56 @@ When downstream policy requires signing, entry-point scripts and reusable module
 Safe signing examples:
 
 ```powershell
-$certificate = Get-ChildItem -Path Cert:\CurrentUser\My -CodeSigningCert |
-    Where-Object { $_.Subject -like '*Example Code Signing*' } |
-    Select-Object -First 1
-Set-AuthenticodeSignature -FilePath .\Invoke-Example.ps1 -Certificate $certificate -TimestampServer 'https://timestamp.example.invalid'
+$now = Get-Date
+$approvedSubject = 'CN=Example Code Signing'
+$timestampServer = 'https://timestamp.example.invalid'
+
+$certificates = @(
+    Get-ChildItem -Path Cert:\CurrentUser\My -CodeSigningCert |
+        Where-Object {
+            $_.HasPrivateKey -and
+            $_.NotBefore -le $now -and
+            $_.NotAfter -gt $now -and
+            $_.Subject -eq $approvedSubject
+        }
+)
+
+if ($certificates.Count -eq 0) {
+    throw 'No valid matching code-signing certificate was found.'
+}
+
+if ($certificates.Count -gt 1) {
+    throw 'Multiple matching code-signing certificates were found. Use an explicit approved selector.'
+}
+
+$certificate = $certificates[0]
+
+Set-AuthenticodeSignature `
+    -FilePath .\Invoke-Example.ps1 `
+    -Certificate $certificate `
+    -TimestampServer $timestampServer
 ```
 
 ```powershell
-Get-AuthenticodeSignature -FilePath .\Invoke-Example.ps1
+$signature = Get-AuthenticodeSignature -FilePath .\Invoke-Example.ps1
+if ($signature.Status -ne 'Valid') {
+    throw "Signature validation failed: $($signature.Status)"
+}
 ```
 
 Code-signing requirements:
 
 - The certificate MUST include the Code Signing EKU.
+- Certificate selection MUST validate `HasPrivateKey`, current validity period, intended certificate store, trust chain, timestamp-server policy, and a unique certificate match.
+- Certificate selection MUST use an explicit approved selector such as subject, thumbprint, or another governed identifier. Real thumbprints MUST NOT appear in examples.
+- Certificate discovery MUST fail when zero certificates match or multiple certificates match.
+- Certificate discovery MUST NOT silently use `Select-Object -First 1` as the only selection safeguard.
+- Revocation status MUST be checked where enterprise PKI and network access can validate it.
 - Private keys MUST remain on an approved signing workstation, HSM, key vault, or protected signing service.
 - Timestamping SHOULD be used when policy allows so signatures remain valid after certificate expiration.
 - Timestamp servers MUST be validated according to enterprise policy.
+- Certificate discovery does not replace enterprise approval. The selected certificate MUST be approved for the repository and release process.
+- Signature status MUST be validated after signing with `Get-AuthenticodeSignature`.
 - `AllSigned` and `RemoteSigned` documentation MUST be accurate.
 - `Bypass` MUST NOT be prescribed as the normal solution.
 - Trust-chain requirements MUST be documented.
@@ -883,5 +948,6 @@ Expired, missing, malformed, rejected, or unapproved exceptions MUST NOT be trea
 
 ## Revision History
 
+- 1.1.1: Corrected path-boundary validation guidance to prevent prefix-collision sibling paths, strengthened README public-parameter documentation requirements, and hardened Authenticode certificate-selection guidance against silent first-match selection.
 - 1.1.0: Rebuilt as a comprehensive enterprise PowerShell standard with explicit runtime compatibility, PSD1-first configuration, CSV/manual target input, phased safe development, `DryRun` and `WhatIf` semantics, credential/reporting/email module patterns, remoting controls, destructive-operation safeguards, Authenticode signing, scheduled execution, testing, validation, and completion evidence.
 - 1.0.0: PowerShell standard rewritten with enterprise requirements for discovery, risk, path safety, ShouldProcess, credentials, remoting, validation, testing, signing, logging, evidence, and failure behavior.

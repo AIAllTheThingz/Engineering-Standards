@@ -110,5 +110,36 @@ Describe 'Agent standards validation' {
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
+
+        It 'fails an unsafe PowerShell path-boundary example' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_PowerShell.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('$candidate.StartsWith($rootBoundary, [System.StringComparison]::OrdinalIgnoreCase)', '$candidate.StartsWith($resolvedRoot, [System.StringComparison]::OrdinalIgnoreCase)').
+                Replace('Prefix matching without a directory boundary is unsafe', 'Prefix matching is usually fine')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing PowerShell README parameter documentation requirements' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_PowerShell.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace(
+                'README documentation MUST include every public entry-point parameter and switch',
+                'README documentation SHOULD describe common parameters'
+            )
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails a PowerShell signing example that silently selects the first certificate' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_PowerShell.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('$certificates.Count -gt 1', '$certificates.Count -lt 0').
+                Replace('$certificate = $certificates[0]', '$certificate = $certificates | Select-Object -First 1')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
     }
 }

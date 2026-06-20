@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-20T16:08:49.5395646Z",
+  "generatedAtUtc": "2026-06-20T16:33:01.4485148Z",
   "results": [
     {
       "status": "Passed",
@@ -375,6 +375,125 @@
     {
       "status": "Passed",
       "severity": "info",
+      "message": "PowerShell path-boundary example creates an explicit root boundary.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell path-boundary example controls root access explicitly.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell path-boundary guidance explains prefix-collision risk.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell path-boundary guidance documents additional filesystem risks.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell standard requires README documentation for every public parameter and switch.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell standard requires complete README parameter details.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell standard prohibits hidden behavior-changing public switches.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell standard requires README and comment-based help synchronization.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell signing example fails when no certificate matches.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell signing example fails when multiple certificates match.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell signing example validates private-key availability.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell signing example validates certificate start date.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell signing example validates certificate expiration.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell signing guidance prohibits first-match selection.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell signing guidance requires post-signing validation.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell path-boundary example avoids unsafe direct root prefix matching.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "PowerShell signing example avoids silent first-match certificate selection.",
+      "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
       "message": "Root AGENTS.md does not duplicate the full base standard.",
       "path": "AGENTS.md",
       "data": null
@@ -392,4 +511,3 @@
   "blocked": 0,
   "notRun": 0
 }
-

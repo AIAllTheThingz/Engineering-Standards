@@ -92,6 +92,7 @@ function Test-MarkdownRelativeLinks {
 
 $basePath = Join-Path $root 'agents/AGENTS_Base.md'
 $rootPath = Join-Path $root 'AGENTS.md'
+$powerShellPath = Join-Path $root 'agents/AGENTS_PowerShell.md'
 
 if (-not (Test-Path -LiteralPath $basePath -PathType Leaf)) {
     Add-Result Failed 'AGENTS_Base.md exists.' 'agents/AGENTS_Base.md'
@@ -115,6 +116,7 @@ if (-not (Test-Path -LiteralPath $basePath -PathType Leaf) -or -not (Test-Path -
 
 $base = Get-Content -LiteralPath $basePath -Raw
 $rootAgents = Get-Content -LiteralPath $rootPath -Raw
+$powerShellAgents = if (Test-Path -LiteralPath $powerShellPath -PathType Leaf) { Get-Content -LiteralPath $powerShellPath -Raw } else { '' }
 
 if ($base -match '(?im)\binherits?\s+(?:\[[^\]]+\]\()?AGENTS_Base\.md|inherits?\s+itself|inherits?\s+this\s+base') {
     Add-Result Failed 'Base standard does not claim to inherit itself.' 'agents/AGENTS_Base.md'
@@ -214,6 +216,49 @@ foreach ($standard in $technologyStandards) {
     }
     else {
         Add-Result Failed "Technology-specific standard is missing or unreferenced: $standard" 'AGENTS.md'
+    }
+}
+
+if ($powerShellAgents) {
+    $powerShellRequiredPatterns = @(
+        @{ Pattern = '\$rootBoundary\s*=\s*\$resolvedRoot\s*\+\s*\[System\.IO\.Path\]::DirectorySeparatorChar'; Message = 'PowerShell path-boundary example creates an explicit root boundary.' },
+        @{ Pattern = '\[switch\]\$AllowRoot'; Message = 'PowerShell path-boundary example controls root access explicitly.' },
+        @{ Pattern = 'Prefix matching without a directory boundary is unsafe'; Message = 'PowerShell path-boundary guidance explains prefix-collision risk.' },
+        @{ Pattern = 'reparse points, symlinks, junctions, UNC paths, or time-of-check/time-of-use changes'; Message = 'PowerShell path-boundary guidance documents additional filesystem risks.' },
+        @{ Pattern = 'README documentation MUST include every public entry-point parameter and switch'; Message = 'PowerShell standard requires README documentation for every public parameter and switch.' },
+        @{ Pattern = 'default value, accepted value or `ValidateSet` choice, required or optional status'; Message = 'PowerShell standard requires complete README parameter details.' },
+        @{ Pattern = 'Hidden, undocumented, or behavior-changing public switches are prohibited'; Message = 'PowerShell standard prohibits hidden behavior-changing public switches.' },
+        @{ Pattern = 'README parameter documentation and comment-based help MUST remain synchronized'; Message = 'PowerShell standard requires README and comment-based help synchronization.' },
+        @{ Pattern = '\$certificates\.Count -eq 0'; Message = 'PowerShell signing example fails when no certificate matches.' },
+        @{ Pattern = '\$certificates\.Count -gt 1'; Message = 'PowerShell signing example fails when multiple certificates match.' },
+        @{ Pattern = '\$_.HasPrivateKey'; Message = 'PowerShell signing example validates private-key availability.' },
+        @{ Pattern = '\$_.NotBefore -le \$now'; Message = 'PowerShell signing example validates certificate start date.' },
+        @{ Pattern = '\$_.NotAfter -gt \$now'; Message = 'PowerShell signing example validates certificate expiration.' },
+        @{ Pattern = 'Certificate discovery MUST NOT silently use `Select-Object -First 1` as the only selection safeguard'; Message = 'PowerShell signing guidance prohibits first-match selection.' },
+        @{ Pattern = 'Signature status MUST be validated after signing with `Get-AuthenticodeSignature`'; Message = 'PowerShell signing guidance requires post-signing validation.' }
+    )
+    foreach ($item in $powerShellRequiredPatterns) {
+        Test-Contains $powerShellAgents $item.Pattern $item.Message 'agents/AGENTS_PowerShell.md'
+    }
+
+    if ($powerShellAgents -match '(?s)Safe path-boundary validation example:.*\.StartsWith\(\s*\$resolvedRoot\s*,') {
+        Add-Result Failed 'PowerShell path-boundary example uses unsafe direct root prefix matching.' 'agents/AGENTS_PowerShell.md'
+    }
+    else {
+        Add-Result Passed 'PowerShell path-boundary example avoids unsafe direct root prefix matching.' 'agents/AGENTS_PowerShell.md'
+    }
+
+    $signingExampleText = if ($powerShellAgents -match '(?s)Safe signing examples:(?<example>.*?)Code-signing requirements:') {
+        $Matches['example']
+    }
+    else {
+        ''
+    }
+    if ($signingExampleText -match 'Select-Object\s+-First\s+1') {
+        Add-Result Failed 'PowerShell signing example silently selects the first matching certificate.' 'agents/AGENTS_PowerShell.md'
+    }
+    else {
+        Add-Result Passed 'PowerShell signing example avoids silent first-match certificate selection.' 'agents/AGENTS_PowerShell.md'
     }
 }
 

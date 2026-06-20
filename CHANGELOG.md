@@ -7,6 +7,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 ### Changed
 
 - Rebuilt `agents/AGENTS_PowerShell.md` as a comprehensive enterprise PowerShell standard covering runtime compatibility, PSD1-first configuration, CSV/manual target input, phased safe development, credential/reporting/email module patterns, remoting, destructive-operation controls, Authenticode signing, scheduled execution, validation, and completion evidence.
+- Corrected `agents/AGENTS_PowerShell.md` path-boundary guidance to avoid prefix-collision sibling paths, strengthened README public-parameter documentation requirements, and hardened Authenticode certificate-selection guidance to require uniqueness and approved selectors.
 
 ## [1.0.0] - 2026-06-19
 
