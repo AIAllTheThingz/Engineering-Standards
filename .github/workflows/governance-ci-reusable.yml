@@ -229,9 +229,6 @@ jobs:
           $config = New-PesterConfiguration
           $config.Run.Path = 'tests'
           $config.Output.Verbosity = 'Detailed'
-          $config.TestResult.Enabled = $true
-          $config.TestResult.OutputPath = 'evidence/pester-results.xml'
-          $config.TestResult.OutputFormat = 'NUnitXml'
           $config.Run.PassThru = $true
           $result = Invoke-Pester -Configuration $config
           $result | Select-Object Result,PassedCount,FailedCount,SkippedCount,NotRunCount,Duration | ConvertTo-Json -Depth 10 | Set-Content evidence/pester-summary.json
@@ -267,6 +264,12 @@ jobs:
           npm test --prefix examples/web-project
           npm run build --prefix examples/web-project
           @{ validatedAtUtc = (Get-Date).ToUniversalTime().ToString('o'); status = 'Passed' } | ConvertTo-Json | Set-Content evidence/examples.json
+
+      - name: Normalize evidence report paths
+        id: normalize_evidence_initial
+        if: always()
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/Normalize-EvidencePaths.ps1 -Path . -EvidencePath evidence
 
       - name: Generate workflow test evidence
         id: test_evidence_initial
@@ -308,7 +311,6 @@ jobs:
             'evidence/forbidden-patterns.json',
             'evidence/repository-health.json',
             'evidence/powershell-parser.json',
-            'evidence/pester-results.xml',
             'evidence/pester-summary.json',
             'evidence/psscriptanalyzer.json',
             'evidence/examples.json',
@@ -323,6 +325,12 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: pwsh -NoProfile -File actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path . -EvidencePath evidence/completion-result.json -ExpectedCommitSha '${{ github.sha }}' -OutputJson evidence/evidence-validation.json
+
+      - name: Normalize final evidence inputs
+        id: normalize_evidence_final
+        if: always()
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/Normalize-EvidencePaths.ps1 -Path . -EvidencePath evidence
 
       - name: Finalize workflow test evidence
         id: test_evidence_final
@@ -380,7 +388,6 @@ jobs:
             'evidence/forbidden-patterns.json',
             'evidence/repository-health.json',
             'evidence/powershell-parser.json',
-            'evidence/pester-results.xml',
             'evidence/pester-summary.json',
             'evidence/psscriptanalyzer.json',
             'evidence/examples.json',
