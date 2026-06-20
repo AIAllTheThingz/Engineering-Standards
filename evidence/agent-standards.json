@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-20T16:33:01.4485148Z",
+  "generatedAtUtc": "2026-06-20T19:40:04.9797252Z",
   "results": [
     {
       "status": "Passed",
@@ -489,6 +489,244 @@
       "severity": "info",
       "message": "PowerShell signing example avoids silent first-match certificate selection.",
       "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard declares the rebuilt semantic version.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires target framework monikers.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires supported runtime versions.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires documented SDK/runtime rollForward behavior.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard covers global.json SDK selection.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard prohibits silent framework retargeting.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard prohibits or escalates unsupported frameworks.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires startup options validation.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard covers IValidateOptions based validation.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard limits dotnet user-secrets to local development.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires IHttpClientFactory or approved equivalent.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires stable API error contracts.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires deny-by-default protected resources.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires JWT negative tests.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard prohibits wildcard CORS with credentials.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires upload/download path-boundary checks.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard covers ASP.NET Core Data Protection.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires scoped DbContext lifetime.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard prohibits unapproved production migration-on-startup.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard hands off worker behavior to Worker Service standard.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard covers telemetry expectations.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires distinct health-check semantics.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard hands off integrations to Integration standard.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard hands off static frontend work to Web Frontend standard.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard covers IIS hosting.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard prohibits latest container production tags.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires browser E2E guidance.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard covers NuGet source mapping.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard requires dotnet --info evidence or reason.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard declares evidence statuses.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard hands off data work to Database standard.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard does not weaken JWT issuer/audience validation.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard does not allow production migration-on-startup by default.",
+      "path": "agents/AGENTS_DotNet.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": ".NET standard does not allow assumed IIS validation.",
+      "path": "agents/AGENTS_DotNet.md",
       "data": null
     },
     {

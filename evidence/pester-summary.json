@@ -1,24 +1,24 @@
 {
   "Result": "Passed",
-  "PassedCount": 67,
+  "PassedCount": 70,
   "FailedCount": 0,
   "SkippedCount": 0,
   "NotRunCount": 0,
   "Duration": {
-    "Ticks": 1054514805,
+    "Ticks": 964710215,
     "Days": 0,
     "Hours": 0,
-    "Milliseconds": 451,
-    "Microseconds": 480,
+    "Milliseconds": 471,
+    "Microseconds": 21,
     "Nanoseconds": 500,
     "Minutes": 1,
-    "Seconds": 45,
-    "TotalDays": 0.0012205032465277777,
-    "TotalHours": 0.029292077916666666,
-    "TotalMilliseconds": 105451.4805,
-    "TotalMicroseconds": 105451480.5,
-    "TotalNanoseconds": 105451480500.0,
-    "TotalMinutes": 1.757524675,
-    "TotalSeconds": 105.4514805
+    "Seconds": 36,
+    "TotalDays": 0.0011165627488425925,
+    "TotalHours": 0.026797505972222222,
+    "TotalMilliseconds": 96471.0215,
+    "TotalMicroseconds": 96471021.5,
+    "TotalNanoseconds": 96471021500.0,
+    "TotalMinutes": 1.6078503583333332,
+    "TotalSeconds": 96.4710215
   }
 }

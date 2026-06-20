@@ -141,5 +141,38 @@ Describe 'Agent standards validation' {
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
+
+        It 'fails missing .NET runtime and SDK policy requirements' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_DotNet.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Target framework monikers', 'Framework names').
+                Replace('rollForward', 'roll ahead').
+                Replace('global.json', 'SDK selection file')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing .NET JWT negative-test requirements' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_DotNet.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace(
+                'invalid signature, issuer, audience, expiration',
+                'invalid token inputs'
+            )
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing .NET deployment and evidence honesty requirements' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_DotNet.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('IIS-hosted', 'server-hosted').
+                Replace('dotnet --info', 'SDK details command').
+                Replace('Permitted statuses are `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable`', 'Use repository evidence statuses')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
     }
 }

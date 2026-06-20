@@ -93,6 +93,7 @@ function Test-MarkdownRelativeLinks {
 $basePath = Join-Path $root 'agents/AGENTS_Base.md'
 $rootPath = Join-Path $root 'AGENTS.md'
 $powerShellPath = Join-Path $root 'agents/AGENTS_PowerShell.md'
+$dotNetPath = Join-Path $root 'agents/AGENTS_DotNet.md'
 
 if (-not (Test-Path -LiteralPath $basePath -PathType Leaf)) {
     Add-Result Failed 'AGENTS_Base.md exists.' 'agents/AGENTS_Base.md'
@@ -117,6 +118,7 @@ if (-not (Test-Path -LiteralPath $basePath -PathType Leaf) -or -not (Test-Path -
 $base = Get-Content -LiteralPath $basePath -Raw
 $rootAgents = Get-Content -LiteralPath $rootPath -Raw
 $powerShellAgents = if (Test-Path -LiteralPath $powerShellPath -PathType Leaf) { Get-Content -LiteralPath $powerShellPath -Raw } else { '' }
+$dotNetAgents = if (Test-Path -LiteralPath $dotNetPath -PathType Leaf) { Get-Content -LiteralPath $dotNetPath -Raw } else { '' }
 
 if ($base -match '(?im)\binherits?\s+(?:\[[^\]]+\]\()?AGENTS_Base\.md|inherits?\s+itself|inherits?\s+this\s+base') {
     Add-Result Failed 'Base standard does not claim to inherit itself.' 'agents/AGENTS_Base.md'
@@ -259,6 +261,59 @@ if ($powerShellAgents) {
     }
     else {
         Add-Result Passed 'PowerShell signing example avoids silent first-match certificate selection.' 'agents/AGENTS_PowerShell.md'
+    }
+}
+
+if ($dotNetAgents) {
+    $dotNetRequiredPatterns = @(
+        @{ Pattern = 'Version\s*\|\s*1\.1\.0'; Message = '.NET standard declares the rebuilt semantic version.' },
+        @{ Pattern = 'Target framework monikers'; Message = '.NET standard requires target framework monikers.' },
+        @{ Pattern = 'Supported runtime versions'; Message = '.NET standard requires supported runtime versions.' },
+        @{ Pattern = 'rollForward'; Message = '.NET standard requires documented SDK/runtime rollForward behavior.' },
+        @{ Pattern = 'global\.json'; Message = '.NET standard covers global.json SDK selection.' },
+        @{ Pattern = 'No silent framework retargeting|MUST NOT silently retarget frameworks'; Message = '.NET standard prohibits silent framework retargeting.' },
+        @{ Pattern = 'end-of-support frameworks'; Message = '.NET standard prohibits or escalates unsupported frameworks.' },
+        @{ Pattern = 'ValidateOnStart'; Message = '.NET standard requires startup options validation.' },
+        @{ Pattern = 'IValidateOptions<T>'; Message = '.NET standard covers IValidateOptions based validation.' },
+        @{ Pattern = 'dotnet user-secrets'; Message = '.NET standard limits dotnet user-secrets to local development.' },
+        @{ Pattern = 'IHttpClientFactory'; Message = '.NET standard requires IHttpClientFactory or approved equivalent.' },
+        @{ Pattern = 'ProblemDetails'; Message = '.NET standard requires stable API error contracts.' },
+        @{ Pattern = 'Deny-by-default|deny-by-default'; Message = '.NET standard requires deny-by-default protected resources.' },
+        @{ Pattern = 'invalid signature, issuer, audience, expiration'; Message = '.NET standard requires JWT negative tests.' },
+        @{ Pattern = 'wildcard-with-credentials'; Message = '.NET standard prohibits wildcard CORS with credentials.' },
+        @{ Pattern = 'Path normalization and approved-root boundary checks'; Message = '.NET standard requires upload/download path-boundary checks.' },
+        @{ Pattern = 'Data Protection'; Message = '.NET standard covers ASP.NET Core Data Protection.' },
+        @{ Pattern = 'Scoped DbContext|DbContext.*scoped'; Message = '.NET standard requires scoped DbContext lifetime.' },
+        @{ Pattern = 'Automatic production migration-on-startup is prohibited'; Message = '.NET standard prohibits unapproved production migration-on-startup.' },
+        @{ Pattern = 'AGENTS_WorkerService\.md'; Message = '.NET standard hands off worker behavior to Worker Service standard.' },
+        @{ Pattern = 'OpenTelemetry'; Message = '.NET standard covers telemetry expectations.' },
+        @{ Pattern = 'liveness and readiness'; Message = '.NET standard requires distinct health-check semantics.' },
+        @{ Pattern = 'AGENTS_Integration\.md'; Message = '.NET standard hands off integrations to Integration standard.' },
+        @{ Pattern = 'AGENTS_WebFrontend\.md'; Message = '.NET standard hands off static frontend work to Web Frontend standard.' },
+        @{ Pattern = 'IIS-hosted'; Message = '.NET standard covers IIS hosting.' },
+        @{ Pattern = 'No `latest` production tags|no `latest` production tags'; Message = '.NET standard prohibits latest container production tags.' },
+        @{ Pattern = 'Playwright'; Message = '.NET standard requires browser E2E guidance.' },
+        @{ Pattern = 'NuGet package source mapping'; Message = '.NET standard covers NuGet source mapping.' },
+        @{ Pattern = 'dotnet --info'; Message = '.NET standard requires dotnet --info evidence or reason.' },
+        @{ Pattern = 'Permitted statuses are `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable`'; Message = '.NET standard declares evidence statuses.' },
+        @{ Pattern = 'AGENTS_Database\.md'; Message = '.NET standard hands off data work to Database standard.' }
+    )
+    foreach ($item in $dotNetRequiredPatterns) {
+        Test-Contains $dotNetAgents $item.Pattern $item.Message 'agents/AGENTS_DotNet.md'
+    }
+
+    $dotNetProhibitedWeakeningPatterns = @(
+        @{ Pattern = 'validate issuer and audience only when convenient'; Message = '.NET standard does not weaken JWT issuer/audience validation.' },
+        @{ Pattern = 'production migration-on-startup is allowed by default'; Message = '.NET standard does not allow production migration-on-startup by default.' },
+        @{ Pattern = 'IIS validation may be assumed'; Message = '.NET standard does not allow assumed IIS validation.' }
+    )
+    foreach ($item in $dotNetProhibitedWeakeningPatterns) {
+        if ($dotNetAgents -match $item.Pattern) {
+            Add-Result Failed $item.Message 'agents/AGENTS_DotNet.md'
+        }
+        else {
+            Add-Result Passed $item.Message 'agents/AGENTS_DotNet.md'
+        }
     }
 }
 
