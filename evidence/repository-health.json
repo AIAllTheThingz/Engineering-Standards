@@ -1,0 +1,156 @@
+{
+  "generatedAtUtc": "2026-06-20T01:22:13.0501679Z",
+  "results": [
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": "README.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": "LICENSE",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": "SECURITY.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": "CONTRIBUTING.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": "CODEOWNERS",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": "project-manifest.json",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": "governance.config.json",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": ".github/dependabot.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": ".github/workflows/governance-ci.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": ".github/pull_request_template.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": "docs/BRANCH_PROTECTION.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": "docs/ACTION_SECURITY.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": "scripts/GovernanceValidation.psm1",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": "scripts/Test-DocumentationCompleteness.ps1",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": "scripts/Test-YamlSyntax.ps1",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required health file exists.",
+      "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "project-manifest validation passed.",
+      "path": "F:\\repos\\Engineering-Standards\\project-manifest.json",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "governance-config validation passed.",
+      "path": "F:\\repos\\Engineering-Standards\\governance.config.json",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Pester test files found: 9.",
+      "path": "tests",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Repository health validation completed.",
+      "path": "F:\\repos\\Engineering-Standards",
+      "data": null
+    }
+  ],
+  "failed": 0,
+  "warnings": 0,
+  "blocked": 0,
+  "notRun": 0
+}

@@ -64,7 +64,8 @@ flowchart TD
 - `agents/`: base and technology-specific AI-agent standards.
 - `schemas/`: strongly typed JSON Schema contracts.
 - `actions/`: composite GitHub Actions implemented with PowerShell 7.
-- `workflows/`: reusable workflows invoked through `workflow_call`.
+- `.github/workflows/`: executable repository workflows and reusable workflows.
+- `workflows/`: distribution templates; GitHub does not execute reusable workflows directly from this root directory.
 - `templates/`: repository, pull-request, issue, test-plan, and threat-model templates.
 - `examples/`: functional downstream example projects.
 - `scripts/`: local validation and evidence tooling.
@@ -115,7 +116,13 @@ jobs:
     with:
       project-path: .
       governance-version: 1.0.0
+      run-examples: true
+      run-pester: true
+      run-documentation-validation: true
+      artifact-retention-days: 30
 ```
+
+The local event workflow is `.github/workflows/governance-ci.yml`. It triggers on pull requests, pushes to `master`, and manual `workflow_dispatch`, then calls `.github/workflows/governance-ci-reusable.yml` exactly once. Downstream repositories must call the reusable workflow path under `.github/workflows`, not files under the root `workflows/` template directory.
 
 ## Example Local AGENTS.md
 
@@ -169,6 +176,8 @@ Local rules may add stricter validation and repository-specific commands. Local 
 pwsh -NoProfile -File scripts/Test-JsonSchemas.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-MarkdownLinks.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .
+pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .
+pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path .
 pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path .
 Invoke-Pester -Path tests -Output Detailed
 ```
@@ -203,4 +212,4 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 
 ## Related Documents
 
-This repository MUST be used with the governing documents in `governance/`, the agent standards in `agents/`, the reusable workflows in `workflows/`, and the validation evidence in `evidence/`. Consumers should start with `docs/ADOPTION_GUIDE.md`, then configure `project-manifest.json` and `governance.config.json` before enabling CI. Exceptions, validation results, and completion evidence are part of the same governance system; they are not optional side files.
+This repository MUST be used with the governing documents in `governance/`, the agent standards in `agents/`, the executable workflows in `.github/workflows/`, the distribution templates in `workflows/`, and the validation evidence in `evidence/`. Consumers should start with `docs/ADOPTION_GUIDE.md`, then configure `project-manifest.json` and `governance.config.json` before enabling CI. Exceptions, validation results, and completion evidence are part of the same governance system; they are not optional side files.

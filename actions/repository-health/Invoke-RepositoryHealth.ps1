@@ -49,7 +49,9 @@ $required = @(
     'docs/BRANCH_PROTECTION.md',
     'docs/ACTION_SECURITY.md',
     'scripts/GovernanceValidation.psm1',
-    'scripts/Test-DocumentationCompleteness.ps1'
+    'scripts/Test-DocumentationCompleteness.ps1',
+    'scripts/Test-YamlSyntax.ps1',
+    'scripts/Test-GitHubWorkflowArchitecture.ps1'
 )
 $required | ForEach-Object { Add-RequiredFileResult -RelativePath $_ }
 

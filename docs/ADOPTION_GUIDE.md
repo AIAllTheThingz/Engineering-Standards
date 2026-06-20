@@ -85,9 +85,18 @@ permissions:
 jobs:
   governance:
     uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<pinned-commit-sha>
+    with:
+      project-path: .
+      governance-version: 1.0.0
+      run-examples: true
+      run-pester: true
+      run-documentation-validation: true
+      artifact-retention-days: 30
 ```
 
-The workflow MUST run on pull requests and on pushes to protected long-lived branches. It MUST use least-privilege permissions and upload evidence artifacts with explicit retention.
+The workflow MUST run on pull requests and on pushes to protected long-lived branches. It MUST use least-privilege permissions and upload evidence artifacts with explicit retention. `project-path` is repository-relative and rejects path traversal; `governance-version` must match the manifest where applicable; `artifact-retention-days` must remain in the supported range. `run-examples`, `run-pester`, and `run-documentation-validation` control supported checks but must not be used to hide mandatory control failures.
+
+The supported reusable workflow path is `.github/workflows/governance-ci-reusable.yml`. Files under the root `workflows/` directory are distribution templates and are not directly executable reusable workflows from their current location.
 
 ## Advisory Mode
 
@@ -130,7 +139,9 @@ Adoption MUST NOT use exceptions to hide missing ownership, absent evidence, dis
 Run the local governance validation before requesting review:
 
 ```powershell
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
+pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .
+pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path .
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Category JsonSchemas,YamlSyntax,WorkflowArchitecture,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
 ```
 
 For downstream repositories, run the reusable workflow in GitHub Actions and attach the uploaded governance evidence artifact. Technology repositories MUST also run their build, lint, test, migration, security, or deployment dry-run checks.

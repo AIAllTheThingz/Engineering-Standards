@@ -1,0 +1,30 @@
+{
+  "generatedAtUtc": "2026-06-20T01:22:11.5398676Z",
+  "results": [
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "project-manifest validation passed.",
+      "path": "F:\\repos\\Engineering-Standards\\project-manifest.json",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "governance-config validation passed.",
+      "path": "F:\\repos\\Engineering-Standards\\governance.config.json",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Contract validation completed.",
+      "path": "F:\\repos\\Engineering-Standards",
+      "data": null
+    }
+  ],
+  "failed": 0,
+  "warnings": 0,
+  "blocked": 0,
+  "notRun": 0
+}

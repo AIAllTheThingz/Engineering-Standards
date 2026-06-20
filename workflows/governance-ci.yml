@@ -1,3 +1,7 @@
+# Distribution template only. GitHub does not execute reusable workflows from
+# this root workflows/ directory. Copy this file into .github/workflows/ in a
+# downstream repository or call:
+# AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<immutable-reference>
 name: Governance
 
 on:
@@ -13,7 +17,7 @@ permissions:
 jobs:
   governance:
     name: Governance
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@master
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<immutable-reference>
     with:
       project-path: .
       governance-version: 1.0.0

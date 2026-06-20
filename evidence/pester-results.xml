@@ -1,0 +1,181 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<test-results xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="nunit_schema_2.5.xsd" name="Pester" total="32" errors="0" failures="0" not-run="0" inconclusive="0" ignored="0" skipped="0" invalid="0" date="2026-06-19" time="20:24:25">
+  <environment os-version="10.0.26200" user="MZucc" cwd="F:\repos\Engineering-Standards" user-domain="HOMESWEETHOME" machine-name="HOMESWEETHOME" platform="Microsoft Windows 11 Pro|C:\WINDOWS|\Device\Harddisk2\Partition4" nunit-version="2.5.8.0" clr-version="10.0.8" />
+  <culture-info current-culture="en-US" current-uiculture="en-US" />
+  <test-suite type="TestFixture" name="Pester" executed="True" result="Success" success="True" time="41.958" asserts="0" description="Pester">
+    <results>
+      <test-suite type="TestFixture" name="F:\repos\Engineering-Standards\tests\actions\ForbiddenPatternScan.Tests.ps1" executed="True" result="Success" success="True" time="6.4165" asserts="0" description="F:\repos\Engineering-Standards\tests\actions\ForbiddenPatternScan.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="Forbidden pattern scan" executed="True" result="Success" success="True" time="5.4113" asserts="0" description="Forbidden pattern scan">
+            <results>
+              <test-suite type="TestFixture" name="Forbidden pattern scan.advisory mode" executed="True" result="Success" success="True" time="2.0932" asserts="0" description="Forbidden pattern scan.advisory mode">
+                <results>
+                  <test-case description="runs without failing the repository in advisory mode" name="Forbidden pattern scan.advisory mode.runs without failing the repository in advisory mode" time="2.0174" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="Forbidden pattern scan.blocking findings" executed="True" result="Success" success="True" time="5.3457" asserts="0" description="Forbidden pattern scan.blocking findings">
+                <results>
+                  <test-case description="fails on an embedded credential assignment" name="Forbidden pattern scan.blocking findings.fails on an embedded credential assignment" time="1.0632" asserts="0" success="True" result="Success" executed="True" />
+                  <test-case description="honors an unexpired allowlist entry" name="Forbidden pattern scan.blocking findings.honors an unexpired allowlist entry" time="1.0504" asserts="0" success="True" result="Success" executed="True" />
+                  <test-case description="does not honor expired allowlist entries" name="Forbidden pattern scan.blocking findings.does not honor expired allowlist entries" time="1.1246" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="F:\repos\Engineering-Standards\tests\actions\RepositoryHealth.Tests.ps1" executed="True" result="Success" success="True" time="5.7906" asserts="0" description="F:\repos\Engineering-Standards\tests\actions\RepositoryHealth.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="Repository health" executed="True" result="Success" success="True" time="5.6554" asserts="0" description="Repository health">
+            <results>
+              <test-suite type="TestFixture" name="Repository health.rebuilt repository" executed="True" result="Success" success="True" time="4.5915" asserts="0" description="Repository health.rebuilt repository">
+                <results>
+                  <test-case description="passes repository health validation" name="Repository health.rebuilt repository.passes repository health validation" time="4.5819" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="Repository health.invalid repository" executed="True" result="Success" success="True" time="5.6438" asserts="0" description="Repository health.invalid repository">
+                <results>
+                  <test-case description="fails when required governance files are absent" name="Repository health.invalid repository.fails when required governance files are absent" time="1.0208" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="F:\repos\Engineering-Standards\tests\actions\ValidateContract.Tests.ps1" executed="True" result="Success" success="True" time="5.483" asserts="0" description="F:\repos\Engineering-Standards\tests\actions\ValidateContract.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="Validate contract action" executed="True" result="Success" success="True" time="5.3421" asserts="0" description="Validate contract action">
+            <results>
+              <test-suite type="TestFixture" name="Validate contract action.path safety" executed="True" result="Success" success="True" time="1.3656" asserts="0" description="Validate contract action.path safety">
+                <results>
+                  <test-case description="rejects traversal" name="Validate contract action.path safety.rejects traversal" time="1.3571" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="Validate contract action.valid repository" executed="True" result="Success" success="True" time="4.1153" asserts="0" description="Validate contract action.valid repository">
+                <results>
+                  <test-case description="passes contract validation" name="Validate contract action.valid repository.passes contract validation" time="2.7422" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="Validate contract action.invalid downstream repository" executed="True" result="Success" success="True" time="5.3054" asserts="0" description="Validate contract action.invalid downstream repository">
+                <results>
+                  <test-case description="fails when required documentation is missing" name="Validate contract action.invalid downstream repository.fails when required documentation is missing" time="1.1803" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="F:\repos\Engineering-Standards\tests\actions\ValidateEvidence.Tests.ps1" executed="True" result="Success" success="True" time="2.3688" asserts="0" description="F:\repos\Engineering-Standards\tests\actions\ValidateEvidence.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="Validate evidence action" executed="True" result="Success" success="True" time="2.243" asserts="0" description="Validate evidence action">
+            <results>
+              <test-suite type="TestFixture" name="Validate evidence action.contradictory status" executed="True" result="Success" success="True" time="1.1473" asserts="0" description="Validate evidence action.contradictory status">
+                <results>
+                  <test-case description="rejects Passed evidence with NotRun tests" name="Validate evidence action.contradictory status.rejects Passed evidence with NotRun tests" time="1.1398" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="Validate evidence action.artifact integrity" executed="True" result="Success" success="True" time="2.2105" asserts="0" description="Validate evidence action.artifact integrity">
+                <results>
+                  <test-case description="rejects an artifact hash mismatch" name="Validate evidence action.artifact integrity.rejects an artifact hash mismatch" time="1.0551" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="F:\repos\Engineering-Standards\tests\schemas\JsonSchemas.Tests.ps1" executed="True" result="Success" success="True" time="1.2801" asserts="0" description="F:\repos\Engineering-Standards\tests\schemas\JsonSchemas.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="JSON schema validation" executed="True" result="Success" success="True" time="1.1686" asserts="0" description="JSON schema validation">
+            <results>
+              <test-suite type="TestFixture" name="JSON schema validation.fixtures" executed="True" result="Success" success="True" time="1.1578" asserts="0" description="JSON schema validation.fixtures">
+                <results>
+                  <test-case description="accepts valid fixtures and rejects invalid fixtures" name="JSON schema validation.fixtures.accepts valid fixtures and rejects invalid fixtures" time="1.1488" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="F:\repos\Engineering-Standards\tests\scripts\DocumentationCompleteness.Tests.ps1" executed="True" result="Success" success="True" time="4.2014" asserts="0" description="F:\repos\Engineering-Standards\tests\scripts\DocumentationCompleteness.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="Documentation completeness" executed="True" result="Success" success="True" time="4.0949" asserts="0" description="Documentation completeness">
+            <results>
+              <test-suite type="TestFixture" name="Documentation completeness.repository documents" executed="True" result="Success" success="True" time="1.7278" asserts="0" description="Documentation completeness.repository documents">
+                <results>
+                  <test-case description="passes for the rebuilt repository" name="Documentation completeness.repository documents.passes for the rebuilt repository" time="1.7193" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="Documentation completeness.invalid documentation" executed="True" result="Success" success="True" time="4.0879" asserts="0" description="Documentation completeness.invalid documentation">
+                <results>
+                  <test-case description="fails shallow authoritative documents" name="Documentation completeness.invalid documentation.fails shallow authoritative documents" time="1.9981" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="F:\repos\Engineering-Standards\tests\scripts\GitHubWorkflowArchitecture.Tests.ps1" executed="True" result="Success" success="True" time="14.5963" asserts="0" description="F:\repos\Engineering-Standards\tests\scripts\GitHubWorkflowArchitecture.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="GitHub workflow architecture validation" executed="True" result="Success" success="True" time="14.3462" asserts="0" description="GitHub workflow architecture validation">
+            <results>
+              <test-case description="passes a valid one-way workflow call with a pinned action" name="GitHub workflow architecture validation.passes a valid one-way workflow call with a pinned action" time="1.562" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="fails direct self-reference" name="GitHub workflow architecture validation.fails direct self-reference" time="1.4711" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="fails two-file recursion" name="GitHub workflow architecture validation.fails two-file recursion" time="1.6717" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="fails missing reusable workflow target" name="GitHub workflow architecture validation.fails missing reusable workflow target" time="1.3429" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="fails a reusable workflow target missing workflow_call" name="GitHub workflow architecture validation.fails a reusable workflow target missing workflow_call" time="1.4533" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="fails unsupported inputs passed to reusable workflow" name="GitHub workflow architecture validation.fails unsupported inputs passed to reusable workflow" time="1.4794" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="fails unpinned third-party action references" name="GitHub workflow architecture validation.fails unpinned third-party action references" time="1.5549" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="fails broad permissions" name="GitHub workflow architecture validation.fails broad permissions" time="1.2902" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="fails default branch trigger mismatch" name="GitHub workflow architecture validation.fails default branch trigger mismatch" time="1.2283" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="fails invalid local reusable workflow locations" name="GitHub workflow architecture validation.fails invalid local reusable workflow locations" time="1.2843" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Composite action output wiring" executed="True" result="Success" success="True" time="14.3972" asserts="0" description="Composite action output wiring">
+            <results>
+              <test-case description="passes validate-evidence inputs and writes declared outputs safely" name="Composite action output wiring.passes validate-evidence inputs and writes declared outputs safely" time="0.0184" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="writes declared outputs in all composite action definitions" name="Composite action output wiring.writes declared outputs in all composite action definitions" time="0.0251" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="F:\repos\Engineering-Standards\tests\scripts\GovernanceValidationModule.Tests.ps1" executed="True" result="Success" success="True" time="0.4601" asserts="0" description="F:\repos\Engineering-Standards\tests\scripts\GovernanceValidationModule.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="GovernanceValidation module" executed="True" result="Success" success="True" time="0.2752" asserts="0" description="GovernanceValidation module">
+            <results>
+              <test-suite type="TestFixture" name="GovernanceValidation module.safe path resolution" executed="True" result="Success" success="True" time="0.101" asserts="0" description="GovernanceValidation module.safe path resolution">
+                <results>
+                  <test-case description="resolves a child path inside the root" name="GovernanceValidation module.safe path resolution.resolves a child path inside the root" time="0.0361" asserts="0" success="True" result="Success" executed="True" />
+                  <test-case description="rejects traversal outside the root" name="GovernanceValidation module.safe path resolution.rejects traversal outside the root" time="0.0545" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="GovernanceValidation module.test evidence semantics" executed="True" result="Success" success="True" time="0.2078" asserts="0" description="GovernanceValidation module.test evidence semantics">
+                <results>
+                  <test-case description="rejects NotRun evidence with an exit code" name="GovernanceValidation module.test evidence semantics.rejects NotRun evidence with an exit code" time="0.0866" asserts="0" success="True" result="Success" executed="True" />
+                  <test-case description="accepts valid Passed test evidence" name="GovernanceValidation module.test evidence semantics.accepts valid Passed test evidence" time="0.0098" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="GovernanceValidation module.manifest semantics" executed="True" result="Success" success="True" time="0.2676" asserts="0" description="GovernanceValidation module.manifest semantics">
+                <results>
+                  <test-case description="requires production approval for High risk manifests" name="GovernanceValidation module.manifest semantics.requires production approval for High risk manifests" time="0.0498" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="F:\repos\Engineering-Standards\tests\scripts\MarkdownLinks.Tests.ps1" executed="True" result="Success" success="True" time="1.3613" asserts="0" description="F:\repos\Engineering-Standards\tests\scripts\MarkdownLinks.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="Markdown link validation" executed="True" result="Success" success="True" time="1.2153" asserts="0" description="Markdown link validation">
+            <results>
+              <test-suite type="TestFixture" name="Markdown link validation.relative links" executed="True" result="Success" success="True" time="1.2002" asserts="0" description="Markdown link validation.relative links">
+                <results>
+                  <test-case description="passes for repository markdown" name="Markdown link validation.relative links.passes for repository markdown" time="1.1916" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>

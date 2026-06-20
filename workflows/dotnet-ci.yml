@@ -1,3 +1,6 @@
+# Distribution template only. GitHub does not execute reusable workflows from
+# this root workflows/ directory until copied into .github/workflows/ in a
+# downstream repository.
 name: DotNet CI
 
 on:

@@ -82,6 +82,24 @@ Never place credentials, tokens, private keys, customer records, or production e
 - Completion evidence: `evidence/completion-result.json`
 - Active exceptions: `None` or `GOV-*`
 
+## Governance Workflow
+
+Use the central reusable workflow from `.github/workflows/governance-ci-reusable.yml`:
+
+```yaml
+jobs:
+  governance:
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<immutable-reference>
+    with:
+      project-path: .
+      governance-version: 1.0.0
+      run-pester: true
+      run-documentation-validation: true
+      artifact-retention-days: 30
+```
+
+Do not call files from the root `workflows/` directory directly; they are distribution templates. Evidence artifacts must be uploaded without secrets.
+
 This repository MUST follow the organization contract, completion evidence policy, risk classification model, exception process, and applicable agent standards.
 
 ## Related

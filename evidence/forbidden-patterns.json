@@ -1,0 +1,169 @@
+{
+  "generatedAtUtc": "2026-06-20T01:22:36.4156523Z",
+  "scanner": "forbidden-pattern-scan",
+  "schemaVersion": "1.0.0",
+  "completeSecretScanner": false,
+  "root": "F:\\repos\\Engineering-Standards",
+  "patternFile": "F:\\repos\\Engineering-Standards\\actions\\forbidden-pattern-scan\\forbidden-patterns.json",
+  "allowlistFile": null,
+  "advisory": false,
+  "scannedFiles": 184,
+  "skippedFiles": [],
+  "findings": [
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "SECURITY.md",
+      "line": 64,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "dangerous-powershell-expression",
+      "severity": "warning",
+      "path": "agents/AGENTS_PowerShell.md",
+      "line": 203,
+      "description": "Dynamic PowerShell execution.",
+      "redactedMatch": "Invo...[redacted]...sion",
+      "allowlisted": false
+    },
+    {
+      "patternId": "dangerous-powershell-expression",
+      "severity": "warning",
+      "path": "agents/AGENTS_PowerShell.md",
+      "line": 213,
+      "description": "Dynamic PowerShell execution.",
+      "redactedMatch": "Invo...[redacted]...sion",
+      "allowlisted": false
+    },
+    {
+      "patternId": "dangerous-powershell-expression",
+      "severity": "warning",
+      "path": "docs/ACTION_SECURITY.md",
+      "line": 54,
+      "description": "Dynamic PowerShell execution.",
+      "redactedMatch": "Invo...[redacted]...sion",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "docs/ACTION_SECURITY.md",
+      "line": 43,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "docs/ACTION_SECURITY.md",
+      "line": 43,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "docs/ACTION_SECURITY.md",
+      "line": 135,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "docs/RELEASE_PROCESS.md",
+      "line": 71,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "evidence/forbidden-patterns.json",
+      "line": 18,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "evidence/forbidden-patterns.json",
+      "line": 54,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "evidence/forbidden-patterns.json",
+      "line": 63,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "evidence/forbidden-patterns.json",
+      "line": 72,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "evidence/forbidden-patterns.json",
+      "line": 81,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "evidence/forbidden-patterns.json",
+      "line": 90,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "evidence/forbidden-patterns.json",
+      "line": 99,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
+      "line": 228,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
+      "line": 229,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    }
+  ],
+  "failed": 0,
+  "warnings": 17
+}

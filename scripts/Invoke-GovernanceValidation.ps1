@@ -2,7 +2,7 @@
 .SYNOPSIS
 Runs local governance validation.
 .DESCRIPTION
-Orchestrates schema, link, documentation, contract, scanner, repository-health, evidence, and example validation.
+Orchestrates schema, YAML, workflow architecture, link, documentation, contract, scanner, repository-health, evidence, and example validation.
 .PARAMETER Path
 Repository path.
 .PARAMETER Category
@@ -19,7 +19,7 @@ Does not execute untrusted downstream code.
 [CmdletBinding()]
 param(
     [string]$Path='.',
-    [ValidateSet('Contract','JsonSchemas','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','Evidence','Examples')][string[]]$Category=@('JsonSchemas','MarkdownLinks','DocumentationCompleteness','Contract','ForbiddenPatterns','RepositoryHealth','Examples'),
+    [ValidateSet('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','Evidence','Examples')][string[]]$Category=@('JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','Contract','ForbiddenPatterns','RepositoryHealth','Examples'),
     [string]$OutputJson
 )
 Set-StrictMode -Version Latest
@@ -35,6 +35,8 @@ function Invoke-ValidationCommand {
     $items.Add((New-ValidationResult -Status $(if ($code -eq 0) { 'Passed' } else { 'Failed' }) -Message "$Name exited with code $code." -Path $File -Severity $(if ($code -eq 0) { 'info' } else { 'error' }) -Data @{ exitCode=$code }))
 }
 if ($Category -contains 'JsonSchemas') { Invoke-ValidationCommand JsonSchemas (Join-Path $root 'scripts/Test-JsonSchemas.ps1') @('-Path',$root) }
+if ($Category -contains 'YamlSyntax') { Invoke-ValidationCommand YamlSyntax (Join-Path $root 'scripts/Test-YamlSyntax.ps1') @('-Path',$root) }
+if ($Category -contains 'WorkflowArchitecture') { Invoke-ValidationCommand WorkflowArchitecture (Join-Path $root 'scripts/Test-GitHubWorkflowArchitecture.ps1') @('-Path',$root,'-DefaultBranch','master') }
 if ($Category -contains 'MarkdownLinks') { Invoke-ValidationCommand MarkdownLinks (Join-Path $root 'scripts/Test-MarkdownLinks.ps1') @('-Path',$root) }
 if ($Category -contains 'DocumentationCompleteness') { Invoke-ValidationCommand DocumentationCompleteness (Join-Path $root 'scripts/Test-DocumentationCompleteness.ps1') @('-Path',$root) }
 if ($Category -contains 'Contract') { Invoke-ValidationCommand Contract (Join-Path $root 'actions/validate-contract/Invoke-ContractValidation.ps1') @('-Path',$root) }

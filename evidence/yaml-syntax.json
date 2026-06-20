@@ -1,0 +1,156 @@
+{
+  "generatedAtUtc": "2026-06-20T01:26:17.8166426Z",
+  "results": [
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": ".github/dependabot.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": ".github/ISSUE_TEMPLATE/config.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": ".github/ISSUE_TEMPLATE/feature_request.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": ".github/ISSUE_TEMPLATE/governance_exception.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": ".github/workflows/governance-ci-reusable.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": ".github/workflows/governance-ci.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "examples/database-project/.github/workflows/governance.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "examples/dotnet-project/.github/workflows/governance.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "examples/powershell-project/.github/workflows/governance.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "examples/web-project/.github/workflows/governance.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "examples/worker-service-project/.github/workflows/governance.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "templates/issues/bug_report.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "templates/issues/config.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "templates/issues/feature_request.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "templates/issues/governance_exception.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "workflows/database-ci.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "workflows/dotnet-ci.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "workflows/governance-ci.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "workflows/powershell-ci.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "workflows/web-ci.yml",
+      "data": null
+    }
+  ],
+  "failed": 0,
+  "warnings": 0,
+  "blocked": 0,
+  "notRun": 0
+}

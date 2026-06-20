@@ -1,0 +1,23 @@
+{
+  "generatedAtUtc": "2026-06-20T01:27:25.8637266Z",
+  "results": [
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "completion-result validation passed.",
+      "path": "F:\\repos\\Engineering-Standards\\evidence\\completion-result.json",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Evidence validation completed.",
+      "path": "evidence/completion-result.json",
+      "data": null
+    }
+  ],
+  "failed": 0,
+  "warnings": 0,
+  "blocked": 0,
+  "notRun": 0
+}

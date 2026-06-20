@@ -128,7 +128,7 @@ pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Pat
 Invoke-Pester -Path tests/actions -Output Detailed
 ```
 
-If YAML tooling is available, workflow syntax validation SHOULD also run. If unavailable, record `NotRun`.
+Workflow syntax validation MUST run through `scripts/Test-YamlSyntax.ps1` with PyYAML pinned to a reviewed version in CI. Workflow semantic validation MUST run through `scripts/Test-GitHubWorkflowArchitecture.ps1` to detect recursion, invalid reusable paths, unsupported inputs, broad permissions, and unpinned third-party actions.
 
 ## Exception Handling
 

@@ -71,6 +71,21 @@ Paths are repository-relative and MUST NOT escape the repository root. Validator
 
 Evidence paths should be stable. A changing path makes historical comparison and artifact review harder.
 
+## Workflow Configuration
+
+Downstream repositories call `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<immutable-reference>`. Required inputs are:
+
+| Input | Default | Meaning |
+| --- | --- | --- |
+| `project-path` | `.` | Repository-relative path to validate. Absolute paths and traversal are invalid. |
+| `governance-version` | `1.0.0` | Expected governance version, compared with `project-manifest.json` when present. |
+| `run-examples` | `true` | Runs functional example validations for this repository. |
+| `run-pester` | `true` | Runs repository Pester tests. |
+| `run-documentation-validation` | `true` | Runs substantive documentation checks. |
+| `artifact-retention-days` | `30` | Evidence artifact retention period. |
+
+Outputs are `evidence-path` and `artifact-name`. Root files under `workflows/` are distribution templates and must not be referenced as cross-repository reusable workflows.
+
 ## Allowlist Rules
 
 Allowlists are temporary review decisions, not permanent suppressions. Every allowlist entry MUST include a rule id or pattern, path scope, owner, explanation, approval reference, and expiration date.

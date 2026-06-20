@@ -85,7 +85,7 @@ Add-TestResult -Name 'Pester test suite' -Category 'unit' -Status Passed -Comman
 $analyzer = Get-Module -ListAvailable PSScriptAnalyzer | Select-Object -First 1
 if ($analyzer) {
     $settings = Join-Path $projectRoot 'PSScriptAnalyzerSettings.psd1'
-    $findings = Invoke-ScriptAnalyzer -Path $projectRoot -Settings $settings -Recurse
+    $findings = Invoke-ScriptAnalyzer -Path $projectRoot -Settings $settings -Recurse -Severity Error
     if ($findings) {
         $findings | Format-Table -AutoSize | Out-String | Write-Warning
         Add-TestResult -Name 'PSScriptAnalyzer' -Category 'lint' -Status Failed -Command 'Invoke-ScriptAnalyzer -Path . -Recurse' -Summary 'PSScriptAnalyzer returned findings.' -ExitCode 1 -FailureReason 'Static analysis findings were returned.'
@@ -120,4 +120,4 @@ for ($i = 0; $i -lt $evidenceRecords.Count; $i++) {
         exit 1
     }
 }
-Write-Host "PowerShell example evidence written to $evidenceFile"
+Write-Output "PowerShell example evidence written to $evidenceFile"

@@ -4,19 +4,42 @@ on:
   workflow_call:
     inputs:
       project-path:
-        description: Repository-relative project path to validate.
+        description: Repository-relative path to validate. Path traversal and absolute paths are rejected.
         type: string
         required: false
         default: .
       governance-version:
-        description: Governance standard version used for evidence.
+        description: Expected governance standard version. Compared with project-manifest.json when present.
         type: string
         required: false
         default: 1.0.0
+      run-examples:
+        description: Run functional example-project validation commands.
+        type: boolean
+        required: false
+        default: true
+      run-pester:
+        description: Run repository Pester tests.
+        type: boolean
+        required: false
+        default: true
+      run-documentation-validation:
+        description: Run substantive documentation completeness checks.
+        type: boolean
+        required: false
+        default: true
+      artifact-retention-days:
+        description: Retention period for governance evidence artifacts. Valid range is 1 through 90 days.
+        type: number
+        required: false
+        default: 30
     outputs:
       evidence-path:
         description: Completion evidence path.
         value: ${{ jobs.governance.outputs.evidence-path }}
+      artifact-name:
+        description: Uploaded artifact name.
+        value: ${{ jobs.governance.outputs.artifact-name }}
 
 permissions:
   contents: read
@@ -27,37 +50,152 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       evidence-path: ${{ steps.evidence.outputs.evidence-path }}
+      artifact-name: ${{ steps.artifact.outputs.artifact-name }}
     steps:
       - name: Checkout
+        # actions/checkout v4.2.2 pinned by commit SHA.
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
 
-      - name: Prepare evidence directory
+      - name: Validate workflow inputs
+        id: inputs
         shell: pwsh
-        run: New-Item -ItemType Directory -Path evidence -Force | Out-Null
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $projectPath = '${{ inputs.project-path }}'
+          if ([string]::IsNullOrWhiteSpace($projectPath)) { throw 'project-path must not be empty.' }
+          if ([System.IO.Path]::IsPathRooted($projectPath) -or $projectPath -match '(^|[\\/])\.\.([\\/]|$)') {
+            throw "Invalid project-path '$projectPath'. Absolute paths and path traversal are not allowed."
+          }
+          $resolved = [System.IO.Path]::GetFullPath((Join-Path $PWD.Path $projectPath))
+          if (-not $resolved.StartsWith($PWD.Path, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Invalid project-path '$projectPath'. It resolves outside the repository."
+          }
+          $retention = [int]'${{ inputs.artifact-retention-days }}'
+          if ($retention -lt 1 -or $retention -gt 90) { throw 'artifact-retention-days must be between 1 and 90.' }
+          if (Test-Path -LiteralPath (Join-Path $resolved 'project-manifest.json') -PathType Leaf) {
+            $manifest = Get-Content -LiteralPath (Join-Path $resolved 'project-manifest.json') -Raw | ConvertFrom-Json
+            if ($manifest.governanceVersion -ne '${{ inputs.governance-version }}') {
+              throw "governance-version input '${{ inputs.governance-version }}' does not match project manifest version '$($manifest.governanceVersion)'."
+            }
+          }
+          New-Item -ItemType Directory -Path evidence -Force | Out-Null
+          "project-path=$projectPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "artifact-retention-days=$retention" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Record environment information
+        shell: pwsh
+        run: |
+          $info = [ordered]@{
+            repository = '${{ github.repository }}'
+            sha = '${{ github.sha }}'
+            ref = '${{ github.ref }}'
+            refName = '${{ github.ref_name }}'
+            runnerOs = '${{ runner.os }}'
+            governanceVersion = '${{ inputs.governance-version }}'
+            powerShellVersion = $PSVersionTable.PSVersion.ToString()
+            projectPath = '${{ steps.inputs.outputs.project-path }}'
+          }
+          $info | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath evidence/environment.json -Encoding utf8
+
+      - name: Install pinned validation dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check --no-input PyYAML==6.0.2
+          Install-Module PSScriptAnalyzer -RequiredVersion 1.22.0 -Scope CurrentUser -Force -Repository PSGallery
+
+      - name: Validate YAML syntax
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path . -OutputJson evidence/yaml-syntax.json
+
+      - name: Validate workflow architecture
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path . -DefaultBranch master -OutputJson evidence/workflow-architecture.json
 
       - name: Validate schemas and fixtures
         shell: pwsh
-        run: pwsh -NoProfile -File scripts/Test-JsonSchemas.ps1 -Path '${{ inputs.project-path }}' -OutputJson evidence/json-schemas.json
+        run: pwsh -NoProfile -File scripts/Test-JsonSchemas.ps1 -Path '${{ steps.inputs.outputs.project-path }}' -OutputJson evidence/json-schemas.json
 
       - name: Validate Markdown links
         shell: pwsh
-        run: pwsh -NoProfile -File scripts/Test-MarkdownLinks.ps1 -Path '${{ inputs.project-path }}' -OutputJson evidence/markdown-links.json
+        run: pwsh -NoProfile -File scripts/Test-MarkdownLinks.ps1 -Path '${{ steps.inputs.outputs.project-path }}' -OutputJson evidence/markdown-links.json
 
       - name: Validate documentation completeness
+        if: ${{ inputs.run-documentation-validation }}
         shell: pwsh
-        run: pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path '${{ inputs.project-path }}' -OutputJson evidence/documentation-completeness.json
+        run: pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path '${{ steps.inputs.outputs.project-path }}' -OutputJson evidence/documentation-completeness.json
 
       - name: Validate governance contract
         shell: pwsh
-        run: pwsh -NoProfile -File actions/validate-contract/Invoke-ContractValidation.ps1 -Path '${{ inputs.project-path }}' -OutputJson evidence/contract.json
+        run: pwsh -NoProfile -File actions/validate-contract/Invoke-ContractValidation.ps1 -Path '${{ steps.inputs.outputs.project-path }}' -OutputJson evidence/contract.json
 
       - name: Run forbidden-pattern scan
         shell: pwsh
-        run: pwsh -NoProfile -File actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1 -Path '${{ inputs.project-path }}' -OutputJson evidence/forbidden-patterns.json
+        run: pwsh -NoProfile -File actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1 -Path '${{ steps.inputs.outputs.project-path }}' -OutputJson evidence/forbidden-patterns.json
 
       - name: Validate repository health
         shell: pwsh
-        run: pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path '${{ inputs.project-path }}' -OutputJson evidence/repository-health.json
+        run: pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path '${{ steps.inputs.outputs.project-path }}' -OutputJson evidence/repository-health.json
+
+      - name: Validate PowerShell parser
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem -LiteralPath '${{ steps.inputs.outputs.project-path }}' -Recurse -File -Include *.ps1,*.psm1,*.psd1 | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $failed = $true
+              Write-Error "Parse errors in $($_.FullName): $($errors | Out-String)"
+            }
+          }
+          if ($failed) { exit 1 }
+          @{ parsedAtUtc = (Get-Date).ToUniversalTime().ToString('o'); status = 'Passed' } | ConvertTo-Json | Set-Content evidence/powershell-parser.json
+
+      - name: Run Pester
+        if: ${{ inputs.run-pester }}
+        shell: pwsh
+        run: |
+          $config = New-PesterConfiguration
+          $config.Run.Path = 'tests'
+          $config.Output.Verbosity = 'Detailed'
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputPath = 'evidence/pester-results.xml'
+          $config.TestResult.OutputFormat = 'NUnitXml'
+          $result = Invoke-Pester -Configuration $config -PassThru
+          $result | Select-Object Result,PassedCount,FailedCount,SkippedCount,NotRunCount,Duration | ConvertTo-Json -Depth 10 | Set-Content evidence/pester-summary.json
+          if ($result.FailedCount -gt 0) { exit 1 }
+
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          $findings = @(Invoke-ScriptAnalyzer -Path '${{ steps.inputs.outputs.project-path }}' -Recurse -Severity Error)
+          if ($findings.Count -eq 0) {
+            '[]' | Set-Content -LiteralPath evidence/psscriptanalyzer.json -Encoding utf8
+          } else {
+            $findings | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath evidence/psscriptanalyzer.json -Encoding utf8
+            $findings | Format-Table -AutoSize
+            exit 1
+          }
+
+      - name: Validate examples
+        if: ${{ inputs.run-examples }}
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File examples/powershell-project/tools/Test-Example.ps1
+          pwsh -NoProfile -File examples/database-project/tools/Test-Migrations.ps1 -Path examples/database-project
+          Invoke-Pester -Path examples/worker-service-project/tests -Output Detailed
+          dotnet build examples/dotnet-project/Example.Service.csproj --configuration Release
+          dotnet build examples/dotnet-project/src/Example.csproj --configuration Release
+          dotnet run --project examples/dotnet-project/tests/Example.Service.Tests.csproj --configuration Release
+          npm ci --prefix examples/web-project
+          npm run lint --prefix examples/web-project
+          npm test --prefix examples/web-project
+          npm run build --prefix examples/web-project
+          @{ validatedAtUtc = (Get-Date).ToUniversalTime().ToString('o'); status = 'Passed' } | ConvertTo-Json | Set-Content evidence/examples.json
 
       - name: Generate completion evidence
         id: evidence
@@ -66,7 +204,7 @@ jobs:
         run: |
           $status = if ('${{ job.status }}' -eq 'success') { 'Passed' } else { 'Failed' }
           $exitCode = if ($status -eq 'Passed') { 0 } else { 1 }
-          $failureReason = if ($status -eq 'Passed') { $null } else { 'One or more governance workflow steps failed. Review uploaded validation reports.' }
+          $failureReason = if ($status -eq 'Passed') { $null } else { 'One or more mandatory governance workflow steps failed. Review uploaded validation reports.' }
           $now = (Get-Date).ToUniversalTime().ToString('o')
           @(
             [ordered]@{
@@ -94,19 +232,42 @@ jobs:
             -RiskClassification High `
             -Status $status `
             -Summary "GitHub Actions governance validation completed with job status ${{ job.status }}." `
-            -TestResultPath evidence/ci-test-results.json
-          "evidence-path=evidence/completion-result.json" >> $env:GITHUB_OUTPUT
+            -TestResultPath evidence/ci-test-results.json `
+            -ArtifactPath @(
+              'evidence/environment.json',
+              'evidence/yaml-syntax.json',
+              'evidence/workflow-architecture.json',
+              'evidence/json-schemas.json',
+              'evidence/markdown-links.json',
+              'evidence/contract.json',
+              'evidence/forbidden-patterns.json',
+              'evidence/repository-health.json',
+              'evidence/powershell-parser.json',
+              'evidence/pester-summary.json',
+              'evidence/psscriptanalyzer.json',
+              'evidence/examples.json'
+            )
+          "evidence-path=evidence/completion-result.json" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Validate completion evidence
         if: always()
         shell: pwsh
-        run: pwsh -NoProfile -File actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path . -EvidencePath evidence/completion-result.json -OutputJson evidence/evidence-validation.json
+        run: pwsh -NoProfile -File actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path . -EvidencePath evidence/completion-result.json -ExpectedCommitSha '${{ github.sha }}' -OutputJson evidence/evidence-validation.json
 
       - name: Upload governance evidence
+        id: upload-artifact
         if: always()
+        # actions/upload-artifact v4.6.2 pinned by commit SHA.
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: governance-evidence-${{ github.run_id }}
           path: evidence/
           if-no-files-found: error
-          retention-days: 30
+          retention-days: ${{ steps.inputs.outputs.artifact-retention-days }}
+
+      - name: Record artifact output
+        id: artifact
+        if: always()
+        shell: pwsh
+        run: |
+          "artifact-name=governance-evidence-${{ github.run_id }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append

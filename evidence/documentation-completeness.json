@@ -1,0 +1,16 @@
+{
+  "generatedAtUtc": "2026-06-20T01:21:58.2679868Z",
+  "results": [
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Documentation completeness validation passed.",
+      "path": "F:\\repos\\Engineering-Standards",
+      "data": null
+    }
+  ],
+  "failed": 0,
+  "warnings": 0,
+  "blocked": 0,
+  "notRun": 0
+}

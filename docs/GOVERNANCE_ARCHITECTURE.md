@@ -34,13 +34,25 @@ sequenceDiagram
   Workflow->>Evidence: upload artifact
 ```
 
+## Workflow Architecture
+
+The event-triggered workflow is `.github/workflows/governance-ci.yml`. It runs on pull requests, pushes to `master`, and manual `workflow_dispatch`, and its only job calls `.github/workflows/governance-ci-reusable.yml`.
+
+The reusable workflow is `.github/workflows/governance-ci-reusable.yml`. It is triggered only by `workflow_call`, defines all supported inputs, runs validation jobs, generates completion evidence, and uploads evidence artifacts. It MUST NOT call the event workflow, itself, or any workflow that calls it back.
+
+Root files under `workflows/` are distribution templates. GitHub does not execute reusable workflows directly from that location. Cross-repository callers must use `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<immutable-reference>`.
+
 ## Trust Boundaries
 
 Pull-request content, filenames, configuration, evidence, and generated artifacts are untrusted. Central workflow code is trusted only at the pinned version. Secrets are outside the validation boundary and are not required for pull-request validation.
 
 ## Failure Behavior
 
-Mandatory failures return nonzero. Advisory mode records findings without blocking. Missing tools are `NotRun` and must be shown in evidence.
+Mandatory failures return nonzero. The reusable workflow generates evidence with `if: always()` and uploads validation reports even when a mandatory step fails. Missing tools are `NotRun` and must be shown in evidence; mandatory local workflow validation includes YAML syntax and workflow architecture checks.
+
+## Reusable Inputs And Outputs
+
+Inputs are `project-path`, `governance-version`, `run-examples`, `run-pester`, `run-documentation-validation`, and `artifact-retention-days`. Outputs are `evidence-path` and `artifact-name`. Artifact uploads include validation reports, scanner reports, Pester output, and completion evidence.
 
 ## Governance Operating Requirements
 
@@ -57,3 +69,4 @@ Exceptions MUST follow `governance/EXCEPTION_PROCESS.md`. An exception request n
 - `governance/RISK_CLASSIFICATION.md`
 - `governance/EXCEPTION_PROCESS.md`
 - `docs/ADOPTION_GUIDE.md`
+- `scripts/Test-GitHubWorkflowArchitecture.ps1`
