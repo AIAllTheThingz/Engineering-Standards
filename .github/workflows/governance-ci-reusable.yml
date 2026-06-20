@@ -240,7 +240,7 @@ jobs:
             'evidence/psscriptanalyzer.json',
             'evidence/examples.json'
           )
-          & pwsh -NoProfile -File scripts/New-CompletionEvidence.ps1 `
+          & ./scripts/New-CompletionEvidence.ps1 `
             -RepositoryPath . `
             -OutputPath evidence/completion-result.json `
             -GovernanceVersion '${{ inputs.governance-version }}' `
