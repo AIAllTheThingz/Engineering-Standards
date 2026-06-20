@@ -90,6 +90,10 @@ Agents MUST NOT weaken branch protection, review, evidence, scanner, workflow, o
 Agents MUST run the applicable subset for each change and MUST NOT claim a command passed unless it actually ran.
 
 ```powershell
+pwsh -NoProfile -File scripts/Test-AgentStandards.ps1 -Path .
+```
+
+```powershell
 pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .
 ```
 
@@ -148,7 +152,7 @@ Changes under `actions/` require Pester tests, output wiring validation, failure
 
 Changes under `evidence/` require schema validation, commit-semantics validation, no absolute paths, no fabricated run metadata, and hash consistency.
 
-Changes under `agents/` or `governance/` require documentation completeness, link validation, cross-document consistency review, and no contradictory instruction hierarchy.
+Changes under `agents/`, root `AGENTS.md`, agent-standard validation tooling, or related instruction-hierarchy documentation require `Test-AgentStandards.ps1`, documentation completeness, link validation, cross-document consistency review, and no contradictory instruction hierarchy.
 
 Changes under `examples/` require real build and test commands for the affected example. Fake commands that only print success are prohibited.
 

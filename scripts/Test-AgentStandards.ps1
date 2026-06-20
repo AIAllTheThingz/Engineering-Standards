@@ -161,6 +161,7 @@ Test-Contains $base 'EXCEPTION_PROCESS\.md' 'Base references the exception proce
 Test-Contains $rootAgents 'EXCEPTION_PROCESS\.md' 'Root references the exception process.' 'AGENTS.md'
 
 $requiredCommands = @(
+    'pwsh -NoProfile -File scripts/Test-AgentStandards.ps1 -Path .',
     'pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .',
     'pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path . -DefaultBranch master',
     'pwsh -NoProfile -File scripts/Test-JsonSchemas.ps1 -Path .',

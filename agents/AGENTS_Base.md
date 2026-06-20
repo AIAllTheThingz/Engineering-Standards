@@ -84,7 +84,7 @@ Before modifying files, agents MUST:
 - Inspect `git status` and preserve user changes.
 - Record unresolved assumptions.
 
-No modifying action SHOULD occur before discovery is complete unless the user explicitly requests a trivial isolated edit.
+Agents MUST complete discovery before modifying files, except for an explicitly requested trivial isolated edit.
 
 ### Phase 2 - Validation Planning
 
@@ -204,7 +204,7 @@ Documentation MUST be fully authored. It MUST NOT rely on placeholders, keyword 
 
 ## Testing Requirements
 
-Agents SHOULD include tests that match the risk and change type:
+Agents MUST include all applicable tests that match the risk and change type. Tests that are not applicable MUST be recorded as `NotApplicable` with a reason. Applicable tests that cannot run MUST be recorded as `NotRun` or `Blocked` with the reason.
 
 - Positive tests.
 - Negative tests.
@@ -253,7 +253,7 @@ Agents MUST NOT:
 
 ## Required Final Response Format
 
-Final responses SHOULD include:
+Final responses MUST include:
 
 1. Summary.
 2. Files changed.

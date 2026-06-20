@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-20T14:42:47.8881508Z",
+  "generatedAtUtc": "2026-06-20T15:43:00.3912676Z",
   "results": [
     {
       "status": "Passed",
@@ -201,6 +201,13 @@
       "status": "Passed",
       "severity": "info",
       "message": "Root references the exception process.",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required repository validation command is present: pwsh -NoProfile -File scripts/Test-AgentStandards.ps1 -Path .",
       "path": "AGENTS.md",
       "data": null
     },

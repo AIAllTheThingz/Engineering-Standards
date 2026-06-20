@@ -99,5 +99,16 @@ Describe 'Agent standards validation' {
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
+
+        It 'fails when the agent-standard validation command is missing' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'AGENTS.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace(
+                'pwsh -NoProfile -File scripts/Test-AgentStandards.ps1 -Path .',
+                'pwsh -NoProfile -File scripts/Test-AgentStandards.ps1 -Path agents'
+            )
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
     }
 }
