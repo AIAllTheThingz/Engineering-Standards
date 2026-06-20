@@ -1,11 +1,11 @@
 {
-  "generatedAtUtc": "2026-06-20T01:26:19.0732629Z",
+  "generatedAtUtc": "2026-06-20T01:30:29.5896341Z",
   "results": [
     {
       "status": "Warning",
       "severity": "warning",
       "message": "Root workflows directory file is a distribution template, not directly callable by GitHub in this location.",
-      "path": "workflows/web-ci.yml",
+      "path": "workflows/database-ci.yml",
       "data": null
     },
     {
@@ -19,14 +19,14 @@
       "status": "Warning",
       "severity": "warning",
       "message": "Root workflows directory file is a distribution template, not directly callable by GitHub in this location.",
-      "path": "workflows/database-ci.yml",
+      "path": "workflows/powershell-ci.yml",
       "data": null
     },
     {
       "status": "Warning",
       "severity": "warning",
       "message": "Root workflows directory file is a distribution template, not directly callable by GitHub in this location.",
-      "path": "workflows/powershell-ci.yml",
+      "path": "workflows/web-ci.yml",
       "data": null
     },
     {
@@ -36,15 +36,15 @@
       "path": "F:\\repos\\Engineering-Standards",
       "data": {
         "callGraph": {
+          "workflows/database-ci.yml": [],
+          ".github/workflows/governance-ci-reusable.yml": [],
           "workflows/governance-ci.yml": [],
-          "workflows/web-ci.yml": [],
           "workflows/dotnet-ci.yml": [],
+          "workflows/web-ci.yml": [],
           ".github/workflows/governance-ci.yml": [
             ".github/workflows/governance-ci-reusable.yml"
           ],
-          "workflows/database-ci.yml": [],
-          "workflows/powershell-ci.yml": [],
-          ".github/workflows/governance-ci-reusable.yml": []
+          "workflows/powershell-ci.yml": []
         }
       }
     }

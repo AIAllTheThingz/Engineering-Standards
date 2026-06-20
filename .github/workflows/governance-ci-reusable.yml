@@ -165,7 +165,8 @@ jobs:
           $config.TestResult.Enabled = $true
           $config.TestResult.OutputPath = 'evidence/pester-results.xml'
           $config.TestResult.OutputFormat = 'NUnitXml'
-          $result = Invoke-Pester -Configuration $config -PassThru
+          $config.Run.PassThru = $true
+          $result = Invoke-Pester -Configuration $config
           $result | Select-Object Result,PassedCount,FailedCount,SkippedCount,NotRunCount,Duration | ConvertTo-Json -Depth 10 | Set-Content evidence/pester-summary.json
           if ($result.FailedCount -gt 0) { exit 1 }
 
@@ -225,6 +226,20 @@ jobs:
               failureReason = $failureReason
             }
           ) | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath evidence/ci-test-results.json -Encoding utf8
+          $artifactPaths = @(
+            'evidence/environment.json',
+            'evidence/yaml-syntax.json',
+            'evidence/workflow-architecture.json',
+            'evidence/json-schemas.json',
+            'evidence/markdown-links.json',
+            'evidence/contract.json',
+            'evidence/forbidden-patterns.json',
+            'evidence/repository-health.json',
+            'evidence/powershell-parser.json',
+            'evidence/pester-summary.json',
+            'evidence/psscriptanalyzer.json',
+            'evidence/examples.json'
+          )
           & pwsh -NoProfile -File scripts/New-CompletionEvidence.ps1 `
             -RepositoryPath . `
             -OutputPath evidence/completion-result.json `
@@ -233,20 +248,7 @@ jobs:
             -Status $status `
             -Summary "GitHub Actions governance validation completed with job status ${{ job.status }}." `
             -TestResultPath evidence/ci-test-results.json `
-            -ArtifactPath @(
-              'evidence/environment.json',
-              'evidence/yaml-syntax.json',
-              'evidence/workflow-architecture.json',
-              'evidence/json-schemas.json',
-              'evidence/markdown-links.json',
-              'evidence/contract.json',
-              'evidence/forbidden-patterns.json',
-              'evidence/repository-health.json',
-              'evidence/powershell-parser.json',
-              'evidence/pester-summary.json',
-              'evidence/psscriptanalyzer.json',
-              'evidence/examples.json'
-            )
+            -ArtifactPath $artifactPaths
           "evidence-path=evidence/completion-result.json" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Validate completion evidence
