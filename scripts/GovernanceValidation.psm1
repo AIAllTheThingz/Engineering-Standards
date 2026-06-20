@@ -54,6 +54,35 @@ function Write-ValidationReport {
         [string]$OutputJson
     )
 
+    function ConvertTo-NeutralPathValue {
+        param([object]$Value)
+        if ($null -eq $Value) { return $null }
+        if ($Value -is [string]) {
+            $root = (Get-Location).Path
+            if ($Value.StartsWith($root, [StringComparison]::OrdinalIgnoreCase)) {
+                $relative = [System.IO.Path]::GetRelativePath($root, $Value).Replace('\','/')
+                if ([string]::IsNullOrWhiteSpace($relative)) { return '.' }
+                return $relative
+            }
+            return $Value
+        }
+        if ($Value -is [System.Collections.IDictionary]) {
+            $copy = [ordered]@{}
+            foreach ($key in $Value.Keys) { $copy[$key] = ConvertTo-NeutralPathValue -Value $Value[$key] }
+            return $copy
+        }
+        if ($Value -is [pscustomobject]) {
+            $copy = [ordered]@{}
+            foreach ($property in $Value.PSObject.Properties) { $copy[$property.Name] = ConvertTo-NeutralPathValue -Value $property.Value }
+            return $copy
+        }
+        if ($Value -is [System.Collections.IEnumerable] -and $Value -isnot [string]) {
+            return @($Value | ForEach-Object { ConvertTo-NeutralPathValue -Value $_ })
+        }
+        return $Value
+    }
+
+    $Report = ConvertTo-NeutralPathValue -Value $Report
     if ($OutputJson) {
         $parent = Split-Path -Parent $OutputJson
         if ($parent) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }

@@ -9,6 +9,8 @@ param(
     [string]$Path = '.',
     [string]$EvidencePath = 'evidence/completion-result.json',
     [string]$ExpectedCommitSha,
+    [string]$ExpectedRepository,
+    [string]$ExpectedRefName,
     [string]$OutputJson
 )
 
@@ -39,6 +41,14 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
     if ($ExpectedCommitSha -and $evidence.commitSha -ne $ExpectedCommitSha) {
         $results.Add((New-ValidationResult -Status Failed -Message 'Commit SHA mismatch.' -Path $EvidencePath))
     }
+    $repositoryToCheck = if ($ExpectedRepository) { $ExpectedRepository } else { $env:GITHUB_REPOSITORY }
+    if ($repositoryToCheck -and $evidence.repository -ne $repositoryToCheck) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Repository mismatch.' -Path $EvidencePath))
+    }
+    $refToCheck = if ($ExpectedRefName) { $ExpectedRefName } else { $env:GITHUB_REF_NAME }
+    if ($refToCheck -and $evidence.branch -ne $refToCheck) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Branch/ref mismatch.' -Path $EvidencePath))
+    }
 
     $knownTestNames = @{}
     foreach ($test in @($evidence.tests)) {
@@ -50,17 +60,35 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
         }
     }
 
+    $artifactKeys = @{}
     foreach ($artifact in @($evidence.artifacts)) {
+        $artifactKey = [string]$artifact.path
+        if ($artifactKeys.ContainsKey($artifactKey)) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Duplicate artifact record '$artifactKey'." -Path $EvidencePath))
+        }
+        else {
+            $artifactKeys[$artifactKey] = $true
+        }
         try {
+            if ([System.IO.Path]::IsPathRooted([string]$artifact.path) -or [string]$artifact.path -match '(^|[\\/])\.\.([\\/]|$)') {
+                throw "Artifact path '$($artifact.path)' must be repository-relative and must not traverse outside the repository."
+            }
+            if ([string]$artifact.path -notmatch '^evidence/') {
+                throw "Artifact path '$($artifact.path)' must be under the evidence directory."
+            }
             $artifactPath = Resolve-SafePath -Root $root -ChildPath $artifact.path
             if (Test-Path -LiteralPath $artifactPath -PathType Leaf) {
+                $actualSize = (Get-Item -LiteralPath $artifactPath).Length
+                if ([int64]$artifact.sizeBytes -ne [int64]$actualSize) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Artifact size mismatch.' -Path $artifact.path))
+                }
                 $actual = (Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant()
                 if ($actual -ne $artifact.sha256.ToLowerInvariant()) {
                     $results.Add((New-ValidationResult -Status Failed -Message 'Artifact hash mismatch.' -Path $artifact.path))
                 }
             }
             else {
-                $results.Add((New-ValidationResult -Status Warning -Message 'Artifact listed but not present for hash verification.' -Path $artifact.path -Severity warning))
+                $results.Add((New-ValidationResult -Status Failed -Message 'Artifact listed but not present for hash verification.' -Path $artifact.path))
             }
         }
         catch {

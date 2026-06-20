@@ -56,7 +56,7 @@ function Add-TestResult {
 
 $moduleManifest = Join-Path $projectRoot 'ExampleModule.psd1'
 Test-ModuleManifest -Path $moduleManifest | Out-Null
-Add-TestResult -Name 'Module manifest validation' -Category 'lint' -Status Passed -Command "Test-ModuleManifest -Path $moduleManifest" -Summary 'Module manifest parsed and required metadata is valid.'
+Add-TestResult -Name 'Module manifest validation' -Category 'lint' -Status Passed -Command 'Test-ModuleManifest -Path ExampleModule.psd1' -Summary 'Module manifest parsed and required metadata is valid.'
 
 $parseFailed = $false
 foreach ($file in Get-ChildItem -LiteralPath $projectRoot -Recurse -File -Include *.ps1,*.psm1,*.psd1) {

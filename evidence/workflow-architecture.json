@@ -1,56 +1,60 @@
 {
-  "generatedAtUtc": "2026-06-20T01:33:03.5030698Z",
+  "generatedAtUtc": "2026-06-20T01:56:50.0496294Z",
   "results": [
     {
-      "status": "Warning",
-      "severity": "warning",
-      "message": "Root workflows directory file is a distribution template, not directly callable by GitHub in this location.",
-      "path": "workflows/dotnet-ci.yml",
-      "data": null
-    },
-    {
-      "status": "Warning",
-      "severity": "warning",
-      "message": "Root workflows directory file is a distribution template, not directly callable by GitHub in this location.",
-      "path": "workflows/web-ci.yml",
-      "data": null
-    },
-    {
-      "status": "Warning",
-      "severity": "warning",
-      "message": "Root workflows directory file is a distribution template, not directly callable by GitHub in this location.",
+      "status": "Passed",
+      "severity": "info",
+      "message": "Root workflows directory file is an informational distribution template.",
       "path": "workflows/powershell-ci.yml",
       "data": null
     },
     {
-      "status": "Warning",
-      "severity": "warning",
-      "message": "Root workflows directory file is a distribution template, not directly callable by GitHub in this location.",
+      "status": "Passed",
+      "severity": "info",
+      "message": "Root workflows directory file is an informational distribution template.",
+      "path": "workflows/web-ci.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Root workflows directory file is an informational distribution template.",
       "path": "workflows/database-ci.yml",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
+      "message": "Root workflows directory file is an informational distribution template.",
+      "path": "workflows/dotnet-ci.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
       "message": "GitHub workflow architecture validation passed.",
-      "path": "F:\\repos\\Engineering-Standards",
+      "path": ".",
       "data": {
         "callGraph": {
-          "workflows/dotnet-ci.yml": [],
-          "workflows/web-ci.yml": [],
-          "workflows/powershell-ci.yml": [],
-          ".github/workflows/governance-ci-reusable.yml": [],
-          "workflows/database-ci.yml": [],
-          "workflows/governance-ci.yml": [],
-          ".github/workflows/governance-ci.yml": [
-            ".github/workflows/governance-ci-reusable.yml"
-          ]
+          "workflows/governance-ci.yml": null,
+          "workflows/web-ci.yml": null,
+          ".github/workflows/governance-ci-reusable.yml": null,
+          "workflows/powershell-ci.yml": null,
+          ".github/workflows/governance-ci.yml": ".github/workflows/governance-ci-reusable.yml",
+          "workflows/database-ci.yml": null,
+          "workflows/dotnet-ci.yml": null
         }
       }
     }
   ],
   "failed": 0,
-  "warnings": 4,
+  "warnings": 0,
   "blocked": 0,
   "notRun": 0
 }
+
+
+
+
+
+

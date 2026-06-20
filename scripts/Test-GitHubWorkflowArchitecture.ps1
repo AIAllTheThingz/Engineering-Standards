@@ -233,7 +233,13 @@ foreach ($rel in $workflows.Keys) {
 
 foreach ($rel in $workflows.Keys) {
     if ((Test-HasWorkflowCall -Workflow $workflows[$rel]) -and $rel -notmatch '^\.github/workflows/') {
-        $results.Add((New-ValidationResult -Status Warning -Message 'Root workflows directory file is a distribution template, not directly callable by GitHub in this location.' -Path $rel -Severity warning))
+        $text = Get-Content -LiteralPath (Join-Path $root $rel) -Raw
+        if ($rel -match '^workflows/' -and $text -match 'distribution template' -and $text -notmatch 'directly executable from this location') {
+            $results.Add((New-ValidationResult -Status Passed -Message 'Root workflows directory file is an informational distribution template.' -Path $rel -Severity info))
+        }
+        else {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Root workflow template is missing clear distribution-template labeling or claims direct executability.' -Path $rel))
+        }
     }
 }
 

@@ -6,6 +6,12 @@ on:
     branches:
       - master
   workflow_dispatch:
+    inputs:
+      controlled-failure-test:
+        description: Run a safe mandatory-check failure to prove evidence upload on failure.
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -17,3 +23,4 @@ jobs:
     with:
       project-path: .
       governance-version: 1.0.0
+      controlled-failure-test: ${{ inputs.controlled-failure-test || false }}

@@ -1,0 +1,15 @@
+{
+  "pythonRequirement": "PyYAML==6.0.2",
+  "pythonInstall": "pip --require-hashes",
+  "powershellRepository": "PSGallery",
+  "psscriptAnalyzerVersion": "1.22.0",
+  "status": "Passed",
+  "failureReason": null,
+  "installedAtUtc": "2026-06-20T01:59:01.7330992Z"
+}
+
+
+
+
+
+

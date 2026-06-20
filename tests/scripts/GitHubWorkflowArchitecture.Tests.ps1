@@ -309,6 +309,96 @@ jobs:
         & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master
         $LASTEXITCODE | Should -Not -Be 0
     }
+
+    It 'treats valid root distribution templates as informational' {
+        $root = New-WorkflowFixture -Name 'valid-root-template'
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci.yml' -Content @'
+name: Governance CI
+on:
+  push:
+    branches: [master]
+jobs:
+  governance:
+    uses: ./.github/workflows/governance-ci-reusable.yml
+'@
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci-reusable.yml' -Content @'
+name: Reusable
+on:
+  workflow_call:
+    inputs:
+      project-path: { type: string, required: false, default: . }
+      governance-version: { type: string, required: false, default: 1.0.0 }
+      run-examples: { type: boolean, required: false, default: true }
+      run-pester: { type: boolean, required: false, default: true }
+      run-documentation-validation: { type: boolean, required: false, default: true }
+      artifact-retention-days: { type: number, required: false, default: 30 }
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo '${{ inputs.project-path }}'
+          echo '${{ inputs.governance-version }}'
+          echo '${{ inputs.run-examples }}'
+          echo '${{ inputs.run-pester }}'
+          echo '${{ inputs.run-documentation-validation }}'
+          echo '${{ inputs.artifact-retention-days }}'
+'@
+        Set-FixtureFile -Root $root -RelativePath 'workflows/powershell-ci.yml' -Content @'
+# Distribution template only. GitHub does not execute reusable workflows from
+# this root workflows/ directory until copied into .github/workflows/ in a
+# downstream repository.
+name: PowerShell CI
+on:
+  workflow_call:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ok
+'@
+        $report = Join-Path $root 'report.json'
+        & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -OutputJson $report
+        $LASTEXITCODE | Should -Be 0
+        $json = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
+        @($json.results | Where-Object { $_.path -eq 'workflows/powershell-ci.yml' -and $_.status -eq 'Passed' }).Count | Should -BeGreaterThan 0
+        $json.warnings | Should -Be 0
+    }
+
+    It 'fails a mislabeled root distribution template' {
+        $root = New-WorkflowFixture -Name 'invalid-root-template-label'
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci.yml' -Content @'
+name: Governance CI
+on:
+  push:
+    branches: [master]
+jobs:
+  governance:
+    uses: ./.github/workflows/governance-ci-reusable.yml
+'@
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci-reusable.yml' -Content @'
+name: Reusable
+on:
+  workflow_call:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ok
+'@
+        Set-FixtureFile -Root $root -RelativePath 'workflows/powershell-ci.yml' -Content @'
+name: PowerShell CI
+on:
+  workflow_call:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ok
+'@
+        & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master
+        $LASTEXITCODE | Should -Not -Be 0
+    }
 }
 
 Describe 'Composite action output wiring' {

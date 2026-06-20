@@ -1,0 +1,17 @@
+{
+  "runId": "local",
+  "governanceVersion": "1.0.0",
+  "workflow": "Local validation",
+  "sha": "6ab9c6e03271eef46224b5aebad137e5f9685a8b",
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "ref": "refs/heads/main",
+  "powerShellVersion": "7.6.2",
+  "runAttempt": "1",
+  "refName": "main",
+  "projectPath": ".",
+  "runnerOs": "Windows"
+}
+
+
+
+

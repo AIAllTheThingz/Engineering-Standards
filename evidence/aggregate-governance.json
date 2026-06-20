@@ -5,7 +5,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "JsonSchemas exited with code 0.",
-      "path": "F:\\repos\\Engineering-Standards\\scripts\\Test-JsonSchemas.ps1",
+      "path": "scripts\\Test-JsonSchemas.ps1",
       "data": {
         "exitCode": 0
       }
@@ -14,7 +14,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "YamlSyntax exited with code 0.",
-      "path": "F:\\repos\\Engineering-Standards\\scripts\\Test-YamlSyntax.ps1",
+      "path": "scripts\\Test-YamlSyntax.ps1",
       "data": {
         "exitCode": 0
       }
@@ -23,7 +23,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "WorkflowArchitecture exited with code 0.",
-      "path": "F:\\repos\\Engineering-Standards\\scripts\\Test-GitHubWorkflowArchitecture.ps1",
+      "path": "scripts\\Test-GitHubWorkflowArchitecture.ps1",
       "data": {
         "exitCode": 0
       }
@@ -32,7 +32,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "MarkdownLinks exited with code 0.",
-      "path": "F:\\repos\\Engineering-Standards\\scripts\\Test-MarkdownLinks.ps1",
+      "path": "scripts\\Test-MarkdownLinks.ps1",
       "data": {
         "exitCode": 0
       }
@@ -41,7 +41,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "DocumentationCompleteness exited with code 0.",
-      "path": "F:\\repos\\Engineering-Standards\\scripts\\Test-DocumentationCompleteness.ps1",
+      "path": "scripts\\Test-DocumentationCompleteness.ps1",
       "data": {
         "exitCode": 0
       }
@@ -50,7 +50,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "Contract exited with code 0.",
-      "path": "F:\\repos\\Engineering-Standards\\actions\\validate-contract\\Invoke-ContractValidation.ps1",
+      "path": "actions\\validate-contract\\Invoke-ContractValidation.ps1",
       "data": {
         "exitCode": 0
       }
@@ -59,7 +59,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "ForbiddenPatterns exited with code 0.",
-      "path": "F:\\repos\\Engineering-Standards\\actions\\forbidden-pattern-scan\\Invoke-ForbiddenPatternScan.ps1",
+      "path": "actions\\forbidden-pattern-scan\\Invoke-ForbiddenPatternScan.ps1",
       "data": {
         "exitCode": 0
       }
@@ -68,7 +68,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "RepositoryHealth exited with code 0.",
-      "path": "F:\\repos\\Engineering-Standards\\actions\\repository-health\\Invoke-RepositoryHealth.ps1",
+      "path": "actions\\repository-health\\Invoke-RepositoryHealth.ps1",
       "data": {
         "exitCode": 0
       }
@@ -77,7 +77,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "Example database-project exited with code 0.",
-      "path": "F:\\repos\\Engineering-Standards\\actions\\validate-contract\\Invoke-ContractValidation.ps1",
+      "path": "actions\\validate-contract\\Invoke-ContractValidation.ps1",
       "data": {
         "exitCode": 0
       }
@@ -86,7 +86,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "Example dotnet-project exited with code 0.",
-      "path": "F:\\repos\\Engineering-Standards\\actions\\validate-contract\\Invoke-ContractValidation.ps1",
+      "path": "actions\\validate-contract\\Invoke-ContractValidation.ps1",
       "data": {
         "exitCode": 0
       }
@@ -95,7 +95,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "Example powershell-project exited with code 0.",
-      "path": "F:\\repos\\Engineering-Standards\\actions\\validate-contract\\Invoke-ContractValidation.ps1",
+      "path": "actions\\validate-contract\\Invoke-ContractValidation.ps1",
       "data": {
         "exitCode": 0
       }
@@ -104,7 +104,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "Example web-project exited with code 0.",
-      "path": "F:\\repos\\Engineering-Standards\\actions\\validate-contract\\Invoke-ContractValidation.ps1",
+      "path": "actions\\validate-contract\\Invoke-ContractValidation.ps1",
       "data": {
         "exitCode": 0
       }
@@ -113,7 +113,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "Example worker-service-project exited with code 0.",
-      "path": "F:\\repos\\Engineering-Standards\\actions\\validate-contract\\Invoke-ContractValidation.ps1",
+      "path": "actions\\validate-contract\\Invoke-ContractValidation.ps1",
       "data": {
         "exitCode": 0
       }
@@ -122,7 +122,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "Evidence exited with code 0.",
-      "path": "F:\\repos\\Engineering-Standards\\actions\\validate-evidence\\Invoke-EvidenceValidation.ps1",
+      "path": "actions\\validate-evidence\\Invoke-EvidenceValidation.ps1",
       "data": {
         "exitCode": 0
       }
@@ -130,3 +130,9 @@
   ],
   "failed": 0
 }
+
+
+
+
+
+
