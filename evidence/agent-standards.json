@@ -1,0 +1,388 @@
+{
+  "generatedAtUtc": "2026-06-20T14:42:47.8881508Z",
+  "results": [
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "AGENTS_Base.md exists.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Root AGENTS.md exists.",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Base standard does not claim to inherit itself.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Root states that it extends the base standard.",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Root declares master as the default branch.",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required hierarchy includes 'Organization governance documents'.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required hierarchy includes 'agents/AGENTS_Base\\.md'.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required hierarchy includes 'technology-specific agent standards?'.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required hierarchy includes 'Repository-root `?AGENTS\\.md`?'.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required hierarchy includes 'directory-local `?AGENTS\\.md`?'.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required work phase 'Phase 1 - Discovery' is present.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required work phase 'Phase 2 - Validation Planning' is present.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required work phase 'Phase 3 - Safe Implementation' is present.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required work phase 'Phase 4 - Dry Run Or Simulation' is present.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required work phase 'Phase 5 - Validation' is present.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required work phase 'Phase 6 - Evidence' is present.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required work phase 'Phase 7 - Final Review' is present.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Completion status 'Passed' is present.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Completion status 'Failed' is present.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Completion status 'Blocked' is present.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Completion status 'NotRun' is present.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Completion status 'NotApplicable' is present.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Prohibited fabrication language includes 'Fabricate test results'.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Prohibited fabrication language includes 'Fabricate GitHub runs'.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Prohibited fabrication language includes 'Fabricate artifact hashes'.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Prohibited fabrication language includes 'Fabricate citations'.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Prohibited fabrication language includes 'Claim external execution that did not happen'.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Base references the exception process.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Root references the exception process.",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required repository validation command is present: pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required repository validation command is present: pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path . -DefaultBranch master",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required repository validation command is present: pwsh -NoProfile -File scripts/Test-JsonSchemas.ps1 -Path .",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required repository validation command is present: pwsh -NoProfile -File scripts/Test-MarkdownLinks.ps1 -Path .",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required repository validation command is present: pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required repository validation command is present: pwsh -NoProfile -File actions/validate-contract/Invoke-ContractValidation.ps1 -Path .",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required repository validation command is present: pwsh -NoProfile -File actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1 -Path . -OutputJson evidence/forbidden-patterns.json",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required repository validation command is present: pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path .",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required repository validation command is present: Invoke-Pester -Path tests -Output Detailed",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required repository validation command is present: Invoke-ScriptAnalyzer -Path . -Recurse -Severity Error",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required repository validation command is present: git status --short",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required repository validation command is present: git diff --check",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required repository validation command is present: git diff",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Required repository validation command is present: git ls-files",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Document contains no unresolved placeholder text.",
+      "path": "agents/AGENTS_Base.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Document contains no unresolved placeholder text.",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Technology-specific standard is referenced: agents/AGENTS_PowerShell.md",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Technology-specific standard is referenced: agents/AGENTS_DotNet.md",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Technology-specific standard is referenced: agents/AGENTS_WebFrontend.md",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Technology-specific standard is referenced: agents/AGENTS_Database.md",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Technology-specific standard is referenced: agents/AGENTS_WorkerService.md",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Technology-specific standard is referenced: agents/AGENTS_Integration.md",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Technology-specific standard is referenced: agents/AGENTS_Infrastructure.md",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Root AGENTS.md does not duplicate the full base standard.",
+      "path": "AGENTS.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Agent standards validation completed.",
+      "path": ".",
+      "data": null
+    }
+  ],
+  "failed": 0,
+  "warnings": 0,
+  "blocked": 0,
+  "notRun": 0
+}
+
