@@ -390,7 +390,7 @@ if ($dotNetAgents) {
 }
 
 if ($databaseAgents) {
-    Test-MinimumSemanticVersion -Text $databaseAgents -MinimumVersion '1.1.0' -Message 'Database standard declares a valid semantic version at least 1.1.0.' -RelativePath 'agents/AGENTS_Database.md'
+    Test-MinimumSemanticVersion -Text $databaseAgents -MinimumVersion '1.1.1' -Message 'Database standard declares a valid semantic version at least 1.1.1.' -RelativePath 'agents/AGENTS_Database.md'
 
     $databaseRequiredPatterns = @(
         @{ Pattern = 'SQL Server.*Azure SQL Database.*Azure SQL Managed Instance.*PostgreSQL.*MySQL.*MariaDB.*Oracle Database.*SQLite'; Message = 'Database standard declares supported engine coverage.' },
@@ -415,7 +415,21 @@ if ($databaseAgents) {
         @{ Pattern = 'transaction boundaries'; Message = 'Database standard requires transaction-boundary definition.' },
         @{ Pattern = 'isolation level, lock duration, lock escalation, blocking chains, deadlock risk'; Message = 'Database standard covers isolation, locking, blocking, and deadlocks.' },
         @{ Pattern = 'idempotency'; Message = 'Database standard covers idempotency.' },
+        @{ Pattern = '(?is)`MERGE` and equivalent upsert constructs MUST receive engine- and version-specific correctness and concurrency review'; Message = 'Database standard requires engine/version-specific MERGE and upsert review.' },
+        @{ Pattern = '(?is)duplicate source-row behavior.*concurrent writer behavior'; Message = 'Database standard requires duplicate source-row and concurrent-writer behavior for upserts.' },
+        @{ Pattern = '(?is)Upsert tests MUST cover.*concurrent insert attempts.*concurrent update attempts.*duplicate source rows.*retry after partial failure'; Message = 'Database standard requires upsert concurrency, duplicate, and retry tests.' },
         @{ Pattern = 'Triggers.*MUST handle multi-row operations'; Message = 'Database standard requires multi-row-safe triggers.' },
+        @{ Pattern = 'Transactions MUST use the smallest practical scope'; Message = 'Database standard requires smallest practical transaction scope.' },
+        @{ Pattern = 'Remote API, SMTP, file-transfer, queue, or other external calls MUST NOT occur inside a database transaction unless explicitly justified and protected by an approved pattern'; Message = 'Database standard prohibits external calls inside transactions without an approved pattern.' },
+        @{ Pattern = 'When commit outcome is uncertain, callers MUST NOT blindly retry non-idempotent operations'; Message = 'Database standard prohibits blind retry after uncertain commit.' },
+        @{ Pattern = 'Transactional DDL support MUST be verified for the declared engine before rollback claims are made'; Message = 'Database standard requires transactional DDL support verification before rollback claims.' },
+        @{ Pattern = '(?is)Stored procedures MUST define.*explicit parameter types.*explicit string or binary lengths'; Message = 'Database standard requires stored procedure parameter types and lengths.' },
+        @{ Pattern = '(?is)Stored procedures MUST define.*stable result-set contracts'; Message = 'Database standard requires stable stored procedure result contracts.' },
+        @{ Pattern = '(?is)Functions MUST document determinism assumptions.*Scalar function performance impact MUST be reviewed'; Message = 'Database standard requires function determinism and scalar-function performance review.' },
+        @{ Pattern = 'Views MUST use explicit column lists and MUST avoid `SELECT \*`'; Message = 'Database standard requires explicit view columns and prohibits SELECT *.' },
+        @{ Pattern = 'Accidental cross joins are prohibited'; Message = 'Database standard prohibits accidental cross joins.' },
+        @{ Pattern = 'Cursor, loop, and row-by-row processing MUST be justified'; Message = 'Database standard requires cursor and row-by-row justification.' },
+        @{ Pattern = 'Recursive queries MUST define termination condition, maximum depth'; Message = 'Database standard requires recursive-query termination and maximum depth controls.' },
         @{ Pattern = 'least privilege'; Message = 'Database standard requires least privilege.' },
         @{ Pattern = 'Application accounts MUST NOT use `sysadmin`, `dbo`-equivalent, `superuser`'; Message = 'Database standard prohibits privileged application accounts.' },
         @{ Pattern = 'Public, Internal, Confidential, Regulated, or Secret/Restricted'; Message = 'Database standard requires data classification.' },
@@ -427,6 +441,9 @@ if ($databaseAgents) {
         @{ Pattern = 'Validation Commands'; Message = 'Database standard includes validation commands section.' },
         @{ Pattern = 'sqlcmd -S "<server>" -d "<database>" -E -b -i'; Message = 'Database standard includes SQL Server validation example.' },
         @{ Pattern = 'sqlpackage /Action:Script'; Message = 'Database standard includes DACPAC validation example.' },
+        @{ Pattern = 'Secret-bearing connection strings MUST NOT be placed directly in process arguments'; Message = 'Database standard prohibits secret-bearing connection strings in process arguments.' },
+        @{ Pattern = 'integrated authentication, managed identity, workload identity, certificate authentication'; Message = 'Database standard includes approved non-secret sqlpackage authentication guidance.' },
+        @{ Pattern = '(?is)/TargetServerName:"<server>".*/TargetDatabaseName:"<database>".*/TargetTrustServerCertificate:False'; Message = 'Database standard includes safer sqlpackage placeholder example.' },
         @{ Pattern = 'dotnet ef migrations list'; Message = 'Database standard includes EF Core validation example.' },
         @{ Pattern = 'flyway validate'; Message = 'Database standard includes Flyway validation example.' },
         @{ Pattern = 'liquibase validate'; Message = 'Database standard includes Liquibase validation example.' },
@@ -455,7 +472,21 @@ if ($databaseAgents) {
         @{ Pattern = 'Application accounts may use sysadmin'; Message = 'Database standard does not allow application sysadmin accounts.' },
         @{ Pattern = 'Dynamic table names may come directly from users'; Message = 'Database standard does not allow direct user-provided dynamic table names.' },
         @{ Pattern = 'Constraints may be disabled for convenience'; Message = 'Database standard does not allow disabling constraints for convenience.' },
-        @{ Pattern = 'Missing database validation may be marked Passed'; Message = 'Database standard does not allow missing database validation to be marked Passed.' }
+        @{ Pattern = 'Missing database validation may be marked Passed'; Message = 'Database standard does not allow missing database validation to be marked Passed.' },
+        @{ Pattern = 'MERGE is always safe'; Message = 'Database standard does not claim MERGE is always safe.' },
+        @{ Pattern = 'Upserts require no concurrency testing'; Message = 'Database standard does not waive upsert concurrency testing.' },
+        @{ Pattern = 'Remote calls inside transactions are acceptable by default'; Message = 'Database standard does not allow remote calls inside transactions by default.' },
+        @{ Pattern = 'A lost connection during commit means the transaction definitely failed'; Message = 'Database standard does not misstate uncertain commit outcome.' },
+        @{ Pattern = 'Blind retry after uncertain commit is safe'; Message = 'Database standard does not allow blind retry after uncertain commit.' },
+        @{ Pattern = 'Procedure parameters may omit lengths'; Message = 'Database standard does not allow procedure parameters to omit lengths.' },
+        @{ Pattern = 'Functions need no performance review'; Message = 'Database standard does not waive function performance review.' },
+        @{ Pattern = 'Views may use SELECT \* by default'; Message = 'Database standard does not allow view SELECT * by default.' },
+        @{ Pattern = 'Cross joins require no review'; Message = 'Database standard does not allow cross joins without review.' },
+        @{ Pattern = 'Cursors are preferred for bulk processing'; Message = 'Database standard does not prefer cursors for bulk processing.' },
+        @{ Pattern = 'Recursive queries need no depth limit'; Message = 'Database standard requires recursive query depth limits.' },
+        @{ Pattern = 'Plaintext connection strings may be passed to sqlpackage'; Message = 'Database standard does not allow plaintext sqlpackage connection strings.' },
+        @{ Pattern = 'Command-line secrets are acceptable in CI'; Message = 'Database standard does not allow command-line secrets in CI.' },
+        @{ Pattern = 'Transactional DDL support may be assumed'; Message = 'Database standard does not allow assumed transactional DDL support.' }
     )
     foreach ($item in $databaseProhibitedWeakeningPatterns) {
         if ($databaseAgents -match $item.Pattern) {

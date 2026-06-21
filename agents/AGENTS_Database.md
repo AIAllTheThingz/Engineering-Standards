@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Status | Active |
-| Version | 1.1.0 |
+| Version | 1.1.1 |
 | Owner role | Engineering Standards Maintainers |
 | Last reviewed | 2026-06-20 |
 | Changelog | See [../CHANGELOG.md](../CHANGELOG.md). |
@@ -179,6 +179,10 @@ For SQL Server, agents SHOULD use `sp_executesql` for parameterized values where
 
 Production queries, persisted views, integrations, and stable contracts MUST use explicit column lists. `SELECT *` MUST NOT be introduced into stable production contracts unless an exceptional use is documented and reviewed. Queries MUST use schema-qualified objects where appropriate, deterministic ordering where order matters, bounded result sets, pagination for large collections, correct null semantics, explicit time-zone and collation behavior, reviewed join predicates, aggregation correctness, duplicate handling, query timeout policy, and cancellation support from callers where applicable.
 
+Accidental cross joins are prohibited. Every intentional cross join MUST include documented rationale, expected cardinality, Cartesian growth risk, and test or review evidence. Join predicates MUST be explicit and reviewed. Cursor, loop, and row-by-row processing MUST be justified; set-based processing SHOULD be preferred when it preserves correctness and operational safety. Cursors MUST define scope, ordering, locking behavior, fetch behavior, exit condition, error handling, cleanup, expected row count, and expected runtime. Unbounded cursor processing is prohibited.
+
+Recursive queries MUST define termination condition, maximum depth, cycle detection where cycles are possible, expected cardinality, and resource limits. Recursive CTE or hierarchical-query limits MUST be explicit where the engine supports them. Temporary tables, table variables, common table expressions, and materialization choices MUST be reviewed for cardinality and plan impact on high-volume paths. `OFFSET` pagination on changing datasets MUST be reviewed for duplicates, omissions, and cost. Keyset pagination SHOULD be preferred for stable high-volume traversal where appropriate. Queries MUST avoid unbounded memory or result materialization.
+
 High-impact queries MUST include estimated or actual execution-plan review as appropriate, row estimate versus actual review where available, cardinality considerations, statistics considerations, index use, scan/seek behavior, join strategy, sort/hash spill risk, memory grant risk, temp storage impact, parameter sensitivity or sniffing considerations, plan cache behavior, compilation or recompilation behavior, parallelism impact, blocking and lock duration, and baseline plus post-change measurement.
 
 Performance claims require measurements. Plan forcing, hints, `OPTION(RECOMPILE)`, `NOLOCK`, read-uncommitted behavior, optimizer hints, and engine-specific tuning directives require documented rationale. `NOLOCK` MUST NOT be used as a generic performance fix. Query Store or equivalent SHOULD be used where available for regression analysis. High-impact query changes require rollback or feature-disable strategy.
@@ -197,9 +201,13 @@ Cascade behavior MUST be explicit. Broad cascade delete requires impact analysis
 
 ## Transactions And Consistency
 
-Database changes MUST define transaction boundaries, commit points, rollback behavior, savepoint behavior where applicable, retry safety, timeout policy, and partial-failure handling. Long-running migrations MUST justify transaction scope and log growth. Agents MUST avoid mixing non-idempotent external side effects inside database transactions unless a safe pattern such as an outbox is used.
+Database changes MUST define transaction boundaries, commit points, rollback behavior, savepoint behavior where applicable, retry safety, timeout policy, and partial-failure handling. Transactions MUST use the smallest practical scope that preserves required invariants. Long-running migrations MUST justify transaction scope and log growth. Long-running computation SHOULD occur before opening the transaction where safe. User or operator interaction MUST NOT occur inside an open database transaction.
 
-Transactions MUST NOT hide partial failure. Error handling MUST preserve the original failure and stop unsafe continuation. Retried transactions MUST be idempotent or protected against duplicate effects.
+Remote API, SMTP, file-transfer, queue, or other external calls MUST NOT occur inside a database transaction unless explicitly justified and protected by an approved pattern such as an outbox or equivalent durable handoff. Transaction ownership MUST be explicit. Nested transaction behavior MUST be understood for the declared engine and framework. Savepoint behavior MUST be documented when used. Transactional DDL support MUST be verified for the declared engine before rollback claims are made. Implicit transaction modes, autocommit behavior, connection pooling, and framework defaults MUST NOT be assumed.
+
+Statement timeout, lock timeout, transaction timeout, and cancellation behavior MUST be explicit. Error handling MUST preserve the original database error. Failed or aborted transactions MUST NOT continue issuing dependent writes. Connection loss during commit creates an uncertain outcome and MUST be handled explicitly. When commit outcome is uncertain, callers MUST NOT blindly retry non-idempotent operations. Recovery from uncertain commit MUST use durable operation identifiers, idempotency keys, reconciliation queries, unique constraints, or an equivalent design. Distributed and cross-database transactions require explicit justification, support verification, failure-mode review, and recovery documentation.
+
+Transactions MUST NOT hide partial failure. Retried transactions MUST recreate the entire safe unit of work where the framework requires it. Retried transactions MUST be idempotent or protected against duplicate effects. Partial commit or partial success MUST be represented honestly.
 
 ## Isolation, Locking, Blocking, And Deadlocks
 
@@ -213,9 +221,25 @@ Concurrent writers, retries, replays, duplicate requests, worker overlap, migrat
 
 Migration and backfill scripts MUST define whether rerun is safe. If rerun is unsafe, the script MUST detect prior execution and fail clearly. Empty input, duplicate input, stale execution plans, and changed target state MUST be handled explicitly.
 
+`MERGE` and equivalent upsert constructs MUST receive engine- and version-specific correctness and concurrency review. Agents MUST verify whether the declared engine/version has known correctness, race, trigger, concurrency, replication, or duplicate-handling concerns with the chosen upsert mechanism. `MERGE` MUST NOT be selected merely for compact syntax.
+
+Upsert implementations MUST define match key, uniqueness guarantee, duplicate source-row behavior, concurrent writer behavior, retry behavior, idempotency behavior, insert/update/delete behavior, trigger interaction, affected-row interpretation, and failure/rollback behavior. The target match key SHOULD be backed by a unique constraint where business rules require uniqueness. Source rows MUST be deduplicated or rejected according to an explicit rule before mutation. Race conditions between existence checks and writes MUST be addressed.
+
+A separate update-then-insert, insert-on-conflict, on-duplicate-key, or engine-native alternative SHOULD be preferred when it is safer for the declared engine and use case. Exactly-once claims are prohibited unless proven through durable constraints and processing design. Upserts that can delete rows are destructive and require destructive-operation controls.
+
+Upsert tests MUST cover concurrent insert attempts, concurrent update attempts, duplicate source rows, retry after partial failure, idempotent rerun, trigger behavior, duplicate-key conflict, unexpected multiple matches, correct affected-row counts, and rollback or failure behavior.
+
 ## Stored Procedures, Functions, Views, And Triggers
 
 Stored procedures, functions, and views MUST define ownership, parameters, result contract, permissions, error behavior, transaction behavior, performance expectations, dependency impact, and versioning/compatibility rules. Changes to production-used routines are at least High unless proven isolated.
+
+Stored procedures MUST define explicit parameter names, explicit parameter types, explicit string or binary lengths, precision and scale, nullability expectations, defaults, input validation, output parameters where used, stable result-set contracts, result-set column names, result-set types, result-set nullability, result ordering where contractually relevant, transaction ownership, error propagation, accepted success and failure behavior, side effects, permissions, execution context, performance expectations, compatibility/versioning behavior, and dependency impact. Stored procedures MUST NOT have undocumented side effects. Broad owner, superuser, or administrator execution MUST NOT be used merely for convenience.
+
+`EXECUTE AS`, definer rights, invoker rights, ownership chaining, and certificate/module signing MUST be reviewed where applicable. Procedure internals MUST still use parameterized dynamic SQL where dynamic SQL exists. Procedures MUST handle multi-row input where table-valued, array, batch, or set-based input is supported. Return codes MUST NOT silently conflict with result-set or exception-based failure handling. Procedure result changes require consumer compatibility analysis. Procedure deployment MUST NOT silently drop permissions.
+
+Functions MUST document determinism assumptions, side effects, data access, volatility classification where the engine supports it, null handling, collation and culture assumptions, time-zone assumptions, security context, performance behavior, indexing or computed-column compatibility where applicable, and cross-database or external dependencies. Scalar function performance impact MUST be reviewed on production paths. Functions MUST NOT hide expensive row-by-row execution. Functions MUST NOT perform undocumented data mutation. Engine restrictions on side effects MUST be respected. Hidden cross-database dependencies are prohibited unless documented and reviewed. Function changes used by indexes, generated/computed columns, constraints, partitioning, or security policies require dependency analysis. Deterministic claims require evidence or engine-supported declaration.
+
+Views MUST use explicit column lists and MUST avoid `SELECT *`. Views MUST define ownership and security behavior, preserve stable column names, types, order, and nullability where consumers depend on them, document joins, filters, tenant predicates, row-level security interaction, aggregation behavior, and materialized/indexed view requirements where applicable. Views MUST avoid accidental duplicate rows and accidental cross joins. View changes require dependency, compatibility, and production-path performance review where applicable. Stable view changes require downstream consumer impact review. Views MUST NOT hide destructive or mutable behavior through instead-of triggers or equivalent mechanisms without explicit documentation.
 
 Triggers require explicit justification. They MUST handle multi-row operations, avoid one-row assumptions, avoid hidden recursive or cascading behavior, define ordering and failure behavior, include performance and observability controls, and be included in migration and rollback evidence. Triggers MUST NOT silently call remote systems.
 
@@ -281,10 +305,16 @@ SQL Server syntax or nonproduction apply example:
 sqlcmd -S "<server>" -d "<database>" -E -b -i ".\path\migration.sql"
 ```
 
-DACPAC script-generation example:
+DACPAC script-generation guidance MUST prefer integrated authentication, managed identity, workload identity, certificate authentication, or another approved non-secret command-line flow where supported. If a publish profile is used, it MUST NOT contain plaintext secrets. Secret-bearing connection strings MUST NOT be placed directly in process arguments. Environment variables are not automatically safe and MUST be reviewed for process, log, child-process, and runner exposure. Agents MUST use approved secret-injection capability of the CI/CD platform or deployment tool when secrets are unavoidable. Command output and process lists MUST be considered. Examples are placeholders and MUST NOT imply production execution.
+
+DACPAC script-generation example using non-secret command-line parameters:
 
 ```powershell
-sqlpackage /Action:Script /SourceFile:".\database.dacpac" /TargetConnectionString:"<approved-secret-source>"
+sqlpackage /Action:Script `
+  /SourceFile:".\database.dacpac" `
+  /TargetServerName:"<server>" `
+  /TargetDatabaseName:"<database>" `
+  /TargetTrustServerCertificate:False
 ```
 
 EF Core examples:
@@ -323,7 +353,7 @@ Repository-approved static or build tools MAY include SQLFluff, sql-lint, TSQLLi
 
 Database changes MUST include applicable tests or justified statuses. Tests SHOULD use ephemeral or isolated databases and synthetic data where feasible. Destructive tests MUST never target production.
 
-Applicable tests include migration ordering, migration checksum/history, clean database apply, upgrade from prior supported version, idempotency where expected, rollback where supported, roll-forward mitigation where rollback is unsafe, destructive-change detection, empty scope, maximum row threshold, `DryRun`/preview, batch/restart behavior, partial failure, constraints, foreign keys, unique constraints, nullability, defaults, permission allow/deny, row-level security allow/deny, tenant isolation, SQL injection attempts, dynamic identifier allowlists, query result correctness, query plan/performance baseline, deadlock/retry behavior, concurrency conflicts, replication compatibility where testable, seed/reference idempotency, and synthetic data verification.
+Applicable tests include migration ordering, migration checksum/history, clean database apply, upgrade from prior supported version, idempotency where expected, rollback where supported, roll-forward mitigation where rollback is unsafe, destructive-change detection, empty scope, maximum row threshold, `DryRun`/preview, batch/restart behavior, partial failure, constraints, foreign keys, unique constraints, nullability, defaults, permission allow/deny, row-level security allow/deny, tenant isolation, SQL injection attempts, dynamic identifier allowlists, query result correctness, query plan/performance baseline, deadlock/retry behavior, concurrency conflicts, upsert duplicate/concurrency/retry behavior, cursor bounds, recursive-query termination/depth/cycle behavior, cross-join cardinality review, routine result-contract compatibility, replication compatibility where testable, seed/reference idempotency, and synthetic data verification.
 
 Skipped or unavailable tests require exact `NotRun`, `Blocked`, or `NotApplicable` status and reason.
 
@@ -350,6 +380,8 @@ Permitted statuses are `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicab
 ## Failure Behavior
 
 Database work is incomplete when migrations are unordered, schema source of truth is ambiguous, syntax validation fails, clean apply fails, upgrade fails, destructive operations lack approval, row scope is ambiguous, empty scope can mean all rows, backup verification is claimed without evidence, rollback or mitigation is absent, production data appears in tests or evidence, SQL injection risk exists, dynamic identifiers are not allowlisted, `DELETE` or `UPDATE` lacks validated scope, `SELECT *` is introduced into stable production contracts without justification, query performance claims lack evidence, blocking or deadlock risk is ignored, permission broadening lacks review, tenant isolation lacks deny tests, migration-on-startup is enabled without approval, replication or HA impact is ignored, tests are skipped without status and reason, or GitHub/production execution is claimed without evidence.
+
+Database work is also incomplete when remote calls occur inside unmanaged transactions, transaction duration is unbounded, a caller blindly retries after uncertain commit, rollback claims depend on unverified transactional DDL support, dependent writes continue after an aborted transaction, `MERGE` or upsert lacks engine/version correctness review, duplicate source rows are not handled, concurrent writer behavior is undefined, stored procedure parameter lengths or result contracts are ambiguous, function determinism or scalar-function performance is unreviewed, views use `SELECT *` by default, cross joins lack review, cursors are unbounded or preferred for bulk processing without justification, recursive queries lack termination or depth controls, or DACPAC/sqlpackage examples pass plaintext secrets in command-line arguments.
 
 Agents MUST downgrade completion status to `Failed`, `Blocked`, or `NotRun` when evidence requires it.
 
@@ -380,5 +412,6 @@ Exceptions MUST NOT permit plaintext secrets, fabricated evidence, unparameteriz
 
 ## Revision History
 
+- 1.1.1: Corrected remaining database standard gaps by strengthening MERGE/upsert correctness and concurrency controls, transaction and uncertain-commit requirements, stored procedure/function/view rules, cursor, recursion, and cross-join controls, safer DACPAC authentication guidance, and validator/test hardening.
 - 1.1.0: Rebuilt as a comprehensive enterprise database and SQL standard covering engines, development models, schemas, migrations, expand-and-contract, destructive operations, backfills, SQL injection prevention, dynamic SQL, query design, plans, indexes, constraints, transactions, locking, concurrency, routines, seed data, security, privacy, encryption, backup, recovery, HA, replication, ETL, observability, validation, testing, deployment, rollback, documentation, evidence, failures, exceptions, and cross-standard handoffs.
 - 1.0.0: Initial database standard with baseline requirements for discovery, risk, migrations, query safety, data repair, security, validation, evidence, and exceptions.

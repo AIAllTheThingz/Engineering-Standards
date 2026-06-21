@@ -252,7 +252,7 @@ Describe 'Agent standards validation' {
         It 'fails a database standard version below the required minimum' {
             $script:tempRoot = New-AgentStandardsFixture
             $path = Join-Path $script:tempRoot 'agents/AGENTS_Database.md'
-            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | 1.0.0 |')
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.1 |', '| Version | 1.1.0 |')
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
@@ -260,7 +260,7 @@ Describe 'Agent standards validation' {
         It 'fails a malformed database standard semantic version' {
             $script:tempRoot = New-AgentStandardsFixture
             $path = Join-Path $script:tempRoot 'agents/AGENTS_Database.md'
-            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | current |')
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.1 |', '| Version | current |')
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
@@ -295,7 +295,46 @@ Describe 'Agent standards validation' {
                 Replace('parameterized queries, bound parameters', 'safe queries').
                 Replace('identifier allowlists', 'identifier checks').
                 Replace('`SELECT *` MUST NOT be introduced into stable production contracts', 'SELECT star should be avoided').
-                Replace('`NOLOCK` MUST NOT be used as a generic performance fix', 'NOLOCK needs care')
+                Replace('`NOLOCK` MUST NOT be used as a generic performance fix', 'NOLOCK needs care').
+                Replace('Accidental cross joins are prohibited', 'Cross joins need care').
+                Replace('Cursor, loop, and row-by-row processing MUST be justified', 'Cursor processing should be explained').
+                Replace('Recursive queries MUST define termination condition, maximum depth', 'Recursive queries should terminate')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing database MERGE and upsert controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Database.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('`MERGE` and equivalent upsert constructs MUST receive engine- and version-specific correctness and concurrency review', 'Upserts should be reviewed').
+                Replace('duplicate source-row behavior, concurrent writer behavior', 'duplicate behavior').
+                Replace('Upsert tests MUST cover concurrent insert attempts, concurrent update attempts, duplicate source rows, retry after partial failure', 'Upsert tests should cover normal behavior')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing database transaction uncertainty controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Database.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Transactions MUST use the smallest practical scope', 'Transactions should be scoped').
+                Replace('Remote API, SMTP, file-transfer, queue, or other external calls MUST NOT occur inside a database transaction unless explicitly justified and protected by an approved pattern', 'External calls inside transactions should be reviewed').
+                Replace('When commit outcome is uncertain, callers MUST NOT blindly retry non-idempotent operations', 'Commit uncertainty should be considered').
+                Replace('Transactional DDL support MUST be verified for the declared engine before rollback claims are made', 'Transactional DDL should be checked')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing database routine-specific controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Database.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Stored procedures MUST define explicit parameter names, explicit parameter types, explicit string or binary lengths', 'Stored procedures should define parameters').
+                Replace('stable result-set contracts', 'result behavior').
+                Replace('Functions MUST document determinism assumptions', 'Functions should document behavior').
+                Replace('Scalar function performance impact MUST be reviewed', 'Scalar functions should be reviewed').
+                Replace('Views MUST use explicit column lists and MUST avoid `SELECT *`', 'Views should avoid broad columns')
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
@@ -317,6 +356,8 @@ Describe 'Agent standards validation' {
             $path = Join-Path $script:tempRoot 'agents/AGENTS_Database.md'
             $text = (Get-Content -LiteralPath $path -Raw).
                 Replace('sqlcmd -S "<server>" -d "<database>" -E -b -i', 'sqlcmd example').
+                Replace('Secret-bearing connection strings MUST NOT be placed directly in process arguments', 'Connection strings should be handled carefully').
+                Replace('integrated authentication, managed identity, workload identity, certificate authentication', 'approved authentication').
                 Replace('dotnet ef migrations list', 'ef migration command').
                 Replace('CI MUST NOT use fake commands that only print success', 'CI should avoid fake commands').
                 Replace('Permitted statuses are `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable`', 'Use evidence statuses')
@@ -326,7 +367,24 @@ Describe 'Agent standards validation' {
 
         It 'fails database weakening language for unsafe exceptions' {
             $script:tempRoot = New-AgentStandardsFixture
-            Add-Content -LiteralPath (Join-Path $script:tempRoot 'agents/AGENTS_Database.md') -Value "`nMissing database validation may be marked Passed."
+            Add-Content -LiteralPath (Join-Path $script:tempRoot 'agents/AGENTS_Database.md') -Value @'
+
+Missing database validation may be marked Passed.
+MERGE is always safe.
+Upserts require no concurrency testing.
+Remote calls inside transactions are acceptable by default.
+A lost connection during commit means the transaction definitely failed.
+Blind retry after uncertain commit is safe.
+Procedure parameters may omit lengths.
+Functions need no performance review.
+Views may use SELECT * by default.
+Cross joins require no review.
+Cursors are preferred for bulk processing.
+Recursive queries need no depth limit.
+Plaintext connection strings may be passed to sqlpackage.
+Command-line secrets are acceptable in CI.
+Transactional DDL support may be assumed.
+'@
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
     }
