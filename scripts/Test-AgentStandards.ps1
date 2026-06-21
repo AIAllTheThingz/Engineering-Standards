@@ -126,6 +126,7 @@ $rootPath = Join-Path $root 'AGENTS.md'
 $powerShellPath = Join-Path $root 'agents/AGENTS_PowerShell.md'
 $dotNetPath = Join-Path $root 'agents/AGENTS_DotNet.md'
 $databasePath = Join-Path $root 'agents/AGENTS_Database.md'
+$workerPath = Join-Path $root 'agents/AGENTS_WorkerService.md'
 
 if (-not (Test-Path -LiteralPath $basePath -PathType Leaf)) {
     Add-Result Failed 'AGENTS_Base.md exists.' 'agents/AGENTS_Base.md'
@@ -152,6 +153,7 @@ $rootAgents = Get-Content -LiteralPath $rootPath -Raw
 $powerShellAgents = if (Test-Path -LiteralPath $powerShellPath -PathType Leaf) { Get-Content -LiteralPath $powerShellPath -Raw } else { '' }
 $dotNetAgents = if (Test-Path -LiteralPath $dotNetPath -PathType Leaf) { Get-Content -LiteralPath $dotNetPath -Raw } else { '' }
 $databaseAgents = if (Test-Path -LiteralPath $databasePath -PathType Leaf) { Get-Content -LiteralPath $databasePath -Raw } else { '' }
+$workerAgents = if (Test-Path -LiteralPath $workerPath -PathType Leaf) { Get-Content -LiteralPath $workerPath -Raw } else { '' }
 
 if ($base -match '(?im)\binherits?\s+(?:\[[^\]]+\]\()?AGENTS_Base\.md|inherits?\s+itself|inherits?\s+this\s+base') {
     Add-Result Failed 'Base standard does not claim to inherit itself.' 'agents/AGENTS_Base.md'
@@ -494,6 +496,85 @@ if ($databaseAgents) {
         }
         else {
             Add-Result Passed $item.Message 'agents/AGENTS_Database.md'
+        }
+    }
+}
+
+if ($workerAgents) {
+    Test-MinimumSemanticVersion -Text $workerAgents -MinimumVersion '1.1.0' -Message 'Worker Service standard declares a valid semantic version at least 1.1.0.' -RelativePath 'agents/AGENTS_WorkerService.md'
+
+    $workerRequiredPatterns = @(
+        @{ Pattern = '(?is)Polling worker.*Push or queue consumer.*Scheduled worker.*Event-driven worker.*File-watcher worker.*Batch worker.*Script-runner worker.*Orchestrator.*Hybrid'; Message = 'Worker Service standard declares worker execution models.' },
+        @{ Pattern = 'Every durable worker MUST define a documented state machine'; Message = 'Worker Service standard requires documented state machines.' },
+        @{ Pattern = 'For SQL-polled workers, claiming MUST be atomic'; Message = 'Worker Service standard requires atomic SQL worker claiming.' },
+        @{ Pattern = 'lease owner.*lease expiration|claim or lease owner.*lease expiration'; Message = 'Worker Service standard requires lease owner and expiration.' },
+        @{ Pattern = 'A worker MUST stop or fail safely if it loses ownership'; Message = 'Worker Service standard requires safe stop on lease loss.' },
+        @{ Pattern = 'At-least-once delivery MUST assume duplicate messages'; Message = 'Worker Service standard requires duplicate assumptions for at-least-once delivery.' },
+        @{ Pattern = 'Exactly-once delivery is prohibited as a claim unless proven end-to-end'; Message = 'Worker Service standard prohibits unproven exactly-once claims.' },
+        @{ Pattern = 'durable idempotency key'; Message = 'Worker Service standard requires durable idempotency.' },
+        @{ Pattern = 'Empty input MUST NOT mean all jobs'; Message = 'Worker Service standard prevents empty input or replay from meaning all work.' },
+        @{ Pattern = 'Unbounded concurrency is prohibited'; Message = 'Worker Service standard requires bounded concurrency.' },
+        @{ Pattern = '(?is)Empty polls MUST delay.*Failure loops MUST back off'; Message = 'Worker Service standard requires polling delay and backoff.' },
+        @{ Pattern = 'Overlap MUST be explicitly allowed or prevented'; Message = 'Worker Service standard requires schedule overlap policy.' },
+        @{ Pattern = '(?is)daylight saving time skipped-time behavior.*repeated-time behavior.*ambiguous local-time behavior'; Message = 'Worker Service standard requires DST behavior.' },
+        @{ Pattern = 'retryable and nonretryable categories'; Message = 'Worker Service standard requires retry classification.' },
+        @{ Pattern = '(?is)maximum attempt count.*exponential backoff and jitter'; Message = 'Worker Service standard requires bounded retries and jitter.' },
+        @{ Pattern = 'Dead-letter storage MUST be durable'; Message = 'Worker Service standard requires durable dead-letter storage.' },
+        @{ Pattern = '(?is)Replay and manual retry MUST define authorization.*maximum job count'; Message = 'Worker Service standard requires replay authorization and limits.' },
+        @{ Pattern = 'Cancellation tokens or equivalent cancellation signals MUST propagate'; Message = 'Worker Service standard requires cancellation propagation.' },
+        @{ Pattern = 'Graceful shutdown MUST define drain behavior'; Message = 'Worker Service standard requires graceful shutdown.' },
+        @{ Pattern = 'Child processes MUST have timeouts'; Message = 'Worker Service standard requires process timeouts.' },
+        @{ Pattern = 'outbox, inbox, durable handoff'; Message = 'Worker Service standard requires transactional handoff patterns.' },
+        @{ Pattern = 'Script-runner workers MUST use an approved script or job catalog'; Message = 'Worker Service standard requires approved script catalogs.' },
+        @{ Pattern = 'Arbitrary scripts, paths, commands, shell snippets, or user command text MUST NOT be executed'; Message = 'Worker Service standard prohibits arbitrary script, command, and path execution.' },
+        @{ Pattern = 'Secrets MUST NOT be passed in visible command-line arguments'; Message = 'Worker Service standard prohibits command-line secrets.' },
+        @{ Pattern = 'Accepted exit codes MUST be explicit'; Message = 'Worker Service standard requires process exit-code validation.' },
+        @{ Pattern = 'approved roots, safe file names, traversal protection'; Message = 'Worker Service standard requires artifact path controls.' },
+        @{ Pattern = 'Workers MUST run with least privilege'; Message = 'Worker Service standard requires least privilege.' },
+        @{ Pattern = 'Secrets MUST come from approved secret stores'; Message = 'Worker Service standard requires approved secret stores.' },
+        @{ Pattern = 'Structured logs MUST include'; Message = 'Worker Service standard requires structured logging.' },
+        @{ Pattern = 'Logs MUST NOT include secrets'; Message = 'Worker Service standard requires redaction.' },
+        @{ Pattern = 'queue depth, oldest work age'; Message = 'Worker Service standard requires queue depth and oldest-age metrics.' },
+        @{ Pattern = 'A worker MUST NOT claim jobs before startup validation completes'; Message = 'Worker Service standard requires readiness before claiming.' },
+        @{ Pattern = 'backpressure'; Message = 'Worker Service standard requires backpressure controls.' },
+        @{ Pattern = 'old/new worker compatibility'; Message = 'Worker Service standard requires rolling compatibility.' },
+        @{ Pattern = 'Validation Commands'; Message = 'Worker Service standard includes validation commands section.' },
+        @{ Pattern = 'Permitted statuses are `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable`'; Message = 'Worker Service standard declares completion statuses.' },
+        @{ Pattern = 'AGENTS_DotNet\.md'; Message = 'Worker Service standard hands off .NET worker work.' },
+        @{ Pattern = 'AGENTS_Database\.md'; Message = 'Worker Service standard hands off database worker work.' },
+        @{ Pattern = 'AGENTS_PowerShell\.md'; Message = 'Worker Service standard hands off PowerShell worker work.' },
+        @{ Pattern = 'AGENTS_Integration\.md'; Message = 'Worker Service standard hands off integration worker work.' },
+        @{ Pattern = 'AGENTS_Infrastructure\.md'; Message = 'Worker Service standard hands off infrastructure worker work.' }
+    )
+    foreach ($item in $workerRequiredPatterns) {
+        Test-Contains $workerAgents $item.Pattern $item.Message 'agents/AGENTS_WorkerService.md'
+    }
+
+    $workerProhibitedWeakeningPatterns = @(
+        @{ Pattern = 'Exactly-once delivery is automatic'; Message = 'Worker Service standard does not allow automatic exactly-once claims.' },
+        @{ Pattern = 'Empty input means all jobs'; Message = 'Worker Service standard does not allow empty input to mean all jobs.' },
+        @{ Pattern = 'Any script path may be executed'; Message = 'Worker Service standard does not allow arbitrary script paths.' },
+        @{ Pattern = 'User command text may be passed to a shell'; Message = 'Worker Service standard does not allow user shell command text.' },
+        @{ Pattern = 'Queue messages may be acknowledged before durable completion'; Message = 'Worker Service standard does not allow early queue acknowledgement.' },
+        @{ Pattern = 'Leases may be overwritten by another worker'; Message = 'Worker Service standard does not allow active lease overwrite.' },
+        @{ Pattern = 'Lost lease may be ignored'; Message = 'Worker Service standard does not allow lease loss to be ignored.' },
+        @{ Pattern = 'Infinite retries are acceptable'; Message = 'Worker Service standard does not allow infinite retries.' },
+        @{ Pattern = 'Poison jobs may be discarded'; Message = 'Worker Service standard does not allow discarded poison jobs.' },
+        @{ Pattern = 'Dead-letter replay needs no approval'; Message = 'Worker Service standard requires replay approval.' },
+        @{ Pattern = 'Cancellation may be ignored'; Message = 'Worker Service standard does not allow ignored cancellation.' },
+        @{ Pattern = 'Process launch means success'; Message = 'Worker Service standard does not equate process launch with success.' },
+        @{ Pattern = 'Secrets may be passed on command lines'; Message = 'Worker Service standard does not allow command-line secrets.' },
+        @{ Pattern = 'Busy polling is acceptable'; Message = 'Worker Service standard does not allow busy polling.' },
+        @{ Pattern = 'Unlimited concurrency is preferred'; Message = 'Worker Service standard does not prefer unlimited concurrency.' },
+        @{ Pattern = 'Local time schedules need no DST handling'; Message = 'Worker Service standard requires DST handling.' },
+        @{ Pattern = 'Missing worker validation may be marked Passed'; Message = 'Worker Service standard does not allow missing validation to be marked Passed.' }
+    )
+    foreach ($item in $workerProhibitedWeakeningPatterns) {
+        if ($workerAgents -match $item.Pattern) {
+            Add-Result Failed $item.Message 'agents/AGENTS_WorkerService.md'
+        }
+        else {
+            Add-Result Passed $item.Message 'agents/AGENTS_WorkerService.md'
         }
     }
 }

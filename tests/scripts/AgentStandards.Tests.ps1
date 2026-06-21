@@ -387,5 +387,156 @@ Transactional DDL support may be assumed.
 '@
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
+
+        It 'fails a worker standard version below the required minimum' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | 1.0.0 |')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails a malformed worker standard semantic version' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | current |')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing worker state-machine requirements' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Every durable worker MUST define a documented state machine', 'Workers should describe states').
+                Replace('State transitions MUST be validated', 'State transitions should be checked')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing worker atomic claim requirements' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('For SQL-polled workers, claiming MUST be atomic', 'SQL-polled workers should claim carefully').
+                Replace('claim or lease owner, claim timestamp, lease expiration', 'claim timestamp')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing worker lease-loss behavior' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('A worker MUST stop or fail safely if it loses ownership', 'A worker should notice ownership changes').
+                Replace('Leases MUST NOT be overwritten by another worker while an active owner is valid', 'Leases should avoid overlap')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing worker delivery and idempotency controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('At-least-once delivery MUST assume duplicate messages', 'At-least-once delivery should consider duplicates').
+                Replace('Exactly-once delivery is prohibited as a claim unless proven end-to-end', 'Exactly-once delivery should be justified').
+                Replace('durable idempotency key', 'idempotency key').
+                Replace('Empty input MUST NOT mean all jobs', 'Empty input should not mean all jobs')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails weakened worker concurrency and polling controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Unbounded concurrency is prohibited', 'Unbounded concurrency should be avoided').
+                Replace('Empty polls MUST delay', 'Empty polls should delay').
+                Replace('Failure loops MUST back off', 'Failure loops should slow down')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing worker retry and dead-letter controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('retryable and nonretryable categories', 'failure categories').
+                Replace('maximum attempt count', 'attempt count').
+                Replace('exponential backoff and jitter', 'delays').
+                Replace('Dead-letter storage MUST be durable', 'Dead-letter storage should persist')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing worker cancellation and timeout controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Cancellation tokens or equivalent cancellation signals MUST propagate', 'Cancellation should be propagated').
+                Replace('Graceful shutdown MUST define drain behavior', 'Graceful shutdown should drain').
+                Replace('Child processes MUST have timeouts', 'Child processes should have timeouts')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing worker script-runner safeguards' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Script-runner workers MUST use an approved script or job catalog', 'Script-runner workers should use a catalog').
+                Replace('Arbitrary scripts, paths, commands, shell snippets, or user command text MUST NOT be executed', 'Arbitrary commands should be restricted').
+                Replace('Secrets MUST NOT be passed in visible command-line arguments', 'Secrets should not be passed on command lines').
+                Replace('Accepted exit codes MUST be explicit', 'Exit codes should be checked')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing worker security and redaction controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Workers MUST run with least privilege', 'Workers should use limited privilege').
+                Replace('Secrets MUST come from approved secret stores', 'Secrets should come from secret stores').
+                Replace('Logs MUST NOT include secrets', 'Logs should not include secrets')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing worker readiness, backpressure, and rolling compatibility controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('A worker MUST NOT claim jobs before startup validation completes', 'Workers should validate startup before work').
+                Replace('backpressure', 'pressure handling').
+                Replace('old/new worker compatibility', 'worker compatibility')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails unsafe worker weakening phrases' {
+            $script:tempRoot = New-AgentStandardsFixture
+            Add-Content -LiteralPath (Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md') -Value @'
+
+Exactly-once delivery is automatic.
+Empty input means all jobs.
+Any script path may be executed.
+User command text may be passed to a shell.
+Queue messages may be acknowledged before durable completion.
+Leases may be overwritten by another worker.
+Lost lease may be ignored.
+Infinite retries are acceptable.
+Poison jobs may be discarded.
+Dead-letter replay needs no approval.
+Cancellation may be ignored.
+Process launch means success.
+Secrets may be passed on command lines.
+Busy polling is acceptable.
+Unlimited concurrency is preferred.
+Local time schedules need no DST handling.
+Missing worker validation may be marked Passed.
+'@
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
     }
 }
