@@ -391,7 +391,7 @@ Transactional DDL support may be assumed.
         It 'fails a worker standard version below the required minimum' {
             $script:tempRoot = New-AgentStandardsFixture
             $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
-            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | 1.0.0 |')
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.1 |', '| Version | 1.1.0 |')
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
@@ -399,7 +399,7 @@ Transactional DDL support may be assumed.
         It 'fails a malformed worker standard semantic version' {
             $script:tempRoot = New-AgentStandardsFixture
             $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
-            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | current |')
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.1 |', '| Version | current |')
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
@@ -409,7 +409,11 @@ Transactional DDL support may be assumed.
             $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
             $text = (Get-Content -LiteralPath $path -Raw).
                 Replace('Every durable worker MUST define a documented state machine', 'Workers should describe states').
-                Replace('State transitions MUST be validated', 'State transitions should be checked')
+                Replace('State transitions MUST be validated', 'State transitions should be checked').
+                Replace('Every progress, heartbeat, completion, failure, retry scheduling, cancellation, timeout, dead-letter, skip, and partial-success transition MUST verify', 'Progress and completion transitions should verify').
+                Replace('State transitions MUST use compare-and-swap, optimistic concurrency, an atomic predicate, queue-native ownership semantics, or an equivalent protected mechanism', 'State transitions should use a protected mechanism').
+                Replace('A worker that has lost ownership MUST NOT update progress, mark success, mark failure, schedule retry, complete or acknowledge the message, publish final artifacts, dead-letter the work, or mutate terminal state', 'A worker that has lost ownership should avoid terminal mutation').
+                Replace('Zero rows affected by an ownership-protected update MUST be treated as ownership loss or stale state, not success', 'Zero rows affected may indicate stale state')
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
@@ -419,7 +423,9 @@ Transactional DDL support may be assumed.
             $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
             $text = (Get-Content -LiteralPath $path -Raw).
                 Replace('For SQL-polled workers, claiming MUST be atomic', 'SQL-polled workers should claim carefully').
-                Replace('claim or lease owner, claim timestamp, lease expiration', 'claim timestamp')
+                Replace('claim or lease owner, claim timestamp, lease expiration', 'claim timestamp').
+                Replace('Queue completion or acknowledgement MUST verify that the current receiver still owns the lock, lease, receipt handle', 'Queue completion should verify ownership').
+                Replace('Reclaimed work MUST generate a new ownership context or attempt identity', 'Reclaimed work should generate a new attempt')
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
@@ -485,9 +491,54 @@ Transactional DDL support may be assumed.
             $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
             $text = (Get-Content -LiteralPath $path -Raw).
                 Replace('Script-runner workers MUST use an approved script or job catalog', 'Script-runner workers should use a catalog').
+                Replace('The approved catalog MUST define and verify an immutable executable identity before execution', 'The approved catalog should identify executables').
+                Replace('The worker MUST verify the executable, script, module, package, hash, signature, signer, or container digest immediately before execution', 'The worker should verify executable identity').
+                Replace('A valid signature from an unapproved signer is insufficient', 'Any valid signature is usually enough').
                 Replace('Arbitrary scripts, paths, commands, shell snippets, or user command text MUST NOT be executed', 'Arbitrary commands should be restricted').
                 Replace('Secrets MUST NOT be passed in visible command-line arguments', 'Secrets should not be passed on command lines').
-                Replace('Accepted exit codes MUST be explicit', 'Exit codes should be checked')
+                Replace('Accepted exit codes MUST be explicit', 'Exit codes should be checked').
+                Replace('The worker MUST intentionally capture the success/output stream, error stream, warning stream, verbose stream, debug stream, and information stream', 'The worker should capture common streams').
+                Replace('The worker MUST distinguish terminating and nonterminating errors', 'The worker should inspect errors').
+                Replace('Process exit code alone MUST NOT be treated as complete proof of PowerShell success', 'Process exit code usually proves PowerShell success').
+                Replace('A stable structured result contract MUST be preferred for governed scripts', 'Script text output is usually enough')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing worker immutable input controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Job input MUST become immutable, versioned, or content-addressed after durable submission', 'Job input should be retained after submission').
+                Replace('immutable payload snapshot or immutable object reference, content hash', 'payload reference').
+                Replace('The worker MUST verify content hash before execution', 'The worker should inspect input before execution').
+                Replace('Uploaded CSV or input files MUST NOT be replaceable after approval', 'Uploaded files should not usually be replaced')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing worker artifact integrity controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Worker artifacts and reports MUST be associated with job ID, attempt number, correlation ID', 'Worker artifacts should include job metadata').
+                Replace('content hash, classification, retention, and authorization boundary', 'classification and retention').
+                Replace('Artifact publication MUST use an atomic publish model', 'Artifact publication should be orderly').
+                Replace('Partial artifacts MUST NOT be presented as final', 'Partial artifacts should not be final').
+                Replace('A job MUST NOT be marked fully successful when a required artifact failed to publish', 'Required artifact failure should be reviewed')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing worker durable handoff and safe container validation controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WorkerService.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('When database state and external side effects must remain coordinated, workers MUST use outbox, inbox, durable queue handoff, idempotent reconciliation, saga or orchestration state, or another approved durable pattern', 'When database state and external side effects must remain coordinated, workers SHOULD use a durable pattern').
+                Replace('Queue acknowledgement MUST NOT occur before the approved durable completion point', 'Queue acknowledgement should occur after completion').
+                Replace('Normal worker execution MUST NOT be launched merely as a smoke test', 'Normal worker execution may be launched as a smoke test').
+                Replace('Production credentials MUST NOT be mounted', 'Production credentials may be mounted for convenience').
+                Replace('--validate-configuration', '--run-worker')
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
@@ -535,6 +586,24 @@ Busy polling is acceptable.
 Unlimited concurrency is preferred.
 Local time schedules need no DST handling.
 Missing worker validation may be marked Passed.
+A stale worker may complete the job.
+Lease ownership only matters during claim.
+Zero rows affected may still be treated as success.
+Script version strings are sufficient integrity.
+Script hashes do not need verification.
+Any valid signer is acceptable.
+PowerShell exit code zero always means success.
+Nonterminating PowerShell errors may be ignored.
+Job input files may be replaced after approval.
+File paths are sufficient input identity.
+Partial reports may be published as final.
+Artifacts may be overwritten during retry.
+Artifact hashes are optional.
+Outbox or durable handoff is optional for coordinated side effects.
+A worker may acknowledge before durable completion.
+Normal worker startup is a safe container smoke test.
+Production credentials may be used for container validation.
+Missing Worker Service validation may be marked Passed.
 '@
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
