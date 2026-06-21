@@ -127,6 +127,7 @@ $powerShellPath = Join-Path $root 'agents/AGENTS_PowerShell.md'
 $dotNetPath = Join-Path $root 'agents/AGENTS_DotNet.md'
 $databasePath = Join-Path $root 'agents/AGENTS_Database.md'
 $workerPath = Join-Path $root 'agents/AGENTS_WorkerService.md'
+$infrastructurePath = Join-Path $root 'agents/AGENTS_Infrastructure.md'
 
 if (-not (Test-Path -LiteralPath $basePath -PathType Leaf)) {
     Add-Result Failed 'AGENTS_Base.md exists.' 'agents/AGENTS_Base.md'
@@ -154,6 +155,7 @@ $powerShellAgents = if (Test-Path -LiteralPath $powerShellPath -PathType Leaf) {
 $dotNetAgents = if (Test-Path -LiteralPath $dotNetPath -PathType Leaf) { Get-Content -LiteralPath $dotNetPath -Raw } else { '' }
 $databaseAgents = if (Test-Path -LiteralPath $databasePath -PathType Leaf) { Get-Content -LiteralPath $databasePath -Raw } else { '' }
 $workerAgents = if (Test-Path -LiteralPath $workerPath -PathType Leaf) { Get-Content -LiteralPath $workerPath -Raw } else { '' }
+$infrastructureAgents = if (Test-Path -LiteralPath $infrastructurePath -PathType Leaf) { Get-Content -LiteralPath $infrastructurePath -Raw } else { '' }
 
 if ($base -match '(?im)\binherits?\s+(?:\[[^\]]+\]\()?AGENTS_Base\.md|inherits?\s+itself|inherits?\s+this\s+base') {
     Add-Result Failed 'Base standard does not claim to inherit itself.' 'agents/AGENTS_Base.md'
@@ -619,6 +621,107 @@ if ($workerAgents) {
         }
         else {
             Add-Result Passed $item.Message 'agents/AGENTS_WorkerService.md'
+        }
+    }
+}
+
+if ($infrastructureAgents) {
+    Test-MinimumSemanticVersion -Text $infrastructureAgents -MinimumVersion '1.1.0' -Message 'Infrastructure standard declares a valid semantic version at least 1.1.0.' -RelativePath 'agents/AGENTS_Infrastructure.md'
+
+    $infrastructureRequiredPatterns = @(
+        @{ Pattern = '(?is)Terraform.*OpenTofu.*Bicep.*CloudFormation.*Pulumi.*Kubernetes.*Helm.*Kustomize'; Message = 'Infrastructure standard declares broad infrastructure tooling applicability.' },
+        @{ Pattern = 'PowerShell infrastructure automation.*MUST also apply \[AGENTS_PowerShell\.md\]'; Message = 'Infrastructure standard hands off PowerShell infrastructure automation.' },
+        @{ Pattern = '\.NET deployment tools.*MUST also apply \[AGENTS_DotNet\.md\]'; Message = 'Infrastructure standard hands off .NET deployment work.' },
+        @{ Pattern = 'Database provisioning.*MUST also apply \[AGENTS_Database\.md\]'; Message = 'Infrastructure standard hands off database infrastructure work.' },
+        @{ Pattern = 'Worker services.*MUST also apply \[AGENTS_WorkerService\.md\]'; Message = 'Infrastructure standard hands off worker infrastructure work.' },
+        @{ Pattern = 'Vendor APIs.*DNS/IPAM APIs.*MUST also apply \[AGENTS_Integration\.md\]'; Message = 'Infrastructure standard hands off integration provisioning work.' },
+        @{ Pattern = 'Web ingress.*MUST also apply \[AGENTS_WebFrontend\.md\]'; Message = 'Infrastructure standard hands off frontend delivery infrastructure.' },
+        @{ Pattern = '(?is)Before editing infrastructure, agents MUST inspect and record.*Infrastructure tool and exact version.*State backend.*Existing user changes from `git status --short`'; Message = 'Infrastructure standard requires infrastructure discovery.' },
+        @{ Pattern = 'Guessing target environment from directory name, current CLI context, shell profile, default subscription, default region, default kubeconfig context, or cached credentials is prohibited'; Message = 'Infrastructure standard prohibits guessed or cached targeting.' },
+        @{ Pattern = 'The default mode for AI-generated infrastructure work MUST be non-mutating'; Message = 'Infrastructure standard requires non-mutating default mode.' },
+        @{ Pattern = 'Agents MUST NOT apply, deploy, destroy, import, move, force-unlock, rotate, revoke, purge, or mutate state unless explicitly requested and authorized'; Message = 'Infrastructure standard blocks unauthorized mutation.' },
+        @{ Pattern = 'Every governed resource MUST have one declared source of truth'; Message = 'Infrastructure standard requires source-of-truth ownership.' },
+        @{ Pattern = 'Every mutating command MUST make the following explicit'; Message = 'Infrastructure standard requires explicit target context for mutation.' },
+        @{ Pattern = 'Empty target MUST NOT mean all environments or all resources'; Message = 'Infrastructure standard prevents empty target broad scope.' },
+        @{ Pattern = 'Cached CLI context alone is insufficient for production mutation'; Message = 'Infrastructure standard rejects cached CLI context for production.' },
+        @{ Pattern = 'Infrastructure changes MUST use plan-before-apply, preview, what-if, diff, or equivalent review output'; Message = 'Infrastructure standard requires plan-before-apply.' },
+        @{ Pattern = 'Apply MUST use the reviewed saved plan artifact where the tool supports saved plans'; Message = 'Infrastructure standard binds apply to reviewed plan artifacts.' },
+        @{ Pattern = 'A plan generated from one commit, variable set, state, provider set, credential, policy set, or environment MUST NOT authorize a different apply'; Message = 'Infrastructure standard prevents stale or mismatched plan apply.' },
+        @{ Pattern = 'Production environment protections MUST be used where available'; Message = 'Infrastructure standard requires production approval controls.' },
+        @{ Pattern = 'Critical changes MUST NOT be self-approved unless an approved emergency process applies'; Message = 'Infrastructure standard requires separation of duties for Critical changes.' },
+        @{ Pattern = 'Shared or production state MUST use a remote protected backend where supported'; Message = 'Infrastructure standard requires protected remote state.' },
+        @{ Pattern = 'State files MUST NOT be committed'; Message = 'Infrastructure standard prohibits committed state files.' },
+        @{ Pattern = 'State backend outage is `Blocked` for apply, not a reason to bypass locking'; Message = 'Infrastructure standard prevents lock bypass on backend outage.' },
+        @{ Pattern = 'Force-unlock requires proof that no active operation owns the lock'; Message = 'Infrastructure standard governs force-unlock.' },
+        @{ Pattern = 'State import, move, migration, backend migration, repair, `state rm`, `state mv`, moved blocks, and manual state surgery require phased controls'; Message = 'Infrastructure standard governs state migration and repair.' },
+        @{ Pattern = 'Manual state editing is prohibited unless an approved emergency procedure requires it'; Message = 'Infrastructure standard prohibits routine manual state editing.' },
+        @{ Pattern = 'Infrastructure CLI versions MUST be pinned or constrained'; Message = 'Infrastructure standard requires infrastructure CLI version constraints.' },
+        @{ Pattern = 'GitHub Actions MUST be pinned to immutable commit SHAs'; Message = 'Infrastructure standard requires immutable GitHub Action SHA pinning.' },
+        @{ Pattern = 'Production dependencies MUST NOT use floating `latest`, `main`, `master`, mutable branch names, mutable tags, or unbounded version ranges'; Message = 'Infrastructure standard prohibits floating production dependencies.' },
+        @{ Pattern = 'Dynamically downloaded scripts MUST NOT be immediately executed without integrity controls'; Message = 'Infrastructure standard prohibits unverified download-and-execute behavior.' },
+        @{ Pattern = 'Destroy, replacement, deletion, purge, resource rename, recreation, force replacement, broad refactoring, and lifecycle changes'; Message = 'Infrastructure standard controls destructive and replacement changes.' },
+        @{ Pattern = 'Snapshot existence does not prove restore capability'; Message = 'Infrastructure standard distinguishes snapshots from restore proof.' },
+        @{ Pattern = 'Backup configured does not prove restore tested'; Message = 'Infrastructure standard distinguishes backup configuration from restore proof.' },
+        @{ Pattern = 'Networking MUST be private by default and deny by default'; Message = 'Infrastructure standard requires private-by-default networking.' },
+        @{ Pattern = 'Broad ingress, wildcard source ranges, unrestricted egress'; Message = 'Infrastructure standard requires broad ingress and egress review.' },
+        @{ Pattern = 'DNS rollback MUST account for TTL and caches'; Message = 'Infrastructure standard governs DNS rollback.' },
+        @{ Pattern = 'Infrastructure identity MUST follow least privilege'; Message = 'Infrastructure standard requires least-privilege IAM and RBAC.' },
+        @{ Pattern = 'Wildcard IAM, broad administrator access, cluster-admin'; Message = 'Infrastructure standard controls privileged IAM and RBAC.' },
+        @{ Pattern = 'Secrets, private keys, certificates, kubeconfigs, SSH keys, tokens, service-principal secrets, signing keys, and state containing sensitive values MUST be stored in approved secret stores'; Message = 'Infrastructure standard requires approved secret storage.' },
+        @{ Pattern = 'Certificate validation MUST NOT be bypassed'; Message = 'Infrastructure standard prohibits certificate-validation bypass.' },
+        @{ Pattern = 'Certificate and PKI changes MUST define subject, SANs, issuer, chain, trust store'; Message = 'Infrastructure standard requires PKI and certificate lifecycle controls.' },
+        @{ Pattern = 'Kubernetes workloads MUST run non-root where feasible'; Message = 'Infrastructure standard requires Kubernetes non-root posture where feasible.' },
+        @{ Pattern = 'Privileged containers, hostPath mounts, host networking, host PID, added Linux capabilities, cluster-admin'; Message = 'Infrastructure standard controls privileged Kubernetes and container settings.' },
+        @{ Pattern = 'Container and Kubernetes work MUST define image source, tag, digest'; Message = 'Infrastructure standard requires image identity and digest review.' },
+        @{ Pattern = 'Backup and disaster-recovery configuration MUST identify.*RPO.*RTO'; Message = 'Infrastructure standard requires backup, DR, RPO, and RTO controls.' },
+        @{ Pattern = 'Drift MUST be detected and reviewed before applying changes to managed resources'; Message = 'Infrastructure standard requires drift detection.' },
+        @{ Pattern = 'Policy failures MUST NOT be ignored, suppressed, or converted to success'; Message = 'Infrastructure standard requires policy-as-code enforcement.' },
+        @{ Pattern = 'Unbounded autoscaling is prohibited'; Message = 'Infrastructure standard prohibits unbounded autoscaling.' },
+        @{ Pattern = 'Infrastructure CI/CD MUST use least-privilege workflow permissions'; Message = 'Infrastructure standard requires CI/CD least privilege.' },
+        @{ Pattern = 'Production mutation MUST NOT run from untrusted pull requests'; Message = 'Infrastructure standard prohibits production mutation from untrusted PRs.' },
+        @{ Pattern = 'Validation Commands'; Message = 'Infrastructure standard includes validation commands section.' },
+        @{ Pattern = 'terraform fmt -check -recursive'; Message = 'Infrastructure standard includes Terraform/OpenTofu validation examples.' },
+        @{ Pattern = 'az deployment group what-if'; Message = 'Infrastructure standard includes Azure what-if validation example.' },
+        @{ Pattern = 'aws cloudformation validate-template'; Message = 'Infrastructure standard includes AWS CloudFormation validation example.' },
+        @{ Pattern = 'kubectl apply --dry-run=server'; Message = 'Infrastructure standard includes Kubernetes server-side dry-run example.' },
+        @{ Pattern = 'helm template'; Message = 'Infrastructure standard includes Helm rendering validation example.' },
+        @{ Pattern = 'Permitted statuses are `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable`'; Message = 'Infrastructure standard declares honest completion statuses.' },
+        @{ Pattern = 'Unexecuted plan, apply, deployment, destroy, restore, failover, DNS, firewall, certificate, cluster, service, or production validation MUST NOT be labeled `Passed`'; Message = 'Infrastructure standard prohibits false infrastructure evidence.' }
+    )
+    foreach ($item in $infrastructureRequiredPatterns) {
+        Test-Contains $infrastructureAgents $item.Pattern $item.Message 'agents/AGENTS_Infrastructure.md'
+    }
+
+    $infrastructureProhibitedWeakeningPatterns = @(
+        @{ Pattern = 'Apply may run without a plan'; Message = 'Infrastructure standard does not allow apply without a plan where supported.' },
+        @{ Pattern = 'Cached CLI context is sufficient for production'; Message = 'Infrastructure standard does not allow cached CLI context as production proof.' },
+        @{ Pattern = 'Empty target means all resources'; Message = 'Infrastructure standard does not allow empty target to mean all resources.' },
+        @{ Pattern = 'State locking may be bypassed'; Message = 'Infrastructure standard does not allow state locking bypass.' },
+        @{ Pattern = 'State files may be committed'; Message = 'Infrastructure standard does not allow committed state files.' },
+        @{ Pattern = 'Force-unlock is always safe'; Message = 'Infrastructure standard does not treat force-unlock as always safe.' },
+        @{ Pattern = 'Manual state editing is acceptable by default'; Message = 'Infrastructure standard does not allow default manual state editing.' },
+        @{ Pattern = 'Floating latest tags are preferred'; Message = 'Infrastructure standard does not prefer floating latest tags.' },
+        @{ Pattern = 'GitHub Actions may use mutable tags'; Message = 'Infrastructure standard does not allow mutable GitHub Action tags.' },
+        @{ Pattern = 'Destroy requires no approval'; Message = 'Infrastructure standard requires destructive approval.' },
+        @{ Pattern = 'Public ingress from anywhere is safe'; Message = 'Infrastructure standard does not treat public ingress from anywhere as safe.' },
+        @{ Pattern = 'Wildcard IAM is acceptable'; Message = 'Infrastructure standard does not allow wildcard IAM without review.' },
+        @{ Pattern = 'Plaintext secrets may be stored in tfvars'; Message = 'Infrastructure standard does not allow plaintext secrets in tfvars.' },
+        @{ Pattern = 'Certificate validation may be disabled'; Message = 'Infrastructure standard does not allow certificate-validation bypass.' },
+        @{ Pattern = 'Snapshots prove restore capability'; Message = 'Infrastructure standard does not treat snapshots as restore proof.' },
+        @{ Pattern = 'Production may be used when test environments are unavailable'; Message = 'Infrastructure standard does not allow production as a test substitute.' },
+        @{ Pattern = 'Cluster-admin is the default'; Message = 'Infrastructure standard does not allow cluster-admin as default.' },
+        @{ Pattern = 'Privileged containers are preferred'; Message = 'Infrastructure standard does not prefer privileged containers.' },
+        @{ Pattern = 'Unbounded autoscaling is acceptable'; Message = 'Infrastructure standard does not allow unbounded autoscaling.' },
+        @{ Pattern = 'Policy failures may be ignored'; Message = 'Infrastructure standard does not allow ignored policy failures.' },
+        @{ Pattern = 'Apply success proves readiness'; Message = 'Infrastructure standard does not equate apply success with readiness.' },
+        @{ Pattern = 'Missing infrastructure validation may be marked Passed'; Message = 'Infrastructure standard does not allow missing infrastructure validation to be marked Passed.' }
+    )
+    foreach ($item in $infrastructureProhibitedWeakeningPatterns) {
+        if ($infrastructureAgents -match $item.Pattern) {
+            Add-Result Failed $item.Message 'agents/AGENTS_Infrastructure.md'
+        }
+        else {
+            Add-Result Passed $item.Message 'agents/AGENTS_Infrastructure.md'
         }
     }
 }

@@ -607,5 +607,226 @@ Missing Worker Service validation may be marked Passed.
 '@
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
+
+        It 'fails an infrastructure standard version below the required minimum' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | 1.0.0 |')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails a malformed infrastructure standard semantic version' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | current |')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure environment targeting controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Every mutating command MUST make the following explicit', 'Mutating commands should identify useful context').
+                Replace('Empty target MUST NOT mean all environments or all resources', 'Empty target should not broaden scope').
+                Replace('Cached CLI context alone is insufficient for production mutation', 'Cached CLI context should be reviewed for production').
+                Replace('Guessing target environment from directory name, current CLI context, shell profile, default subscription, default region, default kubeconfig context, or cached credentials is prohibited', 'Guessing target environment should be avoided')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure plan-before-apply controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Infrastructure changes MUST use plan-before-apply, preview, what-if, diff, or equivalent review output', 'Infrastructure changes should use previews').
+                Replace('Apply MUST use the reviewed saved plan artifact where the tool supports saved plans', 'Apply should use reviewed plans where convenient').
+                Replace('A plan generated from one commit, variable set, state, provider set, credential, policy set, or environment MUST NOT authorize a different apply', 'Plans should generally match apply inputs')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure approved plan binding and production approval controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Production environment protections MUST be used where available', 'Production environment protections should be used').
+                Replace('Critical changes MUST NOT be self-approved unless an approved emergency process applies', 'Critical changes should avoid self-approval')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure state locking controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Shared or production state MUST use a remote protected backend where supported', 'Shared or production state should use a backend').
+                Replace('State files MUST NOT be committed', 'State files should not be committed').
+                Replace('State backend outage is `Blocked` for apply, not a reason to bypass locking', 'State backend outage may require alternate locking').
+                Replace('Force-unlock requires proof that no active operation owns the lock', 'Force-unlock should be used carefully')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure state migration controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('State import, move, migration, backend migration, repair, `state rm`, `state mv`, moved blocks, and manual state surgery require phased controls', 'State operations should be phased').
+                Replace('Manual state editing is prohibited unless an approved emergency procedure requires it', 'Manual state editing should be rare')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure pinning and supply-chain controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Infrastructure CLI versions MUST be pinned or constrained', 'Infrastructure CLI versions should be known').
+                Replace('GitHub Actions MUST be pinned to immutable commit SHAs', 'GitHub Actions may use version tags').
+                Replace('Production dependencies MUST NOT use floating `latest`, `main`, `master`, mutable branch names, mutable tags, or unbounded version ranges', 'Production dependencies should avoid floating versions').
+                Replace('Dynamically downloaded scripts MUST NOT be immediately executed without integrity controls', 'Downloaded scripts should be reviewed')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure destructive-change controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Destroy, replacement, deletion, purge, resource rename, recreation, force replacement, broad refactoring, and lifecycle changes', 'Destroy and replacement changes').
+                Replace('Agents MUST NOT apply, deploy, destroy, import, move, force-unlock, rotate, revoke, purge, or mutate state unless explicitly requested and authorized', 'Agents should avoid mutation unless requested')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure persistent-data controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Snapshot existence does not prove restore capability', 'Snapshots may prove restore capability').
+                Replace('Backup configured does not prove restore tested', 'Backup configured is enough restore evidence')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure network exposure controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Networking MUST be private by default and deny by default', 'Networking should be private where practical').
+                Replace('Broad ingress, wildcard source ranges, unrestricted egress', 'Broad network rules').
+                Replace('DNS rollback MUST account for TTL and caches', 'DNS rollback should account for propagation')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure IAM and RBAC controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Infrastructure identity MUST follow least privilege', 'Infrastructure identity should follow least privilege').
+                Replace('Wildcard IAM, broad administrator access, cluster-admin', 'Privileged access')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure secrets and PKI controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Secrets, private keys, certificates, kubeconfigs, SSH keys, tokens, service-principal secrets, signing keys, and state containing sensitive values MUST be stored in approved secret stores', 'Secrets should be stored in safe places').
+                Replace('Certificate validation MUST NOT be bypassed', 'Certificate validation should usually remain enabled').
+                Replace('Certificate and PKI changes MUST define subject, SANs, issuer, chain, trust store', 'Certificate changes should document PKI details')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure Kubernetes controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Container and Kubernetes work MUST define image source, tag, digest', 'Container work should define image source').
+                Replace('Kubernetes workloads MUST run non-root where feasible', 'Kubernetes workloads should avoid root').
+                Replace('Privileged containers, hostPath mounts, host networking, host PID, added Linux capabilities, cluster-admin', 'Privileged container settings')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure backup, restore, RPO, and RTO controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Backup and disaster-recovery configuration MUST identify protected resources, schedule, retention, encryption, storage location, immutability or soft-delete controls, access controls, restore owner, restore procedure, restore-test status, RPO, RTO', 'Backup and disaster-recovery configuration should identify recovery details')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure drift, policy, and cost controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Drift MUST be detected and reviewed before applying changes to managed resources', 'Drift should be reviewed').
+                Replace('Policy failures MUST NOT be ignored, suppressed, or converted to success', 'Policy failures should not be ignored').
+                Replace('Unbounded autoscaling is prohibited', 'Unbounded autoscaling should be avoided')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure CI/CD controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Infrastructure CI/CD MUST use least-privilege workflow permissions', 'Infrastructure CI/CD should use limited permissions').
+                Replace('Production mutation MUST NOT run from untrusted pull requests', 'Production mutation should avoid untrusted pull requests')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure validation and evidence honesty controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('terraform fmt -check -recursive', 'terraform fmt command').
+                Replace('az deployment group what-if', 'azure deployment preview').
+                Replace('aws cloudformation validate-template', 'cloudformation validation').
+                Replace('kubectl apply --dry-run=server', 'kubectl dry run').
+                Replace('helm template', 'helm render').
+                Replace('Permitted statuses are `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable`', 'Use evidence statuses').
+                Replace('Unexecuted plan, apply, deployment, destroy, restore, failover, DNS, firewall, certificate, cluster, service, or production validation MUST NOT be labeled `Passed`', 'Unexecuted validation should be recorded honestly')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails unsafe infrastructure weakening phrases' {
+            $script:tempRoot = New-AgentStandardsFixture
+            Add-Content -LiteralPath (Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md') -Value @'
+
+Apply may run without a plan.
+Cached CLI context is sufficient for production.
+Empty target means all resources.
+State locking may be bypassed.
+State files may be committed.
+Force-unlock is always safe.
+Manual state editing is acceptable by default.
+Floating latest tags are preferred.
+GitHub Actions may use mutable tags.
+Destroy requires no approval.
+Public ingress from anywhere is safe.
+Wildcard IAM is acceptable.
+Plaintext secrets may be stored in tfvars.
+Certificate validation may be disabled.
+Snapshots prove restore capability.
+Production may be used when test environments are unavailable.
+Cluster-admin is the default.
+Privileged containers are preferred.
+Unbounded autoscaling is acceptable.
+Policy failures may be ignored.
+Apply success proves readiness.
+Missing infrastructure validation may be marked Passed.
+'@
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
     }
 }
