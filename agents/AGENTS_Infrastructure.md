@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Status | Active |
-| Version | 1.1.0 |
+| Version | 1.1.1 |
 | Owner role | Engineering Standards Maintainers |
 | Last reviewed | 2026-06-21 |
 | Changelog | See [../CHANGELOG.md](../CHANGELOG.md). |
@@ -184,7 +184,9 @@ Evidence MUST include exact resource addresses, exact remote resource IDs, sourc
 
 ## Provider, Module, Action, Image, And Toolchain Pinning
 
-Infrastructure CLI versions MUST be pinned or constrained. Provider versions MUST be pinned or constrained. Modules MUST be pinned to immutable versions, commits, or digests. Helm charts MUST be pinned. Container images SHOULD be pinned by digest and MUST be pinned by digest for protected production paths where practical. GitHub Actions MUST be pinned to immutable commit SHAs. Package lockfiles, Terraform or OpenTofu dependency lockfiles, and equivalent locks MUST be governed where supported.
+Infrastructure CLI versions MUST be pinned or constrained. Provider versions MUST be pinned or constrained. Modules MUST be pinned to immutable versions, commits, or digests. Helm charts MUST be pinned. Protected production container and Kubernetes deployment paths MUST pin images by immutable digest. Tags MAY remain as human-readable metadata but MUST NOT be the only production identity. A mutable tag such as `latest`, `stable`, `release`, `main`, `master`, or a reusable semantic tag is insufficient by itself. The resolved digest MUST be recorded in plan or deployment evidence. Registry, repository, tag, digest, signature or attestation status, scanner result, and provenance MUST be reviewed together. GitHub Actions MUST be pinned to immutable commit SHAs. Package lockfiles, Terraform or OpenTofu dependency lockfiles, and equivalent locks MUST be governed where supported.
+
+Digest changes are deployment changes and require review. Rollback MUST identify the exact prior digest. Image policy MUST reject unapproved digest substitution. Multi-architecture manifests require platform-aware digest handling. Mirrored or promoted images MUST preserve or re-establish provenance and integrity. If digest pinning is technically unsupported, evidence MUST record the exact documented limitation, an approved active exception, an alternate immutable package or release identity, and compensating verification.
 
 Production dependencies MUST NOT use floating `latest`, `main`, `master`, mutable branch names, mutable tags, or unbounded version ranges unless an approved exception documents compensating controls. Provenance, publisher, checksum, signature, changelog, breaking changes, transitive dependencies, private registry trust, TLS validation, and dependency update review MUST be considered. Dynamically downloaded scripts MUST NOT be immediately executed without integrity controls. Generated providers, modules, plugins, charts, or images MUST NOT be silently substituted.
 
@@ -218,17 +220,29 @@ Networking MUST be private by default and deny by default where the platform sup
 
 Broad ingress, wildcard source ranges, unrestricted egress, route-table changes, NAT, VPN, peering, private endpoint, load balancer, reverse proxy, firewall, network ACL, security group, and ingress-controller changes require blast-radius review. Public ingress from anywhere is Critical or High depending on data, service, and controls. Certificate validation, host validation, and origin validation MUST NOT be disabled for convenience.
 
+Every temporary network or firewall rule MUST define rule ID or name, owner, requestor, business reason, source, destination, protocol, port, environment, creation time, expiration time, change or ticket reference, monitoring, cleanup owner, and removal verification. Temporary rules MUST have an explicit expiration. Temporary rules MUST be removed automatically where the platform supports it, or have a documented manual removal task and owner. Expired rules MUST NOT remain active silently. Removal MUST be verified.
+
+Administrative interfaces such as SSH, RDP, WinRM, vCenter, hypervisor management, Kubernetes API, database administration, storage administration, and PKI administration MUST NOT be exposed publicly without Critical approval and compensating controls. Broad source ranges, all ports, all protocols, wildcard destinations, or unrestricted egress require High or Critical review. Rule descriptions or comments are not enforcement. Security-group references, service tags, prefix lists, and dynamic identities MUST be reviewed for actual effective scope. Network-policy and firewall changes MUST account for stateful or stateless behavior. Emergency access requires break-glass controls, short expiration, audit, and removal verification. Firewall deletion MUST verify that required traffic still has an approved path. Rule cleanup MUST NOT delete shared rules without consumer review.
+
 ## DNS, IPAM, And Traffic Cutover
 
 DNS, IPAM, load balancer, reverse proxy, ingress, CDN, and traffic-routing changes MUST identify zone, record, IP allocation, owner, environment, TTL, cache behavior, propagation expectations, consumer impact, rollback, monitoring, and conflict detection.
 
+Every DNS or IPAM change MUST define environment, DNS server or provider, zone, view or split-horizon scope, record name, record type, existing value, new value, TTL, existing TTL, desired TTL, owner, application or service, IPAM reservation, network or subnet, forward record, reverse or PTR record, duplicate or conflict check, DNSSEC behavior where applicable, certificate SAN and hostname alignment, load balancer or backend readiness, propagation expectations, validation resolver set, rollback value, rollback TTL, change window, and consumer impact.
+
 Production DNS cutover affecting broad traffic is Critical by default. DNS rollback MUST account for TTL and caches. IPAM changes MUST avoid duplicate allocation. Traffic cutover MUST define health gates, stop conditions, and data compatibility. Placeholder examples MUST NOT include real zones, IP addresses, customer domains, or certificate names.
+
+Existing records MUST be read and recorded before replacement or deletion. Record-type changes require dependency review. Forward and reverse or PTR records MUST be considered together where reverse DNS is relevant. Split-horizon DNS views MUST be explicit. Internal and external answers MUST NOT be confused. DNSSEC changes MUST define key, signer, chain-of-trust, rollover, and rollback review. Certificate SANs and service hostnames MUST align before traffic cutover. TTL reduction for planned cutover MUST occur early enough to become effective before the change window. Agents MUST NOT assume immediate propagation. Validation SHOULD query multiple authoritative or recursive resolvers appropriate to the environment. DNS cache behavior MUST be included in rollback. Wildcard DNS records require High or Critical review. DNS deletion requires consumer and dependency review. IP allocation MUST use approved IPAM where required. Hard-coded unmanaged IP allocation is prohibited where IPAM is authoritative. Duplicate IP, duplicate hostname, stale reservation, and orphaned record checks are required. PTR deletion or creation MUST NOT be omitted when required by environment policy. Traffic cutover MUST verify backend readiness before changing DNS. Rollback MUST identify the exact prior record values. DNS changes MUST be auditable and correlated to the infrastructure change.
 
 ## Identity, IAM, RBAC, And Service Accounts
 
 Infrastructure identity MUST follow least privilege. Application, deployment, plan, apply, break-glass, monitoring, and runtime identities SHOULD be separate where practical. IAM, RBAC, service account, managed identity, federation, permission boundary, role assignment, group membership, and privileged-access changes MUST identify subject, scope, action, resource, condition, duration, owner, and revocation path.
 
 Wildcard IAM, broad administrator access, cluster-admin, subscription owner, domain administrator, root, or equivalent access is Critical unless narrowly justified and approved. Service identities MUST NOT approve their own changes. Production credentials MUST NOT be available to untrusted pull-request code. Access changes require negative review for privilege escalation and cross-tenant or cross-environment reach.
+
+Every service or workload identity MUST define identity type, owner, purpose, environment, scope, permissions, trust relationship, authentication mechanism, credential source, rotation, expiration, revocation, interactive-login policy, network access, audit, break-glass behavior, decommissioning, and consumer systems. Managed identity, workload identity, federated identity, gMSA, virtual account, or equivalent short-lived mechanism MUST be preferred where supported. Long-lived static credentials MUST NOT be used where a supported workload identity can meet the requirement. Interactive login MUST be disabled for service accounts unless explicitly required and approved. Service accounts MUST be environment-specific unless a documented cross-environment design is approved. Shared service accounts are prohibited by default and require ownership and consumer mapping. Credentials MUST have defined rotation and expiration.
+
+Orphaned service accounts MUST be detected and removed or disabled. Service-account decommissioning MUST revoke access, secrets, keys, tokens, and role assignments. Kubernetes service accounts MUST define token mounting, audience, expiration, projected-token behavior, and RBAC. AutomountServiceAccountToken SHOULD be disabled when not required. Cloud trust policies MUST constrain principal, audience, subject, repository, branch or environment, tenant, or equivalent claims. IAM policy simulation, access review, or equivalent negative-permission testing SHOULD be used where supported. Removing access requires administrator and workload lockout analysis. Privilege escalation paths through pass-role, impersonation, assume-role, token creation, group nesting, or delegated administration MUST be reviewed. Service-account secrets MUST NOT appear in code, state, command lines, or logs.
 
 ## Secrets, Keys, Certificates, And PKI
 
@@ -254,11 +268,17 @@ IIS, Windows Services, systemd units, cron jobs, scheduled tasks, and platform j
 
 Windows Service and IIS work that hosts .NET code MUST also follow [AGENTS_DotNet.md](AGENTS_DotNet.md). PowerShell-based service, DSC, scheduled task, or deployment automation MUST also follow [AGENTS_PowerShell.md](AGENTS_PowerShell.md). Scheduled infrastructure jobs MUST not default to destructive mode merely because they are unattended.
 
+Every IIS infrastructure change MUST define site name, application name where applicable, application pool name, application pool identity, managed runtime or no-managed-code setting, pipeline mode, start mode, idle timeout, recycling policy, rapid-fail protection, queue length where relevant, 32-bit application setting where relevant, physical path, content/deployment path ownership, filesystem permissions, binding protocol, hostname, port, IP binding, SNI behavior, TLS certificate identity, certificate store/location, certificate private-key access, HTTP-to-HTTPS behavior, authentication mode, authorization boundary, logging, failed-request tracing where required, request limits, upload limits, health endpoint, hosting bundle/runtime dependency, deployment strategy, rollback, and backup or configuration export where appropriate. IIS sites and applications MUST NOT use broad filesystem permissions such as Everyone, Users, Authenticated Users, or broad write access unless explicitly justified and approved. Application pool identities MUST receive only the minimum path, certificate, registry, network, and service permissions required. Production bindings MUST explicitly identify hostname, port, protocol, SNI, and certificate. Wildcard bindings require High or Critical review depending on exposure. Unreviewed catch-all bindings are prohibited. HTTP bindings for protected applications MUST define redirect, isolation, or approved exception behavior. TLS certificate binding MUST verify hostname/SAN, chain, EKU, validity, private-key association, and application-pool access where required. Physical paths MUST be canonicalized and resolved beneath approved roots. Deployment directories MUST not be writable by untrusted users. `web.config` and deployment logs MUST NOT contain plaintext secrets. IIS configuration changes MUST define whether `applicationHost.config`, delegated config, or site-level config is the source of truth. Changes to authentication, authorization, request filtering, handler mappings, modules, reverse proxy settings, or TLS are High by default. IIS restart, app-pool recycle, and site stop/start behavior MUST be explicit and MUST NOT be hidden. Successful file copy or site start MUST NOT be treated as application readiness. Hosting bundle/runtime compatibility MUST be validated for hosted .NET applications under [AGENTS_DotNet.md](AGENTS_DotNet.md). Configuration backups or exports MUST be protected when they contain sensitive settings.
+
+Every Windows Service infrastructure change MUST define service name, display name, description, binary path, binary arguments, quoted path behavior, working directory, service identity, logon rights, start type, delayed-auto-start behavior, dependencies, failure recovery, restart count, reset period, service timeout, stop timeout, health check, logging, Event Log source, upgrade process, rollback, binary/config directory ownership, Service Control Manager ACL, registry/configuration path, secret source, network permissions, firewall requirements, and certificate access where relevant. Service binary paths containing spaces MUST be safely quoted. Unquoted service paths are prohibited. Service executable, configuration, and working directories MUST NOT be writable by untrusted or ordinary users. Service identities MUST use least privilege. LocalSystem, LocalService, NetworkService, domain accounts, gMSA, virtual accounts, and managed identities MUST be explicitly justified and reviewed according to scope. Interactive logon for service accounts MUST be disabled where not required. Broad local administrator or domain administrator rights are prohibited by default. Service Control Manager ACLs MUST prevent unauthorized reconfiguration, start, stop, delete, or binary-path changes. Service recovery MUST NOT create uncontrolled restart loops. Recovery commands MUST NOT execute arbitrary or mutable paths. Service upgrade MUST verify binary identity, version, signature or hash where required. A service being in Running state MUST NOT be treated as full application readiness. Service stop/start and reboot requirements MUST be explicit. Rollback MUST identify the exact prior binary/configuration version. Secrets MUST NOT be embedded in ImagePath, command-line arguments, registry values, or logs.
+
+Every systemd service change MUST define unit name, description, User, Group, WorkingDirectory, ExecStart, ExecStartPre/ExecStartPost where used, ExecStop, environment source, secret source, restart policy, restart delay, TimeoutStartSec, TimeoutStopSec, KillMode, dependencies, ordering, network dependencies, logging, health/readiness, capability requirements, filesystem access, temporary files, runtime directories, state directories, upgrade, rollback, and enable/start behavior. User and Group MUST be explicit. Root execution requires High or Critical review and justification. NoNewPrivileges SHOULD be enabled where supported. CapabilityBoundingSet and AmbientCapabilities MUST be minimized. ProtectSystem, ProtectHome, PrivateTmp, PrivateDevices, ProtectKernelTunables, ProtectKernelModules, ProtectControlGroups, RestrictAddressFamilies, RestrictNamespaces, LockPersonality, MemoryDenyWriteExecute, and SystemCallFilter MUST be reviewed where supported. ReadWritePaths MUST be limited to required directories. World-writable executable or configuration directories are prohibited. EnvironmentFile and secret files MUST not be world-readable. Secrets MUST NOT appear in unit files, command-line arguments, journal output, or ordinary environment files. Unit drop-ins and override ownership MUST be explicit. Daemon reload, enable, start, restart, and stop behavior MUST be documented. Active state MUST NOT be treated as full application readiness. Restart=always or aggressive restart loops require bounds and operational review. systemd sandboxing exceptions require rationale. Unit files and executable paths MUST be integrity-controlled.
+
 ## Containers, Kubernetes, Helm, And Orchestration
 
 Container and Kubernetes work MUST define image source, tag, digest, signature or provenance where available, runtime user, privilege model, capabilities, filesystem mode, seccomp/AppArmor/SELinux profile where applicable, resource requests and limits, probes, environment variables, secret mounts, config maps, volumes, network policies, service accounts, RBAC, namespaces, ingress, egress, rollout strategy, and rollback.
 
-Production images SHOULD be pinned by digest and MUST avoid unreviewed `latest` tags. Kubernetes workloads MUST run non-root where feasible. Privileged containers, hostPath mounts, host networking, host PID, added Linux capabilities, cluster-admin, broad RBAC, unrestricted egress, and disabled admission policy require Critical or High review. Helm template rendering is not cluster validation. Server-side dry run does not prove runtime readiness.
+Protected production images MUST be pinned by digest and MUST avoid unreviewed `latest` tags. Kubernetes workloads MUST run non-root where feasible. Privileged containers, hostPath mounts, host networking, host PID, added Linux capabilities, cluster-admin, broad RBAC, unrestricted egress, and disabled admission policy require Critical or High review. Helm template rendering is not cluster validation. Server-side dry run does not prove runtime readiness.
 
 ## Databases And Stateful Services As Infrastructure
 
@@ -332,24 +352,27 @@ Skipped or unavailable tests require exact `NotRun`, `Blocked`, or `NotApplicabl
 
 Repository-root [../AGENTS.md](../AGENTS.md) is the source of truth for repository validation. Infrastructure commands are conditional on actual tools, credentials, backends, providers, and safe environments. Exact command, working directory, tool version, exit code, summary, and status MUST be recorded. Missing credentials, backends, providers, policy engines, or environments are `NotRun` or `Blocked`. Plan does not prove apply. Apply does not prove readiness. Destroy validation MUST NOT use production.
 
-Terraform/OpenTofu examples:
+Terraform/OpenTofu static validation examples:
 
 ```powershell
 terraform version
 terraform fmt -check -recursive
 terraform init -backend=false
 terraform validate
-terraform plan -out "<plan-file>"
-terraform show -json "<plan-file>"
 ```
 
-Where backend validation is authorized:
+`terraform init -backend=false` is suitable only for static initialization or validation where supported. A plan generated without the authoritative backend or state MUST NOT be treated as authoritative production plan evidence. Backendless plan behavior MAY be incomplete, fail, or differ from real state-backed planning. Backendless validation MUST NOT be used to claim drift detection, replacement accuracy, destroy accuracy, or no-change status.
+
+Authorized state-backed planning examples:
 
 ```powershell
 terraform init
 terraform workspace show
 terraform plan -out "<plan-file>"
+terraform show -json "<plan-file>"
 ```
+
+Production plan evidence requires the approved backend, workspace, variables, credentials, state, and target context. State-backed planning is credentialed and environment-specific and MUST NOT be implied as executed unless it actually ran.
 
 Bicep and Azure examples:
 
@@ -360,11 +383,18 @@ az bicep build --file "<template>.bicep"
 az deployment group what-if --resource-group "<resource-group>" --template-file "<template>.bicep"
 ```
 
-AWS and CloudFormation examples:
+AWS and CloudFormation static validation examples:
 
 ```powershell
 aws sts get-caller-identity
 aws cloudformation validate-template --template-body file://"<template>.yaml"
+```
+
+`aws cloudformation create-change-set` is a credentialed API mutation even though it does not execute the stack change. It creates an environment-scoped CloudFormation resource and requires explicit account, region, stack, change-set name, role, template, parameter, capability, and cleanup context. It MUST NOT be presented as ordinary offline static validation. It requires approved nonproduction or production preview context according to risk. Unused change sets MUST be deleted or expired according to policy. Creation success does not prove execution success or stack readiness. Change-set review MUST include replacement, deletion, IAM capability, nested stack, macro, and unknown behavior. Stack policy, termination protection, rollback configuration, and service role MUST be reviewed where relevant. Secret-bearing parameters MUST NOT appear in command lines or logs.
+
+Credentialed CloudFormation preview creation examples are mutating preview creation, account/region/stack specific, approval controlled, cleanup required, and not ordinary default validation:
+
+```powershell
 aws cloudformation create-change-set <approved-placeholder-arguments>
 ```
 
@@ -433,5 +463,6 @@ Exceptions MUST NOT permit plaintext secrets, fabricated evidence, unreviewed pr
 
 ## Revision History
 
+- 1.1.1: Corrected remaining infrastructure gaps by adding explicit IIS controls, Windows Service controls, systemd hardening, DNS/IPAM operational detail, mandatory protected-production image digests, temporary firewall lifecycle, service-account and workload-identity controls, Terraform backendless-plan qualification, CloudFormation change-set mutation warning, and validator/Pester hardening.
 - 1.1.0: Rebuilt as a comprehensive enterprise infrastructure standard covering tool applicability, cross-standard handoffs, discovery, risk, execution modes, source of truth, environment targeting, plan/apply separation, approvals, state backends, state migration, supply-chain pinning, naming, destructive changes, storage, networking, DNS/IPAM, IAM/RBAC, secrets, PKI, encryption, compute, services, Kubernetes, databases, backup/DR, HA, drift, policy, cost, observability, deployment, rollback, CI/CD, testing, validation, documentation, evidence, failures, and exceptions.
 - 1.0.0: Initial infrastructure standard with baseline requirements for discovery, risk, plans, state, security, destructive changes, validation, evidence, and exceptions.

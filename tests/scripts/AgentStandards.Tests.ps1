@@ -611,7 +611,7 @@ Missing Worker Service validation may be marked Passed.
         It 'fails an infrastructure standard version below the required minimum' {
             $script:tempRoot = New-AgentStandardsFixture
             $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
-            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | 1.0.0 |')
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.1 |', '| Version | 1.1.0 |')
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
@@ -619,7 +619,7 @@ Missing Worker Service validation may be marked Passed.
         It 'fails a malformed infrastructure standard semantic version' {
             $script:tempRoot = New-AgentStandardsFixture
             $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
-            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | current |')
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.1 |', '| Version | current |')
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
@@ -799,6 +799,138 @@ Missing Worker Service validation may be marked Passed.
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
 
+        It 'fails missing infrastructure IIS binding, app-pool, and filesystem controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Every IIS infrastructure change MUST define site name, application name where applicable, application pool name, application pool identity', 'IIS changes should define site and pool information').
+                Replace('IIS sites and applications MUST NOT use broad filesystem permissions such as Everyone, Users, Authenticated Users', 'IIS sites should avoid broad filesystem permissions').
+                Replace('Application pool identities MUST receive only the minimum path, certificate, registry, network, and service permissions required', 'Application pool identities should be limited').
+                Replace('Production bindings MUST explicitly identify hostname, port, protocol, SNI, and certificate', 'Production bindings should identify relevant TLS details').
+                Replace('Wildcard bindings require High or Critical review', 'Wildcard bindings should be reviewed').
+                Replace('`web.config` and deployment logs MUST NOT contain plaintext secrets', 'web config and logs should not contain secrets').
+                Replace('Successful file copy or site start MUST NOT be treated as application readiness', 'Site start should be checked').
+                Replace('Hosting bundle/runtime compatibility MUST be validated for hosted .NET applications under [AGENTS_DotNet.md](AGENTS_DotNet.md)', 'Hosted runtime compatibility should be reviewed')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure Windows Service quoting, directory, and ACL controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Every Windows Service infrastructure change MUST define service name, display name, description, binary path, binary arguments, quoted path behavior', 'Windows Service changes should define service metadata').
+                Replace('Service binary paths containing spaces MUST be safely quoted', 'Service binary paths should be checked').
+                Replace('Unquoted service paths are prohibited', 'Unquoted service paths should be avoided').
+                Replace('Service executable, configuration, and working directories MUST NOT be writable by untrusted or ordinary users', 'Service directories should be protected').
+                Replace('Service Control Manager ACLs MUST prevent unauthorized reconfiguration, start, stop, delete, or binary-path changes', 'Service ACLs should be reviewed').
+                Replace('Secrets MUST NOT be embedded in ImagePath, command-line arguments, registry values, or logs', 'Secrets should not be embedded in service configuration').
+                Replace('A service being in Running state MUST NOT be treated as full application readiness', 'Running services should be checked')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure systemd user, capability, and filesystem controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Every systemd service change MUST define unit name, description, User, Group', 'systemd changes should define unit metadata').
+                Replace('User and Group MUST be explicit', 'User and Group should be documented').
+                Replace('Root execution requires High or Critical review', 'Root execution should be reviewed').
+                Replace('NoNewPrivileges SHOULD be enabled where supported', 'NoNewPrivileges can be considered').
+                Replace('CapabilityBoundingSet and AmbientCapabilities MUST be minimized', 'Capabilities should be reviewed').
+                Replace('ProtectSystem, ProtectHome, PrivateTmp, PrivateDevices, ProtectKernelTunables, ProtectKernelModules, ProtectControlGroups, RestrictAddressFamilies, RestrictNamespaces, LockPersonality, MemoryDenyWriteExecute, and SystemCallFilter MUST be reviewed where supported', 'systemd protections should be reviewed').
+                Replace('EnvironmentFile and secret files MUST not be world-readable', 'Environment files should be protected').
+                Replace('Active state MUST NOT be treated as full application readiness', 'Active services should be checked')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure DNS record, PTR, split-horizon, DNSSEC, SAN, and TTL controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Every DNS or IPAM change MUST define environment, DNS server or provider, zone, view or split-horizon scope, record name, record type, existing value', 'DNS changes should define useful record metadata').
+                Replace('Existing records MUST be read and recorded before replacement or deletion', 'Existing records should be checked').
+                Replace('Forward and reverse or PTR records MUST be considered together where reverse DNS is relevant', 'Reverse records should be considered').
+                Replace('Split-horizon DNS views MUST be explicit', 'Split-horizon DNS should be documented').
+                Replace('DNSSEC changes MUST define key, signer, chain-of-trust, rollover, and rollback review', 'DNSSEC changes should be reviewed').
+                Replace('Certificate SANs and service hostnames MUST align before traffic cutover', 'Certificate names should align').
+                Replace('TTL reduction for planned cutover MUST occur early enough to become effective before the change window', 'TTL should be reduced before cutover').
+                Replace('Validation SHOULD query multiple authoritative or recursive resolvers appropriate to the environment', 'Validation can query resolvers').
+                Replace('Rollback MUST identify the exact prior record values', 'Rollback should identify prior values')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails weakened infrastructure production image digest requirement' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Protected production container and Kubernetes deployment paths MUST pin images by immutable digest', 'Protected production images should use stable tags').
+                Replace('Tags MAY remain as human-readable metadata but MUST NOT be the only production identity', 'Tags may be the production identity').
+                Replace('Rollback MUST identify the exact prior digest', 'Rollback should identify prior image details').
+                Replace('Image policy MUST reject unapproved digest substitution', 'Image policy should check substitutions')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure temporary firewall lifecycle controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Every temporary network or firewall rule MUST define rule ID or name, owner, requestor, business reason, source, destination, protocol, port, environment, creation time, expiration time, change or ticket reference, monitoring, cleanup owner, and removal verification', 'Temporary network rules should define ownership').
+                Replace('Temporary rules MUST have an explicit expiration', 'Temporary rules should have an expiration').
+                Replace('Temporary rules MUST be removed automatically where the platform supports it, or have a documented manual removal task and owner', 'Temporary rules should be cleaned up').
+                Replace('Expired rules MUST NOT remain active silently', 'Expired rules should be reviewed').
+                Replace('Removal MUST be verified', 'Removal should be checked').
+                Replace('Administrative interfaces such as SSH, RDP, WinRM, vCenter, hypervisor management, Kubernetes API, database administration, storage administration, and PKI administration MUST NOT be exposed publicly without Critical approval and compensating controls', 'Administrative interfaces should not be public').
+                Replace('Emergency access requires break-glass controls, short expiration, audit, and removal verification', 'Emergency access should be controlled')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing infrastructure service account workload identity, rotation, and login controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Every service or workload identity MUST define identity type, owner, purpose, environment, scope, permissions, trust relationship, authentication mechanism, credential source, rotation, expiration', 'Service identities should define ownership and scope').
+                Replace('Managed identity, workload identity, federated identity, gMSA, virtual account, or equivalent short-lived mechanism MUST be preferred where supported', 'Managed identities can be used').
+                Replace('Long-lived static credentials MUST NOT be used where a supported workload identity can meet the requirement', 'Long-lived credentials should be avoided').
+                Replace('Interactive login MUST be disabled for service accounts unless explicitly required and approved', 'Interactive login should be disabled').
+                Replace('Credentials MUST have defined rotation and expiration', 'Credentials should rotate').
+                Replace('Kubernetes service accounts MUST define token mounting, audience, expiration, projected-token behavior, and RBAC', 'Kubernetes service accounts should define token behavior').
+                Replace('IAM policy simulation, access review, or equivalent negative-permission testing SHOULD be used where supported', 'Access review can be used').
+                Replace('Removing access requires administrator and workload lockout analysis', 'Removing access should consider lockout').
+                Replace('Privilege escalation paths through pass-role, impersonation, assume-role, token creation, group nesting, or delegated administration MUST be reviewed', 'Privilege escalation paths should be reviewed')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails when Terraform backendless validation is treated as authoritative' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('`terraform init -backend=false` is suitable only for static initialization or validation where supported', 'terraform init backend false may be used for planning').
+                Replace('A plan generated without the authoritative backend or state MUST NOT be treated as authoritative production plan evidence', 'Backendless plans may be production evidence').
+                Replace('Backendless validation MUST NOT be used to claim drift detection, replacement accuracy, destroy accuracy, or no-change status', 'Backendless validation may claim no changes').
+                Replace('Production plan evidence requires the approved backend, workspace, variables, credentials, state, and target context', 'Production plan evidence should include useful context')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails when CloudFormation change-set creation is treated as ordinary static validation' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('`aws cloudformation create-change-set` is a credentialed API mutation', 'CloudFormation change-set creation is static validation').
+                Replace('It MUST NOT be presented as ordinary offline static validation', 'It may be presented as ordinary static validation').
+                Replace('Unused change sets MUST be deleted or expired according to policy', 'Unused change sets should be reviewed later').
+                Replace('Creation success does not prove execution success or stack readiness', 'Creation success proves stack readiness')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
         It 'fails unsafe infrastructure weakening phrases' {
             $script:tempRoot = New-AgentStandardsFixture
             Add-Content -LiteralPath (Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md') -Value @'
@@ -825,6 +957,33 @@ Unbounded autoscaling is acceptable.
 Policy failures may be ignored.
 Apply success proves readiness.
 Missing infrastructure validation may be marked Passed.
+Everyone may have write access to IIS content.
+Wildcard IIS bindings require no review.
+IIS site started means application ready.
+Unquoted Windows Service paths are acceptable.
+Service executable directories may be user writable.
+Service accounts may log on interactively by default.
+Windows Service Running state proves readiness.
+systemd services should run as root by default.
+NoNewPrivileges is unnecessary.
+World-readable environment files may contain secrets.
+systemd active state proves readiness.
+PTR records never matter.
+Split-horizon DNS does not need review.
+DNSSEC changes require no rollover plan.
+DNS TTL may be lowered at cutover time with immediate effect.
+Certificate SANs do not need to match DNS.
+Production image tags are sufficient without digests.
+Latest tags are acceptable for production.
+Temporary firewall rules need no expiration.
+Public administrative interfaces are acceptable.
+Emergency firewall access may remain indefinitely.
+Long-lived service-account credentials are preferred.
+Interactive login may remain enabled for service accounts.
+Kubernetes service-account tokens need no review.
+Backendless Terraform plans are authoritative production evidence.
+CloudFormation change-set creation is offline static validation.
+Missing Infrastructure 1.1.1 validation may be marked Passed.
 '@
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
