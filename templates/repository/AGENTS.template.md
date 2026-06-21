@@ -37,7 +37,7 @@ List real commands for setup, lint, build, test, governance validation, evidence
 
 ## Evidence
 
-Agents MUST update completion evidence when they perform substantive work. Evidence must distinguish Passed, Failed, Blocked, Skipped, and NotRun results.
+Agents MUST update completion evidence when they perform substantive work. Evidence must distinguish `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable` results.
 
 ## Exceptions
 

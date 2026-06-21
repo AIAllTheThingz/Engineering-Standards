@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "2026-06-21",
+  "requiredFields": [
+    "requestId",
+    "tenantId",
+    "requestedBy"
+  ],
+  "immutableAfterSubmission": true,
+  "allowsArbitraryCommandText": false
+}

@@ -37,7 +37,7 @@ Run the project validation commands before requesting review:
 <governance-validation-command>
 ```
 
-Record skipped or unavailable checks honestly as `Skipped`, `NotRun`, or `Blocked`.
+Record unavailable, blocked, or inapplicable checks honestly as `NotRun`, `Blocked`, or `NotApplicable`.
 
 ## Evidence
 

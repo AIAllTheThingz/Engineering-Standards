@@ -1,7 +1,7 @@
 # Configuration Reference
 
 | Status | Active |
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Owner role | Schema Maintainers |
 | Last reviewed | 2026-06-19 |
 
@@ -61,7 +61,7 @@ The governance config MUST NOT be used to remove mandatory controls silently. If
 
 ## Allowed Values
 
-Risk classifications are `Low`, `Moderate`, `High`, and `Critical`. Data classifications are defined in `governance/RISK_CLASSIFICATION.md` and the organization contract. Status values in evidence are `Passed`, `Failed`, `Blocked`, `Skipped`, `NotRun`, and `NotApplicable` when the schema permits it.
+Risk classifications are `Low`, `Moderate`, `High`, and `Critical`. Data classifications are defined in `governance/RISK_CLASSIFICATION.md` and the organization contract. Status values in governance evidence are `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable`.
 
 Do not introduce new enum values in downstream repositories. If a new value is needed, change the central schema, add fixtures, update validators, and release a new governance version.
 
@@ -78,7 +78,7 @@ Downstream repositories call `AIAllTheThingz/Engineering-Standards/.github/workf
 | Input | Default | Meaning |
 | --- | --- | --- |
 | `project-path` | `.` | Repository-relative path to validate. Absolute paths and traversal are invalid. |
-| `governance-version` | `1.0.0` | Expected governance version, compared with `project-manifest.json` when present. |
+| `governance-version` | `1.1.0` | Expected governance version, compared with `project-manifest.json` when present. |
 | `run-examples` | `true` | Runs functional example validations for this repository. |
 | `run-pester` | `true` | Runs repository Pester tests. |
 | `run-documentation-validation` | `true` | Runs substantive documentation checks. |

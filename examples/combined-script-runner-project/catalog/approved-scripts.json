@@ -1,0 +1,16 @@
+{
+  "catalogVersion": "2026-06-21",
+  "scripts": [
+    {
+      "id": "example-report",
+      "displayName": "Example Report",
+      "entryPoint": "scripts/example-report.ps1",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "allowedRoles": [
+        "ExampleOperator"
+      ],
+      "inputSchema": "schemas/example-report-input.schema.json",
+      "producesArtifact": true
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectName": "Integration Example",
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "description": "Synthetic integration example demonstrating governed API contract and webhook validation without external provider access.",
+  "projectType": "integration",
+  "technologies": [
+    "integration",
+    "github-actions"
+  ],
+  "governanceVersion": "1.1.0",
+  "riskClassification": "Moderate",
+  "dataClassification": "Internal",
+  "owners": [
+    "@AIAllTheThingz/engineering-standards-maintainers"
+  ],
+  "environments": [
+    {
+      "name": "local",
+      "type": "development",
+      "production": false
+    }
+  ],
+  "applicableStandards": [
+    "agents/AGENTS_Base.md",
+    "agents/AGENTS_Integration.md"
+  ],
+  "requiredWorkflows": [
+    "governance"
+  ],
+  "externalIntegrations": [
+    {
+      "name": "synthetic-provider",
+      "purpose": "Demonstrates contract, webhook, retry, and redaction evidence without calling a live provider.",
+      "dataClassification": "Internal"
+    }
+  ],
+  "secretsProvider": "none-required-for-synthetic-example",
+  "productionApprovalRequired": false,
+  "evidence": {
+    "completionEvidencePath": "evidence/local-completion-result.json",
+    "testEvidencePath": "evidence/test-evidence.json"
+  },
+  "exceptions": []
+}

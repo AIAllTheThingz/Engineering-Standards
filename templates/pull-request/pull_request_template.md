@@ -28,7 +28,7 @@ Include exact commands, working directory, exit codes, and important warnings.
 
 ## Tests Not Performed
 
-Record `Skipped`, `NotRun`, `Blocked`, or `NotApplicable` with reasons and compensating review.
+Record `NotRun`, `Blocked`, or `NotApplicable` with reasons and compensating review.
 
 ## Evidence
 

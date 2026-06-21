@@ -20,4 +20,4 @@ jobs:
     uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<immutable-reference>
     with:
       project-path: .
-      governance-version: 1.0.0
+      governance-version: 1.1.0

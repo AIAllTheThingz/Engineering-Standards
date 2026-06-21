@@ -53,7 +53,7 @@ List the exact commands maintainers run before review:
 <security-command>
 ```
 
-For skipped checks, record `NotRun`, `Skipped`, or `Blocked` in evidence with the reason.
+For unavailable or unexecuted checks, record `NotRun`, `Blocked`, or `NotApplicable` in evidence with the reason.
 
 ## Deployment
 
@@ -92,7 +92,7 @@ jobs:
     uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<immutable-reference>
     with:
       project-path: .
-      governance-version: 1.0.0
+      governance-version: 1.1.0
       run-pester: true
       run-documentation-validation: true
       artifact-retention-days: 30

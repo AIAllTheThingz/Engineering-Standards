@@ -6,6 +6,13 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Changed
 
+- Consolidated repository governance for the proposed `1.1.0` release by adding a repository-wide audit, machine-readable standards consistency matrix, repository-version synchronization, and release-readiness notes without creating a tag or claiming GitHub-hosted evidence.
+- Strengthened `agents/AGENTS_Integration.md` from `1.0.0` to `1.1.0` with enforceable controls for REST, GraphQL, SOAP, gRPC, WebSocket, SignalR-style integrations, webhooks, message brokers, event streams, SFTP, managed file transfer, batch feeds, vendor SDKs, API gateways, contracts, authentication, authorization, mTLS, secrets, tenant boundaries, retries, rate limits, idempotency, durable coordination, file integrity, schema validation, privacy, telemetry, evidence, failures, exceptions, and cross-standard handoffs.
+- Added Integration standard semantic validation and Pester mutation coverage, including minimum-version, malformed-version, future compatible patch, positive control, and unsafe weakening checks.
+- Added `schemas/standards-consistency.schema.json` and `governance/standards-consistency.json` to make the consolidation audit machine-readable.
+- Added safe synthetic Integration, Infrastructure, and combined script-runner examples with local validation scripts.
+- Normalized repository governance version references to `1.1.0` while retaining existing `1.0.0` schema contract versions for backward-compatible schemas.
+- Normalized documentation and templates away from ambiguous `Skipped` governance evidence status language.
 - Rebuilt `agents/AGENTS_PowerShell.md` as a comprehensive enterprise PowerShell standard covering runtime compatibility, PSD1-first configuration, CSV/manual target input, phased safe development, credential/reporting/email module patterns, remoting, destructive-operation controls, Authenticode signing, scheduled execution, validation, and completion evidence.
 - Corrected `agents/AGENTS_PowerShell.md` path-boundary guidance to avoid prefix-collision sibling paths, strengthened README public-parameter documentation requirements, and hardened Authenticode certificate-selection guidance to require uniqueness and approved selectors.
 - Rebuilt `agents/AGENTS_DotNet.md` as a comprehensive enterprise .NET standard covering runtime and SDK policy, architecture, reproducible builds, configuration, secrets, dependency injection, APIs, authentication, authorization, JWT validation, ASP.NET Core security, uploads, Data Protection, EF Core, workers, reliability, telemetry, health checks, integrations, IIS, containers, testing, supply chain, packaging, deployment, rollback, and completion evidence.

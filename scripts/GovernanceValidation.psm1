@@ -198,7 +198,7 @@ function Test-GovernanceJsonDocument {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Path,
-        [Parameter(Mandatory)][ValidateSet('completion-result','test-evidence','artifact-record','project-manifest','governance-config','verified-run')][string]$Kind
+        [Parameter(Mandatory)][ValidateSet('completion-result','test-evidence','artifact-record','project-manifest','governance-config','verified-run','standards-consistency')][string]$Kind
     )
 
     $results = [System.Collections.Generic.List[object]]::new()
@@ -219,6 +219,7 @@ function Test-GovernanceJsonDocument {
         'project-manifest' { @('schemaVersion','projectName','repository','description','projectType','technologies','governanceVersion','riskClassification','dataClassification','owners','environments','applicableStandards','requiredWorkflows','externalIntegrations','secretsProvider','productionApprovalRequired','evidence','exceptions') }
         'governance-config' { @('schemaVersion','manifestPath','evidencePath','requiredDocumentationPaths','applicableAgentStandards','validationCategories','additionalForbiddenPatterns','reviewedAllowlist','controls','exceptions') }
         'verified-run' { @('schemaVersion','repository','workflow','workflowFile','runId','runAttempt','validatedCommitSha','branch','trigger','conclusion','checkName','artifactName','artifactId','artifactSha256','verifiedAtUtc','verifiedBy','controlledFailureRunId','controlledFailureConclusion','notes') }
+        'standards-consistency' { @('schemaVersion','repository','repositoryVersion','defaultBranch','riskClassification','generatedFromCommit','generatedAtUtc','canonicalStatusValues','canonicalRiskValues','documents','workflowReview','githubEvidence','branchProtection','releaseReadiness') }
     }
 
     foreach ($name in $required) {
@@ -359,6 +360,72 @@ function Test-GovernanceJsonDocument {
         }
         foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.completionEvidencePath -Name 'completionEvidencePath' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
         foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.testEvidencePath -Name 'testEvidencePath' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
+    }
+
+    if ($Kind -eq 'standards-consistency') {
+        if ($json.repository -ne 'AIAllTheThingz/Engineering-Standards') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Consistency matrix repository must match AIAllTheThingz/Engineering-Standards.' -Path $Path))
+        }
+        if ($json.defaultBranch -ne 'master') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Consistency matrix defaultBranch must be master.' -Path $Path))
+        }
+        if ($json.repositoryVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+$') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Consistency matrix repositoryVersion must be semantic version format.' -Path $Path))
+        }
+        if ($json.generatedFromCommit -notmatch '^[A-Fa-f0-9]{40}$') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Consistency matrix generatedFromCommit must be a full 40-character commit SHA.' -Path $Path))
+        }
+        foreach ($status in $statuses) {
+            if (@($json.canonicalStatusValues) -notcontains $status) {
+                $results.Add((New-ValidationResult -Status Failed -Message "Consistency matrix missing canonical status '$status'." -Path $Path))
+            }
+        }
+        foreach ($risk in $risks) {
+            if (@($json.canonicalRiskValues) -notcontains $risk) {
+                $results.Add((New-ValidationResult -Status Failed -Message "Consistency matrix missing canonical risk '$risk'." -Path $Path))
+            }
+        }
+        $requiredDocumentPaths = @(
+            'AGENTS.md',
+            'agents/AGENTS_Base.md',
+            'agents/AGENTS_PowerShell.md',
+            'agents/AGENTS_DotNet.md',
+            'agents/AGENTS_Database.md',
+            'agents/AGENTS_WorkerService.md',
+            'agents/AGENTS_Integration.md',
+            'agents/AGENTS_Infrastructure.md',
+            'agents/AGENTS_WebFrontend.md',
+            'governance/ORGANIZATION_CONTRACT.md',
+            'governance/COMPLETION_EVIDENCE.md',
+            'governance/RISK_CLASSIFICATION.md',
+            'governance/EXCEPTION_PROCESS.md',
+            'governance/AI_GENERATED_CODE_POLICY.md'
+        )
+        $documentPaths = @($json.documents | ForEach-Object { $_.path })
+        foreach ($requiredPath in $requiredDocumentPaths) {
+            if ($documentPaths -notcontains $requiredPath) {
+                $results.Add((New-ValidationResult -Status Failed -Message "Consistency matrix missing document '$requiredPath'." -Path $Path))
+            }
+        }
+        foreach ($document in @($json.documents)) {
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $document.path -Name 'document path' -Path $Path -RequiredExtension '.md')) { $results.Add($item) }
+            if ($document.declaredVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+$') {
+                $results.Add((New-ValidationResult -Status Failed -Message "Document '$($document.path)' has invalid declaredVersion." -Path $Path))
+            }
+            if ($document.lastReviewed -notmatch '^[0-9]{4}-[0-9]{2}-[0-9]{2}$') {
+                $results.Add((New-ValidationResult -Status Failed -Message "Document '$($document.path)' has invalid lastReviewed date." -Path $Path))
+            }
+            foreach ($flag in @('notRunDefined','blockedDefined','fabricatedEvidenceProhibited','exceptionProcessReferenced','completionEvidenceReferenced')) {
+                if ($document[$flag] -ne $true) {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Document '$($document.path)' does not satisfy $flag." -Path $Path))
+                }
+            }
+        }
+        foreach ($statusObjectName in @('workflowReview','githubEvidence','branchProtection','releaseReadiness')) {
+            if ($statuses -notcontains $json[$statusObjectName].status) {
+                $results.Add((New-ValidationResult -Status Failed -Message "Consistency matrix '$statusObjectName' uses invalid status '$($json[$statusObjectName].status)'." -Path $Path))
+            }
+        }
     }
 
     if ($results.Count -eq 0) {

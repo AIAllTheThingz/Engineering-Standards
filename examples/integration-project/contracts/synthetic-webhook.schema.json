@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "2026-06-21",
+  "eventType": "example.created",
+  "requiredHeaders": [
+    "X-Example-Signature",
+    "X-Example-Timestamp",
+    "X-Example-Delivery-Id"
+  ],
+  "replayWindowSeconds": 300,
+  "idempotencyKey": "deliveryId",
+  "piiAllowed": false
+}

@@ -9,7 +9,7 @@ This file defines repository-specific instructions for `AIAllTheThingz/Engineeri
 | Repository | `AIAllTheThingz/Engineering-Standards` |
 | Purpose | Central governance repository for engineering policies, AI-agent standards, schemas, validation actions, reusable workflows, templates, examples, and evidence. |
 | Default branch | `master` |
-| Governance version | `1.0.0` |
+| Governance version | `1.1.0` |
 | Risk classification | `High` |
 | Repository type | `governance` |
 | Data classification | `Internal` |

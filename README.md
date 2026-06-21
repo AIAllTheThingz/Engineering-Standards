@@ -115,7 +115,7 @@ jobs:
     uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<commit-sha>
     with:
       project-path: .
-      governance-version: 1.0.0
+      governance-version: 1.1.0
       run-examples: true
       run-pester: true
       run-documentation-validation: true
@@ -146,7 +146,7 @@ Local rules may add stricter validation and repository-specific commands. Local 
   "description": "Example service used to demonstrate governance adoption.",
   "projectType": "dotnet",
   "technologies": ["dotnet", "github-actions"],
-  "governanceVersion": "1.0.0",
+  "governanceVersion": "1.1.0",
   "riskClassification": "Moderate",
   "dataClassification": "Internal",
   "environments": [
@@ -196,7 +196,7 @@ Other examples are present as adoption targets and should be completed one at a 
 
 The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Downstream CI SHOULD pin commit SHAs for maximum supply-chain integrity. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md), and release procedure is defined in [Release Process](docs/RELEASE_PROCESS.md).
 
-Current version: `1.0.0`.
+Current version: `1.1.0`.
 
 ## Security Reporting And Contributions
 

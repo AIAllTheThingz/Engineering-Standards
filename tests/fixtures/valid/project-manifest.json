@@ -8,7 +8,7 @@
     "governance",
     "github-actions"
   ],
-  "governanceVersion": "1.0.0",
+  "governanceVersion": "1.1.0",
   "riskClassification": "High",
   "dataClassification": "Internal",
   "owners": [

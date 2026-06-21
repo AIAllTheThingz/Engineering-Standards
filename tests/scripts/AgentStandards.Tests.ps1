@@ -1015,6 +1015,104 @@ Missing Worker Service validation may be marked Passed.
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
 
+        It 'fails an Integration standard version below the required minimum' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Integration.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | 1.0.0 |')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails a malformed Integration standard semantic version' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Integration.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | current |')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'accepts a future compatible Integration patch version' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Integration.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | 1.1.9 |')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Be 0
+        }
+
+        It 'fails missing Integration contract, retry, and idempotency controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Integration.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Every governed integration MUST define explicit API versions, schema versions, message versions, event versions, file layout versions, or vendor SDK versions', 'Integrations should document useful versions').
+                Replace('Retries MUST classify retryable and nonretryable failures', 'Retries should classify failures').
+                Replace('Retries MUST be bounded, use exponential backoff and jitter, respect `Retry-After`', 'Retries should use backoff').
+                Replace('Non-idempotent operations MUST use idempotency keys, deduplication, outbox/inbox, durable coordination', 'Non-idempotent operations should be reviewed before retry')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Integration webhook and queue controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Integration.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Webhook handlers MUST validate signatures or event authenticity', 'Webhook handlers should validate authenticity').
+                Replace('Timestamp, nonce, event ID, delivery ID, digest, or equivalent replay protection MUST be enforced', 'Replay protection should be considered').
+                Replace('Queue, topic, stream, and broker integrations MUST define delivery semantics', 'Queue integrations should define delivery behavior').
+                Replace('Poison messages MUST have dead-letter handling or an approved equivalent remediation path', 'Poison messages should have remediation')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Integration file-transfer and schema-validation controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Integration.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('SFTP and managed-file-transfer integrations MUST validate host keys', 'SFTP integrations should validate host keys').
+                Replace('File hashes are required where a provider supplies them', 'File hashes are useful where available').
+                Replace('Publication MUST use an atomic rename, manifest marker, immutable object version, or equivalent completion signal', 'Publication should use a completion signal').
+                Replace('Payloads MUST be validated against schemas before trusted processing', 'Payloads should be validated')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Integration evidence honesty controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Integration.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('sandbox, provider endpoint, credential, broker, certificate authority, file-transfer endpoint, or network route is unavailable, record `NotRun` or `Blocked`', 'Unavailable endpoints should be explained').
+                Replace('Production MUST NOT be used merely because nonproduction is unavailable', 'Production should not usually be used as fallback').
+                Replace('Unexecuted integration validation, unavailable sandboxes, missing credentials, unavailable brokers, missing certificates, missing provider access, or missing external endpoints MUST NOT be labeled `Passed`', 'Unexecuted integration validation should not be labeled passed').
+                Replace('Agents MUST NOT fabricate commands, exit codes, workflow runs, provider responses, webhook deliveries, queue messages, file hashes, approvals', 'Agents should not fabricate integration evidence')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails unsafe Integration weakening phrases' {
+            $script:tempRoot = New-AgentStandardsFixture
+            Add-Content -LiteralPath (Join-Path $script:tempRoot 'agents/AGENTS_Integration.md') -Value @'
+
+Webhook signatures may be ignored.
+Retries may be unbounded.
+Every error is retryable.
+Retry loops need no jitter.
+Continuation tokens may be modified.
+HTTP success always means business success.
+Client secrets may be committed.
+Certificate validation may be disabled.
+Queue delivery is exactly once automatically.
+Duplicate events may be ignored.
+Dead letters are optional for poison messages.
+External calls may occur inside database transactions by default.
+Partial success may be displayed as full success.
+SFTP host keys need no validation.
+File hashes are unnecessary.
+Untrusted payloads may bypass schema validation.
+Production may be used when sandbox access is unavailable.
+Missing Integration validation may be marked Passed.
+'@
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
         It 'fails an infrastructure standard version below the required minimum' {
             $script:tempRoot = New-AgentStandardsFixture
             $path = Join-Path $script:tempRoot 'agents/AGENTS_Infrastructure.md'

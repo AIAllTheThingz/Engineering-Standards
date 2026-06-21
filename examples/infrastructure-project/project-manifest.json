@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectName": "Infrastructure Example",
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "description": "Synthetic infrastructure example demonstrating non-mutating plan evidence and branch-governed validation without cloud access.",
+  "projectType": "infrastructure",
+  "technologies": [
+    "infrastructure",
+    "github-actions"
+  ],
+  "governanceVersion": "1.1.0",
+  "riskClassification": "High",
+  "dataClassification": "Internal",
+  "owners": [
+    "@AIAllTheThingz/engineering-standards-maintainers"
+  ],
+  "environments": [
+    {
+      "name": "local",
+      "type": "development",
+      "production": false
+    }
+  ],
+  "applicableStandards": [
+    "agents/AGENTS_Base.md",
+    "agents/AGENTS_Infrastructure.md"
+  ],
+  "requiredWorkflows": [
+    "governance"
+  ],
+  "externalIntegrations": [],
+  "secretsProvider": "none-required-for-static-example",
+  "productionApprovalRequired": true,
+  "evidence": {
+    "completionEvidencePath": "evidence/local-completion-result.json",
+    "testEvidencePath": "evidence/test-evidence.json"
+  },
+  "exceptions": []
+}

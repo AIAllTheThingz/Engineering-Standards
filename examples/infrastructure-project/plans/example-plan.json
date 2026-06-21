@@ -1,0 +1,10 @@
+{
+  "planId": "synthetic-plan-001",
+  "environment": "local",
+  "mutation": false,
+  "requiresProductionApproval": true,
+  "tool": "static-example",
+  "pinnedProviders": [],
+  "destructiveChanges": [],
+  "rollback": "No infrastructure is created by this example."
+}

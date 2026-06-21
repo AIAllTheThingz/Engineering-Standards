@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectName": "Combined Script Runner Example",
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "description": "Synthetic combined script-runner example demonstrating governed web, worker, database, integration, and infrastructure handoffs.",
+  "projectType": "mixed",
+  "technologies": [
+    "powershell",
+    "dotnet",
+    "database",
+    "worker-service",
+    "integration",
+    "infrastructure",
+    "web",
+    "github-actions"
+  ],
+  "governanceVersion": "1.1.0",
+  "riskClassification": "High",
+  "dataClassification": "Internal",
+  "owners": [
+    "@AIAllTheThingz/engineering-standards-maintainers"
+  ],
+  "environments": [
+    {
+      "name": "local",
+      "type": "development",
+      "production": false
+    }
+  ],
+  "applicableStandards": [
+    "agents/AGENTS_Base.md",
+    "agents/AGENTS_PowerShell.md",
+    "agents/AGENTS_DotNet.md",
+    "agents/AGENTS_Database.md",
+    "agents/AGENTS_WorkerService.md",
+    "agents/AGENTS_Integration.md",
+    "agents/AGENTS_Infrastructure.md",
+    "agents/AGENTS_WebFrontend.md"
+  ],
+  "requiredWorkflows": [
+    "governance"
+  ],
+  "externalIntegrations": [
+    {
+      "name": "synthetic-report-store",
+      "purpose": "Demonstrates report-link and artifact-integrity metadata without external storage access.",
+      "dataClassification": "Internal"
+    }
+  ],
+  "secretsProvider": "none-required-for-static-example",
+  "productionApprovalRequired": true,
+  "evidence": {
+    "completionEvidencePath": "evidence/local-completion-result.json",
+    "testEvidencePath": "evidence/test-evidence.json"
+  },
+  "exceptions": []
+}

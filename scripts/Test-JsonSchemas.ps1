@@ -42,6 +42,7 @@ $map = @{
     'project-manifest' = 'project-manifest'
     'governance-config' = 'governance-config'
     'verified-run' = 'verified-run'
+    'standards-consistency' = 'standards-consistency'
 }
 foreach ($mode in @('valid','invalid')) {
     $fixtureRoot = Join-Path $root "tests/fixtures/$mode"
@@ -62,6 +63,17 @@ foreach ($mode in @('valid','invalid')) {
         else {
             $results.Add((New-ValidationResult -Status Failed -Message 'Fixture expectation failed.' -Path $fixture.FullName -Data $fixtureResults))
         }
+    }
+}
+$consistencyPath = Join-Path $root 'governance/standards-consistency.json'
+if (Test-Path -LiteralPath $consistencyPath -PathType Leaf) {
+    $consistencyResults = @(Test-GovernanceJsonDocument -Path $consistencyPath -Kind 'standards-consistency')
+    $hasFailure = @($consistencyResults | Where-Object status -eq 'Failed').Count -gt 0
+    if ($hasFailure) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Standards consistency matrix validation failed.' -Path $consistencyPath -Data $consistencyResults))
+    }
+    else {
+        $results.Add((New-ValidationResult -Status Passed -Message 'Standards consistency matrix accepted.' -Path $consistencyPath -Severity info))
     }
 }
 $report = [ordered]@{ generatedAtUtc=(Get-Date).ToUniversalTime().ToString('o'); results=@($results); failed=@($results | Where-Object status -eq 'Failed').Count }

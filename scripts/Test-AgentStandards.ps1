@@ -128,6 +128,7 @@ $dotNetPath = Join-Path $root 'agents/AGENTS_DotNet.md'
 $webFrontendPath = Join-Path $root 'agents/AGENTS_WebFrontend.md'
 $databasePath = Join-Path $root 'agents/AGENTS_Database.md'
 $workerPath = Join-Path $root 'agents/AGENTS_WorkerService.md'
+$integrationPath = Join-Path $root 'agents/AGENTS_Integration.md'
 $infrastructurePath = Join-Path $root 'agents/AGENTS_Infrastructure.md'
 
 if (-not (Test-Path -LiteralPath $basePath -PathType Leaf)) {
@@ -157,6 +158,7 @@ $dotNetAgents = if (Test-Path -LiteralPath $dotNetPath -PathType Leaf) { Get-Con
 $webFrontendAgents = if (Test-Path -LiteralPath $webFrontendPath -PathType Leaf) { Get-Content -LiteralPath $webFrontendPath -Raw } else { '' }
 $databaseAgents = if (Test-Path -LiteralPath $databasePath -PathType Leaf) { Get-Content -LiteralPath $databasePath -Raw } else { '' }
 $workerAgents = if (Test-Path -LiteralPath $workerPath -PathType Leaf) { Get-Content -LiteralPath $workerPath -Raw } else { '' }
+$integrationAgents = if (Test-Path -LiteralPath $integrationPath -PathType Leaf) { Get-Content -LiteralPath $integrationPath -Raw } else { '' }
 $infrastructureAgents = if (Test-Path -LiteralPath $infrastructurePath -PathType Leaf) { Get-Content -LiteralPath $infrastructurePath -Raw } else { '' }
 
 if ($base -match '(?im)\binherits?\s+(?:\[[^\]]+\]\()?AGENTS_Base\.md|inherits?\s+itself|inherits?\s+this\s+base') {
@@ -844,6 +846,75 @@ if ($workerAgents) {
         }
         else {
             Add-Result Passed $item.Message 'agents/AGENTS_WorkerService.md'
+        }
+    }
+}
+
+if ($integrationAgents) {
+    Test-MinimumSemanticVersion -Text $integrationAgents -MinimumVersion '1.1.0' -Message 'Integration standard declares a valid semantic version at least 1.1.0.' -RelativePath 'agents/AGENTS_Integration.md'
+
+    $integrationRequiredPatterns = @(
+        @{ Pattern = 'REST, GraphQL, SOAP, gRPC, WebSocket, SignalR-style integrations, webhooks, message brokers, event streams, SFTP, managed file transfer, batch feeds, vendor SDKs, API gateways'; Message = 'Integration standard declares broad integration applicability.' },
+        @{ Pattern = 'Before editing integration code.*agents MUST identify and record'; Message = 'Integration standard requires discovery before editing.' },
+        @{ Pattern = 'Every governed integration MUST define explicit API versions, schema versions, message versions, event versions, file layout versions, or vendor SDK versions'; Message = 'Integration standard requires explicit API and schema versions.' },
+        @{ Pattern = 'Integrations MUST use least-privilege credentials separated by environment, tenant, account, and purpose'; Message = 'Integration standard requires least-privilege separated credentials.' },
+        @{ Pattern = 'Client secrets, API keys, webhook secrets, private keys, certificates, tokens.*MUST NOT be committed'; Message = 'Integration standard prohibits committed plaintext secrets.' },
+        @{ Pattern = 'Tenant, account, partner, and subscription boundaries MUST be enforced on every request, callback, message, file, and batch'; Message = 'Integration standard requires tenant and account boundaries.' },
+        @{ Pattern = 'Every integration MUST define timeouts and cancellation behavior'; Message = 'Integration standard requires timeouts and cancellation.' },
+        @{ Pattern = 'Retries MUST classify retryable and nonretryable failures'; Message = 'Integration standard requires retryable and nonretryable classification.' },
+        @{ Pattern = 'Retries MUST be bounded, use exponential backoff and jitter, respect `Retry-After`'; Message = 'Integration standard requires bounded retries, backoff, jitter, and Retry-After.' },
+        @{ Pattern = 'Non-idempotent operations MUST use idempotency keys, deduplication, outbox/inbox, durable coordination'; Message = 'Integration standard requires idempotency and deduplication for non-idempotent retries.' },
+        @{ Pattern = 'Continuation tokens MUST be treated as opaque'; Message = 'Integration standard requires opaque continuation tokens.' },
+        @{ Pattern = 'HTTP 2xx, transport success, queue acknowledgement, file transfer success, or SDK call success MUST NOT automatically mean business success'; Message = 'Integration standard separates transport success from business success.' },
+        @{ Pattern = 'Webhook handlers MUST validate signatures or event authenticity'; Message = 'Integration standard requires webhook signature or authenticity validation.' },
+        @{ Pattern = 'Timestamp, nonce, event ID, delivery ID, digest, or equivalent replay protection MUST be enforced'; Message = 'Integration standard requires webhook replay protection.' },
+        @{ Pattern = 'Queue, topic, stream, and broker integrations MUST define delivery semantics'; Message = 'Integration standard requires queue and broker delivery semantics.' },
+        @{ Pattern = 'Poison messages MUST have dead-letter handling or an approved equivalent remediation path'; Message = 'Integration standard requires poison and dead-letter handling.' },
+        @{ Pattern = 'outbox, inbox, durable queue handoff, saga/orchestration state, idempotent reconciliation'; Message = 'Integration standard requires durable coordination patterns.' },
+        @{ Pattern = 'SFTP and managed-file-transfer integrations MUST validate host keys'; Message = 'Integration standard requires SFTP host-key validation.' },
+        @{ Pattern = 'File hashes are required where a provider supplies them'; Message = 'Integration standard requires file integrity checks where available.' },
+        @{ Pattern = 'Publication MUST use an atomic rename, manifest marker, immutable object version, or equivalent completion signal'; Message = 'Integration standard requires atomic file publication.' },
+        @{ Pattern = 'Payloads MUST be validated against schemas before trusted processing'; Message = 'Integration standard requires schema validation for payloads.' },
+        @{ Pattern = 'PII, PHI, regulated data, credentials, tokens, private keys.*MUST be redacted'; Message = 'Integration standard requires sensitive data protection and redaction.' },
+        @{ Pattern = 'Correlation IDs MUST be non-secret, bounded, propagated consistently, and safe for logs'; Message = 'Integration standard requires safe correlation IDs.' },
+        @{ Pattern = 'Contract tests or schema validation for requests, responses, events, and files'; Message = 'Integration standard requires contract and schema tests.' },
+        @{ Pattern = 'sandbox, provider endpoint, credential, broker, certificate authority, file-transfer endpoint, or network route is unavailable, record `NotRun` or `Blocked`'; Message = 'Integration standard requires honest NotRun or Blocked statuses.' },
+        @{ Pattern = 'Production MUST NOT be used merely because nonproduction is unavailable'; Message = 'Integration standard prohibits production as a test substitute.' },
+        @{ Pattern = 'Unexecuted integration validation.*MUST NOT be labeled `Passed`'; Message = 'Integration standard prohibits false integration evidence.' },
+        @{ Pattern = 'Agents MUST NOT fabricate commands, exit codes, workflow runs, provider responses, webhook deliveries, queue messages, file hashes, approvals'; Message = 'Integration standard prohibits fabricated integration evidence.' },
+        @{ Pattern = 'Exceptions MUST follow \[../governance/EXCEPTION_PROCESS\.md\]'; Message = 'Integration standard references the exception process.' },
+        @{ Pattern = '(?s)AGENTS_DotNet\.md.*AGENTS_PowerShell\.md.*AGENTS_Database\.md.*AGENTS_WorkerService\.md.*AGENTS_Infrastructure\.md.*AGENTS_WebFrontend\.md'; Message = 'Integration standard includes cross-standard handoffs.' }
+    )
+    foreach ($item in $integrationRequiredPatterns) {
+        Test-Contains $integrationAgents $item.Pattern $item.Message 'agents/AGENTS_Integration.md'
+    }
+
+    $integrationProhibitedWeakeningPatterns = @(
+        @{ Pattern = 'Webhook signatures may be ignored'; Message = 'Integration standard does not allow ignored webhook signatures.' },
+        @{ Pattern = 'Retries may be unbounded'; Message = 'Integration standard does not allow unbounded retries.' },
+        @{ Pattern = 'Every error is retryable'; Message = 'Integration standard does not treat every error as retryable.' },
+        @{ Pattern = 'Retry loops need no jitter'; Message = 'Integration standard requires jitter.' },
+        @{ Pattern = 'Continuation tokens may be modified'; Message = 'Integration standard keeps continuation tokens opaque.' },
+        @{ Pattern = 'HTTP success always means business success'; Message = 'Integration standard separates HTTP success from business success.' },
+        @{ Pattern = 'Client secrets may be committed'; Message = 'Integration standard prohibits committed client secrets.' },
+        @{ Pattern = 'Certificate validation may be disabled'; Message = 'Integration standard prohibits certificate-validation bypass.' },
+        @{ Pattern = 'Queue delivery is exactly once automatically'; Message = 'Integration standard does not claim automatic exactly-once queue delivery.' },
+        @{ Pattern = 'Duplicate events may be ignored'; Message = 'Integration standard requires duplicate handling.' },
+        @{ Pattern = 'Dead letters are optional for poison messages'; Message = 'Integration standard requires poison-message remediation.' },
+        @{ Pattern = 'External calls may occur inside database transactions by default'; Message = 'Integration standard does not allow external calls inside database transactions by default.' },
+        @{ Pattern = 'Partial success may be displayed as full success'; Message = 'Integration standard prohibits partial success as full success.' },
+        @{ Pattern = 'SFTP host keys need no validation'; Message = 'Integration standard requires SFTP host-key validation.' },
+        @{ Pattern = 'File hashes are unnecessary'; Message = 'Integration standard requires file hashes where available.' },
+        @{ Pattern = 'Untrusted payloads may bypass schema validation'; Message = 'Integration standard prohibits schema-validation bypass.' },
+        @{ Pattern = 'Production may be used when sandbox access is unavailable'; Message = 'Integration standard prohibits production as sandbox fallback.' },
+        @{ Pattern = 'Missing Integration validation may be marked Passed'; Message = 'Integration standard prohibits missing Integration validation as Passed.' }
+    )
+    foreach ($item in $integrationProhibitedWeakeningPatterns) {
+        if ($integrationAgents -match $item.Pattern) {
+            Add-Result Failed $item.Message 'agents/AGENTS_Integration.md'
+        }
+        else {
+            Add-Result Passed $item.Message 'agents/AGENTS_Integration.md'
         }
     }
 }

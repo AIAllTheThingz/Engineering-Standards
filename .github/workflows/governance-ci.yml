@@ -37,7 +37,7 @@ jobs:
     uses: ./.github/workflows/governance-ci-reusable.yml
     with:
       project-path: .
-      governance-version: 1.0.0
+      governance-version: 1.1.0
       controlled-failure-test: ${{ inputs.controlled-failure-test || false }}
       run-examples: ${{ github.event_name != 'workflow_dispatch' || inputs.run-examples }}
       run-pester: ${{ github.event_name != 'workflow_dispatch' || inputs.run-pester }}

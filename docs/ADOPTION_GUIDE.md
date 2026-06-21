@@ -1,7 +1,7 @@
 # Adoption Guide
 
 | Status | Active |
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Owner role | Governance Adoption Maintainers |
 | Last reviewed | 2026-06-19 |
 
@@ -87,7 +87,7 @@ jobs:
     uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<pinned-commit-sha>
     with:
       project-path: .
-      governance-version: 1.0.0
+      governance-version: 1.1.0
       run-examples: true
       run-pester: true
       run-documentation-validation: true
@@ -102,7 +102,7 @@ The supported reusable workflow path is `.github/workflows/governance-ci-reusabl
 
 Advisory mode is used to discover gaps before enforcement. Findings in advisory mode MUST be triaged into remediation, approved exception, or documented non-applicability. Advisory mode is time-bound; High and Critical repositories SHOULD define an enforcement date before merging the adoption branch.
 
-Advisory results are still evidence. Do not report an advisory failure as Passed. Use `Failed`, `Skipped`, `Blocked`, or `NotRun` honestly.
+Advisory results are still evidence. Do not report an advisory failure as Passed. Use `Failed`, `Blocked`, `NotRun`, or `NotApplicable` honestly.
 
 ## Enforcement Mode
 
