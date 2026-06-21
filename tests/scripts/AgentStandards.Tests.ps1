@@ -249,6 +249,227 @@ Describe 'Agent standards validation' {
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
 
+        It 'fails a Web Frontend standard version below the required minimum' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | 1.0.0 |')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails a malformed Web Frontend semantic version' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | current |')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend cross-standard handoffs' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('ASP.NET Core hosting, authentication, authorization, cookies, antiforgery, APIs, Data Protection, Identity, JWT validation, IIS, server configuration, and backend security MUST also apply [AGENTS_DotNet.md](AGENTS_DotNet.md)', 'Backend hosting should be reviewed separately').
+                Replace('REST, GraphQL, gRPC-web, WebSocket, SignalR, webhook-related UI, vendor API behavior, retry, rate limiting, and external service contracts MUST also apply [AGENTS_Integration.md](AGENTS_Integration.md)', 'API behavior should be reviewed separately').
+                Replace('CDN, reverse proxy, load balancer, TLS termination, DNS, CSP headers, HSTS, hosting, static asset delivery, cache headers, containers, Kubernetes, and infrastructure deployment MUST also apply [AGENTS_Infrastructure.md](AGENTS_Infrastructure.md)', 'Hosting should be reviewed separately').
+                Replace('Job submission, job status, script catalog, cancellation, replay, report links, worker state, and background-processing UI MUST also apply [AGENTS_WorkerService.md](AGENTS_WorkerService.md)', 'Background-processing UI should be reviewed separately').
+                Replace('Database details MUST NOT be exposed directly to the browser', 'Database details should not usually appear in the browser').
+                Replace('PowerShell-generated frontend assets, deployment scripts, packaging, IIS automation, and test orchestration MUST also apply [AGENTS_PowerShell.md](AGENTS_PowerShell.md)', 'PowerShell-generated assets should be reviewed separately')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend required discovery and rendering controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Before editing frontend code, agents MUST identify and record the relevant subset of runtime and exact version', 'Before editing frontend code, agents should identify useful context').
+                Replace('Rendering model discovery MUST explicitly identify CSR, SSR, SSG, ISR, hybrid, MPA, or PWA behavior', 'Rendering model discovery should identify the application type').
+                Replace('Browser code is untrusted from the server''s perspective', 'Browser code should be treated carefully')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend lockfile and reproducibility controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Every frontend repository MUST define one approved package manager', 'Every frontend repository should define a package manager').
+                Replace('frozen or immutable lockfile install in CI', 'lockfile install in CI').
+                Replace('No mixed lockfiles are allowed', 'Mixed lockfiles should be avoided').
+                Replace('No production build may use an unlocked dependency graph', 'Production builds should avoid unlocked dependencies')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend dependency and supply-chain controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('New or changed dependencies MUST be reviewed for package source, publisher, maintainer health, license, vulnerability status', 'New dependencies should be reviewed').
+                Replace('`npm audit fix --force` or equivalent MUST NOT be run automatically', 'npm audit force fixes can be automated')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend environment-variable and secret controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Every value embedded in a browser bundle MUST be treated as public', 'Browser bundle values should be reviewed').
+                Replace('Prefixes such as `NEXT_PUBLIC_`, `VITE_`, or framework equivalents do not make values secret', 'Public prefixes can identify public configuration').
+                Replace('Browser code MUST NOT contain private keys, database credentials, client secrets, server API keys, signing keys, privileged tokens', 'Browser code should not contain secrets')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend server-side auth and authz requirements' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Authentication MUST be enforced server-side', 'Authentication should be enforced server-side').
+                Replace('Frontend route guards are UX controls only', 'Frontend route guards protect routes').
+                Replace('Hiding a button is not authorization', 'Hidden buttons can enforce authorization').
+                Replace('Disabling a control is not authorization', 'Disabled controls can enforce authorization').
+                Replace('Admin routes MUST be server-protected and direct navigation to admin routes MUST receive server denial when unauthorized', 'Admin routes should be protected')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend token and storage controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Sensitive session tokens SHOULD use Secure, HttpOnly cookies where architecture supports it', 'Sensitive session tokens can use cookies').
+                Replace('Privileged or long-lived tokens MUST NOT be stored in localStorage or sessionStorage unless an approved threat model and exception require it', 'Privileged tokens may be stored in browser storage').
+                Replace('Tenant-safe cache keys are mandatory', 'Cache keys should be scoped').
+                Replace('Logout MUST clear protected caches', 'Logout should clear protected caches')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend XSS, DOM, and URL controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Untrusted HTML MUST NOT be inserted directly', 'Untrusted HTML should be sanitized').
+                Replace('dangerouslySetInnerHTML`, Angular sanitizer bypasses, direct `innerHTML`, `outerHTML`, `insertAdjacentHTML`, document writes, unsafe template compilation, unsafe markdown rendering, DOM clobbering, and script URL injection require security review and tests', 'dangerous HTML APIs should be reviewed').
+                Replace('URL construction MUST use safe parsers and protocol allowlists', 'URL construction should be safe').
+                Replace('Open redirects are prohibited unless targets are allowlisted and validated', 'Open redirects should be avoided')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend Trusted Types, CSP, CSRF, and CORS controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Trusted Types SHOULD be used for applications with material DOM injection risk', 'Trusted Types can be considered').
+                Replace('CSP MUST be governed as a security control', 'CSP should be governed').
+                Replace('CSP MUST NOT be disabled for convenience', 'CSP should not be disabled').
+                Replace('Cookie-authenticated state-changing requests MUST have CSRF protection enforced by the server', 'Cookie-authenticated requests should consider CSRF').
+                Replace('CORS MUST NOT be treated as authorization', 'CORS should not be treated as authorization')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend redirect, opener, form, upload, and download controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('target="_blank"` MUST use safe opener protection', 'target blank links should use opener protection').
+                Replace('Forms MUST be accessible, labeled, keyboard operable, error-associated', 'Forms should be accessible').
+                Replace('Empty scope, empty target, empty filter, or missing file input MUST NOT mean all targets', 'Empty input should not usually mean all targets').
+                Replace('Browser file validation is insufficient by itself', 'Browser file validation can be enough').
+                Replace('Protected downloads and report links MUST require server-side access-time authorization', 'Protected downloads should be authorized')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend API, cache, route, and service-worker controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('API clients MUST define API origin, contract source, generated-client ownership, schema version, timeout, cancellation, retry', 'API clients should define request behavior').
+                Replace('Service workers MUST NOT cache protected API data by default', 'Service workers may cache protected API data').
+                Replace('Critical journeys require direct-navigation and refresh tests', 'Critical journeys should have browser tests')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend third-party privacy and SRI controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Third-party scripts need privacy review before use', 'Third-party scripts should be reviewed').
+                Replace('External assets for protected production paths MUST use pinned versions and Subresource Integrity where supported', 'External assets should use integrity where practical')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend accessibility, performance, reliability, telemetry, and source-map controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Frontend work MUST target WCAG 2.2 AA', 'Frontend work should target accessibility').
+                Replace('keyboard navigation, visible focus, logical focus order', 'keyboard behavior').
+                Replace('performance budgets for bundle size, route chunks, image size, font loading, hydration', 'performance budgets').
+                Replace('User workflows MUST define loading, empty, error, partial success, retry, cancellation', 'User workflows should define states').
+                Replace('Client telemetry MUST define events, owner, purpose, sampling, consent, redaction', 'Client telemetry should define events').
+                Replace('Production source maps MUST NOT be public without review and approval', 'Production source maps may be public')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend validation, browser/E2E, and evidence honesty controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Browser automation MUST define approved tool such as Playwright, Selenium, Cypress, WebdriverIO', 'Browser automation should define a tool').
+                Replace('Validation Commands', 'Validation Guidance').
+                Replace('npm ci', 'npm install').
+                Replace('pnpm install --frozen-lockfile', 'pnpm install').
+                Replace('yarn install --immutable', 'yarn install').
+                Replace('Build success does not prove browser behavior', 'Build success proves browser behavior').
+                Replace('Permitted statuses are `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable`', 'Use completion statuses').
+                Replace('Unexecuted browser, accessibility, performance, security-policy, deployment, or production validation MUST NOT be labeled `Passed`', 'Unexecuted frontend validation should be documented')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails unsafe Web Frontend weakening phrases' {
+            $script:tempRoot = New-AgentStandardsFixture
+            Add-Content -LiteralPath (Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md') -Value @'
+
+Browser code may contain server secrets.
+Client-side route guards are sufficient authorization.
+Hidden buttons enforce authorization.
+Privileged tokens should be stored in localStorage.
+Untrusted HTML may be inserted directly.
+dangerouslySetInnerHTML requires no review.
+javascript URLs are acceptable.
+CSP may be disabled for convenience.
+Cookie-authenticated POST requests need no CSRF protection.
+CORS proves authorization.
+Open redirects are acceptable.
+target blank needs no opener protection.
+Empty input means all targets.
+Browser file validation is sufficient.
+Public report URLs are acceptable for protected data.
+Cache keys need no tenant scope.
+Logout does not need to clear caches.
+Service workers may cache protected API data by default.
+Third-party scripts need no privacy review.
+Accessibility is optional.
+Build success proves browser behavior.
+Production source maps should always be public.
+Production may be used when test environments are unavailable.
+npm audit fix force may be run automatically.
+Missing frontend validation may be marked Passed.
+'@
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
         It 'fails a database standard version below the required minimum' {
             $script:tempRoot = New-AgentStandardsFixture
             $path = Join-Path $script:tempRoot 'agents/AGENTS_Database.md'

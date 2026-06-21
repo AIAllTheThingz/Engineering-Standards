@@ -125,6 +125,7 @@ $basePath = Join-Path $root 'agents/AGENTS_Base.md'
 $rootPath = Join-Path $root 'AGENTS.md'
 $powerShellPath = Join-Path $root 'agents/AGENTS_PowerShell.md'
 $dotNetPath = Join-Path $root 'agents/AGENTS_DotNet.md'
+$webFrontendPath = Join-Path $root 'agents/AGENTS_WebFrontend.md'
 $databasePath = Join-Path $root 'agents/AGENTS_Database.md'
 $workerPath = Join-Path $root 'agents/AGENTS_WorkerService.md'
 $infrastructurePath = Join-Path $root 'agents/AGENTS_Infrastructure.md'
@@ -153,6 +154,7 @@ $base = Get-Content -LiteralPath $basePath -Raw
 $rootAgents = Get-Content -LiteralPath $rootPath -Raw
 $powerShellAgents = if (Test-Path -LiteralPath $powerShellPath -PathType Leaf) { Get-Content -LiteralPath $powerShellPath -Raw } else { '' }
 $dotNetAgents = if (Test-Path -LiteralPath $dotNetPath -PathType Leaf) { Get-Content -LiteralPath $dotNetPath -Raw } else { '' }
+$webFrontendAgents = if (Test-Path -LiteralPath $webFrontendPath -PathType Leaf) { Get-Content -LiteralPath $webFrontendPath -Raw } else { '' }
 $databaseAgents = if (Test-Path -LiteralPath $databasePath -PathType Leaf) { Get-Content -LiteralPath $databasePath -Raw } else { '' }
 $workerAgents = if (Test-Path -LiteralPath $workerPath -PathType Leaf) { Get-Content -LiteralPath $workerPath -Raw } else { '' }
 $infrastructureAgents = if (Test-Path -LiteralPath $infrastructurePath -PathType Leaf) { Get-Content -LiteralPath $infrastructurePath -Raw } else { '' }
@@ -298,6 +300,112 @@ if ($powerShellAgents) {
     }
     else {
         Add-Result Passed 'PowerShell signing example avoids silent first-match certificate selection.' 'agents/AGENTS_PowerShell.md'
+    }
+}
+
+if ($webFrontendAgents) {
+    Test-MinimumSemanticVersion -Text $webFrontendAgents -MinimumVersion '1.1.0' -Message 'Web Frontend standard declares a valid semantic version at least 1.1.0.' -RelativePath 'agents/AGENTS_WebFrontend.md'
+
+    $webFrontendRequiredPatterns = @(
+        @{ Pattern = 'static HTML and CSS, JavaScript, TypeScript, React, Vue, Angular, Svelte, Next\.js, Nuxt, Remix, Astro'; Message = 'Web Frontend standard declares broad framework and tooling applicability.' },
+        @{ Pattern = 'ASP\.NET Core hosting.*MUST also apply \[AGENTS_DotNet\.md\]'; Message = 'Web Frontend standard hands off ASP.NET Core and backend security.' },
+        @{ Pattern = 'REST, GraphQL, gRPC-web, WebSocket, SignalR.*MUST also apply \[AGENTS_Integration\.md\]'; Message = 'Web Frontend standard hands off API and integration behavior.' },
+        @{ Pattern = 'CDN, reverse proxy, load balancer, TLS termination, DNS, CSP headers.*MUST also apply \[AGENTS_Infrastructure\.md\]'; Message = 'Web Frontend standard hands off hosting and infrastructure behavior.' },
+        @{ Pattern = 'Job submission, job status, script catalog, cancellation, replay, report links.*MUST also apply \[AGENTS_WorkerService\.md\]'; Message = 'Web Frontend standard hands off background-processing UI behavior.' },
+        @{ Pattern = 'Database details MUST NOT be exposed directly to the browser'; Message = 'Web Frontend standard prohibits direct browser database exposure.' },
+        @{ Pattern = 'PowerShell-generated frontend assets.*MUST also apply \[AGENTS_PowerShell\.md\]'; Message = 'Web Frontend standard hands off PowerShell-generated frontend work.' },
+        @{ Pattern = 'Before editing frontend code, agents MUST identify and record the relevant subset of runtime and exact version'; Message = 'Web Frontend standard requires frontend discovery.' },
+        @{ Pattern = 'Rendering model discovery MUST explicitly identify CSR, SSR, SSG, ISR, hybrid, MPA, or PWA behavior'; Message = 'Web Frontend standard requires rendering model discovery.' },
+        @{ Pattern = 'Browser code is untrusted from the server''s perspective'; Message = 'Web Frontend standard treats browser code as untrusted.' },
+        @{ Pattern = 'Every frontend repository MUST define one approved package manager'; Message = 'Web Frontend standard requires approved package manager.' },
+        @{ Pattern = 'frozen or immutable lockfile install in CI'; Message = 'Web Frontend standard requires reproducible frozen-lockfile installation.' },
+        @{ Pattern = 'No mixed lockfiles are allowed'; Message = 'Web Frontend standard prohibits mixed lockfiles.' },
+        @{ Pattern = 'No production build may use an unlocked dependency graph'; Message = 'Web Frontend standard prohibits unlocked production dependency graphs.' },
+        @{ Pattern = 'New or changed dependencies MUST be reviewed for package source, publisher, maintainer health, license, vulnerability status'; Message = 'Web Frontend standard requires dependency and supply-chain review.' },
+        @{ Pattern = '`npm audit fix --force` or equivalent MUST NOT be run automatically'; Message = 'Web Frontend standard prohibits automatic force audit fixes.' },
+        @{ Pattern = 'Every value embedded in a browser bundle MUST be treated as public'; Message = 'Web Frontend standard warns public browser variables are public.' },
+        @{ Pattern = 'Prefixes such as `NEXT_PUBLIC_`, `VITE_`, or framework equivalents do not make values secret'; Message = 'Web Frontend standard warns public prefixes do not make secrets safe.' },
+        @{ Pattern = 'Browser code MUST NOT contain private keys, database credentials, client secrets, server API keys, signing keys, privileged tokens'; Message = 'Web Frontend standard prohibits browser secrets.' },
+        @{ Pattern = 'Authentication MUST be enforced server-side'; Message = 'Web Frontend standard requires server-side authentication.' },
+        @{ Pattern = 'Frontend route guards are UX controls only'; Message = 'Web Frontend standard limits route guards to UX.' },
+        @{ Pattern = 'Hiding a button is not authorization'; Message = 'Web Frontend standard rejects hidden-button authorization.' },
+        @{ Pattern = 'Disabling a control is not authorization'; Message = 'Web Frontend standard rejects disabled-control authorization.' },
+        @{ Pattern = 'Admin routes MUST be server-protected and direct navigation to admin routes MUST receive server denial when unauthorized'; Message = 'Web Frontend standard requires admin direct-navigation protection.' },
+        @{ Pattern = 'Sensitive session tokens SHOULD use Secure, HttpOnly cookies where architecture supports it'; Message = 'Web Frontend standard requires secure cookie/token posture.' },
+        @{ Pattern = 'Privileged or long-lived tokens MUST NOT be stored in localStorage or sessionStorage unless an approved threat model and exception require it'; Message = 'Web Frontend standard restricts privileged tokens in localStorage/sessionStorage.' },
+        @{ Pattern = 'Untrusted HTML MUST NOT be inserted directly'; Message = 'Web Frontend standard prohibits direct untrusted HTML insertion.' },
+        @{ Pattern = 'dangerouslySetInnerHTML.*require security review and tests'; Message = 'Web Frontend standard controls framework HTML bypass APIs.' },
+        @{ Pattern = 'Trusted Types SHOULD be used for applications with material DOM injection risk'; Message = 'Web Frontend standard includes Trusted Types guidance.' },
+        @{ Pattern = 'CSP MUST be governed as a security control'; Message = 'Web Frontend standard governs CSP.' },
+        @{ Pattern = 'CSP MUST NOT be disabled for convenience'; Message = 'Web Frontend standard prohibits convenience CSP disablement.' },
+        @{ Pattern = 'Cookie-authenticated state-changing requests MUST have CSRF protection enforced by the server'; Message = 'Web Frontend standard requires CSRF for cookie-authenticated mutation.' },
+        @{ Pattern = 'CORS MUST NOT be treated as authorization'; Message = 'Web Frontend standard rejects CORS as authorization.' },
+        @{ Pattern = 'URL construction MUST use safe parsers and protocol allowlists'; Message = 'Web Frontend standard requires URL protocol allowlists.' },
+        @{ Pattern = 'Open redirects are prohibited unless targets are allowlisted and validated'; Message = 'Web Frontend standard protects redirects.' },
+        @{ Pattern = 'target="_blank"` MUST use safe opener protection'; Message = 'Web Frontend standard requires external-link opener protection.' },
+        @{ Pattern = 'Forms MUST be accessible, labeled, keyboard operable, error-associated'; Message = 'Web Frontend standard requires accessible forms.' },
+        @{ Pattern = 'Empty scope, empty target, empty filter, or missing file input MUST NOT mean all targets'; Message = 'Web Frontend standard prevents empty input broad scope.' },
+        @{ Pattern = 'Browser file validation is insufficient by itself'; Message = 'Web Frontend standard requires server-side upload validation.' },
+        @{ Pattern = 'Protected downloads and report links MUST require server-side access-time authorization'; Message = 'Web Frontend standard requires protected download authorization.' },
+        @{ Pattern = 'API clients MUST define API origin, contract source, generated-client ownership, schema version, timeout, cancellation, retry'; Message = 'Web Frontend standard requires API timeout, cancellation, and retry controls.' },
+        @{ Pattern = 'Tenant-safe cache keys are mandatory'; Message = 'Web Frontend standard requires tenant-safe cache keys.' },
+        @{ Pattern = 'Logout MUST clear protected caches'; Message = 'Web Frontend standard requires logout cache cleanup.' },
+        @{ Pattern = 'Service workers MUST NOT cache protected API data by default'; Message = 'Web Frontend standard protects service-worker caches.' },
+        @{ Pattern = 'Third-party scripts need privacy review before use'; Message = 'Web Frontend standard requires third-party script privacy review.' },
+        @{ Pattern = 'External assets for protected production paths MUST use pinned versions and Subresource Integrity where supported'; Message = 'Web Frontend standard governs SRI and external assets.' },
+        @{ Pattern = 'Frontend work MUST target WCAG 2\.2 AA'; Message = 'Web Frontend standard requires WCAG 2.2 AA target.' },
+        @{ Pattern = 'keyboard navigation, visible focus, logical focus order'; Message = 'Web Frontend standard requires keyboard and focus controls.' },
+        @{ Pattern = 'performance budgets for bundle size, route chunks, image size, font loading, hydration'; Message = 'Web Frontend standard requires performance budgets.' },
+        @{ Pattern = 'User workflows MUST define loading, empty, error, partial success, retry, cancellation'; Message = 'Web Frontend standard requires reliability states.' },
+        @{ Pattern = 'Client telemetry MUST define events, owner, purpose, sampling, consent, redaction'; Message = 'Web Frontend standard governs client telemetry redaction.' },
+        @{ Pattern = 'Production source maps MUST NOT be public without review and approval'; Message = 'Web Frontend standard protects production source maps.' },
+        @{ Pattern = 'Browser automation MUST define approved tool such as Playwright, Selenium, Cypress, WebdriverIO'; Message = 'Web Frontend standard requires browser/E2E automation controls.' },
+        @{ Pattern = 'Validation Commands'; Message = 'Web Frontend standard includes validation commands section.' },
+        @{ Pattern = 'npm ci'; Message = 'Web Frontend standard includes npm reproducible install example.' },
+        @{ Pattern = 'pnpm install --frozen-lockfile'; Message = 'Web Frontend standard includes pnpm frozen install example.' },
+        @{ Pattern = 'yarn install --immutable'; Message = 'Web Frontend standard includes Yarn immutable install example.' },
+        @{ Pattern = 'Build success does not prove browser behavior'; Message = 'Web Frontend standard rejects build success as browser proof.' },
+        @{ Pattern = 'Permitted statuses are `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable`'; Message = 'Web Frontend standard declares honest completion statuses.' },
+        @{ Pattern = 'Unexecuted browser, accessibility, performance, security-policy, deployment, or production validation MUST NOT be labeled `Passed`'; Message = 'Web Frontend standard prohibits false frontend evidence.' }
+    )
+    foreach ($item in $webFrontendRequiredPatterns) {
+        Test-Contains $webFrontendAgents $item.Pattern $item.Message 'agents/AGENTS_WebFrontend.md'
+    }
+
+    $webFrontendProhibitedWeakeningPatterns = @(
+        @{ Pattern = 'Browser code may contain server secrets'; Message = 'Web Frontend standard does not allow browser server secrets.' },
+        @{ Pattern = 'Client-side route guards are sufficient authorization'; Message = 'Web Frontend standard does not allow route guards as authorization.' },
+        @{ Pattern = 'Hidden buttons enforce authorization'; Message = 'Web Frontend standard does not allow hidden-button authorization.' },
+        @{ Pattern = 'Privileged tokens should be stored in localStorage'; Message = 'Web Frontend standard does not prefer privileged tokens in localStorage.' },
+        @{ Pattern = 'Untrusted HTML may be inserted directly'; Message = 'Web Frontend standard does not allow direct untrusted HTML insertion.' },
+        @{ Pattern = 'dangerouslySetInnerHTML requires no review'; Message = 'Web Frontend standard requires review for dangerous HTML bypasses.' },
+        @{ Pattern = 'javascript URLs are acceptable'; Message = 'Web Frontend standard rejects unsafe javascript URLs.' },
+        @{ Pattern = 'CSP may be disabled for convenience'; Message = 'Web Frontend standard does not allow convenience CSP disablement.' },
+        @{ Pattern = 'Cookie-authenticated POST requests need no CSRF protection'; Message = 'Web Frontend standard requires CSRF review.' },
+        @{ Pattern = 'CORS proves authorization'; Message = 'Web Frontend standard does not treat CORS as authorization.' },
+        @{ Pattern = 'Open redirects are acceptable'; Message = 'Web Frontend standard does not allow open redirects.' },
+        @{ Pattern = 'target blank needs no opener protection'; Message = 'Web Frontend standard requires opener protection.' },
+        @{ Pattern = 'Empty input means all targets'; Message = 'Web Frontend standard does not allow empty input to mean all targets.' },
+        @{ Pattern = 'Browser file validation is sufficient'; Message = 'Web Frontend standard requires server-side upload validation.' },
+        @{ Pattern = 'Public report URLs are acceptable for protected data'; Message = 'Web Frontend standard protects report URLs.' },
+        @{ Pattern = 'Cache keys need no tenant scope'; Message = 'Web Frontend standard requires tenant-safe cache keys.' },
+        @{ Pattern = 'Logout does not need to clear caches'; Message = 'Web Frontend standard requires logout cache cleanup.' },
+        @{ Pattern = 'Service workers may cache protected API data by default'; Message = 'Web Frontend standard does not allow protected API caching by default.' },
+        @{ Pattern = 'Third-party scripts need no privacy review'; Message = 'Web Frontend standard requires third-party privacy review.' },
+        @{ Pattern = 'Accessibility is optional'; Message = 'Web Frontend standard does not treat accessibility as optional.' },
+        @{ Pattern = 'Build success proves browser behavior'; Message = 'Web Frontend standard does not equate build success with browser behavior.' },
+        @{ Pattern = 'Production source maps should always be public'; Message = 'Web Frontend standard protects production source maps.' },
+        @{ Pattern = 'Production may be used when test environments are unavailable'; Message = 'Web Frontend standard does not allow production as default test target.' },
+        @{ Pattern = 'npm audit fix force may be run automatically'; Message = 'Web Frontend standard does not allow automatic force audit fixes.' },
+        @{ Pattern = 'Missing frontend validation may be marked Passed'; Message = 'Web Frontend standard does not allow missing frontend validation to be marked Passed.' }
+    )
+    foreach ($item in $webFrontendProhibitedWeakeningPatterns) {
+        if ($webFrontendAgents -match $item.Pattern) {
+            Add-Result Failed $item.Message 'agents/AGENTS_WebFrontend.md'
+        }
+        else {
+            Add-Result Passed $item.Message 'agents/AGENTS_WebFrontend.md'
+        }
     }
 }
 
