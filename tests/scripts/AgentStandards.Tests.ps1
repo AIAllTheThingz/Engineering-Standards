@@ -252,7 +252,7 @@ Describe 'Agent standards validation' {
         It 'fails a Web Frontend standard version below the required minimum' {
             $script:tempRoot = New-AgentStandardsFixture
             $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
-            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | 1.0.0 |')
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.1 |', '| Version | 1.1.0 |')
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
@@ -260,7 +260,7 @@ Describe 'Agent standards validation' {
         It 'fails a malformed Web Frontend semantic version' {
             $script:tempRoot = New-AgentStandardsFixture
             $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
-            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.0 |', '| Version | current |')
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('| Version | 1.1.1 |', '| Version | current |')
             Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
@@ -466,7 +466,193 @@ Production source maps should always be public.
 Production may be used when test environments are unavailable.
 npm audit fix force may be run automatically.
 Missing frontend validation may be marked Passed.
+Browser OAuth clients may use implicit flow.
+PKCE is optional for public browser clients.
+OAuth state or OIDC nonce needs no validation.
+Wildcard redirect URIs are acceptable.
+Tokens may appear in URLs.
+Refresh-token reuse may be ignored.
+Static CSP nonces are acceptable.
+CSP report-only may remain permanent.
+GET requests may change state.
+CSRF failures may be retried automatically.
+Login/logout CSRF does not matter.
+Dynamic CORS origins may be reflected blindly.
+Development origins may remain in production.
+WebSocket origins need no validation.
+Public CORS proxies are acceptable.
+User filenames may be server paths.
+HTML/SVG downloads are always passive.
+Spreadsheet formula injection does not matter.
+Content type may be inferred only from extension.
+HTTP 200 always means business success.
+Unknown enums may map to administrator.
+Schema mismatches may be ignored.
+Non-idempotent requests may be retried blindly.
+Polling may run without delay.
+Cancellation/completion may display before server confirmation.
+Stale poll responses may overwrite current state.
+Service workers may use broad scope by default or bypass CSP.
+Opaque responses may always be cached.
+Cache poisoning needs no review.
+Telemetry failures may break the UI.
+Production console logs may contain tokens.
+Production debug logging may remain enabled.
+Source maps need not match the deployed release or be secret-scanned.
+Missing Web Frontend 1.1.1 validation may be marked Passed.
 '@
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend OAuth PKCE, state, nonce, and redirect controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Every OAuth/OIDC browser flow MUST define identity provider and client type', 'OAuth browser flows should define identity provider details').
+                Replace('Public browser clients MUST use Authorization Code flow with PKCE', 'Public browser clients should use PKCE where convenient').
+                Replace('Implicit flow MUST NOT be used for new browser applications', 'Implicit flow should be avoided for new browser applications').
+                Replace('OAuth state MUST be high entropy, transaction-bound, validated on return, and consumed once', 'OAuth state should be validated').
+                Replace('OIDC nonce MUST be generated, transaction-bound, validated, and consumed once', 'OIDC nonce should be validated').
+                Replace('Redirect URIs MUST be exact, allowlisted, environment-specific, and registered', 'Redirect URIs should be allowlisted').
+                Replace('Tokens MUST NOT appear in query strings, fragments, browser history, referrers, analytics, or logs', 'Tokens should not appear in URLs').
+                Replace('Refresh tokens require provider support, rotation, reuse detection where available, bounded lifetime, revocation, and approved storage', 'Refresh tokens should rotate').
+                Replace('Session fixation MUST be prevented by rotating or replacing session state at login and privilege elevation', 'Session fixation should be prevented').
+                Replace('Account or tenant switching MUST clear prior identity, cache, and authorization state', 'Account switching should clear state')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend CSP directive and nonce lifecycle controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Every CSP MUST define, where applicable, delivery mechanism, `default-src`, `script-src`, `script-src-elem`, `script-src-attr`', 'CSP should define directives').
+                Replace('`default-src` MUST be explicit for protected applications', 'default-src should be explicit').
+                Replace('`object-src ''none''` SHOULD be used unless a reviewed requirement exists', 'object-src should be reviewed').
+                Replace('`base-uri` MUST restrict base URL manipulation', 'base-uri should be restricted').
+                Replace('`form-action` MUST restrict submission destinations', 'form-action should be restricted').
+                Replace('`frame-ancestors` MUST define clickjacking protection', 'frame-ancestors should be defined').
+                Replace('`connect-src` MUST explicitly cover approved API, WebSocket, telemetry, and worker destinations', 'connect-src should cover destinations').
+                Replace('Nonces MUST be unpredictable and request-scoped', 'Nonces should be unique').
+                Replace('Static or reusable nonces are prohibited', 'Static nonces should be avoided').
+                Replace('Report-only mode MUST have an owner, review period, remediation process, and enforcement target date', 'Report-only mode should have an owner')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend CSRF lifecycle and no-retry controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('GET, HEAD, OPTIONS, and other safe methods MUST NOT perform state-changing business actions', 'Safe methods should avoid state changes').
+                Replace('Login endpoints MUST address login CSRF and account-confusion risks', 'Login endpoints should consider CSRF').
+                Replace('Logout endpoints MUST address logout CSRF according to the threat model', 'Logout endpoints should consider CSRF').
+                Replace('Failed CSRF validation MUST fail closed', 'Failed CSRF validation should fail safely').
+                Replace('Failed CSRF validation MUST NOT automatically retry the mutation', 'Failed CSRF validation may retry').
+                Replace('Retry loops after antiforgery-related 400, 401, or 403 responses are prohibited', 'Antiforgery retry loops should be limited')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend strict CORS and WebSocket controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Dynamic origin reflection MUST use a strict allowlist', 'Dynamic origin reflection should use a list').
+                Replace('Blind Origin reflection is prohibited', 'Blind Origin reflection should be avoided').
+                Replace('Suffix matching without a hostname boundary is prohibited', 'Suffix matching should be careful').
+                Replace('Production allowlists MUST NOT silently include localhost, loopback, development domains, wildcard ports, preview domains, or test origins', 'Production allowlists should avoid development origins').
+                Replace('WebSocket and SignalR endpoints MUST validate Origin', 'WebSocket endpoints should validate Origin').
+                Replace('Unsafe public CORS proxies or ad hoc relay services are prohibited', 'Public CORS proxies should be avoided').
+                Replace('Credential mode MUST match the approved server contract', 'Credential mode should match the server')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend active-content and integrity upload/download controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('User filenames MUST NOT become server filesystem paths', 'User filenames should not become paths').
+                Replace('Uploaded HTML or SVG MUST NOT render inline in a privileged application origin', 'Uploaded HTML or SVG should be isolated').
+                Replace('CSV exports MUST address spreadsheet formula injection', 'CSV exports should address spreadsheet safety').
+                Replace('Downloads MUST define server-authoritative Content-Type, Content-Disposition, safe filename, `X-Content-Type-Options: nosniff`', 'Downloads should define content metadata').
+                Replace('Safety MUST NOT be inferred from extension alone', 'Extensions help infer safety').
+                Replace('Hash mismatch MUST fail closed where hashes are provided', 'Hash mismatch should be reviewed').
+                Replace('Expired, revoked, wrong-tenant, wrong-attempt, wrong-version, or mismatched artifacts MUST fail safely', 'Invalid artifacts should fail safely')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend API outcome, schema, and idempotency controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('API contracts MUST define HTTP status and business outcome', 'API contracts should define outcomes').
+                Replace('HTTP 2xx MUST NOT automatically mean full business success', 'HTTP 2xx means success').
+                Replace('Partial success MUST remain explicit', 'Partial success should be visible').
+                Replace('Unknown enums MUST fail safely and MUST NOT map to privileged defaults', 'Unknown enums may use defaults').
+                Replace('Missing required fields and schema-version mismatches MUST fail safely', 'Schema mismatches should be handled').
+                Replace('Nullability mismatches MUST NOT be silently coerced when meaning changes', 'Nullability can be coerced').
+                Replace('Date/time formats MUST be explicit and unambiguous', 'Date formats should be clear').
+                Replace('Pagination MUST define maximum size, stable ordering, continuation behavior', 'Pagination should define size').
+                Replace('Continuation tokens are opaque', 'Continuation tokens may be parsed').
+                Replace('Idempotency keys MUST be unique, scoped, retained, and interpreted according to the server contract', 'Idempotency keys should be unique').
+                Replace('Blind retry of non-idempotent requests is prohibited', 'Non-idempotent retries should be careful')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend bounded polling and server-confirmed terminal-state controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Job polling MUST define initial, normal, and maximum intervals, backoff and jitter', 'Job polling should define intervals').
+                Replace('Poll intervals MUST be bounded', 'Poll intervals should be bounded').
+                Replace('Tight or zero-delay loops are prohibited', 'Tight loops should be avoided').
+                Replace('Polling MUST stop on terminal states', 'Polling should stop on terminal states').
+                Replace('Polling MUST cancel on navigation, logout, account switch, component disposal, or lost authorization', 'Polling should cancel on lifecycle changes').
+                Replace('Visibility changes MUST NOT create duplicate loops', 'Visibility changes should avoid duplicate loops').
+                Replace('A cancellation request MUST NOT be displayed as completed until the server confirms terminal cancellation', 'Cancellation can display after request').
+                Replace('A job MUST NOT be shown completed until the server reports terminal completion', 'Jobs can display complete optimistically').
+                Replace('Stale responses from prior attempts MUST NOT overwrite current state', 'Stale responses should not overwrite state').
+                Replace('Out-of-order responses MUST NOT regress terminal state', 'Out-of-order responses should be handled')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend service-worker scope, cache-poisoning, and integrity controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Service-worker work MUST define script identity, scope, registration path, allowed scope', 'Service-worker work should define identity').
+                Replace('Scope MUST be no broader than required', 'Scope should be narrow').
+                Replace('Workers MUST NOT bypass auth, authorization, CSP, Trusted Types, or server controls', 'Workers should not bypass controls').
+                Replace('Cached executable assets MUST match the approved release identity', 'Cached executable assets should match release').
+                Replace('Opaque cross-origin responses require review before caching', 'Opaque responses can be cached').
+                Replace('Cache poisoning through URLs, query strings, redirects, headers, or compromised upstream content MUST be considered', 'Cache poisoning should be considered').
+                Replace('Authentication pages, logout responses, antiforgery responses, token endpoints, and protected API responses MUST NOT be cached without an approved design', 'Protected endpoints should not be cached').
+                Replace('Faulty active workers require documented recovery', 'Faulty workers should recover').
+                Replace('Update failures MUST be observable', 'Update failures should be observable')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails missing Web Frontend telemetry and source-map release-integrity controls' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_WebFrontend.md'
+            $text = (Get-Content -LiteralPath $path -Raw).
+                Replace('Telemetry failure MUST NOT break core UI', 'Telemetry failure should not break UI').
+                Replace('Console logs MUST NOT contain secrets, tokens, passwords, authorization headers, private keys', 'Console logs should avoid secrets').
+                Replace('Debug logging MUST be disabled in protected production builds unless approved', 'Debug logging should be disabled').
+                Replace('Correlation IDs MUST be opaque, safe, and non-secret', 'Correlation IDs should be safe').
+                Replace('Events MUST identify frontend release and environment', 'Events should identify release').
+                Replace('Every production source map MUST associate with the exact source revision, release identifier, bundle filename, and content hash', 'Production source maps should have release association').
+                Replace('Maps and bundles MUST be secret-scanned before publication or upload', 'Maps should be scanned').
+                Replace('Upload success MUST be verified independently from deployment success', 'Upload success should be verified').
+                Replace('Provider upload MUST NOT make maps publicly reachable', 'Provider upload should protect maps').
+                Replace('Mismatched maps MUST fail deployment verification or be reported as a defect', 'Mismatched maps should be reported')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
 
