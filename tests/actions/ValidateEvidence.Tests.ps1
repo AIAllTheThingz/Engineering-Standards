@@ -117,6 +117,71 @@ Describe 'Validate evidence action' {
             }
         }
 
+        It 'accepts local release evidence with externally verified GitHub artifact details' {
+            & $script:NewTempEvidence -Status Blocked -TestStatus Passed
+            $evidencePath = Join-Path $script:tempRoot 'completion-result.json'
+            $evidence = Get-Content $evidencePath -Raw | ConvertFrom-Json -AsHashtable
+            $evidence.executionContext = 'Local'
+            $evidence.status = 'Blocked'
+            $evidence.commitSha = '2222222222222222222222222222222222222222'
+            $evidence.validatedCommitSha = '1111111111111111111111111111111111111111'
+            $evidence.blockedReason = 'Release approval remains blocked pending independent approval.'
+            $evidence.tests = @(
+                $evidence.tests[0],
+                [ordered]@{
+                    schemaVersion = '1.1.0'
+                    name = 'GitHub-hosted workflow execution'
+                    category = 'workflow'
+                    status = 'Passed'
+                    requiredValidation = $true
+                    evidenceSource = 'GitHubArtifact'
+                    command = 'Governance CI run 123'
+                    workingDirectory = '.'
+                    startedAtUtc = '2026-06-19T00:00:00Z'
+                    completedAtUtc = '2026-06-19T00:00:01Z'
+                    durationSeconds = 1
+                    runtime = 'GitHub Actions'
+                    toolVersion = '7.x'
+                    exitCode = 0
+                    summary = 'GitHub-hosted workflow execution was independently verified from an artifact.'
+                    warnings = @()
+                    failureReason = $null
+                    blockedReason = $null
+                    notApplicableRationale = $null
+                    details = [ordered]@{
+                        successRunId = 123
+                        artifactName = 'governance-evidence-123'
+                        artifactSha256 = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+                    }
+                },
+                [ordered]@{
+                    schemaVersion = '1.1.0'
+                    name = 'Release approval'
+                    category = 'manual'
+                    status = 'Blocked'
+                    requiredValidation = $true
+                    evidenceSource = 'Manual'
+                    command = 'Review release approval.'
+                    workingDirectory = '.'
+                    startedAtUtc = '2026-06-19T00:00:00Z'
+                    completedAtUtc = '2026-06-19T00:00:01Z'
+                    durationSeconds = 1
+                    runtime = 'Repository governance review'
+                    toolVersion = '1.1.0'
+                    exitCode = $null
+                    summary = 'Release approval is blocked pending independent approval.'
+                    warnings = @()
+                    failureReason = $null
+                    blockedReason = 'Release approval is blocked pending independent approval.'
+                    notApplicableRationale = $null
+                }
+            )
+            $evidence | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $evidencePath
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Be 0
+        }
+
         It 'rejects an artifact hash mismatch' {
             & $script:NewTempEvidence
             $evidence = Get-Content "$PSScriptRoot/../fixtures/valid/completion-result.json" -Raw | ConvertFrom-Json -AsHashtable

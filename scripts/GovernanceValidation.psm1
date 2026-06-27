@@ -43,6 +43,34 @@ function New-ValidationReport {
     }
 }
 
+function Test-JsonMember {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]$InputObject,
+        [Parameter(Mandatory)][string]$Name
+    )
+
+    if ($InputObject -is [System.Collections.IDictionary]) {
+        return $InputObject.Contains($Name)
+    }
+    return ($InputObject.PSObject.Properties.Name -contains $Name)
+}
+
+function Get-JsonMemberValue {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]$InputObject,
+        [Parameter(Mandatory)][string]$Name
+    )
+
+    if ($InputObject -is [System.Collections.IDictionary]) {
+        if ($InputObject.Contains($Name)) { return $InputObject[$Name] }
+        return $null
+    }
+    if ($InputObject.PSObject.Properties.Name -contains $Name) { return $InputObject.$Name }
+    return $null
+}
+
 function Write-ValidationReport {
     <#
     .SYNOPSIS
@@ -252,9 +280,6 @@ function Test-GovernanceJsonDocument {
     }
 
     if ($Kind -eq 'completion-result') {
-        if ($json.commitSha -ne $json.validatedCommitSha) {
-            $results.Add((New-ValidationResult -Status Failed -Message 'commitSha must match validatedCommitSha for backward compatibility.' -Path $Path))
-        }
         foreach ($shaField in @('commitSha','validatedCommitSha')) {
             if ($json[$shaField] -notmatch '^[A-Fa-f0-9]{40}$') {
                 $results.Add((New-ValidationResult -Status Failed -Message "$shaField must be a full 40-character commit SHA." -Path $Path))
@@ -301,8 +326,18 @@ function Test-GovernanceJsonDocument {
         }
         $githubExecution = @($json.tests | Where-Object name -eq 'GitHub-hosted workflow execution' | Select-Object -First 1)
         if ($json.executionContext -eq 'Local') {
-            if ($githubExecution.Count -eq 0 -or $githubExecution[0].status -ne 'NotRun') {
-                $results.Add((New-ValidationResult -Status Failed -Message 'Local completion evidence must record GitHub-hosted workflow execution as NotRun.' -Path $Path))
+            if ($githubExecution.Count -eq 0) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Local completion evidence must record GitHub-hosted workflow execution.' -Path $Path))
+            }
+            elseif ($githubExecution[0].status -notin @('NotRun','Passed')) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Local completion evidence must record GitHub-hosted workflow execution as NotRun or externally verified Passed.' -Path $Path))
+            }
+            elseif ($githubExecution[0].status -eq 'Passed') {
+                $evidenceSource = Get-JsonMemberValue -InputObject $githubExecution[0] -Name 'evidenceSource'
+                $details = Get-JsonMemberValue -InputObject $githubExecution[0] -Name 'details'
+                if ($evidenceSource -ne 'GitHubArtifact' -or $null -eq $details) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Local evidence may mark GitHub-hosted workflow execution Passed only when backed by GitHubArtifact details.' -Path $Path))
+                }
             }
             if ($json.status -eq 'Passed') {
                 $results.Add((New-ValidationResult -Status Failed -Message 'Local completion evidence cannot be Passed while GitHub-hosted execution is mandatory.' -Path $Path))
@@ -466,8 +501,8 @@ function Test-TestEvidenceObject {
     )
 
     $results = [System.Collections.Generic.List[object]]::new()
-    $hasBlockedReason = $Test.PSObject.Properties.Name -contains 'blockedReason'
-    $hasNotApplicableRationale = $Test.PSObject.Properties.Name -contains 'notApplicableRationale'
+    $hasBlockedReason = Test-JsonMember -InputObject $Test -Name 'blockedReason'
+    $hasNotApplicableRationale = Test-JsonMember -InputObject $Test -Name 'notApplicableRationale'
 
     if ($Test.status -eq 'Passed') {
         if ($Test.exitCode -ne 0) {
@@ -620,6 +655,8 @@ Export-ModuleMember -Function @(
     'Resolve-SafePath',
     'Test-RelativeRepositoryPath',
     'Test-UniqueValues',
+    'Test-JsonMember',
+    'Get-JsonMemberValue',
     'Read-JsonFile',
     'Test-GovernanceJsonDocument',
     'Test-TestEvidenceObject',
