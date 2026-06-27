@@ -9,10 +9,10 @@ function New-ValidationResult {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][ValidateSet('Passed','Failed','Warning','NotRun','Blocked')][string]$Status,
+        [Parameter(Mandatory)][ValidateSet('Passed','Failed','NotRun','Blocked','NotApplicable')][string]$Status,
         [Parameter(Mandatory)][string]$Message,
         [string]$Path = '',
-        [ValidateSet('info','warning','error')][string]$Severity = $(if ($Status -eq 'Passed') { 'info' } elseif ($Status -eq 'Warning') { 'warning' } else { 'error' }),
+        [ValidateSet('info','warning','error')][string]$Severity = $(if ($Status -eq 'Passed' -or $Status -eq 'NotApplicable') { 'info' } else { 'error' }),
         [object]$Data = $null
     )
 
@@ -37,7 +37,7 @@ function New-ValidationReport {
         generatedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
         results = @($Results)
         failed = @($Results | Where-Object status -eq 'Failed').Count
-        warnings = @($Results | Where-Object status -eq 'Warning').Count
+        warnings = @($Results | Where-Object severity -eq 'warning').Count
         blocked = @($Results | Where-Object status -eq 'Blocked').Count
         notRun = @($Results | Where-Object status -eq 'NotRun').Count
     }
@@ -229,7 +229,7 @@ function Test-GovernanceJsonDocument {
     }
     if ($results.Count -gt 0) { return @($results) }
 
-    if ($json.schemaVersion -ne '1.0.0') {
+    if (@('1.0.0','1.1.0') -notcontains $json.schemaVersion) {
         $results.Add((New-ValidationResult -Status Failed -Message "Unsupported schemaVersion '$($json.schemaVersion)'." -Path $Path))
     }
     if ($json.ContainsKey('status') -and $statuses -notcontains $json.status) {
@@ -272,14 +272,31 @@ function Test-GovernanceJsonDocument {
         if ($json.status -eq 'NotRun' -and @($json.commandsNotExecuted).Count -lt 1) {
             $results.Add((New-ValidationResult -Status Failed -Message 'Overall NotRun evidence must list commands not executed.' -Path $Path))
         }
+        if ($json.status -eq 'NotRun' -and [string]::IsNullOrWhiteSpace([string]$json.notRunReason)) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Overall NotRun evidence must include notRunReason.' -Path $Path))
+        }
+        if ($json.status -eq 'Blocked' -and [string]::IsNullOrWhiteSpace([string]$json.blockedReason)) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Overall Blocked evidence must include blockedReason.' -Path $Path))
+        }
+        if ($json.status -eq 'NotApplicable' -and [string]::IsNullOrWhiteSpace([string]$json.notApplicableRationale)) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Overall NotApplicable evidence must include notApplicableRationale.' -Path $Path))
+        }
         if ($json.status -eq 'Passed') {
-            if (@($json.remainingRisks).Count -gt 0) {
-                $results.Add((New-ValidationResult -Status Failed -Message 'Overall Passed must not include remaining risks.' -Path $Path))
-            }
             foreach ($test in @($json.tests)) {
-                if ($test.status -in @('Failed','NotRun','Blocked')) {
+                $requiredValidation = $true
+                if ($test.PSObject.Properties.Name -contains 'requiredValidation') {
+                    $requiredValidation = ($test.requiredValidation -ne $false)
+                }
+                if ($requiredValidation -and $test.status -in @('Failed','NotRun','Blocked')) {
                     $results.Add((New-ValidationResult -Status Failed -Message "Overall Passed conflicts with test '$($test.name)' status '$($test.status)'." -Path $Path))
                 }
+            }
+            $approvalRequired = $false
+            if ($json.ContainsKey('approvalRequired')) {
+                $approvalRequired = ($json.approvalRequired -eq $true)
+            }
+            if ($approvalRequired -and @($json.approvals).Count -lt 1) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Overall Passed evidence requiring approval must include at least one approval record.' -Path $Path))
             }
         }
         $githubExecution = @($json.tests | Where-Object name -eq 'GitHub-hosted workflow execution' | Select-Object -First 1)
@@ -306,6 +323,9 @@ function Test-GovernanceJsonDocument {
         }
         foreach ($artifact in @($json.artifacts)) {
             foreach ($item in @(Test-ArtifactRecordObject -Artifact $artifact -Path $Path)) { $results.Add($item) }
+            if ($json.status -eq 'Passed' -and $artifact.PSObject.Properties.Name -contains 'finality' -and $artifact.finality -eq 'partial') {
+                $results.Add((New-ValidationResult -Status Failed -Message "Overall Passed evidence cannot rely on partial artifact '$($artifact.name)'." -Path $Path))
+            }
         }
     }
 
@@ -446,6 +466,9 @@ function Test-TestEvidenceObject {
     )
 
     $results = [System.Collections.Generic.List[object]]::new()
+    $hasBlockedReason = $Test.PSObject.Properties.Name -contains 'blockedReason'
+    $hasNotApplicableRationale = $Test.PSObject.Properties.Name -contains 'notApplicableRationale'
+
     if ($Test.status -eq 'Passed') {
         if ($Test.exitCode -ne 0) {
             $results.Add((New-ValidationResult -Status Failed -Message "Passed test '$($Test.name)' must have exitCode 0." -Path $Path))
@@ -453,10 +476,29 @@ function Test-TestEvidenceObject {
         if ($null -ne $Test.failureReason) {
             $results.Add((New-ValidationResult -Status Failed -Message "Passed test '$($Test.name)' must not have failureReason." -Path $Path))
         }
+        if ($hasBlockedReason -and $null -ne $Test.blockedReason) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Passed test '$($Test.name)' must not have blockedReason." -Path $Path))
+        }
+        if ($hasNotApplicableRationale -and $null -ne $Test.notApplicableRationale) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Passed test '$($Test.name)' must not have notApplicableRationale." -Path $Path))
+        }
     }
-    if ($Test.status -in @('Failed','NotRun','Blocked')) {
+    if ($Test.status -in @('Failed','NotRun')) {
         if ([string]::IsNullOrWhiteSpace([string]$Test.failureReason) -or ([string]$Test.failureReason).Length -lt 10) {
             $results.Add((New-ValidationResult -Status Failed -Message "Test '$($Test.name)' must include a meaningful failure reason for status '$($Test.status)'." -Path $Path))
+        }
+    }
+    if ($Test.status -eq 'Blocked') {
+        if (-not $hasBlockedReason -or [string]::IsNullOrWhiteSpace([string]$Test.blockedReason) -or ([string]$Test.blockedReason).Length -lt 10) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Test '$($Test.name)' must include a meaningful blocked reason." -Path $Path))
+        }
+    }
+    if ($Test.status -eq 'NotApplicable') {
+        if (-not $hasNotApplicableRationale -or [string]::IsNullOrWhiteSpace([string]$Test.notApplicableRationale) -or ([string]$Test.notApplicableRationale).Length -lt 10) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Test '$($Test.name)' must include a meaningful notApplicable rationale." -Path $Path))
+        }
+        if ($null -ne $Test.exitCode) {
+            $results.Add((New-ValidationResult -Status Failed -Message "NotApplicable test '$($Test.name)' must have null exitCode." -Path $Path))
         }
     }
     if ($Test.status -eq 'NotRun' -and $null -ne $Test.exitCode -and [int]$Test.exitCode -ne 3) {
@@ -493,6 +535,12 @@ function Test-ArtifactRecordObject {
     }
     if ($dataClasses -notcontains $Artifact.sensitivity) {
         $results.Add((New-ValidationResult -Status Failed -Message "Unknown artifact sensitivity '$($Artifact.sensitivity)'." -Path $Path))
+    }
+    if ($Artifact.PSObject.Properties.Name -contains 'finality' -and $Artifact.finality -eq 'final') {
+        $hasIntegrityVerification = $Artifact.PSObject.Properties.Name -contains 'integrityVerification'
+        if (-not $hasIntegrityVerification -or -not $Artifact.integrityVerification -or $Artifact.integrityVerification.status -notin @('Passed','NotApplicable')) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Final artifact '$($Artifact.name)' must include a passing or not-applicable integrityVerification record." -Path $Path))
+        }
     }
     foreach ($item in @(Test-RelativeRepositoryPath -Value $Artifact.path -Name "artifact path for '$($Artifact.name)'" -Path $Path)) { $results.Add($item) }
     @($results)

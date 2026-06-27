@@ -33,7 +33,10 @@
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "pattern": "^1\\.0\\.0$"
+      "enum": [
+        "1.0.0",
+        "1.1.0"
+      ]
     },
     "executionContext": {
       "type": "string",
@@ -65,6 +68,14 @@
         "null"
       ],
       "minLength": 1
+    },
+    "githubJob": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 160
     },
     "artifactName": {
       "type": [
@@ -118,6 +129,24 @@
         "Critical"
       ]
     },
+    "changeCategory": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "documentation",
+        "schema",
+        "workflow",
+        "release",
+        "application",
+        "database",
+        "infrastructure",
+        "integration",
+        "mixed",
+        null
+      ]
+    },
     "status": {
       "type": "string",
       "enum": [
@@ -135,6 +164,13 @@
     "completedAtUtc": {
       "type": "string",
       "format": "date-time"
+    },
+    "durationSeconds": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
     },
     "summary": {
       "type": "string",
@@ -169,6 +205,89 @@
         "generatedEvidence": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
         "generatedBuildOutput": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
       }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "type": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "production": { "type": "boolean" },
+        "tenant": { "type": ["string", "null"], "minLength": 1, "maxLength": 160 },
+        "account": { "type": ["string", "null"], "minLength": 1, "maxLength": 160 },
+        "subscription": { "type": ["string", "null"], "minLength": 1, "maxLength": 160 },
+        "project": { "type": ["string", "null"], "minLength": 1, "maxLength": 160 },
+        "region": { "type": ["string", "null"], "minLength": 1, "maxLength": 120 },
+        "zone": { "type": ["string", "null"], "minLength": 1, "maxLength": 120 },
+        "cluster": { "type": ["string", "null"], "minLength": 1, "maxLength": 120 },
+        "namespace": { "type": ["string", "null"], "minLength": 1, "maxLength": 120 }
+      }
+    },
+    "productionChange": {
+      "type": "boolean"
+    },
+    "approvalRequired": {
+      "type": "boolean"
+    },
+    "executionMode": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dryRun": { "type": "boolean" },
+        "whatIf": { "type": "boolean" },
+        "planOnly": { "type": "boolean" },
+        "applied": { "type": "boolean" }
+      }
+    },
+    "dataClassification": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "Public",
+        "Internal",
+        "Confidential",
+        "Regulated",
+        null
+      ]
+    },
+    "identityUsed": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 2,
+      "maxLength": 200
+    },
+    "credentialMode": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 2,
+      "maxLength": 120
+    },
+    "notRunReason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 10
+    },
+    "blockedReason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 10
+    },
+    "notApplicableRationale": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 10
     },
     "commandsExecuted": {
       "type": "array",
@@ -242,19 +361,59 @@
           "approvedAtUtc"
         ],
         "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 2
-          },
-          "role": {
-            "type": "string",
-            "minLength": 2
-          },
-          "approvedAtUtc": {
-            "type": "string",
-            "format": "date-time"
-          }
+          "name": { "type": "string", "minLength": 2 },
+          "role": { "type": "string", "minLength": 2 },
+          "approvedAtUtc": { "type": "string", "format": "date-time" },
+          "approvalType": { "type": ["string", "null"], "minLength": 2, "maxLength": 120 },
+          "scope": { "type": ["string", "null"], "minLength": 2, "maxLength": 200 },
+          "environment": { "type": ["string", "null"], "minLength": 2, "maxLength": 120 },
+          "ticketReference": { "type": ["string", "null"], "minLength": 2, "maxLength": 120 },
+          "expiresAtUtc": { "type": ["string", "null"], "format": "date-time" },
+          "approvedCommitSha": { "type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{40}$" },
+          "approvedPlanHash": { "type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$" },
+          "approvedArtifactHash": { "type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$" },
+          "separationOfDuties": { "type": ["boolean", "null"] }
         }
+      }
+    },
+    "operations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maintenanceWindow": { "type": ["string", "null"], "minLength": 2, "maxLength": 200 },
+        "rollbackPlan": { "type": ["string", "null"], "minLength": 10, "maxLength": 4000 },
+        "rollbackTestedStatus": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "Passed",
+            "Failed",
+            "Blocked",
+            "NotRun",
+            "NotApplicable",
+            null
+          ]
+        },
+        "rollForwardPlan": { "type": ["string", "null"], "minLength": 10, "maxLength": 4000 },
+        "backupRequired": { "type": ["boolean", "null"] },
+        "backupVerification": { "type": ["string", "null"], "minLength": 10, "maxLength": 2000 },
+        "restoreVerification": { "type": ["string", "null"], "minLength": 10, "maxLength": 2000 },
+        "destructiveOperations": { "type": ["boolean", "null"] }
+      }
+    },
+    "technologyEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "powershell": { "type": "object" },
+        "dotnet": { "type": "object" },
+        "database": { "type": "object" },
+        "workerService": { "type": "object" },
+        "integration": { "type": "object" },
+        "infrastructure": { "type": "object" },
+        "webFrontend": { "type": "object" }
       }
     }
   },
@@ -271,6 +430,10 @@
         "properties": {
           "commandsNotExecuted": {
             "minItems": 1
+          },
+          "notRunReason": {
+            "type": "string",
+            "minLength": 10
           }
         }
       }
@@ -279,14 +442,51 @@
       "if": {
         "properties": {
           "status": {
+            "const": "Blocked"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "blockedReason": {
+            "type": "string",
+            "minLength": 10
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "NotApplicable"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "notApplicableRationale": {
+            "type": "string",
+            "minLength": 10
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "approvalRequired": {
+            "const": true
+          },
+          "status": {
             "const": "Passed"
           }
         }
       },
       "then": {
         "properties": {
-          "remainingRisks": {
-            "maxItems": 0
+          "approvals": {
+            "minItems": 1
           }
         }
       }

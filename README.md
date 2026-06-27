@@ -190,7 +190,16 @@ The PowerShell example at `examples/powershell-project` is functional and includ
 pwsh -NoProfile -File examples/powershell-project/tools/Test-Example.ps1
 ```
 
-Other examples are present as adoption targets and should be completed one at a time before they are treated as functional references.
+The repository now separates example types explicitly:
+
+- `examples/powershell-project`: functional PowerShell example.
+- `examples/dotnet-project`: runtime-dependent .NET example.
+- `examples/database-project`: non-mutating migration validation example.
+- `examples/web-project`: runtime-dependent web example.
+- `examples/worker-service-project`: functional worker-service example.
+- `examples/integration-project`: synthetic governed integration flow with signature, replay, duplicate-delivery, partial-success, and redaction checks.
+- `examples/infrastructure-project`: synthetic non-mutating plan validation example with generated plan evidence.
+- `examples/combined-script-runner-project`: executable synthetic vertical slice demonstrating approved script catalog validation, queue state, idempotency, claim/lease, and atomic report publication.
 
 ## Release And Versioning
 
@@ -214,7 +223,11 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 - Forbidden-pattern scanning excludes generated evidence and build output by default. Use `-IncludeGeneratedEvidence` only for diagnostics.
 - Detailed Pester audit evidence is stored as sanitized JSON in `evidence/pester-details.json`; raw Pester XML is temporary and is not uploaded.
 - Final workflow enforcement occurs after final evidence validation and artifact upload, so controlled failures still produce downloadable evidence.
-- Branch protection must still be verified in GitHub settings because local file validation cannot prove repository settings.
+- The last independently verified success run remains `27915176022` for validated implementation commit `da185738a83d2d4ab1d420ce4ded89bfe12b2cc7`.
+- The paired controlled-failure proof run remains `27915324851` and failed only at final enforcement after evidence upload.
+- `master` was inspected through the GitHub branch-protection API on 2026-06-26 and is currently not protected by classic branch protection.
+- No Git tags or GitHub releases currently exist for this repository.
+- Current local changes after `4ad0896bc42b5c826abbc168728facbfd0095965` still require a fresh local and GitHub validation cycle before release readiness can be claimed.
 
 ## Related Documents
 

@@ -36,6 +36,20 @@ Actions MUST NOT require write permissions for ordinary pull-request validation.
 
 Secrets SHOULD NOT be available to validation jobs for untrusted pull requests. If secrets are required, split validation so untrusted code is not checked out or executed in the secret-bearing job.
 
+## Required Workflow Controls
+
+Governed workflows MUST declare:
+
+- Explicit `permissions`
+- `persist-credentials: false` on `actions/checkout` unless a reviewed exception exists
+- Job-level `timeout-minutes`
+- Concurrency on event-entry workflows where repeated pushes can overlap
+- Artifact names qualified by run identity
+- `if-no-files-found: error` for mandatory evidence uploads
+- Final status aggregation after all mandatory evidence is generated and validated
+
+The repository validator checks these controls semantically through `scripts/Test-GitHubWorkflowArchitecture.ps1`.
+
 ## Untrusted Pull Requests And Forks
 
 Pull request content, filenames, workflow inputs, issue text, comments, generated evidence, and artifacts are untrusted. Workflows MUST NOT execute untrusted pull request code with privileged tokens.

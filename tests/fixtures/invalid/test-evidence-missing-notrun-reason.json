@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.1.0",
+  "name": "GitHub-hosted workflow execution",
+  "category": "workflow",
+  "status": "NotRun",
+  "requiredValidation": true,
+  "evidenceSource": "local-summary",
+  "environment": "github-actions",
+  "command": "Governance CI",
+  "workingDirectory": ".",
+  "startedAtUtc": "2026-06-19T00:00:02Z",
+  "completedAtUtc": "2026-06-19T00:00:02Z",
+  "durationSeconds": 0,
+  "runtime": "GitHub Actions",
+  "toolVersion": "n/a",
+  "exitCode": 3,
+  "summary": "GitHub-hosted workflow execution was not run locally.",
+  "warnings": [],
+  "failureReason": null,
+  "blockedReason": null,
+  "notApplicableRationale": null,
+  "manualProcedure": null,
+  "executionMode": {
+    "dryRun": false,
+    "whatIf": false,
+    "planOnly": false,
+    "applied": false
+  },
+  "details": {
+    "requiredExternalSystem": "GitHub Actions"
+  }
+}

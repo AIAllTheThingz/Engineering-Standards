@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-20T21:35:42.8084833Z",
+  "generatedAtUtc": "2026-06-27T02:07:56.2237775Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -7,10 +7,338 @@
   "patternFile": "actions/forbidden-pattern-scan/forbidden-patterns.json",
   "allowlistFile": null,
   "advisory": false,
-  "scannedFiles": 187,
+  "scannedFiles": 231,
   "skippedFiles": [
     {
+      "path": ".tmp/agent-standards-debug.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/agent-standards-debug.txt",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022-verification-rerun.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022-verification.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851-verification-rerun.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851-verification.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743-verification.json",
+      "reason": "excluded-path"
+    },
+    {
       "path": ".tmp/pester-results.xml",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/agent-standards.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/aggregate-governance.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/ci-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/contract.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/dependencies.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/documentation-completeness.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/environment.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/evidence-validation-final.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/evidence-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/examples.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/forbidden-patterns.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/json-schemas.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/latest-verified-run.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/local-completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/local-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/markdown-links.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/pester-details.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/pester-summary.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/powershell-parser.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/psscriptanalyzer.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/repository-health.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/workflow-architecture.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915176022/yaml-syntax.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/agent-standards.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/aggregate-governance.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/ci-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/contract.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/dependencies.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/documentation-completeness.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/environment.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/evidence-validation-final.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/evidence-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/examples.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/forbidden-patterns.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/json-schemas.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/latest-verified-run.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/local-completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/local-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/markdown-links.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/pester-details.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/pester-summary.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/powershell-parser.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/psscriptanalyzer.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/repository-health.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/workflow-architecture.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915324851/yaml-syntax.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/agent-standards.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/aggregate-governance.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/ci-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/contract.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/dependencies.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/documentation-completeness.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/environment.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/evidence-validation-final.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/evidence-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/examples.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/forbidden-patterns.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/json-schemas.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/latest-verified-run.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/local-completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/local-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/markdown-links.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/pester-details.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/pester-summary.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/powershell-parser.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/psscriptanalyzer.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/repository-health.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/workflow-architecture.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/gh-evidence-27915485743/yaml-syntax.json",
       "reason": "excluded-path"
     },
     {
@@ -211,6 +539,106 @@
     },
     {
       "path": ".tmp/github-run-27884064235/yaml-syntax.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/agent-standards.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/aggregate-governance.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/ci-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/contract.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/dependencies.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/documentation-completeness.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/environment.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/evidence-validation-final.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/evidence-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/examples.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/forbidden-patterns.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/json-schemas.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/latest-verified-run.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/local-completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/local-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/markdown-links.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/pester-details.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/pester-summary.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/powershell-parser.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/psscriptanalyzer.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/repository-health.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/workflow-architecture.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/github-run-27884847805/yaml-syntax.json",
       "reason": "excluded-path"
     },
     {
@@ -447,7 +875,7 @@
     },
     {
       "path": "evidence/forbidden-patterns.json",
-      "reason": "scanner-output"
+      "reason": "excluded-path"
     },
     {
       "path": "evidence/json-schemas.json",
@@ -500,6 +928,282 @@
     {
       "path": "evidence/yaml-syntax.json",
       "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/bin/Release/net8.0/Example.Service.deps.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/bin/Release/net8.0/Example.Service.dll",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/bin/Release/net8.0/Example.Service.pdb",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/Example.Service.csproj.nuget.dgspec.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/Example.Service.csproj.nuget.g.props",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/Example.Service.csproj.nuget.g.targets",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/project.assets.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/project.nuget.cache",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/Release/net8.0/.NETCoreApp,Version=v8.0.AssemblyAttributes.cs",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.AssemblyInfo.cs",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.AssemblyInfoInputs.cache",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.assets.cache",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.csproj.CoreCompileInputs.cache",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.csproj.FileListAbsolute.txt",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.dll",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.GeneratedMSBuildEditorConfig.editorconfig",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.pdb",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.sourcelink.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/Release/net8.0/ref/Example.Service.dll",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/obj/Release/net8.0/refint/Example.Service.dll",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/bin/Release/net8.0/Example.deps.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/bin/Release/net8.0/Example.dll",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/bin/Release/net8.0/Example.pdb",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/Example.csproj.nuget.dgspec.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/Example.csproj.nuget.g.props",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/Example.csproj.nuget.g.targets",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/project.assets.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/project.nuget.cache",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/Release/net8.0/.NETCoreApp,Version=v8.0.AssemblyAttributes.cs",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.AssemblyInfo.cs",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.AssemblyInfoInputs.cache",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.assets.cache",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.csproj.CoreCompileInputs.cache",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.csproj.FileListAbsolute.txt",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.dll",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.GeneratedMSBuildEditorConfig.editorconfig",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.pdb",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.sourcelink.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/Release/net8.0/ref/Example.dll",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/src/obj/Release/net8.0/refint/Example.dll",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/bin/Release/net8.0/Example.dll",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/bin/Release/net8.0/Example.pdb",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/bin/Release/net8.0/Example.Service.Tests.deps.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/bin/Release/net8.0/Example.Service.Tests.dll",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/bin/Release/net8.0/Example.Service.Tests.exe",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/bin/Release/net8.0/Example.Service.Tests.pdb",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/bin/Release/net8.0/Example.Service.Tests.runtimeconfig.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Example.Service.Tests.csproj.nuget.dgspec.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Example.Service.Tests.csproj.nuget.g.props",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Example.Service.Tests.csproj.nuget.g.targets",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/project.assets.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/project.nuget.cache",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/.NETCoreApp,Version=v8.0.AssemblyAttributes.cs",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/apphost.exe",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example..F4C71C71.Up2Date",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.AssemblyInfo.cs",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.AssemblyInfoInputs.cache",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.assets.cache",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.csproj.AssemblyReference.cache",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.csproj.CoreCompileInputs.cache",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.csproj.FileListAbsolute.txt",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.dll",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.GeneratedMSBuildEditorConfig.editorconfig",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.genruntimeconfig.cache",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.pdb",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.sourcelink.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/ref/Example.Service.Tests.dll",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/dotnet-project/tests/obj/Release/net8.0/refint/Example.Service.Tests.dll",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "examples/web-project/dist/app.js",
+      "reason": "excluded-path"
     }
   ],
   "findings": [
@@ -534,7 +1238,7 @@
       "patternId": "dangerous-powershell-expression",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 54,
+      "line": 68,
       "description": "Dynamic PowerShell execution.",
       "redactedMatch": "Invo...[redacted]...sion",
       "allowlisted": false
@@ -543,7 +1247,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 43,
+      "line": 57,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -552,7 +1256,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 43,
+      "line": 57,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -561,7 +1265,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 135,
+      "line": 149,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -570,7 +1274,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/RELEASE_PROCESS.md",
-      "line": 77,
+      "line": 87,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -588,7 +1292,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
-      "line": 228,
+      "line": 255,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -597,7 +1301,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
-      "line": 229,
+      "line": 256,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false

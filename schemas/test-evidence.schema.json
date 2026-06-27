@@ -24,7 +24,10 @@
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "pattern": "^1\\.0\\.0$"
+      "enum": [
+        "1.0.0",
+        "1.1.0"
+      ]
     },
     "name": {
       "type": "string",
@@ -55,6 +58,19 @@
         "NotRun",
         "NotApplicable",
         "Blocked"
+      ]
+    },
+    "requiredValidation": {
+      "type": "boolean",
+      "default": true
+    },
+    "evidenceSource": {
+      "type": "string",
+      "enum": [
+        "Automated",
+        "Manual",
+        "Static",
+        "GitHubArtifact"
       ]
     },
     "command": {
@@ -89,6 +105,14 @@
       "minLength": 1,
       "maxLength": 120
     },
+    "environment": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 2,
+      "maxLength": 120
+    },
     "exitCode": {
       "type": [
         "integer",
@@ -112,6 +136,41 @@
         "null"
       ],
       "minLength": 10
+    },
+    "blockedReason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 10
+    },
+    "notApplicableRationale": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 10
+    },
+    "manualProcedure": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 10,
+      "maxLength": 2000
+    },
+    "executionMode": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dryRun": { "type": "boolean" },
+        "whatIf": { "type": "boolean" },
+        "planOnly": { "type": "boolean" },
+        "applied": { "type": "boolean" }
+      }
+    },
+    "details": {
+      "type": "object"
     }
   },
   "allOf": [
@@ -130,6 +189,12 @@
           },
           "failureReason": {
             "type": "null"
+          },
+          "blockedReason": {
+            "type": "null"
+          },
+          "notApplicableRationale": {
+            "type": "null"
           }
         }
       }
@@ -138,11 +203,7 @@
       "if": {
         "properties": {
           "status": {
-            "enum": [
-              "Failed",
-              "NotRun",
-              "Blocked"
-            ]
+            "const": "Failed"
           }
         }
       },
@@ -159,17 +220,52 @@
       "if": {
         "properties": {
           "status": {
+            "const": "Blocked"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "blockedReason": {
+            "type": "string",
+            "minLength": 10
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
             "const": "NotRun"
           }
         }
       },
       "then": {
         "properties": {
+          "failureReason": {
+            "type": "string",
+            "minLength": 10
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "NotApplicable"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "notApplicableRationale": {
+            "type": "string",
+            "minLength": 10
+          },
           "exitCode": {
-            "type": [
-              "integer",
-              "null"
-            ]
+            "type": "null"
           }
         }
       }

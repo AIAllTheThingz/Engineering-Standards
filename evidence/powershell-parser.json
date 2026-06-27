@@ -1,10 +1,71 @@
 {
-  "generatedAtUtc": "2026-06-20T21:41:55.9863729Z",
-  "results": [
+  "generatedAtUtc": "2026-06-27T02:12:29.7658046Z",
+  "files": [
+    {
+      "status": "Passed",
+      "path": "actions/repository-health/Invoke-RepositoryHealth.ps1",
+      "message": "PowerShell parsed successfully.",
+      "errors": []
+    },
+    {
+      "status": "Passed",
+      "path": "examples/combined-script-runner-project/tools/Test-Example.ps1",
+      "message": "PowerShell parsed successfully.",
+      "errors": []
+    },
+    {
+      "status": "Passed",
+      "path": "examples/infrastructure-project/tools/Test-Example.ps1",
+      "message": "PowerShell parsed successfully.",
+      "errors": []
+    },
+    {
+      "status": "Passed",
+      "path": "examples/integration-project/tools/Test-Example.ps1",
+      "message": "PowerShell parsed successfully.",
+      "errors": []
+    },
+    {
+      "status": "Passed",
+      "path": "scripts/GovernanceValidation.psm1",
+      "message": "PowerShell parsed successfully.",
+      "errors": []
+    },
+    {
+      "status": "Passed",
+      "path": "scripts/New-CompletionEvidence.ps1",
+      "message": "PowerShell parsed successfully.",
+      "errors": []
+    },
+    {
+      "status": "Passed",
+      "path": "scripts/New-WorkflowTestEvidence.ps1",
+      "message": "PowerShell parsed successfully.",
+      "errors": []
+    },
     {
       "status": "Passed",
       "path": "scripts/Test-AgentStandards.ps1",
-      "message": "Changed PowerShell files parsed successfully."
+      "message": "PowerShell parsed successfully.",
+      "errors": []
+    },
+    {
+      "status": "Passed",
+      "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
+      "message": "PowerShell parsed successfully.",
+      "errors": []
+    },
+    {
+      "status": "Passed",
+      "path": "tests/scripts/GitHubWorkflowArchitecture.Tests.ps1",
+      "message": "PowerShell parsed successfully.",
+      "errors": []
+    },
+    {
+      "status": "Passed",
+      "path": "tests/scripts/GovernanceValidationModule.Tests.ps1",
+      "message": "PowerShell parsed successfully.",
+      "errors": []
     }
   ],
   "failed": 0

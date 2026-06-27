@@ -1,0 +1,46 @@
+{
+  "contractVersion": "2026-06-21",
+  "authenticationMethod": "shared-secret-hmac",
+  "timeoutSeconds": 10,
+  "retryPolicy": {
+    "maxAttempts": 3,
+    "strategy": "exponential-backoff-with-jitter",
+    "respectsRetryAfter": true
+  },
+  "validSignature": {
+    "deliveryId": "delivery-001",
+    "timestamp": "1782526243",
+    "signature": "9b62eccac6894a227d177aa5ae751375dd109d2031394418d70191150006d6d2",
+    "replayProtected": true,
+    "status": "Passed"
+  },
+  "invalidSignature": {
+    "deliveryId": "delivery-002",
+    "timestamp": "1782526243",
+    "signature": "deadbeef",
+    "status": "Failed",
+    "reason": "Signature did not match the expected HMAC."
+  },
+  "duplicateDelivery": {
+    "deliveryId": "delivery-001",
+    "status": "Passed",
+    "behavior": "duplicate ignored using idempotency key"
+  },
+  "partialSuccess": {
+    "processed": 1,
+    "rejected": 1,
+    "status": "Passed"
+  },
+  "redactedLog": {
+    "eventType": "example.created",
+    "deliveryId": "delivery-001",
+    "authenticationMethod": "shared-secret-hmac",
+    "idempotency": "deliveryId",
+    "rateLimitBehavior": "retry-after-respected",
+    "duplicateDelivery": "ignored",
+    "sandboxMode": true,
+    "payloadClassification": "Internal",
+    "payloadPreview": "[redacted]",
+    "partialSuccess": true
+  }
+}

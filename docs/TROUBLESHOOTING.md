@@ -35,6 +35,8 @@ pwsh -NoProfile -File scripts/Test-JsonSchemas.ps1 -Path .
 
 If a fixture fails after a schema change, update both valid and invalid fixtures intentionally.
 
+If a repository still emits `1.0.0` evidence while the central generators now emit `1.1.0`, confirm that the validator compatibility window still accepts both versions. Unsupported future-major versions must fail rather than silently downgrade.
+
 ## Documentation Completeness Failures
 
 Documentation completeness fails when required documents are too shallow, missing required concepts, contain empty headings, include unresolved placeholders outside templates, or use fake validation commands.
@@ -129,6 +131,8 @@ Install a supported YAML parser or add a validator before making YAML syntax cla
 If required checks do not appear in branch protection settings, first run the workflow on the target branch so GitHub creates the check name. Then configure the exact check name.
 
 If a repository changed from `master` to `main`, update workflow branch filters, branch protection rules, documentation, and adoption evidence together.
+
+If the GitHub API returns `404 Branch not protected`, treat that as the observed current state. Do not infer protection from local docs, required workflow files, or CODEOWNERS alone.
 
 ## Template Issues
 

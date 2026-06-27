@@ -4,7 +4,11 @@
   "mutation": false,
   "requiresProductionApproval": true,
   "tool": "static-example",
-  "pinnedProviders": [],
+  "toolVersion": "1.0.0",
+  "pinnedProviders": [
+    "example/provider@1.0.0"
+  ],
+  "planHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "destructiveChanges": [],
   "rollback": "No infrastructure is created by this example."
 }

@@ -53,6 +53,7 @@ jobs:
   governance:
     name: Governance validation
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     outputs:
       evidence-path: ${{ steps.evidence_final.outputs.evidence-path }}
       artifact-name: ${{ steps.artifact.outputs.artifact-name }}

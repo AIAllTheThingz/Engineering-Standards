@@ -4,8 +4,8 @@
   "repositoryVersion": "1.1.0",
   "defaultBranch": "master",
   "riskClassification": "High",
-  "generatedFromCommit": "8009f3fc65dc873c31dbb753aeef9c8f1fd4262c",
-  "generatedAtUtc": "2026-06-21T00:00:00Z",
+  "generatedFromCommit": "4ad0896bc42b5c826abbc168728facbfd0095965",
+  "generatedAtUtc": "2026-06-26T00:00:00Z",
   "canonicalStatusValues": [
     "Passed",
     "Failed",
@@ -351,19 +351,19 @@
     ]
   },
   "githubEvidence": {
-    "status": "Blocked",
-    "reason": "GitHub-hosted success and controlled-failure runs require authenticated workflow dispatch and artifact download after this commit exists on the remote."
+    "status": "Passed",
+    "reason": "Real GitHub workflow success, controlled-failure, and independent artifact verification exist for historical validated commits; current local changes still require fresh GitHub validation before release."
   },
   "branchProtection": {
-    "status": "Blocked",
-    "reason": "Actual branch protection settings require authenticated GitHub repository settings or API access; local documentation is not proof."
+    "status": "Failed",
+    "reason": "GitHub API inspection on 2026-06-26 returned 404 Branch not protected for master."
   },
   "releaseReadiness": {
     "status": "Blocked",
     "proposedVersion": "1.1.0",
     "proposedTag": "v1.1.0",
-    "targetCommitSha": "8009f3fc65dc873c31dbb753aeef9c8f1fd4262c",
+    "targetCommitSha": "4ad0896bc42b5c826abbc168728facbfd0095965",
     "releaseCreated": false,
-    "reason": "Release tag and GitHub release were not authorized; target SHA must be updated to the final committed consolidation SHA after validation."
+    "reason": "No tag or GitHub release exists, branch protection is not currently enforced on master, and the current local consolidation work still requires fresh local and GitHub validation."
   }
 }

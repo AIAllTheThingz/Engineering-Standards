@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.1.0",
+  "name": "Node.js availability",
+  "category": "build",
+  "status": "NotRun",
+  "requiredValidation": true,
+  "evidenceSource": "local-execution",
+  "environment": "developer-workstation",
+  "command": "node --version",
+  "workingDirectory": "examples/web-project",
+  "startedAtUtc": "2026-06-27T02:10:41.2709680Z",
+  "completedAtUtc": "2026-06-27T02:10:41.5646247Z",
+  "durationSeconds": 0.294,
+  "runtime": "Node.js local tooling",
+  "toolVersion": "local",
+  "exitCode": 3,
+  "summary": "Node.js is not installed in the local environment.",
+  "warnings": [],
+  "failureReason": "Node.js is unavailable.",
+  "blockedReason": null,
+  "notApplicableRationale": null,
+  "manualProcedure": null,
+  "executionMode": {
+    "dryRun": false,
+    "whatIf": false,
+    "planOnly": false,
+    "applied": true
+  },
+  "details": null
+}

@@ -18,9 +18,12 @@ jobs:
   database:
     name: Validate database project
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
 
       - name: Governance validation
         shell: pwsh
@@ -43,5 +46,5 @@ jobs:
         with:
           name: database-evidence-${{ github.run_id }}
           path: evidence/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 30

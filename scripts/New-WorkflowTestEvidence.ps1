@@ -46,6 +46,8 @@ function Get-OutcomeStatus {
             status = 'NotApplicable'
             exitCode = $null
             failureReason = $null
+            blockedReason = $null
+            notApplicableRationale = "$Name does not apply to this repository configuration."
             summary = "$Name is not applicable for this project configuration."
         }
     }
@@ -56,6 +58,8 @@ function Get-OutcomeStatus {
             status = 'NotRun'
             exitCode = 3
             failureReason = "$Name was not performed in this execution context."
+            blockedReason = $null
+            notApplicableRationale = $null
             summary = "$Name was not run."
         }
     }
@@ -70,6 +74,8 @@ function Get-OutcomeStatus {
             status = 'Passed'
             exitCode = 0
             failureReason = $null
+            blockedReason = $null
+            notApplicableRationale = $null
             summary = "$Name completed successfully."
         }
     }
@@ -79,6 +85,8 @@ function Get-OutcomeStatus {
             status = 'Failed'
             exitCode = $null
             failureReason = "$Name was unexpectedly skipped without an approved exception."
+            blockedReason = $null
+            notApplicableRationale = $null
             summary = "$Name did not run."
         }
     }
@@ -88,6 +96,8 @@ function Get-OutcomeStatus {
             status = 'Blocked'
             exitCode = $null
             failureReason = "$Name was cancelled before producing complete evidence."
+            blockedReason = "$Name was cancelled before producing complete evidence."
+            notApplicableRationale = $null
             summary = "$Name was cancelled."
         }
     }
@@ -97,6 +107,8 @@ function Get-OutcomeStatus {
             status = 'Failed'
             exitCode = 1
             failureReason = "$Name reported success but did not produce required report '$ReportPath'."
+            blockedReason = $null
+            notApplicableRationale = $null
             summary = "$Name report is missing."
         }
     }
@@ -105,6 +117,8 @@ function Get-OutcomeStatus {
         status = 'Failed'
         exitCode = 1
         failureReason = "$Name failed with GitHub step outcome '$Outcome'."
+        blockedReason = $null
+        notApplicableRationale = $null
         summary = "$Name failed."
     }
 }
@@ -154,10 +168,12 @@ foreach ($definition in $definitions) {
     }
 
     $records.Add([ordered]@{
-        schemaVersion = '1.0.0'
+        schemaVersion = '1.1.0'
         name = $definition.name
         category = $definition.category
         status = $computed.status
+        requiredValidation = [bool]$definition.required
+        evidenceSource = 'Automated'
         command = $definition.command
         workingDirectory = '.'
         startedAtUtc = $started.ToString('o')
@@ -165,10 +181,21 @@ foreach ($definition in $definitions) {
         durationSeconds = [math]::Round($duration, 3)
         runtime = $Runtime
         toolVersion = $ToolVersion
+        environment = 'GitHub Actions'
         exitCode = $computed.exitCode
         summary = $computed.summary
         warnings = @()
         failureReason = $computed.failureReason
+        blockedReason = $computed.blockedReason
+        notApplicableRationale = $computed.notApplicableRationale
+        manualProcedure = $null
+        executionMode = [ordered]@{
+            dryRun = $false
+            whatIf = $false
+            planOnly = $false
+            applied = $true
+        }
+        details = $null
     })
 }
 

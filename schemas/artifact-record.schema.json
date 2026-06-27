@@ -21,7 +21,10 @@
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "pattern": "^1\\.0\\.0$"
+      "enum": [
+        "1.0.0",
+        "1.1.0"
+      ]
     },
     "name": {
       "type": "string",
@@ -39,6 +42,7 @@
         "package",
         "screenshot",
         "evidence",
+        "manifest",
         "other"
       ]
     },
@@ -56,12 +60,25 @@
       "type": "integer",
       "minimum": 0
     },
+    "hashAlgorithm": {
+      "type": "string",
+      "enum": [
+        "SHA-256"
+      ]
+    },
     "sha256": {
       "type": "string",
       "pattern": "^[A-Fa-f0-9]{64}$"
     },
     "createdAtUtc": {
       "type": "string",
+      "format": "date-time"
+    },
+    "publishedAtUtc": {
+      "type": [
+        "string",
+        "null"
+      ],
       "format": "date-time"
     },
     "producer": {
@@ -78,13 +95,33 @@
         "temporary"
       ]
     },
+    "expiresAtUtc": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
     "sensitivity": {
       "type": "string",
       "enum": [
         "Public",
         "Internal",
         "Confidential",
-        "Restricted"
+        "Regulated"
+      ]
+    },
+    "classification": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "Public",
+        "Internal",
+        "Confidential",
+        "Regulated",
+        null
       ]
     },
     "relatedTest": {
@@ -94,6 +131,105 @@
       ],
       "minLength": 3,
       "maxLength": 120
+    },
+    "sourceCommitSha": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Fa-f0-9]{40}$"
+    },
+    "validatedCommitSha": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Fa-f0-9]{40}$"
+    },
+    "githubRunId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]+$"
+    },
+    "githubRunAttempt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]+$"
+    },
+    "jobName": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "finality": {
+      "type": "string",
+      "enum": [
+        "final",
+        "partial"
+      ]
+    },
+    "signed": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "attested": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "authorizationBoundary": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "verifiedAtUtc": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "verifiedBy": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 2,
+      "maxLength": 160
+    },
+    "integrityVerification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "Passed",
+            "Failed",
+            "NotRun",
+            "Blocked",
+            "NotApplicable"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 1000
+        }
+      }
     }
   },
   "allOf": [
@@ -117,6 +253,20 @@
             "minimum": 1
           }
         }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "finality": {
+            "const": "final"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "integrityVerification"
+        ]
       }
     }
   ]

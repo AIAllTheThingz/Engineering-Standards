@@ -1,0 +1,8 @@
+{
+  "jobId": "job-req-001",
+  "requestId": "req-001",
+  "tenantId": "tenant-a",
+  "scriptId": "example-report",
+  "generatedAtUtc": "2026-06-27T02:10:43.2129174Z",
+  "status": "Completed"
+}

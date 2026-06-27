@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-20T21:35:42.1744830Z",
+  "generatedAtUtc": "2026-06-27T02:07:37.3254915Z",
   "results": [
     {
       "status": "Passed",
@@ -489,6 +489,1413 @@
       "severity": "info",
       "message": "PowerShell signing example avoids silent first-match certificate selection.",
       "path": "agents/AGENTS_PowerShell.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard declares a valid semantic version at least 1.1.1.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard declares broad framework and tooling applicability.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard hands off ASP.NET Core and backend security.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard hands off API and integration behavior.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard hands off hosting and infrastructure behavior.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard hands off background-processing UI behavior.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits direct browser database exposure.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard hands off PowerShell-generated frontend work.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires frontend discovery.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires rendering model discovery.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard treats browser code as untrusted.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires approved package manager.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires reproducible frozen-lockfile installation.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits mixed lockfiles.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits unlocked production dependency graphs.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires dependency and supply-chain review.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits automatic force audit fixes.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard warns public browser variables are public.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard warns public prefixes do not make secrets safe.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits browser secrets.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires server-side authentication.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires OAuth/OIDC browser-flow definition.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires PKCE for public browser clients.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits new implicit-flow browser applications.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits ROPC for browser applications.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires OAuth state lifecycle controls.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires OIDC nonce lifecycle controls.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires exact allowlisted redirect URIs.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits tokens in URLs and telemetry paths.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard governs refresh-token rotation and reuse detection.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires session-fixation protection.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires account and tenant switch cleanup.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard limits route guards to UX.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard rejects hidden-button authorization.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard rejects disabled-control authorization.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires admin direct-navigation protection.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires secure cookie/token posture.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard restricts privileged tokens in localStorage/sessionStorage.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits direct untrusted HTML insertion.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard controls framework HTML bypass APIs.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard includes Trusted Types guidance.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard governs CSP.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits convenience CSP disablement.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires directive-level CSP definition.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires explicit default-src.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard expects object-src none.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires base-uri restriction.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires form-action restriction.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires frame-ancestors clickjacking protection.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires connect-src destination coverage.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires request-scoped CSP nonces.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits static CSP nonces.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires CSP report-only lifecycle.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires CSRF for cookie-authenticated mutation.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits state-changing safe methods.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires login CSRF controls.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires logout CSRF controls.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires CSRF fail-closed behavior.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits automatic retry after CSRF failure.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits antiforgery retry loops.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard rejects CORS as authorization.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires strict dynamic CORS allowlists.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits blind Origin reflection.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires boundary-safe origin matching.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard separates production and development origins.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires WebSocket/SignalR Origin validation.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits unsafe CORS proxy workarounds.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires credential mode contract alignment.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires URL protocol allowlists.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard protects redirects.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires external-link opener protection.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires accessible forms.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prevents empty input broad scope.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires server-side upload validation.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires protected download authorization.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard separates uploaded filenames from server paths.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard governs active HTML/SVG uploads.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires CSV formula-injection controls.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires download MIME, disposition, and nosniff controls.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard rejects extension-only content safety.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires hash mismatch fail-closed behavior.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires artifact identity and tenant failure behavior.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires API timeout, cancellation, and retry controls.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires HTTP and business outcome contracts.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard separates HTTP success from business success.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires explicit partial success.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires safe unknown-enum handling.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires safe schema mismatch behavior.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires nullability semantics.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires explicit date/time formats.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires pagination semantics.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires opaque continuation tokens.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires idempotency-key semantics.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits blind non-idempotent retries.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires tenant-safe cache keys.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires logout cache cleanup.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard protects service-worker caches.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires third-party script privacy review.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard governs SRI and external assets.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires WCAG 2.2 AA target.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires keyboard and focus controls.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires performance budgets.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires reliability states.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires job polling bounds and jitter.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires bounded polling.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits tight polling loops.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires terminal-state polling stop.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires polling cancellation on lifecycle changes.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prevents duplicate visibility polling loops.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires server-confirmed cancellation.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires server-confirmed completion.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard rejects stale polling responses.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard rejects out-of-order terminal regression.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard governs client telemetry redaction.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires service-worker identity and scope controls.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires minimal service-worker scope.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits service-worker security bypasses.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires release-bound cached executable assets.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires opaque response cache review.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires cache-poisoning analysis.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits unapproved protected endpoint caching.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires faulty service-worker recovery.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires service-worker update observability.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard isolates telemetry failure from core UI.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits sensitive console logs.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard disables protected production debug logging.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires safe correlation IDs.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires telemetry release and environment identity.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires exact source-map release association.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires source-map and bundle secret scanning.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires independent source-map upload verification.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires protected source-map provider upload.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires mismatched map failure handling.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard protects production source maps.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires browser/E2E automation controls.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard includes validation commands section.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard includes npm reproducible install example.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard includes pnpm frozen install example.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard includes Yarn immutable install example.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard rejects build success as browser proof.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard declares honest completion statuses.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits false frontend evidence.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not allow browser server secrets.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not allow route guards as authorization.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not allow hidden-button authorization.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not prefer privileged tokens in localStorage.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not allow direct untrusted HTML insertion.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires review for dangerous HTML bypasses.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard rejects unsafe javascript URLs.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not allow convenience CSP disablement.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires CSRF review.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not treat CORS as authorization.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not allow open redirects.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires opener protection.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not allow empty input to mean all targets.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires server-side upload validation.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard protects report URLs.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires tenant-safe cache keys.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires logout cache cleanup.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not allow protected API caching by default.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires third-party privacy review.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not treat accessibility as optional.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not equate build success with browser behavior.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard protects production source maps.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not allow production as default test target.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not allow automatic force audit fixes.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not allow missing frontend validation to be marked Passed.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not allow new implicit-flow browser clients.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires PKCE for public browser clients.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires state and nonce validation.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits wildcard redirect URIs for protected production clients.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits tokens in URLs.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires refresh-token reuse handling.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits static CSP nonces.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires report-only enforcement lifecycle.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits state-changing GET requests.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits automatic CSRF retries.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires login/logout CSRF review.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits blind dynamic CORS reflection.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard separates development and production origins.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires WebSocket Origin validation.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits public CORS proxies.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard separates user filenames from server paths.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard treats HTML/SVG downloads as active content.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires spreadsheet formula injection handling.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard rejects extension-only content type.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard separates HTTP and business success.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard rejects privileged unknown-enum defaults.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires safe schema mismatch handling.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits blind non-idempotent retries.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits zero-delay polling.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires server-confirmed cancellation/completion.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard rejects stale poll overwrite.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard limits service-worker scope and security controls.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires opaque response cache review.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires cache poisoning review.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard isolates telemetry failures.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard prohibits token logging.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard disables protected production debug logging.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard requires source-map release match and secret scanning.",
+      "path": "agents/AGENTS_WebFrontend.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Web Frontend standard does not allow missing Web Frontend 1.1.1 validation to be marked Passed.",
+      "path": "agents/AGENTS_WebFrontend.md",
       "data": null
     },
     {
@@ -998,7 +2405,7 @@
     {
       "status": "Passed",
       "severity": "info",
-      "message": "Database standard declares a valid semantic version at least 1.1.0.",
+      "message": "Database standard declares a valid semantic version at least 1.1.1.",
       "path": "agents/AGENTS_Database.md",
       "data": null
     },
@@ -1159,7 +2566,105 @@
     {
       "status": "Passed",
       "severity": "info",
+      "message": "Database standard requires engine/version-specific MERGE and upsert review.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires duplicate source-row and concurrent-writer behavior for upserts.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires upsert concurrency, duplicate, and retry tests.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
       "message": "Database standard requires multi-row-safe triggers.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires smallest practical transaction scope.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard prohibits external calls inside transactions without an approved pattern.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard prohibits blind retry after uncertain commit.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires transactional DDL support verification before rollback claims.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires stored procedure parameter types and lengths.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires stable stored procedure result contracts.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires function determinism and scalar-function performance review.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires explicit view columns and prohibits SELECT *.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard prohibits accidental cross joins.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires cursor and row-by-row justification.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires recursive-query termination and maximum depth controls.",
       "path": "agents/AGENTS_Database.md",
       "data": null
     },
@@ -1237,6 +2742,27 @@
       "status": "Passed",
       "severity": "info",
       "message": "Database standard includes DACPAC validation example.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard prohibits secret-bearing connection strings in process arguments.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard includes approved non-secret sqlpackage authentication guidance.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard includes safer sqlpackage placeholder example.",
       "path": "agents/AGENTS_Database.md",
       "data": null
     },
@@ -1399,6 +2925,2344 @@
       "severity": "info",
       "message": "Database standard does not allow missing database validation to be marked Passed.",
       "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not claim MERGE is always safe.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not waive upsert concurrency testing.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow remote calls inside transactions by default.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not misstate uncertain commit outcome.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow blind retry after uncertain commit.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow procedure parameters to omit lengths.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not waive function performance review.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow view SELECT * by default.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow cross joins without review.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not prefer cursors for bulk processing.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard requires recursive query depth limits.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow plaintext sqlpackage connection strings.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow command-line secrets in CI.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Database standard does not allow assumed transactional DDL support.",
+      "path": "agents/AGENTS_Database.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard declares a valid semantic version at least 1.1.1.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard declares worker execution models.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires documented state machines.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires owner and concurrency-token checks for progress and final state mutation.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires protected state-transition mechanisms.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard prohibits stale owner mutation and finalization.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard rejects zero-row protected updates as success.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires atomic SQL worker claiming.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires lease owner and expiration.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires safe stop on lease loss.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires queue lock or receipt-handle verification before acknowledgement.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires new ownership context for reclaimed work.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires duplicate assumptions for at-least-once delivery.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard prohibits unproven exactly-once claims.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires durable idempotency.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard prevents empty input or replay from meaning all work.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires bounded concurrency.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires polling delay and backoff.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires schedule overlap policy.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires DST behavior.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires retry classification.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires bounded retries and jitter.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires durable dead-letter storage.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires replay authorization and limits.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires cancellation propagation.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires graceful shutdown.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires process timeouts.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires mandatory durable handoff for coordinated cross-system effects.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires acknowledgement after durable completion.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires approved script catalogs.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires immutable script and executable identity.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires immediate pre-execution identity verification.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires approved Authenticode signer validation.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard prohibits arbitrary script, command, and path execution.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard prohibits command-line secrets.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires process exit-code validation.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires PowerShell stream capture.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires PowerShell terminating and nonterminating error handling.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard says PowerShell exit code alone is insufficient.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires stable structured PowerShell result contracts.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires immutable job input.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires input snapshot or version and hash.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires input hash verification before execution.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard prohibits silent approved input replacement.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires artifact metadata.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires artifact content hash and governance metadata.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires atomic artifact publication.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard prohibits exposing partial artifacts.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires artifact failure to affect job outcome.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires artifact path controls.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires least privilege.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires approved secret stores.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires structured logging.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires redaction.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires queue depth and oldest-age metrics.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires readiness before claiming.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires backpressure controls.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires rolling compatibility.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard includes validation commands section.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard prohibits unsafe normal worker container smoke tests.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard prohibits production credentials for container validation.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard includes safe container validation or no-work mode guidance.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard declares completion statuses.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard hands off .NET worker work.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard hands off database worker work.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard hands off PowerShell worker work.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard hands off integration worker work.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard hands off infrastructure worker work.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow automatic exactly-once claims.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow empty input to mean all jobs.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow arbitrary script paths.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow user shell command text.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow early queue acknowledgement.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow active lease overwrite.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow lease loss to be ignored.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow infinite retries.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow discarded poison jobs.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires replay approval.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow ignored cancellation.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not equate process launch with success.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow command-line secrets.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow busy polling.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not prefer unlimited concurrency.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires DST handling.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow missing validation to be marked Passed.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow stale worker completion.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not limit ownership checks to claim time.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow zero-row protected updates as success.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow version strings as sufficient integrity.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires script hash verification where hashes are used.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires approved signer validation.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not equate PowerShell exit code zero with success.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow ignored nonterminating PowerShell errors.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow approved input replacement.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow paths as sufficient input identity.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow partial reports as final.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow retry artifact overwrite.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires artifact hashes where applicable.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard requires durable handoff for coordinated side effects.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow acknowledgement before durable completion.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow normal worker startup as safe smoke test.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow production credentials for container validation.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Worker Service standard does not allow missing Worker Service validation to be marked Passed.",
+      "path": "agents/AGENTS_WorkerService.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard declares a valid semantic version at least 1.1.0.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard declares broad integration applicability.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires discovery before editing.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires explicit API and schema versions.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires least-privilege separated credentials.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard prohibits committed plaintext secrets.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires tenant and account boundaries.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires timeouts and cancellation.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires retryable and nonretryable classification.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires bounded retries, backoff, jitter, and Retry-After.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires idempotency and deduplication for non-idempotent retries.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires opaque continuation tokens.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard separates transport success from business success.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires webhook signature or authenticity validation.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires webhook replay protection.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires queue and broker delivery semantics.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires poison and dead-letter handling.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires durable coordination patterns.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires SFTP host-key validation.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires file integrity checks where available.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires atomic file publication.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires schema validation for payloads.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires sensitive data protection and redaction.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires safe correlation IDs.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires contract and schema tests.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires honest NotRun or Blocked statuses.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard prohibits production as a test substitute.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard prohibits false integration evidence.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard prohibits fabricated integration evidence.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard references the exception process.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard includes cross-standard handoffs.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard does not allow ignored webhook signatures.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard does not allow unbounded retries.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard does not treat every error as retryable.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires jitter.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard keeps continuation tokens opaque.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard separates HTTP success from business success.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard prohibits committed client secrets.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard prohibits certificate-validation bypass.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard does not claim automatic exactly-once queue delivery.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires duplicate handling.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires poison-message remediation.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard does not allow external calls inside database transactions by default.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard prohibits partial success as full success.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires SFTP host-key validation.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard requires file hashes where available.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard prohibits schema-validation bypass.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard prohibits production as sandbox fallback.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Integration standard prohibits missing Integration validation as Passed.",
+      "path": "agents/AGENTS_Integration.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard declares a valid semantic version at least 1.1.1.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard declares broad infrastructure tooling applicability.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard hands off PowerShell infrastructure automation.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard hands off .NET deployment work.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard hands off database infrastructure work.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard hands off worker infrastructure work.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard hands off integration provisioning work.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard hands off frontend delivery infrastructure.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires infrastructure discovery.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits guessed or cached targeting.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires non-mutating default mode.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard blocks unauthorized mutation.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires source-of-truth ownership.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires explicit target context for mutation.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prevents empty target broad scope.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard rejects cached CLI context for production.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires plan-before-apply.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard binds apply to reviewed plan artifacts.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prevents stale or mismatched plan apply.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires production approval controls.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires separation of duties for Critical changes.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires protected remote state.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits committed state files.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prevents lock bypass on backend outage.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard governs force-unlock.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard governs state migration and repair.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits routine manual state editing.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires infrastructure CLI version constraints.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires immutable GitHub Action SHA pinning.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits floating production dependencies.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits unverified download-and-execute behavior.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires protected production image digest pinning.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard rejects tags as the only production image identity.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires exact prior image digest for rollback.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires image policy to reject unapproved digest substitution.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard controls destructive and replacement changes.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard distinguishes snapshots from restore proof.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard distinguishes backup configuration from restore proof.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires private-by-default networking.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires broad ingress and egress review.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires temporary network rule lifecycle metadata.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires temporary rule expiration.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires temporary rule cleanup ownership.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard rejects silently active expired network rules.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires firewall rule removal verification.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits public administrative interfaces without Critical approval.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires emergency network access lifecycle controls.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires DNS/IPAM record discovery and target detail.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires existing DNS record capture.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires PTR/reverse record consideration.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires explicit split-horizon DNS scope.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires DNSSEC rollover and rollback review.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires certificate SAN alignment before DNS cutover.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires early DNS TTL reduction.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires multi-resolver DNS validation guidance.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires exact DNS rollback values.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard governs DNS rollback.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires least-privilege IAM and RBAC.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard controls privileged IAM and RBAC.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires service/workload identity lifecycle detail.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prefers workload identity and short-lived mechanisms.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits unnecessary long-lived service-account credentials.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard restricts service-account interactive login.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires service-account credential rotation and expiration.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires Kubernetes service-account token controls.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires IAM simulation or access review guidance.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires service-account lockout analysis.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires privilege-escalation path review.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires approved secret storage.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits certificate-validation bypass.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires PKI and certificate lifecycle controls.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires IIS site and app-pool definition.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits broad IIS filesystem permissions.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires app-pool least privilege.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires explicit IIS production bindings.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires wildcard IIS binding review.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits plaintext secrets in web.config and deployment logs.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard rejects IIS site-start as readiness proof.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires IIS .NET hosting-bundle validation.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires Windows Service definition detail.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires safely quoted Windows Service binary paths.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits unquoted Windows Service paths.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard protects Windows Service directories.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires Windows Service ACL controls.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits Windows Service secrets in ImagePath or arguments.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard rejects Windows Service Running state as readiness proof.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires systemd unit definition detail.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires explicit systemd User and Group.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires systemd root-execution review.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires NoNewPrivileges guidance.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires systemd capability minimization.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires systemd filesystem and sandboxing review.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits world-readable systemd secret files.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard rejects systemd active state as readiness proof.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires Kubernetes non-root posture where feasible.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard controls privileged Kubernetes and container settings.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires image identity and digest review.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires backup, DR, RPO, and RTO controls.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires drift detection.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires policy-as-code enforcement.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits unbounded autoscaling.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires CI/CD least privilege.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits production mutation from untrusted PRs.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard includes validation commands section.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard includes Terraform/OpenTofu validation examples.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard qualifies backendless Terraform initialization.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard rejects backendless plans as authoritative production evidence.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard restricts backendless Terraform evidence claims.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires authoritative Terraform plan context.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard includes Azure what-if validation example.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard includes AWS CloudFormation validation example.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard identifies CloudFormation change-set creation as mutation.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard separates CloudFormation change sets from offline validation.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires CloudFormation change-set cleanup.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard rejects CloudFormation change-set creation as readiness proof.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard includes Kubernetes server-side dry-run example.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard includes Helm rendering validation example.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard declares honest completion statuses.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits false infrastructure evidence.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow apply without a plan where supported.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow cached CLI context as production proof.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow empty target to mean all resources.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow state locking bypass.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow committed state files.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not treat force-unlock as always safe.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow default manual state editing.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not prefer floating latest tags.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow mutable GitHub Action tags.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires destructive approval.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not treat public ingress from anywhere as safe.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow wildcard IAM without review.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow plaintext secrets in tfvars.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow certificate-validation bypass.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not treat snapshots as restore proof.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow production as a test substitute.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow cluster-admin as default.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not prefer privileged containers.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow unbounded autoscaling.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow ignored policy failures.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not equate apply success with readiness.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow missing infrastructure validation to be marked Passed.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow broad write access to IIS content.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires wildcard IIS binding review.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not equate IIS site start with readiness.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits unquoted Windows Service paths.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard protects Windows Service executable directories.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard restricts service-account interactive login.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not equate Windows Service Running state with readiness.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow root as the default systemd identity.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard keeps NoNewPrivileges guidance.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits world-readable secret environment files.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not equate systemd active state with readiness.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires PTR consideration where relevant.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires split-horizon DNS scope.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires DNSSEC rollover planning.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard rejects immediate TTL assumptions.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires certificate SAN and DNS alignment.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires production image digests.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not accept latest tags for production identity.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires temporary firewall expiration.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prohibits public administrative interfaces without Critical approval.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires emergency firewall cleanup.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard prefers workload identity over long-lived credentials.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard disables unnecessary service-account interactive login.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard requires Kubernetes service-account token review.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard rejects backendless Terraform plans as authoritative production evidence.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard identifies CloudFormation change-set creation as credentialed mutation.",
+      "path": "agents/AGENTS_Infrastructure.md",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Infrastructure standard does not allow missing Infrastructure 1.1.1 validation to be marked Passed.",
+      "path": "agents/AGENTS_Infrastructure.md",
       "data": null
     },
     {

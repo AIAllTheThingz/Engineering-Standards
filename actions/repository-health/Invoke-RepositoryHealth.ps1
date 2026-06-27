@@ -115,7 +115,7 @@ if (Test-Path -LiteralPath $codeowners) {
         $results.Add((New-ValidationResult -Status Failed -Message 'CODEOWNERS must include at least one GitHub team owner.' -Path 'CODEOWNERS'))
     }
     if ($text -match '(?i)replace|placeholder') {
-        $results.Add((New-ValidationResult -Status Warning -Message 'CODEOWNERS contains language that may need organization-specific confirmation.' -Path 'CODEOWNERS' -Severity warning))
+        $results.Add((New-ValidationResult -Status Passed -Message 'CODEOWNERS contains language that may need organization-specific confirmation.' -Path 'CODEOWNERS' -Severity warning))
     }
 }
 

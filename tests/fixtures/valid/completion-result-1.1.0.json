@@ -1,0 +1,188 @@
+{
+  "schemaVersion": "1.1.0",
+  "executionContext": "Local",
+  "githubRunId": null,
+  "githubRunAttempt": null,
+  "githubWorkflow": null,
+  "githubJob": null,
+  "artifactName": null,
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "commitSha": "1111111111111111111111111111111111111111",
+  "validatedCommitSha": "1111111111111111111111111111111111111111",
+  "evidenceCommitSha": null,
+  "branch": "master",
+  "pullRequest": null,
+  "governanceVersion": "1.1.0",
+  "riskClassification": "High",
+  "changeCategory": "documentation",
+  "status": "NotRun",
+  "startedAtUtc": "2026-06-19T00:00:00Z",
+  "completedAtUtc": "2026-06-19T00:00:10Z",
+  "durationSeconds": 10,
+  "summary": "Valid 1.1.0 local completion fixture with honest GitHub NotRun evidence.",
+  "changedFiles": [
+    "README.md"
+  ],
+  "changedFileCategories": {
+    "source": [],
+    "documentation": [
+      "README.md"
+    ],
+    "configuration": [],
+    "tests": [],
+    "generatedEvidence": [],
+    "generatedBuildOutput": []
+  },
+  "environment": {
+    "name": "local",
+    "type": "development",
+    "production": false,
+    "tenant": null,
+    "account": null,
+    "subscription": null,
+    "project": null,
+    "region": null,
+    "zone": null,
+    "cluster": null,
+    "namespace": null
+  },
+  "productionChange": false,
+  "approvalRequired": false,
+  "executionMode": {
+    "dryRun": false,
+    "whatIf": false,
+    "planOnly": false,
+    "applied": false
+  },
+  "dataClassification": "Internal",
+  "identityUsed": "Local maintainer context",
+  "credentialMode": "Local workstation credentials",
+  "notRunReason": "GitHub-hosted Governance CI workflow execution was not performed in this execution context.",
+  "blockedReason": null,
+  "notApplicableRationale": null,
+  "commandsExecuted": [
+    "pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path ."
+  ],
+  "commandsNotExecuted": [
+    "GitHub-hosted Governance CI workflow execution was not performed in this execution context."
+  ],
+  "tests": [
+    {
+      "schemaVersion": "1.1.0",
+      "name": "Documentation completeness",
+      "category": "documentation",
+      "status": "Passed",
+      "requiredValidation": true,
+      "evidenceSource": "local-execution",
+      "environment": "developer-workstation",
+      "command": "pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .",
+      "workingDirectory": ".",
+      "startedAtUtc": "2026-06-19T00:00:00Z",
+      "completedAtUtc": "2026-06-19T00:00:01Z",
+      "durationSeconds": 1,
+      "runtime": "PowerShell 7",
+      "toolVersion": "7.x",
+      "exitCode": 0,
+      "summary": "Documentation completeness passed.",
+      "warnings": [],
+      "failureReason": null,
+      "blockedReason": null,
+      "notApplicableRationale": null,
+      "manualProcedure": null,
+      "executionMode": {
+        "dryRun": false,
+        "whatIf": false,
+        "planOnly": false,
+        "applied": true
+      },
+      "details": {
+        "coverage": "docs"
+      }
+    },
+    {
+      "schemaVersion": "1.1.0",
+      "name": "GitHub-hosted workflow execution",
+      "category": "workflow",
+      "status": "NotRun",
+      "requiredValidation": true,
+      "evidenceSource": "local-summary",
+      "environment": "github-actions",
+      "command": "Governance CI",
+      "workingDirectory": ".",
+      "startedAtUtc": "2026-06-19T00:00:02Z",
+      "completedAtUtc": "2026-06-19T00:00:02Z",
+      "durationSeconds": 0,
+      "runtime": "GitHub Actions",
+      "toolVersion": "n/a",
+      "exitCode": 3,
+      "summary": "GitHub-hosted workflow execution was not run locally.",
+      "warnings": [],
+      "failureReason": "GitHub-hosted workflow execution was not performed in this execution context.",
+      "blockedReason": null,
+      "notApplicableRationale": null,
+      "manualProcedure": null,
+      "executionMode": {
+        "dryRun": false,
+        "whatIf": false,
+        "planOnly": false,
+        "applied": false
+      },
+      "details": {
+        "requiredExternalSystem": "GitHub Actions"
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "schemaVersion": "1.1.0",
+      "name": "validation-report",
+      "artifactType": "report",
+      "path": "evidence/report.json",
+      "mediaType": "application/json",
+      "sizeBytes": 2,
+      "hashAlgorithm": "SHA-256",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "createdAtUtc": "2026-06-19T00:00:00Z",
+      "publishedAtUtc": null,
+      "producer": "fixture",
+      "retention": "audit",
+      "sensitivity": "Internal",
+      "classification": "Internal",
+      "relatedTest": "Documentation completeness",
+      "sourceCommitSha": "1111111111111111111111111111111111111111",
+      "validatedCommitSha": "1111111111111111111111111111111111111111",
+      "githubRunId": null,
+      "githubRunAttempt": null,
+      "jobName": null,
+      "finality": "final",
+      "signed": null,
+      "attested": null,
+      "authorizationBoundary": "Local",
+      "verifiedAtUtc": null,
+      "verifiedBy": null,
+      "expiresAtUtc": null,
+      "integrityVerification": {
+        "status": "Passed",
+        "summary": "Fixture artifact hash declared."
+      }
+    }
+  ],
+  "warnings": [],
+  "knownLimitations": [],
+  "remainingRisks": [
+    "GitHub-hosted validation remains NotRun in local-only evidence."
+  ],
+  "exceptions": [],
+  "approvals": [],
+  "operations": {
+    "maintenanceWindow": null,
+    "rollbackPlan": null,
+    "rollbackTestedStatus": "NotApplicable",
+    "rollForwardPlan": null,
+    "backupRequired": false,
+    "backupVerification": null,
+    "restoreVerification": null,
+    "destructiveOperations": false
+  },
+  "technologyEvidence": {}
+}

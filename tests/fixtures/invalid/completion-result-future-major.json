@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "2.0.0",
+  "executionContext": "Local",
+  "githubRunId": null,
+  "githubRunAttempt": null,
+  "githubWorkflow": null,
+  "githubJob": null,
+  "artifactName": null,
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "commitSha": "1111111111111111111111111111111111111111",
+  "validatedCommitSha": "1111111111111111111111111111111111111111",
+  "evidenceCommitSha": null,
+  "branch": "master",
+  "pullRequest": null,
+  "governanceVersion": "1.1.0",
+  "riskClassification": "High",
+  "changeCategory": "documentation",
+  "status": "NotRun",
+  "startedAtUtc": "2026-06-19T00:00:00Z",
+  "completedAtUtc": "2026-06-19T00:00:10Z",
+  "durationSeconds": 10,
+  "summary": "Unsupported future-major schema fixture.",
+  "changedFiles": [
+    "README.md"
+  ],
+  "changedFileCategories": {
+    "source": [],
+    "documentation": [
+      "README.md"
+    ],
+    "configuration": [],
+    "tests": [],
+    "generatedEvidence": [],
+    "generatedBuildOutput": []
+  },
+  "environment": {
+    "name": "local",
+    "type": "development",
+    "production": false
+  },
+  "productionChange": false,
+  "approvalRequired": false,
+  "executionMode": {
+    "dryRun": false,
+    "whatIf": false,
+    "planOnly": false,
+    "applied": false
+  },
+  "dataClassification": "Internal",
+  "identityUsed": "Local maintainer context",
+  "credentialMode": "Local workstation credentials",
+  "notRunReason": "GitHub-hosted Governance CI workflow execution was not performed in this execution context.",
+  "blockedReason": null,
+  "notApplicableRationale": null,
+  "commandsExecuted": [],
+  "commandsNotExecuted": [
+    "GitHub-hosted Governance CI workflow execution was not performed in this execution context."
+  ],
+  "tests": [],
+  "artifacts": [],
+  "warnings": [],
+  "knownLimitations": [],
+  "remainingRisks": [],
+  "exceptions": [],
+  "approvals": [],
+  "operations": {
+    "maintenanceWindow": null,
+    "rollbackPlan": null,
+    "rollbackTestedStatus": "NotApplicable",
+    "rollForwardPlan": null,
+    "backupRequired": false,
+    "backupVerification": null,
+    "restoreVerification": null,
+    "destructiveOperations": false
+  },
+  "technologyEvidence": {}
+}

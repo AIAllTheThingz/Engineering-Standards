@@ -27,11 +27,12 @@ $results = [System.Collections.Generic.List[object]]::new()
 
 function Add-Result {
     param(
-        [ValidateSet('Passed','Failed','Warning','NotRun','Blocked')][string]$Status,
+        [ValidateSet('Passed','Failed','NotRun','Blocked','NotApplicable')][string]$Status,
         [string]$Message,
-        [string]$RelativePath
+        [string]$RelativePath,
+        [ValidateSet('info','warning','error')][string]$Severity = $(if ($Status -eq 'Passed' -or $Status -eq 'NotApplicable') { 'info' } else { 'error' })
     )
-    $results.Add((New-ValidationResult -Status $Status -Message $Message -Path $RelativePath))
+    $results.Add((New-ValidationResult -Status $Status -Message $Message -Path $RelativePath -Severity $Severity))
 }
 
 function Get-RelativePath {

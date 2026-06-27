@@ -1,0 +1,11 @@
+{
+  "apiSurface": "synthetic-powershell-command-surface",
+  "jobId": "job-req-001",
+  "state": "Completed",
+  "idempotencyKey": "tenant-a/req-001/example-report",
+  "duplicateHandling": "return-existing-job",
+  "retryBehavior": "manual-retry-with-idempotent-job-record",
+  "deadLetterBehavior": "not-triggered-in-happy-path-smoke",
+  "reportPath": "evidence/reports/job-req-001.json",
+  "artifactState": "Final"
+}

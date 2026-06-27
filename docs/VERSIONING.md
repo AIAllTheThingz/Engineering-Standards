@@ -47,6 +47,13 @@ Adding optional fields is usually compatible. Adding required fields, narrowing 
 
 Schema changes MUST include fixture updates and validation evidence.
 
+Current evidence-schema migration approach:
+
+- Existing historical documents may remain at `1.0.0`.
+- New additive fields are introduced under `1.1.0`.
+- Validators may accept both `1.0.0` and `1.1.0` during the compatibility window.
+- Generators should move forward to `1.1.0` once the compatibility path is in place.
+
 ## Workflow Compatibility
 
 Reusable workflow changes are breaking when they remove inputs, rename required jobs, require new permissions, change artifact names relied on by downstream automation, or stop supporting a branch pattern used by downstream repositories.

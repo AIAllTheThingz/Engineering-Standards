@@ -37,12 +37,17 @@ name: Governance CI
 on:
   push:
     branches: [master]
+permissions:
+  contents: read
+concurrency:
+  group: governance-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   governance:
     uses: ./.github/workflows/governance-ci-reusable.yml
     with:
       project-path: .
-      governance-version: 1.0.0
+      governance-version: 1.1.0
       run-examples: true
       run-pester: true
       run-documentation-validation: true
@@ -54,16 +59,26 @@ on:
   workflow_call:
     inputs:
       project-path: { type: string, required: false, default: . }
-      governance-version: { type: string, required: false, default: 1.0.0 }
+      governance-version: { type: string, required: false, default: 1.1.0 }
       run-examples: { type: boolean, required: false, default: true }
       run-pester: { type: boolean, required: false, default: true }
       run-documentation-validation: { type: boolean, required: false, default: true }
       artifact-retention-days: { type: number, required: false, default: 30 }
+permissions:
+  contents: read
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874
+        with:
+          name: governance-${{ github.run_id }}
+          path: evidence
+          if-no-files-found: error
       - shell: pwsh
         run: |
           Write-Output '${{ inputs.project-path }}'
@@ -280,6 +295,261 @@ jobs:
         $LASTEXITCODE | Should -Not -Be 0
     }
 
+    It 'fails missing explicit permissions' {
+        $root = New-WorkflowFixture -Name 'missing-permissions'
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci.yml' -Content @'
+name: Governance CI
+on:
+  push:
+    branches: [master]
+jobs:
+  governance:
+    uses: ./.github/workflows/governance-ci-reusable.yml
+    with:
+      project-path: .
+      governance-version: 1.1.0
+      run-examples: true
+      run-pester: true
+      run-documentation-validation: true
+      artifact-retention-days: 30
+'@
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci-reusable.yml' -Content @'
+name: Reusable
+on:
+  workflow_call:
+    inputs:
+      project-path: { type: string, required: false, default: . }
+      governance-version: { type: string, required: false, default: 1.1.0 }
+      run-examples: { type: boolean, required: false, default: true }
+      run-pester: { type: boolean, required: false, default: true }
+      run-documentation-validation: { type: boolean, required: false, default: true }
+      artifact-retention-days: { type: number, required: false, default: 30 }
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874
+        with:
+          name: governance-${{ github.run_id }}
+          path: evidence
+          if-no-files-found: error
+'@
+        & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master
+        $LASTEXITCODE | Should -Not -Be 0
+    }
+
+    It 'fails missing entry concurrency' {
+        $root = New-WorkflowFixture -Name 'missing-concurrency'
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci.yml' -Content @'
+name: Governance CI
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  governance:
+    uses: ./.github/workflows/governance-ci-reusable.yml
+    with:
+      project-path: .
+      governance-version: 1.1.0
+      run-examples: true
+      run-pester: true
+      run-documentation-validation: true
+      artifact-retention-days: 30
+'@
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci-reusable.yml' -Content @'
+name: Reusable
+on:
+  workflow_call:
+    inputs:
+      project-path: { type: string, required: false, default: . }
+      governance-version: { type: string, required: false, default: 1.1.0 }
+      run-examples: { type: boolean, required: false, default: true }
+      run-pester: { type: boolean, required: false, default: true }
+      run-documentation-validation: { type: boolean, required: false, default: true }
+      artifact-retention-days: { type: number, required: false, default: 30 }
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874
+        with:
+          name: governance-${{ github.run_id }}
+          path: evidence
+          if-no-files-found: error
+'@
+        & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master
+        $LASTEXITCODE | Should -Not -Be 0
+    }
+
+    It 'fails missing timeout on executable job' {
+        $root = New-WorkflowFixture -Name 'missing-timeout'
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci.yml' -Content @'
+name: Governance CI
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+concurrency:
+  group: governance-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  governance:
+    uses: ./.github/workflows/governance-ci-reusable.yml
+    with:
+      project-path: .
+      governance-version: 1.1.0
+      run-examples: true
+      run-pester: true
+      run-documentation-validation: true
+      artifact-retention-days: 30
+'@
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci-reusable.yml' -Content @'
+name: Reusable
+on:
+  workflow_call:
+    inputs:
+      project-path: { type: string, required: false, default: . }
+      governance-version: { type: string, required: false, default: 1.1.0 }
+      run-examples: { type: boolean, required: false, default: true }
+      run-pester: { type: boolean, required: false, default: true }
+      run-documentation-validation: { type: boolean, required: false, default: true }
+      artifact-retention-days: { type: number, required: false, default: 30 }
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874
+        with:
+          name: governance-${{ github.run_id }}
+          path: evidence
+          if-no-files-found: error
+'@
+        & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master
+        $LASTEXITCODE | Should -Not -Be 0
+    }
+
+    It 'fails checkout without persist-credentials false' {
+        $root = New-WorkflowFixture -Name 'checkout-persist-credentials'
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci.yml' -Content @'
+name: Governance CI
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+concurrency:
+  group: governance-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  governance:
+    uses: ./.github/workflows/governance-ci-reusable.yml
+    with:
+      project-path: .
+      governance-version: 1.1.0
+      run-examples: true
+      run-pester: true
+      run-documentation-validation: true
+      artifact-retention-days: 30
+'@
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci-reusable.yml' -Content @'
+name: Reusable
+on:
+  workflow_call:
+    inputs:
+      project-path: { type: string, required: false, default: . }
+      governance-version: { type: string, required: false, default: 1.1.0 }
+      run-examples: { type: boolean, required: false, default: true }
+      run-pester: { type: boolean, required: false, default: true }
+      run-documentation-validation: { type: boolean, required: false, default: true }
+      artifact-retention-days: { type: number, required: false, default: 30 }
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874
+        with:
+          name: governance-${{ github.run_id }}
+          path: evidence
+          if-no-files-found: error
+'@
+        & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master
+        $LASTEXITCODE | Should -Not -Be 0
+    }
+
+    It 'fails artifact upload with warn-on-missing files' {
+        $root = New-WorkflowFixture -Name 'artifact-warn'
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci.yml' -Content @'
+name: Governance CI
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+concurrency:
+  group: governance-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  governance:
+    uses: ./.github/workflows/governance-ci-reusable.yml
+    with:
+      project-path: .
+      governance-version: 1.1.0
+      run-examples: true
+      run-pester: true
+      run-documentation-validation: true
+      artifact-retention-days: 30
+'@
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci-reusable.yml' -Content @'
+name: Reusable
+on:
+  workflow_call:
+    inputs:
+      project-path: { type: string, required: false, default: . }
+      governance-version: { type: string, required: false, default: 1.1.0 }
+      run-examples: { type: boolean, required: false, default: true }
+      run-pester: { type: boolean, required: false, default: true }
+      run-documentation-validation: { type: boolean, required: false, default: true }
+      artifact-retention-days: { type: number, required: false, default: 30 }
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874
+        with:
+          name: governance-${{ github.run_id }}
+          path: evidence
+          if-no-files-found: warn
+'@
+        & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master
+        $LASTEXITCODE | Should -Not -Be 0
+    }
+
     It 'fails default branch trigger mismatch' {
         $root = New-WorkflowFixture -Name 'branch-mismatch'
         Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci.yml' -Content @'
@@ -317,9 +587,21 @@ name: Governance CI
 on:
   push:
     branches: [master]
+permissions:
+  contents: read
+concurrency:
+  group: governance-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   governance:
     uses: ./.github/workflows/governance-ci-reusable.yml
+    with:
+      project-path: .
+      governance-version: 1.1.0
+      run-examples: true
+      run-pester: true
+      run-documentation-validation: true
+      artifact-retention-days: 30
 '@
         Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci-reusable.yml' -Content @'
 name: Reusable
@@ -327,15 +609,26 @@ on:
   workflow_call:
     inputs:
       project-path: { type: string, required: false, default: . }
-      governance-version: { type: string, required: false, default: 1.0.0 }
+      governance-version: { type: string, required: false, default: 1.1.0 }
       run-examples: { type: boolean, required: false, default: true }
       run-pester: { type: boolean, required: false, default: true }
       run-documentation-validation: { type: boolean, required: false, default: true }
       artifact-retention-days: { type: number, required: false, default: 30 }
+permissions:
+  contents: read
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874
+        with:
+          name: governance-${{ github.run_id }}
+          path: evidence
+          if-no-files-found: error
       - run: |
           echo '${{ inputs.project-path }}'
           echo '${{ inputs.governance-version }}'
@@ -347,14 +640,26 @@ jobs:
         Set-FixtureFile -Root $root -RelativePath 'workflows/powershell-ci.yml' -Content @'
 # Distribution template only. GitHub does not execute reusable workflows from
 # this root workflows/ directory until copied into .github/workflows/ in a
-# downstream repository.
+# downstream repository, and this file is not executable until copied into
+# .github/workflows/ in the downstream repository.
 name: PowerShell CI
 on:
   workflow_call:
+permissions:
+  contents: read
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874
+        with:
+          name: powershell-${{ github.run_id }}
+          path: evidence
+          if-no-files-found: error
       - run: echo ok
 '@
         $report = Join-Path $root 'report.json'
@@ -372,18 +677,48 @@ name: Governance CI
 on:
   push:
     branches: [master]
+permissions:
+  contents: read
+concurrency:
+  group: governance-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   governance:
     uses: ./.github/workflows/governance-ci-reusable.yml
+    with:
+      project-path: .
+      governance-version: 1.1.0
+      run-examples: true
+      run-pester: true
+      run-documentation-validation: true
+      artifact-retention-days: 30
 '@
         Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci-reusable.yml' -Content @'
 name: Reusable
 on:
   workflow_call:
+    inputs:
+      project-path: { type: string, required: false, default: . }
+      governance-version: { type: string, required: false, default: 1.1.0 }
+      run-examples: { type: boolean, required: false, default: true }
+      run-pester: { type: boolean, required: false, default: true }
+      run-documentation-validation: { type: boolean, required: false, default: true }
+      artifact-retention-days: { type: number, required: false, default: 30 }
+permissions:
+  contents: read
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874
+        with:
+          name: governance-${{ github.run_id }}
+          path: evidence
+          if-no-files-found: error
       - run: echo ok
 '@
         Set-FixtureFile -Root $root -RelativePath 'workflows/powershell-ci.yml' -Content @'

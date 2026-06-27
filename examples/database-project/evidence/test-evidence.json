@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.1.0",
+  "name": "Database migration validation",
+  "category": "schema",
+  "status": "Passed",
+  "requiredValidation": true,
+  "evidenceSource": "local-execution",
+  "environment": "developer-workstation",
+  "command": "pwsh -NoProfile -File examples/database-project/tools/Test-Migrations.ps1 -Path examples/database-project",
+  "workingDirectory": "examples/database-project",
+  "startedAtUtc": "2026-06-27T02:32:34.9454613Z",
+  "completedAtUtc": "2026-06-27T02:32:34.9551025Z",
+  "durationSeconds": 0,
+  "runtime": "PowerShell 7.6.2",
+  "toolVersion": "7.6.2",
+  "exitCode": 0,
+  "summary": "Database example migrations passed non-mutating safety validation.",
+  "warnings": [],
+  "failureReason": null,
+  "blockedReason": null,
+  "notApplicableRationale": null,
+  "manualProcedure": null,
+  "executionMode": {
+    "dryRun": false,
+    "whatIf": false,
+    "planOnly": true,
+    "applied": false
+  },
+  "details": {
+    "migrationCount": 1,
+    "destructiveStatementsDetected": false
+  }
+}

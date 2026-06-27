@@ -48,10 +48,79 @@ Describe 'GovernanceValidation module' {
             @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
         }
 
+        It 'rejects NotRun evidence without a reason' {
+            $doc = [ordered]@{
+                schemaVersion = '1.1.0'
+                name = 'Analyzer validation'
+                category = 'lint'
+                status = 'NotRun'
+                requiredValidation = $true
+                evidenceSource = 'local-execution'
+                environment = 'developer-workstation'
+                command = 'Invoke-ScriptAnalyzer -Path .'
+                workingDirectory = '.'
+                startedAtUtc = '2026-06-19T00:00:00Z'
+                completedAtUtc = '2026-06-19T00:00:00Z'
+                durationSeconds = 0
+                runtime = 'PowerShell 7'
+                toolVersion = 'local'
+                exitCode = 3
+                summary = 'Analyzer did not run because the module is unavailable.'
+                warnings = @()
+                failureReason = $null
+            }
+            $path = Join-Path $script:tempRoot 'missing-notrun-reason.json'
+            $doc | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path
+            $results = Test-GovernanceJsonDocument -Path $path -Kind 'test-evidence'
+            @($results | Where-Object { $_.message -match 'meaningful failure reason' }).Count | Should -BeGreaterThan 0
+        }
+
         It 'accepts valid Passed test evidence' {
             $path = "$PSScriptRoot/../fixtures/valid/test-evidence.json"
             $results = Test-GovernanceJsonDocument -Path $path -Kind 'test-evidence'
             @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
+        }
+    }
+
+    Context 'completion evidence semantics' {
+        It 'rejects approval-required Passed evidence without approvals' {
+            $doc = Get-Content "$PSScriptRoot/../fixtures/valid/completion-result-1.1.0.json" -Raw | ConvertFrom-Json -AsHashtable
+            $doc.approvalRequired = $true
+            $doc.executionContext = 'GitHubActions'
+            $doc.status = 'Passed'
+            $doc.notRunReason = $null
+            $doc.commandsNotExecuted = @()
+            $doc.githubRunId = '123456789'
+            $doc.githubRunAttempt = '1'
+            $doc.githubWorkflow = 'Governance CI'
+            $doc.githubJob = 'Governance CI'
+            $doc.tests[1].status = 'Passed'
+            $doc.tests[1].failureReason = $null
+            $doc.tests[1].exitCode = 0
+            $doc.approvals = @()
+            $path = Join-Path $script:tempRoot 'approval-missing.json'
+            $doc | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $path
+            $results = Test-GovernanceJsonDocument -Path $path -Kind 'completion-result'
+            @($results | Where-Object { $_.message -match 'approval' }).Count | Should -BeGreaterThan 0
+        }
+
+        It 'rejects Blocked completion evidence without a blocked reason' {
+            $doc = Get-Content "$PSScriptRoot/../fixtures/valid/completion-result-1.1.0.json" -Raw | ConvertFrom-Json -AsHashtable
+            $doc.status = 'Blocked'
+            $doc.blockedReason = $null
+            $path = Join-Path $script:tempRoot 'blocked-missing-reason.json'
+            $doc | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $path
+            $results = Test-GovernanceJsonDocument -Path $path -Kind 'completion-result'
+            @($results | Where-Object { $_.message -match 'Blocked' -or $_.message -match 'blockedReason' }).Count | Should -BeGreaterThan 0
+        }
+
+        It 'rejects unsupported future major schema versions' {
+            $doc = Get-Content "$PSScriptRoot/../fixtures/valid/completion-result-1.1.0.json" -Raw | ConvertFrom-Json -AsHashtable
+            $doc.schemaVersion = '2.0.0'
+            $path = Join-Path $script:tempRoot 'future-major.json'
+            $doc | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $path
+            $results = Test-GovernanceJsonDocument -Path $path -Kind 'completion-result'
+            @($results | Where-Object status -eq 'Failed').Count | Should -BeGreaterThan 0
         }
     }
 

@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-20T21:35:59.2401503Z",
+  "generatedAtUtc": "2026-06-27T02:07:37.0984454Z",
   "results": [
     {
       "status": "Passed",
@@ -54,6 +54,13 @@
       "status": "Passed",
       "severity": "info",
       "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "examples/combined-script-runner-project/.github/workflows/governance.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
       "path": "examples/database-project/.github/workflows/governance.yml",
       "data": null
     },
@@ -62,6 +69,20 @@
       "severity": "info",
       "message": "YAML parsed with PyYAML 6.0.2.",
       "path": "examples/dotnet-project/.github/workflows/governance.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "examples/infrastructure-project/.github/workflows/governance.yml",
+      "data": null
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "YAML parsed with PyYAML 6.0.2.",
+      "path": "examples/integration-project/.github/workflows/governance.yml",
       "data": null
     },
     {

@@ -1,11 +1,10 @@
 {
-  "generatedAtUtc": "2026-06-20T21:38:47.2150764Z",
-  "status": "Passed",
-  "total": 86,
-  "passed": 86,
+  "generatedAtUtc": "2026-06-27T02:20:13.6118873Z",
+  "total": 176,
+  "passed": 176,
   "failed": 0,
   "skipped": 0,
   "inconclusive": 0,
   "notRun": 0,
-  "duration": "00:02:29.0284048"
+  "durationSeconds": 461.482
 }

@@ -34,7 +34,7 @@ The script refuses `Passed` when supplied tests contain Failed, NotRun, or Block
 param(
     [string]$RepositoryPath='.',
     [Parameter(Mandatory)][string]$OutputPath,
-    [string]$GovernanceVersion='1.0.0',
+    [string]$GovernanceVersion='1.1.0',
     [ValidateSet('Low','Moderate','High','Critical')][string]$RiskClassification='High',
     [ValidateSet('Passed','Failed','NotRun','NotApplicable','Blocked')][string]$Status='NotRun',
     [Parameter(Mandatory)][string]$Summary,
@@ -51,7 +51,11 @@ param(
     [string]$EvidenceExecutionContext = $(if ($env:GITHUB_ACTIONS -eq 'true') { 'GitHubActions' } else { 'Local' }),
     [string]$ArtifactName,
     [string]$ValidatedCommitSha,
-    [AllowNull()][string]$EvidenceCommitSha = $null
+    [AllowNull()][string]$EvidenceCommitSha = $null,
+    [string]$ChangeCategory = 'mixed',
+    [switch]$ApprovalRequired,
+    [switch]$ProductionChange,
+    [string]$DataClassification = 'Internal'
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -78,6 +82,20 @@ if ($Status -ne $computedStatus) {
         throw "Caller status '$Status' contradicts computed test-record status '$computedStatus'."
     }
 }
+$commit = $env:GITHUB_SHA
+if (-not $commit) {
+    $commit = (& git -C $root rev-parse HEAD 2>$null)
+    if ($LASTEXITCODE -ne 0 -or -not $commit) { $commit = 'unknown' }
+}
+$validatedCommit = if ($ValidatedCommitSha) { $ValidatedCommitSha } else { $commit }
+$branch = $env:GITHUB_REF_NAME
+if (-not $branch) {
+    $branch = (& git -C $root branch --show-current 2>$null)
+    if ($LASTEXITCODE -ne 0 -or -not $branch) { $branch = 'unknown' }
+}
+$githubRunId = if ($env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID } else { $null }
+$githubRunAttempt = if ($env:GITHUB_RUN_ATTEMPT) { $env:GITHUB_RUN_ATTEMPT } else { $null }
+$githubWorkflow = if ($env:GITHUB_WORKFLOW) { $env:GITHUB_WORKFLOW } else { $null }
 $artifacts = @()
 foreach ($artifact in $ArtifactPath) {
     if ($artifact -eq $OutputPath) { continue }
@@ -104,18 +122,37 @@ foreach ($artifact in $ArtifactPath) {
             default { $null }
         }
         $artifacts += [ordered]@{
-            schemaVersion = '1.0.0'
+            schemaVersion = '1.1.0'
             name = $item.Name
             artifactType = 'report'
             path = $artifact
             mediaType = $mediaType
             sizeBytes = $item.Length
+            hashAlgorithm = 'SHA-256'
             sha256 = (Get-FileHash -LiteralPath $resolved -Algorithm SHA256).Hash.ToLowerInvariant()
             createdAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+            publishedAtUtc = $null
             producer = 'New-CompletionEvidence.ps1'
             retention = 'audit'
             sensitivity = 'Internal'
+            classification = 'Internal'
             relatedTest = $related
+            sourceCommitSha = $validatedCommit.Trim()
+            validatedCommitSha = $validatedCommit.Trim()
+            githubRunId = $githubRunId
+            githubRunAttempt = $githubRunAttempt
+            jobName = $githubWorkflow
+            finality = 'final'
+            signed = $null
+            attested = $null
+            authorizationBoundary = $EvidenceExecutionContext
+            verifiedAtUtc = $null
+            verifiedBy = $null
+            expiresAtUtc = $null
+            integrityVerification = [ordered]@{
+                status = 'Passed'
+                summary = 'Artifact hash was generated at evidence creation time.'
+            }
         }
     }
 }
@@ -158,17 +195,6 @@ function Get-ChangedFileCategories {
     $categories
 }
 
-$commit = $env:GITHUB_SHA
-if (-not $commit) {
-    $commit = (& git -C $root rev-parse HEAD 2>$null)
-    if ($LASTEXITCODE -ne 0 -or -not $commit) { $commit = 'unknown' }
-}
-$validatedCommit = if ($ValidatedCommitSha) { $ValidatedCommitSha } else { $commit }
-$branch = $env:GITHUB_REF_NAME
-if (-not $branch) {
-    $branch = (& git -C $root branch --show-current 2>$null)
-    if ($LASTEXITCODE -ne 0 -or -not $branch) { $branch = 'unknown' }
-}
 $changedFiles = @(& git -C $root status --short 2>$null | ForEach-Object { $_.Substring(3).Replace('\','/') })
 if ($changedFiles.Count -eq 0 -and $commit -ne 'unknown') {
     $changedFiles = @(& git -C $root diff-tree --no-commit-id --name-only -r $commit 2>$null | ForEach-Object { $_.Replace('\','/') })
@@ -176,15 +202,13 @@ if ($changedFiles.Count -eq 0 -and $commit -ne 'unknown') {
 $changedFiles = @($changedFiles | Where-Object { -not (Test-GeneratedBuildOutputPath -Path $_) } | Sort-Object -Unique)
 if ($changedFiles.Count -eq 0) { $changedFiles = @('unknown') }
 $changedFileCategories = Get-ChangedFileCategories -Files $changedFiles
-$githubRunId = if ($env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID } else { $null }
-$githubRunAttempt = if ($env:GITHUB_RUN_ATTEMPT) { $env:GITHUB_RUN_ATTEMPT } else { $null }
-$githubWorkflow = if ($env:GITHUB_WORKFLOW) { $env:GITHUB_WORKFLOW } else { $null }
 $evidence = [ordered]@{
-    schemaVersion = '1.0.0'
+    schemaVersion = '1.1.0'
     executionContext = $EvidenceExecutionContext
     githubRunId = $githubRunId
     githubRunAttempt = $githubRunAttempt
     githubWorkflow = $githubWorkflow
+    githubJob = $githubWorkflow
     artifactName = $(if ($ArtifactName) { $ArtifactName } else { $null })
     repository = $(if ($env:GITHUB_REPOSITORY) { $env:GITHUB_REPOSITORY } else { Get-OriginRepositoryName -RepositoryRoot $root })
     commitSha = $validatedCommit.Trim()
@@ -194,12 +218,41 @@ $evidence = [ordered]@{
     pullRequest = $null
     governanceVersion = $GovernanceVersion
     riskClassification = $RiskClassification
+    changeCategory = $ChangeCategory
     status = $computedStatus
     startedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
     completedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+    durationSeconds = 0
     summary = $Summary
     changedFiles = @($changedFiles)
     changedFileCategories = $changedFileCategories
+    environment = [ordered]@{
+        name = $(if ($EvidenceExecutionContext -eq 'GitHubActions') { 'github-actions' } else { 'local' })
+        type = $(if ($EvidenceExecutionContext -eq 'GitHubActions') { 'test' } else { 'development' })
+        production = $false
+        tenant = $null
+        account = $null
+        subscription = $null
+        project = $null
+        region = $null
+        zone = $null
+        cluster = $null
+        namespace = $null
+    }
+    productionChange = $ProductionChange.IsPresent
+    approvalRequired = $ApprovalRequired.IsPresent
+    executionMode = [ordered]@{
+        dryRun = $false
+        whatIf = $false
+        planOnly = $false
+        applied = ($EvidenceExecutionContext -eq 'GitHubActions')
+    }
+    dataClassification = $DataClassification
+    identityUsed = $(if ($EvidenceExecutionContext -eq 'GitHubActions') { 'GitHub Actions runner identity' } else { 'Local maintainer context' })
+    credentialMode = $(if ($EvidenceExecutionContext -eq 'GitHubActions') { 'GitHub-provided ephemeral token' } else { 'Local workstation credentials' })
+    notRunReason = $(if ($computedStatus -eq 'NotRun') { if (@($CommandsNotExecuted).Count -gt 0) { @($CommandsNotExecuted)[0] } else { 'Mandatory validation did not execute.' } } else { $null })
+    blockedReason = $null
+    notApplicableRationale = $null
     commandsExecuted = @($CommandsExecuted)
     commandsNotExecuted = @($CommandsNotExecuted)
     tests = @($tests)
@@ -209,6 +262,17 @@ $evidence = [ordered]@{
     remainingRisks = @($RemainingRisks)
     exceptions = @($Exceptions)
     approvals = @()
+    operations = [ordered]@{
+        maintenanceWindow = $null
+        rollbackPlan = $null
+        rollbackTestedStatus = 'NotApplicable'
+        rollForwardPlan = $null
+        backupRequired = $false
+        backupVerification = $null
+        restoreVerification = $null
+        destructiveOperations = $false
+    }
+    technologyEvidence = [ordered]@{}
 }
 $out = Resolve-SafePath -Root $root -ChildPath $OutputPath -AllowMissingLeaf
 New-Item -ItemType Directory -Path (Split-Path -Parent $out) -Force | Out-Null

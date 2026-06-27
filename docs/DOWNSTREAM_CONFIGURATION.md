@@ -37,6 +37,8 @@ The manifest is intentionally concise. It should identify the project clearly wi
 | `owners` | Yes | Accountable maintainers. | Must be real owners, not unowned aliases. |
 | `evidence` | Yes | Evidence file paths. | Must match generated evidence artifacts. |
 | `exceptions` | No | Approved `GOV-*` exceptions. | Must be current, scoped, and unexpired. |
+| `workflowInterfaceVersion` | No | Workflow interface version expected by the repository. | Use when downstream automation binds to a specific reusable workflow contract. |
+| `supportedEvidenceSchemaVersions` | No | Accepted evidence schema versions. | Use during additive migration windows such as `1.0.0` to `1.1.0`. |
 
 ## Governance Config Schema
 
@@ -55,7 +57,9 @@ The governance config MUST NOT be used to remove mandatory controls silently. If
 | `applicableAgentStandards` | Yes | Central standard paths. | Must align with manifest standards. |
 | `additionalForbiddenPatterns` | No | Repository-specific scanner rules. | Must not duplicate central rules without reason. |
 | `reviewedAllowlist` | No | Approved scanner exceptions. | Must include owner, reason, scope, and expiration. |
-| `optionalValidationCategories` | No | Additional validation categories. | Optional does not mean unreviewed. |
+| `schemaSupport` | No | Supported evidence schema versions and compatibility window. | Use to declare additive migration support explicitly. |
+| `workflowInterfaces` | No | Named workflow interfaces used by the repository. | Keep aligned with reusable workflow consumers. |
+| `branchProtectionCheckName` | No | Exact required GitHub check name. | Use the exact check string after it exists in GitHub. |
 | `controls` | Yes | Control toggles. | Disabled mandatory controls require `GOV-*` exceptions. |
 | `exceptions` | No | Active governance exceptions. | Must match exception records and evidence. |
 

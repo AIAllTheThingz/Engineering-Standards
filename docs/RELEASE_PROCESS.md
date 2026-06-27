@@ -58,6 +58,16 @@ pwsh -NoProfile -Command "Invoke-Pester -Path tests -Output Detailed"
 
 If a validator is unavailable, record the result as `NotRun` or `Blocked` with the reason. Do not convert missing validation into success.
 
+Before release approval, maintainers MUST also confirm:
+
+- Clean worktree
+- Final diff review
+- Exact target SHA
+- Branch-protection inspection status
+- Success GitHub run for the exact release target
+- Controlled-failure proof run for the exact release target
+- Independent artifact download and verification
+
 ## Evidence Generation
 
 Generate completion evidence after validation. Evidence must include the validation commands, exit codes, status, timestamps, warnings, skipped checks, and artifact references.
@@ -94,6 +104,8 @@ git push origin v1.2.3
 ```
 
 Tags SHOULD be protected. Do not rewrite release tags. If a tag is incorrect, publish a corrective patch release unless the security incident process explicitly authorizes a different action.
+
+If no tag exists yet, document that the release is prepared but unpublished. Do not imply publication from a draft note or a prepared changelog entry.
 
 ## Publishing
 

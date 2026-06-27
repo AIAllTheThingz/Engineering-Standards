@@ -22,9 +22,12 @@ jobs:
   web:
     name: Build and test web project
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -55,5 +58,5 @@ jobs:
         with:
           name: web-evidence-${{ github.run_id }}
           path: evidence/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 30

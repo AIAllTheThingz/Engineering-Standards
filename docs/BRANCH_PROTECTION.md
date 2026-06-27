@@ -23,6 +23,26 @@ Protected branches MUST require pull requests before merge, at least one approvi
 
 Repositories handling production infrastructure, restricted data, authentication, authorization, cryptography, or destructive operations SHOULD require two approvals and up-to-date branches before merge.
 
+## Observed Current State
+
+Inspection date: `2026-06-26`
+
+Inspection method:
+
+```powershell
+gh api repos/AIAllTheThingz/Engineering-Standards/branches/master/protection
+```
+
+Observed result for `AIAllTheThingz/Engineering-Standards`:
+
+- Protected branch inspected: `master`
+- Classic branch protection: not configured
+- API result: `404 Branch not protected`
+- Required checks observed: none through classic branch protection
+- Ruleset state: unverified by this document unless separately exported from repository settings
+
+This section is descriptive evidence, not a recommendation. The recommended configuration in this guide remains stricter than the currently observed repository setting.
+
 ## Required Checks
 
 At minimum, require the governance workflow check produced by the reusable governance workflow. The required check set SHOULD include schema validation, documentation completeness, contract validation, forbidden-pattern scanning, repository health, evidence validation, and applicable technology checks.

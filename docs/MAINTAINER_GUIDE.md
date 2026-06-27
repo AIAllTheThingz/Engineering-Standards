@@ -41,6 +41,8 @@ When changing a schema, update the schema file, at least one valid fixture, at l
 
 Schemas MUST reject ambiguous evidence. For example, overall Passed status cannot coexist with failed mandatory tests.
 
+Additive schema changes should prefer a minor schema version such as `1.1.0` with a documented compatibility window. During that window, validators may accept both `1.0.0` and `1.1.0` while generators move to the newer version.
+
 ## Validator Maintenance
 
 Validators MUST fail closed for malformed required inputs and write structured output when an output path is requested. They must not leak secrets in logs. They should distinguish `Failed`, `Blocked`, and `NotRun` instead of flattening everything into failure.
@@ -72,6 +74,8 @@ Checked-in local evidence and GitHub artifact evidence have different authority.
 Use `validatedCommitSha` for the commit validated by commands. Use `evidenceCommitSha` only when recording the commit that contains a checked-in evidence file. Do not repeatedly regenerate evidence solely to make those fields equal.
 
 After proving a workflow run, update `evidence/latest-verified-run.json` with metadata only: run ID, attempt, artifact ID, artifact ZIP SHA-256, validated commit, controlled-failure run, verification timestamp, and verifier.
+
+When release readiness depends on a current GitHub run, select the exact target SHA first, then dispatch success and controlled-failure proof runs against that target. Do not reuse older verified runs for newer commits.
 
 ## Release Preparation
 

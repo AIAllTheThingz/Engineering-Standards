@@ -1,0 +1,10 @@
+{
+  "planId": "synthetic-plan-001",
+  "planHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "tool": "static-example",
+  "toolVersion": "1.0.0",
+  "policyResult": "Passed",
+  "applyStatus": "NotRun",
+  "applyReason": "Synthetic infrastructure example does not mutate any target environment.",
+  "rollback": "No infrastructure is created by this example."
+}

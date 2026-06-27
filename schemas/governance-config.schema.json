@@ -19,7 +19,10 @@
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "pattern": "^1\\.0\\.0$"
+      "enum": [
+        "1.0.0",
+        "1.1.0"
+      ]
     },
     "manifestPath": {
       "type": "string",
@@ -59,11 +62,74 @@
           "ForbiddenPatterns",
           "RepositoryHealth",
           "Evidence",
-          "Examples"
+          "Examples",
+          "WorkflowArchitecture"
         ]
       },
       "minItems": 1,
       "uniqueItems": true
+    },
+    "schemaSupport": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "supportedCompletionSchemaVersions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^1\\.[01]\\.0$"
+          },
+          "uniqueItems": true
+        },
+        "supportedTestEvidenceSchemaVersions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^1\\.[01]\\.0$"
+          },
+          "uniqueItems": true
+        },
+        "supportedArtifactRecordSchemaVersions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^1\\.[01]\\.0$"
+          },
+          "uniqueItems": true
+        },
+        "minimumSupportedGovernanceVersion": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$"
+        },
+        "compatibilityWindow": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 5,
+          "maxLength": 200
+        }
+      }
+    },
+    "workflowInterfaces": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 120
+      },
+      "uniqueItems": true
+    },
+    "branchProtectionCheckName": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 3,
+      "maxLength": 160
     },
     "additionalForbiddenPatterns": {
       "type": "array",

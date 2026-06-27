@@ -1,6 +1,6 @@
 # Combined Script Runner Example
 
-This example models a governed script-runner repository with a web surface, worker, database job store, integration boundary, and infrastructure wiring represented by safe static fixtures.
+This example is a safe executable vertical slice of a governed script-runner system. It validates the approved script catalog and immutable input contract, creates a synthetic job through a PowerShell command surface, claims it through a worker-style lease, completes it idempotently, and publishes a final report atomically. It does not execute arbitrary commands or contact external systems.
 
 Run validation from the repository root:
 

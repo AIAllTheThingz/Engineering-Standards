@@ -27,7 +27,10 @@
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "pattern": "^1\\.0\\.0$"
+      "enum": [
+        "1.0.0",
+        "1.1.0"
+      ]
     },
     "projectName": {
       "type": "string",
@@ -71,6 +74,21 @@
       "type": "string",
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$"
     },
+    "workflowInterfaceVersion": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$"
+    },
+    "supportedEvidenceSchemaVersions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^1\\.[01]\\.0$"
+      },
+      "uniqueItems": true
+    },
     "riskClassification": {
       "type": "string",
       "enum": [
@@ -110,11 +128,7 @@
           "production"
         ],
         "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 2,
-            "maxLength": 80
-          },
+          "name": { "type": "string", "minLength": 2, "maxLength": 80 },
           "type": {
             "type": "string",
             "enum": [
@@ -124,9 +138,11 @@
               "production"
             ]
           },
-          "production": {
-            "type": "boolean"
-          }
+          "production": { "type": "boolean" },
+          "region": { "type": ["string", "null"], "minLength": 1, "maxLength": 80 },
+          "zone": { "type": ["string", "null"], "minLength": 1, "maxLength": 80 },
+          "cluster": { "type": ["string", "null"], "minLength": 1, "maxLength": 80 },
+          "namespace": { "type": ["string", "null"], "minLength": 1, "maxLength": 80 }
         }
       }
     },
@@ -157,14 +173,8 @@
           "dataClassification"
         ],
         "properties": {
-            "name": {
-            "type": "string",
-            "minLength": 2
-          },
-          "purpose": {
-            "type": "string",
-            "minLength": 20
-          },
+          "name": { "type": "string", "minLength": 2 },
+          "purpose": { "type": "string", "minLength": 20 },
           "dataClassification": {
             "type": "string",
             "enum": [
@@ -173,7 +183,9 @@
               "Confidential",
               "Regulated"
             ]
-          }
+          },
+          "contractVersion": { "type": ["string", "null"], "minLength": 1, "maxLength": 80 },
+          "authenticationMethod": { "type": ["string", "null"], "minLength": 1, "maxLength": 120 }
         }
       }
     },
@@ -199,6 +211,13 @@
         },
         "testEvidencePath": {
           "type": "string",
+          "pattern": "^(?!.*\\.\\.)(?![A-Za-z]:)(?!/).+\\.json$"
+        },
+        "artifactManifestPath": {
+          "type": [
+            "string",
+            "null"
+          ],
           "pattern": "^(?!.*\\.\\.)(?![A-Za-z]:)(?!/).+\\.json$"
         }
       }

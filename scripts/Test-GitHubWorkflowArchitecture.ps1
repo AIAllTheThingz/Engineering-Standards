@@ -139,6 +139,25 @@ function Get-WorkflowUses {
     @($uses)
 }
 
+function Get-JobStepRecords {
+    param([hashtable]$Workflow)
+    $records = [System.Collections.Generic.List[object]]::new()
+    if (-not ($Workflow.ContainsKey('jobs')) -or $Workflow['jobs'] -isnot [hashtable]) { return @($records) }
+    foreach ($jobName in $Workflow['jobs'].Keys) {
+        $job = $Workflow['jobs'][$jobName]
+        if ($job -isnot [hashtable]) { continue }
+        if (-not $job.ContainsKey('steps') -or $job.steps -isnot [array]) { continue }
+        foreach ($step in @($job.steps)) {
+            if ($step -isnot [hashtable]) { continue }
+            $records.Add([ordered]@{
+                job = $jobName
+                step = $step
+            })
+        }
+    }
+    @($records)
+}
+
 $workflowFiles = @(
     Get-ChildItem -LiteralPath (Join-Path $root '.github/workflows') -File -Include *.yml,*.yaml -ErrorAction SilentlyContinue
     Get-ChildItem -LiteralPath (Join-Path $root 'workflows') -File -Include *.yml,*.yaml -ErrorAction SilentlyContinue
@@ -178,6 +197,14 @@ foreach ($rel in $workflows.Keys) {
     if (-not $workflow.ContainsKey('jobs') -or $workflow['jobs'] -isnot [hashtable] -or $workflow['jobs'].Count -eq 0) {
         $results.Add((New-ValidationResult -Status Failed -Message 'Workflow has no executable jobs.' -Path $rel))
         continue
+    }
+
+    if (-not $workflow.ContainsKey('permissions')) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Workflow must declare explicit permissions.' -Path $rel))
+    }
+
+    if ($rel -eq '.github/workflows/governance-ci.yml' -and -not $workflow.ContainsKey('concurrency')) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Entry workflow must declare concurrency.' -Path $rel))
     }
 
     $uses = @(Get-WorkflowUses -Workflow $workflow -RelativePath $rel)
@@ -227,6 +254,38 @@ foreach ($rel in $workflows.Keys) {
         $onText = ($workflow['on'] | ConvertTo-Json -Depth 20)
         if ($onText -match 'pull_request_target') {
             $results.Add((New-ValidationResult -Status Failed -Message 'Workflow uses pull_request_target.' -Path $rel))
+        }
+    }
+
+    foreach ($jobName in $workflow.jobs.Keys) {
+        $job = $workflow.jobs[$jobName]
+        if ($job -isnot [hashtable]) { continue }
+        if ($job.ContainsKey('uses')) { continue }
+        if (-not $job.ContainsKey('timeout-minutes')) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Job '$jobName' is missing timeout-minutes." -Path $rel))
+        }
+    }
+
+    foreach ($record in @(Get-JobStepRecords -Workflow $workflow)) {
+        $step = $record.step
+        $jobName = $record.job
+        if ($step.ContainsKey('uses') -and [string]$step.uses -match '^actions/checkout@') {
+            if (-not $step.ContainsKey('with') -or $step.with -isnot [hashtable] -or -not $step.with.ContainsKey('persist-credentials') -or [string]$step.with['persist-credentials'] -ne 'false') {
+                $results.Add((New-ValidationResult -Status Failed -Message "Checkout step in job '$jobName' must set persist-credentials: false." -Path $rel))
+            }
+        }
+        if ($step.ContainsKey('uses') -and [string]$step.uses -match '^actions/upload-artifact@') {
+            if (-not $step.ContainsKey('with') -or $step.with -isnot [hashtable]) {
+                $results.Add((New-ValidationResult -Status Failed -Message "Artifact upload step in job '$jobName' must declare with settings." -Path $rel))
+            }
+            else {
+                if (-not $step.with.ContainsKey('if-no-files-found') -or [string]$step.with['if-no-files-found'] -ne 'error') {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Artifact upload step in job '$jobName' must use if-no-files-found: error." -Path $rel))
+                }
+                if (-not $step.with.ContainsKey('name') -or [string]$step.with.name -notmatch 'run_id') {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Artifact upload step in job '$jobName' must include run-qualified artifact naming." -Path $rel))
+                }
+            }
         }
     }
 }
