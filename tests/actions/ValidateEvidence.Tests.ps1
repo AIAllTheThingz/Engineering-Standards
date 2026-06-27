@@ -101,6 +101,22 @@ Describe 'Validate evidence action' {
             $LASTEXITCODE | Should -Be 0
         }
 
+        It 'does not inherit GitHub repository or branch expectations for local fixture evidence' {
+            & $script:NewTempEvidence
+            $previousRepository = $env:GITHUB_REPOSITORY
+            $previousRefName = $env:GITHUB_REF_NAME
+            try {
+                $env:GITHUB_REPOSITORY = 'AIAllTheThingz/Engineering-Standards'
+                $env:GITHUB_REF_NAME = 'release-protection-finalize-20260627'
+                & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+                $LASTEXITCODE | Should -Be 0
+            }
+            finally {
+                $env:GITHUB_REPOSITORY = $previousRepository
+                $env:GITHUB_REF_NAME = $previousRefName
+            }
+        }
+
         It 'rejects an artifact hash mismatch' {
             & $script:NewTempEvidence
             $evidence = Get-Content "$PSScriptRoot/../fixtures/valid/completion-result.json" -Raw | ConvertFrom-Json -AsHashtable

@@ -226,12 +226,12 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 - The latest independently verified success run is `28281939062` for validated implementation commit `ad23160917584eacee2dd1a11369f7f81932ff57`.
 - The paired controlled-failure proof run is `28282082709` and failed only at final enforcement after evidence upload.
 - The independently computed ZIP SHA-256 values are `0d4b00aaed3895bbbda7aa044519c473a9cde9fc0d228004b1a414df8a5c29a5` for the success artifact and `58efdb73e05da832e5062db25add144c1cc8f95203475ad36dd598a079c4c489` for the controlled-failure artifact.
-- The current branch head is metadata commit `a34d05fb77a1b969a139066b06d182970949d1a6`, and its push validation run `28282351706` succeeded with artifact `governance-evidence-28282351706` (artifact ID `7922347847`, digest `d4856f71ae107eb24aa3f08d713380b8c9059a3314a0db92d257910fcf7e6c98`, expires `2026-07-27T07:25:21Z`).
+- During the release-protection review observed on `2026-06-27T13:45:00Z`, repository head inspection via `git rev-parse HEAD` and GitHub Actions inspection via `gh run view 28290761409` identified head commit `ab45ee1f6b82449e3b595b7e0951dc00b4db364b` with successful push validation run `28290761409`, artifact `governance-evidence-28290761409`, artifact ID `7924942185`, digest `aba7db3021f7368e13d398b939a7ea0fedf45836707a9aa283248a3e3fffbf03`, and expiration `2026-07-27T13:38:47Z`.
 - The intended immutable release target remains implementation commit `ad23160917584eacee2dd1a11369f7f81932ff57` because there are no later implementation changes after that repair commit.
-- `master` was inspected through the GitHub branch-protection API on 2026-06-27 and is currently not protected by classic branch protection.
-- Repository rulesets were inspected on 2026-06-27 and none are configured.
+- `master` was inspected through the GitHub branch-protection API on 2026-06-27, was unprotected at inspection start, and was then configured with verified classic branch protection at `2026-06-27T13:54:22Z`.
+- Repository rulesets were inspected on 2026-06-27 and none are configured; classic branch protection is the single active enforcement mechanism.
 - No Git tags or GitHub releases currently exist for this repository.
-- Release readiness remains blocked because branch protection is not enforced and no tag or GitHub release has been authorized.
+- Release readiness remains blocked until an eligible independent reviewer or approved exception path is recorded, and until tag or GitHub release authorization is granted.
 
 ## Related Documents
 

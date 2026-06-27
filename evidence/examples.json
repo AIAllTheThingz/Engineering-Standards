@@ -1,8 +1,8 @@
 {
-  "nodeVersion": "v24.14.0",
+  "dotnetVersion": "9.0.205",
   "status": "Passed",
-  "validatedAtUtc": "2026-06-27T06:58:48.7209009Z",
-  "dotnetVersion": "9.0.205"
+  "nodeVersion": "v24.14.0",
+  "validatedAtUtc": "2026-06-27T14:12:25.4639695Z",
+  "nodePath": "bundled-codex-runtime",
+  "dotnetPath": "system-path"
 }
-
-

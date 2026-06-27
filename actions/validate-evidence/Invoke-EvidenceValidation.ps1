@@ -63,11 +63,27 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
             }
         }
     }
-    $repositoryToCheck = if ($ExpectedRepository) { $ExpectedRepository } else { $env:GITHUB_REPOSITORY }
+    $repositoryToCheck = if ($ExpectedRepository) {
+        $ExpectedRepository
+    }
+    elseif ($evidence.executionContext -eq 'GitHubActions') {
+        $env:GITHUB_REPOSITORY
+    }
+    else {
+        $null
+    }
     if ($repositoryToCheck -and $evidence.repository -ne $repositoryToCheck) {
         $results.Add((New-ValidationResult -Status Failed -Message 'Repository mismatch.' -Path $EvidencePath))
     }
-    $refToCheck = if ($ExpectedRefName) { $ExpectedRefName } else { $env:GITHUB_REF_NAME }
+    $refToCheck = if ($ExpectedRefName) {
+        $ExpectedRefName
+    }
+    elseif ($evidence.executionContext -eq 'GitHubActions') {
+        $env:GITHUB_REF_NAME
+    }
+    else {
+        $null
+    }
     if ($refToCheck -and $evidence.branch -ne $refToCheck) {
         $results.Add((New-ValidationResult -Status Failed -Message 'Branch/ref mismatch.' -Path $EvidencePath))
     }
