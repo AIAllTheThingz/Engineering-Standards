@@ -6,6 +6,9 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Changed
 
+- Fixed aggregate governance evidence generation so repo-level validation records use repository-relative script paths instead of workstation-specific absolute paths.
+- Added regression coverage for aggregate evidence path relativity and evidence-path normalization failure handling.
+- Regenerated local evidence for the aggregate evidence path repair and verified GitHub success run `28281939062` plus controlled-failure run `28282082709` for implementation commit `ad23160917584eacee2dd1a11369f7f81932ff57`.
 - Consolidated repository governance for the proposed `1.1.0` release by adding a repository-wide audit, machine-readable standards consistency matrix, repository-version synchronization, and release-readiness notes without creating a tag or claiming GitHub-hosted evidence.
 - Strengthened `agents/AGENTS_Integration.md` from `1.0.0` to `1.1.0` with enforceable controls for REST, GraphQL, SOAP, gRPC, WebSocket, SignalR-style integrations, webhooks, message brokers, event streams, SFTP, managed file transfer, batch feeds, vendor SDKs, API gateways, contracts, authentication, authorization, mTLS, secrets, tenant boundaries, retries, rate limits, idempotency, durable coordination, file integrity, schema validation, privacy, telemetry, evidence, failures, exceptions, and cross-standard handoffs.
 - Added Integration standard semantic validation and Pester mutation coverage, including minimum-version, malformed-version, future compatible patch, positive control, and unsafe weakening checks.

@@ -3,11 +3,11 @@
 | Status | Active |
 | Version | 1.1.0 |
 | Owner role | Engineering Standards Maintainers |
-| Last reviewed | 2026-06-26 |
+| Last reviewed | 2026-06-27 |
 
 ## Purpose
 
-This audit records the remaining repository-wide governance consolidation work for `AIAllTheThingz/Engineering-Standards` and distinguishes historical validated state from the current local working state.
+This audit records the repository-wide governance consolidation state for `AIAllTheThingz/Engineering-Standards` and distinguishes historical validated state, the current validated implementation commit, and the later metadata commit that records verification results.
 
 The machine-readable companion is [../governance/standards-consistency.json](../governance/standards-consistency.json), validated structurally by [../schemas/standards-consistency.schema.json](../schemas/standards-consistency.schema.json).
 
@@ -16,9 +16,10 @@ The machine-readable companion is [../governance/standards-consistency.json](../
 | Field | Value |
 | --- | --- |
 | Historical starting commit | `8009f3fc65dc873c31dbb753aeef9c8f1fd4262c` |
-| Last verified implementation commit | `da185738a83d2d4ab1d420ce4ded89bfe12b2cc7` |
-| Evidence metadata commit | `4ad0896bc42b5c826abbc168728facbfd0095965` |
-| Current repository head | `4ad0896bc42b5c826abbc168728facbfd0095965` plus local uncommitted consolidation work |
+| Historical verified implementation commit | `da185738a83d2d4ab1d420ce4ded89bfe12b2cc7` |
+| Historical evidence metadata commit | `4ad0896bc42b5c826abbc168728facbfd0095965` |
+| Current validated implementation commit | `ad23160917584eacee2dd1a11369f7f81932ff57` |
+| Current release target commit | `ad23160917584eacee2dd1a11369f7f81932ff57` |
 | Repository governance version | `1.1.0` |
 | Default branch | `master` |
 | Repository risk | `High` |
@@ -29,15 +30,17 @@ The machine-readable companion is [../governance/standards-consistency.json](../
 
 The prior audit incorrectly stated that GitHub-hosted evidence remained blocked. That statement is no longer accurate.
 
-Verified historical GitHub workflow evidence currently on record:
+Verified GitHub workflow evidence currently on record:
 
 | Evidence type | Run ID | Commit | Conclusion | Artifact | SHA-256 |
 | --- | --- | --- | --- | --- | --- |
-| Success proof | `27915176022` | `da185738a83d2d4ab1d420ce4ded89bfe12b2cc7` | `success` | `governance-evidence-27915176022` | `ac855f2809bf5f53e1a395735e0ecec9bf6e430de4b89657abbf2755b77afb82` |
-| Controlled failure proof | `27915324851` | `da185738a83d2d4ab1d420ce4ded89bfe12b2cc7` | `failure` | `governance-evidence-27915324851` | `31054cb621eb61aab08f44d6a500d6a050156ed78928fbe48832d84230cdcf7c` |
-| Evidence metadata push run | `27915485743` | `4ad0896bc42b5c826abbc168728facbfd0095965` | `success` | `governance-evidence-27915485743` | `1073955aad4015aa8c77d338ddca23328c2e92739dfdebf202d2e7aab71160bc` |
+| Historical success proof | `27915176022` | `da185738a83d2d4ab1d420ce4ded89bfe12b2cc7` | `success` | `governance-evidence-27915176022` | `ac855f2809bf5f53e1a395735e0ecec9bf6e430de4b89657abbf2755b77afb82` |
+| Historical controlled failure proof | `27915324851` | `da185738a83d2d4ab1d420ce4ded89bfe12b2cc7` | `failure` | `governance-evidence-27915324851` | `31054cb621eb61aab08f44d6a500d6a050156ed78928fbe48832d84230cdcf7c` |
+| Historical evidence metadata push run | `27915485743` | `4ad0896bc42b5c826abbc168728facbfd0095965` | `success` | `governance-evidence-27915485743` | `1073955aad4015aa8c77d338ddca23328c2e92739dfdebf202d2e7aab71160bc` |
+| Current success proof | `28281939062` | `ad23160917584eacee2dd1a11369f7f81932ff57` | `success` | `governance-evidence-28281939062` | `0d4b00aaed3895bbbda7aa044519c473a9cde9fc0d228004b1a414df8a5c29a5` |
+| Current controlled failure proof | `28282082709` | `ad23160917584eacee2dd1a11369f7f81932ff57` | `failure` | `governance-evidence-28282082709` | `58efdb73e05da832e5062db25add144c1cc8f95203475ad36dd598a079c4c489` |
 
-The controlled-failure run failed only at final enforcement after evidence upload. The historical validated implementation remains `da185738a83d2d4ab1d420ce4ded89bfe12b2cc7`. The current local working tree is newer than that validated implementation and requires fresh GitHub validation before release.
+The current controlled-failure run failed only at final enforcement after evidence upload and after final completion evidence validation succeeded. The current validated implementation is `ad23160917584eacee2dd1a11369f7f81932ff57`. A later metadata commit may record these results without forcing an infinite rerun loop.
 
 ## Canonical Terms
 
@@ -82,7 +85,7 @@ The completed standards work was preserved. Remaining active work is concentrate
 - Workflow semantic hardening and negative-path validation.
 - Example strengthening so Integration, Infrastructure, and the combined script runner execute real synthetic governed flows.
 - Documentation synchronization to the actual verified GitHub evidence and the current branch-protection state.
-- Fresh local and GitHub validation for the final post-consolidation commit.
+- Release authorization, branch protection, and tag publication decisions that require explicit maintainer approval.
 
 ## Workflow Inventory
 
@@ -99,27 +102,37 @@ Distribution workflow templates inspected:
 - [../workflows/database-ci.yml](../workflows/database-ci.yml)
 - [../workflows/web-ci.yml](../workflows/web-ci.yml)
 
-Actual GitHub verification already proved the central governance workflow can succeed, can fail honestly after evidence upload, and can produce independently verifiable artifacts. That proof applies only to the validated commits listed above, not automatically to the current local working tree.
+Actual GitHub verification has now proved that the current governance workflow can succeed, can fail honestly after evidence upload, and can produce independently verifiable artifacts for commit `ad23160917584eacee2dd1a11369f7f81932ff57`.
 
 ## Branch Protection
 
-Actual branch-protection inspection was performed on 2026-06-26 through the GitHub REST API:
+Actual branch-protection and ruleset inspection was performed on 2026-06-27 through the GitHub REST API:
 
 ```text
 gh api repos/AIAllTheThingz/Engineering-Standards/branches/master/protection
 ```
 
-Result: `404 Branch not protected`.
+Classic result: `404 Branch not protected`.
+
+Ruleset query:
+
+```text
+gh api repos/AIAllTheThingz/Engineering-Standards/rulesets
+```
+
+Ruleset result: `[]`.
 
 Observed current state:
 
 - `master` is not protected by classic branch protection.
 - No required checks are enforced through classic branch protection.
-- Ruleset state is not inferred from repository files and remains unverified unless inspected separately.
+- No repository rulesets are configured.
+- No required checks are currently enforced by branch protection or rulesets.
+- The observed governance check name from the successful run is `Governance / Governance validation`.
 
 ## Release Status
 
-Current observed release status on 2026-06-26:
+Current observed release status on 2026-06-27:
 
 - Git tags present: none
 - GitHub releases present: none
@@ -132,17 +145,17 @@ Proposed version remains `1.1.0` unless the remaining implementation work introd
 
 Historical GitHub validation exists and is real.
 
-Current local working state is newer than the last verified implementation commit and requires:
+Current implementation validation state:
 
-- Full local validation on the final commit.
-- Fresh GitHub success validation on the final commit.
-- Fresh controlled-failure validation on the final commit.
-- Independent artifact verification for those new runs.
-- Updated `evidence/latest-verified-run.json` only after the new final runs are verified.
+- Full local validation completed for the implementation update that fixed aggregate evidence path handling.
+- Fresh GitHub success validation completed for commit `ad23160917584eacee2dd1a11369f7f81932ff57`.
+- Fresh controlled-failure validation completed for commit `ad23160917584eacee2dd1a11369f7f81932ff57`.
+- Both new artifacts were downloaded, hashed independently, and verified with `scripts/Test-WorkflowEvidenceArtifact.ps1`.
+- `evidence/latest-verified-run.json` was updated after independent verification.
 
 ## Remaining Risks
 
-- The current working tree is not yet the same thing as the last independently verified GitHub commit.
 - `master` is currently unprotected by classic branch protection.
+- No repository rulesets are configured.
 - No release tag or GitHub release exists yet.
-- Final release readiness depends on a new end-to-end validation cycle after the remaining consolidation changes are committed.
+- Release readiness remains blocked until branch protection is configured or an approved exception exists, and until tag and release publication are explicitly authorized.

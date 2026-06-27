@@ -74,7 +74,7 @@ Generate completion evidence after validation. Evidence must include the validat
 
 For release artifacts, include artifact hashes. For manual approvals, include reviewer identity, approval location, and approval date.
 
-For governance workflow releases, verify both the success path and controlled-failure path in GitHub Actions. The success run must use `workflow_dispatch` on `master` with mandatory examples, Pester, and documentation validation enabled. The controlled-failure run must use `controlled-failure-test=true` and must fail only after evidence validation and artifact upload.
+For governance workflow releases, verify both the success path and controlled-failure path in GitHub Actions. The success run may be a `push` or `workflow_dispatch` run, but it MUST target the exact approved implementation commit with mandatory examples, Pester, and documentation validation enabled. The controlled-failure run must use `controlled-failure-test=true` against that same implementation state and must fail only after evidence validation and artifact upload.
 
 Download both evidence artifacts into isolated temporary directories, verify them with `scripts/Test-WorkflowEvidenceArtifact.ps1`, and record the successful artifact ZIP SHA-256 plus controlled-failure run metadata in `evidence/latest-verified-run.json`.
 

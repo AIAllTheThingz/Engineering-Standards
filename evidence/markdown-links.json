@@ -1,15 +1,13 @@
 {
-  "generatedAtUtc": "2026-06-27T06:46:55.4764444Z",
+  "generatedAtUtc": "2026-06-27T07:17:49.5642341Z",
   "results": [
     {
       "status": "Passed",
       "severity": "info",
       "message": "Internal Markdown links validated.",
-      "path": ".",
+      "path": "F:\\repos\\Engineering-Standards",
       "data": null
     }
   ],
   "failed": 0
 }
-
-

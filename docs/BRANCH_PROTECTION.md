@@ -25,7 +25,7 @@ Repositories handling production infrastructure, restricted data, authentication
 
 ## Observed Current State
 
-Inspection date: `2026-06-26`
+Inspection date: `2026-06-27`
 
 Inspection method:
 
@@ -39,7 +39,9 @@ Observed result for `AIAllTheThingz/Engineering-Standards`:
 - Classic branch protection: not configured
 - API result: `404 Branch not protected`
 - Required checks observed: none through classic branch protection
-- Ruleset state: unverified by this document unless separately exported from repository settings
+- Repository rulesets API result: `[]`
+- Ruleset state: no repository rulesets configured
+- Exact governance check name observed from the successful validation run: `Governance / Governance validation`
 
 This section is descriptive evidence, not a recommendation. The recommended configuration in this guide remains stricter than the currently observed repository setting.
 

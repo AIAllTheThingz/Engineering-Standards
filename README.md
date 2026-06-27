@@ -223,11 +223,13 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 - Forbidden-pattern scanning excludes generated evidence and build output by default. Use `-IncludeGeneratedEvidence` only for diagnostics.
 - Detailed Pester audit evidence is stored as sanitized JSON in `evidence/pester-details.json`; raw Pester XML is temporary and is not uploaded.
 - Final workflow enforcement occurs after final evidence validation and artifact upload, so controlled failures still produce downloadable evidence.
-- The last independently verified success run remains `27915176022` for validated implementation commit `da185738a83d2d4ab1d420ce4ded89bfe12b2cc7`.
-- The paired controlled-failure proof run remains `27915324851` and failed only at final enforcement after evidence upload.
-- `master` was inspected through the GitHub branch-protection API on 2026-06-26 and is currently not protected by classic branch protection.
+- The latest independently verified success run is `28281939062` for validated implementation commit `ad23160917584eacee2dd1a11369f7f81932ff57`.
+- The paired controlled-failure proof run is `28282082709` and failed only at final enforcement after evidence upload.
+- The independently computed ZIP SHA-256 values are `0d4b00aaed3895bbbda7aa044519c473a9cde9fc0d228004b1a414df8a5c29a5` for the success artifact and `58efdb73e05da832e5062db25add144c1cc8f95203475ad36dd598a079c4c489` for the controlled-failure artifact.
+- `master` was inspected through the GitHub branch-protection API on 2026-06-27 and is currently not protected by classic branch protection.
+- Repository rulesets were inspected on 2026-06-27 and none are configured.
 - No Git tags or GitHub releases currently exist for this repository.
-- Current local changes after `4ad0896bc42b5c826abbc168728facbfd0095965` still require a fresh local and GitHub validation cycle before release readiness can be claimed.
+- Release readiness remains blocked because branch protection is not enforced and no tag or GitHub release has been authorized.
 
 ## Related Documents
 
