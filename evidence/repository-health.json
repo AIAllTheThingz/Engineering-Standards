@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-27T02:08:01.1261867Z",
+  "generatedAtUtc": "2026-06-27T06:47:13.3831514Z",
   "results": [
     {
       "status": "Passed",
@@ -124,20 +124,20 @@
       "status": "Passed",
       "severity": "info",
       "message": "project-manifest validation passed.",
-      "path": "F:\\repos\\Engineering-Standards\\project-manifest.json",
+      "path": "project-manifest.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "governance-config validation passed.",
-      "path": "F:\\repos\\Engineering-Standards\\governance.config.json",
+      "path": "governance.config.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
-      "message": "Pester test files found: 12.",
+      "message": "Pester test files found: 13.",
       "path": "tests",
       "data": null
     },
@@ -145,7 +145,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "Repository health validation completed.",
-      "path": "F:\\repos\\Engineering-Standards",
+      "path": ".",
       "data": null
     }
   ],
@@ -154,3 +154,5 @@
   "blocked": 0,
   "notRun": 0
 }
+
+

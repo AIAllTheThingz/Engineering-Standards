@@ -1,18 +1,18 @@
 {
-  "generatedAtUtc": "2026-06-27T02:07:57.0717848Z",
+  "generatedAtUtc": "2026-06-27T06:46:51.8674613Z",
   "results": [
     {
       "status": "Passed",
       "severity": "info",
       "message": "Root workflows directory file is an informational distribution template.",
-      "path": "workflows/dotnet-ci.yml",
+      "path": "workflows/database-ci.yml",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Root workflows directory file is an informational distribution template.",
-      "path": "workflows/database-ci.yml",
+      "path": "workflows/powershell-ci.yml",
       "data": null
     },
     {
@@ -26,7 +26,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "Root workflows directory file is an informational distribution template.",
-      "path": "workflows/powershell-ci.yml",
+      "path": "workflows/dotnet-ci.yml",
       "data": null
     },
     {
@@ -36,13 +36,13 @@
       "path": ".",
       "data": {
         "callGraph": {
-          "workflows/dotnet-ci.yml": null,
-          "workflows/database-ci.yml": null,
-          "workflows/web-ci.yml": null,
           ".github/workflows/governance-ci.yml": ".github/workflows/governance-ci-reusable.yml",
+          "workflows/database-ci.yml": null,
+          "workflows/powershell-ci.yml": null,
           ".github/workflows/governance-ci-reusable.yml": null,
-          "workflows/governance-ci.yml": null,
-          "workflows/powershell-ci.yml": null
+          "workflows/web-ci.yml": null,
+          "workflows/dotnet-ci.yml": null,
+          "workflows/governance-ci.yml": null
         }
       }
     }
@@ -52,3 +52,5 @@
   "blocked": 0,
   "notRun": 0
 }
+
+

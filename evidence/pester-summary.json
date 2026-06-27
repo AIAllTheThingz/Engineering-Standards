@@ -1,10 +1,26 @@
 {
-  "generatedAtUtc": "2026-06-27T02:20:13.6118873Z",
-  "total": 176,
-  "passed": 176,
-  "failed": 0,
-  "skipped": 0,
-  "inconclusive": 0,
-  "notRun": 0,
-  "durationSeconds": 461.482
+  "Result": "Passed",
+  "PassedCount": 178,
+  "FailedCount": 0,
+  "SkippedCount": 0,
+  "NotRunCount": 0,
+  "Duration": {
+    "Ticks": 4734083062,
+    "Days": 0,
+    "Hours": 0,
+    "Milliseconds": 408,
+    "Microseconds": 306,
+    "Nanoseconds": 200,
+    "Minutes": 7,
+    "Seconds": 53,
+    "TotalDays": 0.005479262803240741,
+    "TotalHours": 0.13150230727777779,
+    "TotalMilliseconds": 473408.3062,
+    "TotalMicroseconds": 473408306.2,
+    "TotalNanoseconds": 473408306200.0,
+    "TotalMinutes": 7.890138436666667,
+    "TotalSeconds": 473.4083062
+  }
 }
+
+

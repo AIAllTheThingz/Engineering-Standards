@@ -124,6 +124,20 @@ Describe 'GovernanceValidation module' {
         }
     }
 
+    Context 'aggregate governance evidence' {
+        It 'writes repository-relative validator script paths' {
+            $repoRoot = Resolve-Path "$PSScriptRoot/../.."
+            $outputPath = Join-Path $script:tempRoot 'aggregate-governance.json'
+
+            & pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $repoRoot -Category JsonSchemas -OutputJson $outputPath
+            $LASTEXITCODE | Should -Be 0
+
+            $report = Get-Content -LiteralPath $outputPath -Raw | ConvertFrom-Json
+            $report.results.Count | Should -BeGreaterThan 0
+            $report.results[0].path | Should -Be 'scripts/Test-JsonSchemas.ps1'
+        }
+    }
+
     Context 'manifest semantics' {
         It 'requires production approval for High risk manifests' {
             $manifest = Get-Content "$PSScriptRoot/../fixtures/valid/project-manifest.json" -Raw | ConvertFrom-Json -AsHashtable

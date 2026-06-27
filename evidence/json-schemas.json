@@ -1,122 +1,122 @@
 {
-  "generatedAtUtc": "2026-06-27T02:07:36.7741484Z",
+  "generatedAtUtc": "2026-06-27T06:46:53.4375945Z",
   "results": [
     {
       "status": "Passed",
       "severity": "info",
       "message": "Schema parsed and declares required metadata.",
-      "path": "F:\\repos\\Engineering-Standards\\schemas\\artifact-record.schema.json",
+      "path": "schemas\\artifact-record.schema.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Schema parsed and declares required metadata.",
-      "path": "F:\\repos\\Engineering-Standards\\schemas\\completion-result.schema.json",
+      "path": "schemas\\completion-result.schema.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Schema parsed and declares required metadata.",
-      "path": "F:\\repos\\Engineering-Standards\\schemas\\governance-config.schema.json",
+      "path": "schemas\\governance-config.schema.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Schema parsed and declares required metadata.",
-      "path": "F:\\repos\\Engineering-Standards\\schemas\\project-manifest.schema.json",
+      "path": "schemas\\project-manifest.schema.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Schema parsed and declares required metadata.",
-      "path": "F:\\repos\\Engineering-Standards\\schemas\\standards-consistency.schema.json",
+      "path": "schemas\\standards-consistency.schema.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Schema parsed and declares required metadata.",
-      "path": "F:\\repos\\Engineering-Standards\\schemas\\test-evidence.schema.json",
+      "path": "schemas\\test-evidence.schema.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Schema parsed and declares required metadata.",
-      "path": "F:\\repos\\Engineering-Standards\\schemas\\verified-run.schema.json",
+      "path": "schemas\\verified-run.schema.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Valid fixture accepted.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\valid\\artifact-record.json",
+      "path": "tests\\fixtures\\valid\\artifact-record.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Valid fixture accepted.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\valid\\completion-result-1.1.0.json",
+      "path": "tests\\fixtures\\valid\\completion-result-1.1.0.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Valid fixture accepted.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\valid\\completion-result.json",
+      "path": "tests\\fixtures\\valid\\completion-result.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Valid fixture accepted.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\valid\\governance-config.json",
+      "path": "tests\\fixtures\\valid\\governance-config.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Valid fixture accepted.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\valid\\project-manifest.json",
+      "path": "tests\\fixtures\\valid\\project-manifest.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Valid fixture accepted.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\valid\\test-evidence-1.1.0.json",
+      "path": "tests\\fixtures\\valid\\test-evidence-1.1.0.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Valid fixture accepted.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\valid\\test-evidence.json",
+      "path": "tests\\fixtures\\valid\\test-evidence.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Valid fixture accepted.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\valid\\verified-run.json",
+      "path": "tests\\fixtures\\valid\\verified-run.json",
       "data": null
     },
     {
       "status": "Passed",
       "severity": "info",
       "message": "Invalid fixture rejected as expected.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\artifact-record.json",
+      "path": "tests\\fixtures\\invalid\\artifact-record.json",
       "data": [
         {
           "status": "Failed",
           "severity": "error",
           "message": "Artifact 'validation-report' SHA-256 is invalid.",
-          "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\artifact-record.json",
+          "path": "tests\\fixtures\\invalid\\artifact-record.json",
           "data": null
         }
       ]
@@ -125,20 +125,20 @@
       "status": "Passed",
       "severity": "info",
       "message": "Invalid fixture rejected as expected.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\completion-result-future-major.json",
+      "path": "tests\\fixtures\\invalid\\completion-result-future-major.json",
       "data": [
         {
           "status": "Failed",
           "severity": "error",
           "message": "Unsupported schemaVersion '2.0.0'.",
-          "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\completion-result-future-major.json",
+          "path": "tests\\fixtures\\invalid\\completion-result-future-major.json",
           "data": null
         },
         {
           "status": "Failed",
           "severity": "error",
           "message": "Local completion evidence must record GitHub-hosted workflow execution as NotRun.",
-          "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\completion-result-future-major.json",
+          "path": "tests\\fixtures\\invalid\\completion-result-future-major.json",
           "data": null
         }
       ]
@@ -147,34 +147,34 @@
       "status": "Passed",
       "severity": "info",
       "message": "Invalid fixture rejected as expected.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\completion-result.json",
+      "path": "tests\\fixtures\\invalid\\completion-result.json",
       "data": [
         {
           "status": "Failed",
           "severity": "error",
           "message": "commitSha must match validatedCommitSha for backward compatibility.",
-          "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\completion-result.json",
+          "path": "tests\\fixtures\\invalid\\completion-result.json",
           "data": null
         },
         {
           "status": "Failed",
           "severity": "error",
           "message": "Overall Passed conflicts with test 'Documentation completeness' status 'NotRun'.",
-          "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\completion-result.json",
+          "path": "tests\\fixtures\\invalid\\completion-result.json",
           "data": null
         },
         {
           "status": "Failed",
           "severity": "error",
           "message": "Test 'Documentation completeness' must include a meaningful failure reason for status 'NotRun'.",
-          "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\completion-result.json",
+          "path": "tests\\fixtures\\invalid\\completion-result.json",
           "data": null
         },
         {
           "status": "Failed",
           "severity": "error",
           "message": "NotRun test 'Documentation completeness' must have null exitCode or policy exitCode 3.",
-          "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\completion-result.json",
+          "path": "tests\\fixtures\\invalid\\completion-result.json",
           "data": null
         }
       ]
@@ -183,13 +183,13 @@
       "status": "Passed",
       "severity": "info",
       "message": "Invalid fixture rejected as expected.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\governance-config.json",
+      "path": "tests\\fixtures\\invalid\\governance-config.json",
       "data": [
         {
           "status": "Failed",
           "severity": "error",
           "message": "Mandatory control 'testing' lacks a valid exception reference.",
-          "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\governance-config.json",
+          "path": "tests\\fixtures\\invalid\\governance-config.json",
           "data": null
         }
       ]
@@ -198,13 +198,13 @@
       "status": "Passed",
       "severity": "info",
       "message": "Invalid fixture rejected as expected.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\project-manifest.json",
+      "path": "tests\\fixtures\\invalid\\project-manifest.json",
       "data": [
         {
           "status": "Failed",
           "severity": "error",
           "message": "Unknown risk classification 'Unknown'.",
-          "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\project-manifest.json",
+          "path": "tests\\fixtures\\invalid\\project-manifest.json",
           "data": null
         }
       ]
@@ -213,13 +213,13 @@
       "status": "Passed",
       "severity": "info",
       "message": "Invalid fixture rejected as expected.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\test-evidence-missing-notrun-reason.json",
+      "path": "tests\\fixtures\\invalid\\test-evidence-missing-notrun-reason.json",
       "data": [
         {
           "status": "Failed",
           "severity": "error",
           "message": "Test 'GitHub-hosted workflow execution' must include a meaningful failure reason for status 'NotRun'.",
-          "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\test-evidence-missing-notrun-reason.json",
+          "path": "tests\\fixtures\\invalid\\test-evidence-missing-notrun-reason.json",
           "data": null
         }
       ]
@@ -228,13 +228,13 @@
       "status": "Passed",
       "severity": "info",
       "message": "Invalid fixture rejected as expected.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\test-evidence.json",
+      "path": "tests\\fixtures\\invalid\\test-evidence.json",
       "data": [
         {
           "status": "Failed",
           "severity": "error",
           "message": "Unknown status 'Green'.",
-          "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\test-evidence.json",
+          "path": "tests\\fixtures\\invalid\\test-evidence.json",
           "data": null
         }
       ]
@@ -243,27 +243,27 @@
       "status": "Passed",
       "severity": "info",
       "message": "Invalid fixture rejected as expected.",
-      "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\verified-run.json",
+      "path": "tests\\fixtures\\invalid\\verified-run.json",
       "data": [
         {
           "status": "Failed",
           "severity": "error",
           "message": "Verified run IDs, attempts, and artifact IDs must be positive.",
-          "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\verified-run.json",
+          "path": "tests\\fixtures\\invalid\\verified-run.json",
           "data": null
         },
         {
           "status": "Failed",
           "severity": "error",
           "message": "Verified run branch must be master.",
-          "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\verified-run.json",
+          "path": "tests\\fixtures\\invalid\\verified-run.json",
           "data": null
         },
         {
           "status": "Failed",
           "severity": "error",
           "message": "artifactSha256 must be a SHA-256 digest.",
-          "path": "F:\\repos\\Engineering-Standards\\tests\\fixtures\\invalid\\verified-run.json",
+          "path": "tests\\fixtures\\invalid\\verified-run.json",
           "data": null
         }
       ]
@@ -272,9 +272,11 @@
       "status": "Passed",
       "severity": "info",
       "message": "Standards consistency matrix accepted.",
-      "path": "F:\\repos\\Engineering-Standards\\governance\\standards-consistency.json",
+      "path": "governance\\standards-consistency.json",
       "data": null
     }
   ],
   "failed": 0
 }
+
+

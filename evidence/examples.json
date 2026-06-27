@@ -1,62 +1,8 @@
 {
-  "generatedAtUtc": "2026-06-27T02:32:34.7079880Z",
-  "results": [
-    {
-      "example": "powershell-project",
-      "status": "Passed",
-      "command": "pwsh -NoProfile -File examples/powershell-project/tools/Test-Example.ps1",
-      "evidence": "examples/powershell-project/evidence/test-evidence.json",
-      "message": "PowerShell example validation passed."
-    },
-    {
-      "example": "database-project",
-      "status": "Passed",
-      "command": "pwsh -NoProfile -File examples/database-project/tools/Test-Migrations.ps1",
-      "evidence": "examples/database-project/evidence/test-evidence.json",
-      "message": "Database example migration validation passed."
-    },
-    {
-      "example": "worker-service-project",
-      "status": "Passed",
-      "command": "pwsh -NoProfile -File examples/worker-service-project/tools/Test-Example.ps1",
-      "evidence": "examples/worker-service-project/evidence/test-evidence.json",
-      "message": "Worker-service example validation passed."
-    },
-    {
-      "example": "integration-project",
-      "status": "Passed",
-      "command": "pwsh -NoProfile -File examples/integration-project/tools/Test-Example.ps1",
-      "evidence": "examples/integration-project/evidence/integration-execution.json",
-      "message": "Integration example validation passed."
-    },
-    {
-      "example": "infrastructure-project",
-      "status": "Passed",
-      "command": "pwsh -NoProfile -File examples/infrastructure-project/tools/Test-Example.ps1",
-      "evidence": "examples/infrastructure-project/evidence/plan-evidence.json",
-      "message": "Infrastructure example validation passed."
-    },
-    {
-      "example": "combined-script-runner-project",
-      "status": "Passed",
-      "command": "pwsh -NoProfile -File examples/combined-script-runner-project/tools/Test-Example.ps1",
-      "evidence": "examples/combined-script-runner-project/evidence/script-runner-execution.json",
-      "message": "Combined script-runner example validation passed."
-    },
-    {
-      "example": "dotnet-project",
-      "status": "Passed",
-      "command": "pwsh -NoProfile -File examples/dotnet-project/tools/Test-Example.ps1",
-      "evidence": "examples/dotnet-project/evidence/test-evidence.json",
-      "message": ".NET example validation passed."
-    },
-    {
-      "example": "web-project",
-      "status": "Passed",
-      "command": "pwsh -NoProfile -File examples/web-project/tools/Test-Example.ps1",
-      "evidence": "examples/web-project/evidence/test-evidence.json",
-      "message": "Web example validation passed."
-    }
-  ],
-  "failed": 0
+  "nodeVersion": "v24.14.0",
+  "status": "Passed",
+  "validatedAtUtc": "2026-06-27T06:58:48.7209009Z",
+  "dotnetVersion": "9.0.205"
 }
+
+

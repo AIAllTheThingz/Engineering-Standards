@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-27T02:07:56.2237775Z",
+  "generatedAtUtc": "2026-06-27T06:47:06.9522248Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -7,7 +7,7 @@
   "patternFile": "actions/forbidden-pattern-scan/forbidden-patterns.json",
   "allowlistFile": null,
   "advisory": false,
-  "scannedFiles": 231,
+  "scannedFiles": 239,
   "skippedFiles": [
     {
       "path": ".tmp/agent-standards-debug.json",
@@ -15,6 +15,10 @@
     },
     {
       "path": ".tmp/agent-standards-debug.txt",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/aggregate-smoke.json",
       "reason": "excluded-path"
     },
     {
@@ -35,6 +39,10 @@
     },
     {
       "path": ".tmp/gh-evidence-27915485743-verification.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/git-ls-files.txt",
       "reason": "excluded-path"
     },
     {
@@ -875,7 +883,7 @@
     },
     {
       "path": "evidence/forbidden-patterns.json",
-      "reason": "excluded-path"
+      "reason": "scanner-output"
     },
     {
       "path": "evidence/json-schemas.json",
@@ -927,6 +935,30 @@
     },
     {
       "path": "evidence/yaml-syntax.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/history/2026-06-20-database-phase/examples.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/history/2026-06-20-database-phase/local-completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/history/2026-06-20-database-phase/local-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/history/2026-06-20-database-phase/pester-details.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/history/2026-06-20-database-phase/pester-summary.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/history/2026-06-20-database-phase/psscriptanalyzer.json",
       "reason": "excluded-path"
     },
     {
@@ -1310,3 +1342,5 @@
   "failed": 0,
   "warnings": 11
 }
+
+

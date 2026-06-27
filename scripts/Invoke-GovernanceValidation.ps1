@@ -27,12 +27,27 @@ $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'GovernanceValidation.psm1') -Force
 $root = (Resolve-Path -LiteralPath $Path).Path
 $items = [System.Collections.Generic.List[object]]::new()
+function Get-RepositoryRelativePath {
+    param([string]$FullPath)
+
+    if ([string]::IsNullOrWhiteSpace($FullPath)) {
+        return $FullPath
+    }
+
+    $resolved = (Resolve-Path -LiteralPath $FullPath).Path
+    $relative = [System.IO.Path]::GetRelativePath($root, $resolved).Replace('\','/')
+    if ([string]::IsNullOrWhiteSpace($relative) -or $relative -eq '.') {
+        return '.'
+    }
+
+    return $relative
+}
 function Invoke-ValidationCommand {
     param([string]$Name, [string]$File, [string[]]$Arguments)
     Write-Output "Running $Name..."
     & pwsh -NoProfile -File $File @Arguments
     $code = $LASTEXITCODE
-    $items.Add((New-ValidationResult -Status $(if ($code -eq 0) { 'Passed' } else { 'Failed' }) -Message "$Name exited with code $code." -Path $File -Severity $(if ($code -eq 0) { 'info' } else { 'error' }) -Data @{ exitCode=$code }))
+    $items.Add((New-ValidationResult -Status $(if ($code -eq 0) { 'Passed' } else { 'Failed' }) -Message "$Name exited with code $code." -Path (Get-RepositoryRelativePath -FullPath $File) -Severity $(if ($code -eq 0) { 'info' } else { 'error' }) -Data @{ exitCode=$code }))
 }
 if ($Category -contains 'JsonSchemas') { Invoke-ValidationCommand JsonSchemas (Join-Path $root 'scripts/Test-JsonSchemas.ps1') @('-Path',$root) }
 if ($Category -contains 'YamlSyntax') { Invoke-ValidationCommand YamlSyntax (Join-Path $root 'scripts/Test-YamlSyntax.ps1') @('-Path',$root) }
