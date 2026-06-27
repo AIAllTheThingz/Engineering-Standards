@@ -8,6 +8,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 - Reworked release-preparation documentation to use time-bound observed-head terminology instead of self-referential permanent "current head" claims, and completed verified sole-maintainer branch-protection documentation for enforced `master` protection.
 - Synchronized final public release documentation to distinguish the validated implementation commit, the later evidence metadata head, the current metadata-head GitHub validation run, and the remaining release-only blockers.
+- Refreshed `v1.1.0` release-validation evidence after PR #3 merged the evidence-validator environment-leakage fix, advancing the proposed release target to protected `master` merge commit `072df3c372d431e3ac5fd0e4569b55f93555ce95` with success run `28293025156` and controlled-failure run `28297679210`.
 - Fixed aggregate governance evidence generation so repo-level validation records use repository-relative script paths instead of workstation-specific absolute paths.
 - Added regression coverage for aggregate evidence path relativity and evidence-path normalization failure handling.
 - Regenerated local evidence for the aggregate evidence path repair and verified GitHub success run `28281939062` plus controlled-failure run `28282082709` for implementation commit `ad23160917584eacee2dd1a11369f7f81932ff57`.

@@ -4,7 +4,7 @@
   "repositoryVersion": "1.1.0",
   "defaultBranch": "master",
   "riskClassification": "High",
-  "generatedFromCommit": "ad23160917584eacee2dd1a11369f7f81932ff57",
+  "generatedFromCommit": "072df3c372d431e3ac5fd0e4569b55f93555ce95",
   "generatedAtUtc": "2026-06-27T07:15:00Z",
   "canonicalStatusValues": [
     "Passed",
@@ -352,18 +352,18 @@
   },
   "githubEvidence": {
     "status": "Passed",
-    "reason": "GitHub workflow success run 28281939062 and controlled-failure run 28282082709 were independently verified for validated implementation commit ad23160917584eacee2dd1a11369f7f81932ff57."
+    "reason": "GitHub workflow success run 28293025156 and controlled-failure run 28297679210 were independently verified for protected-master release target 072df3c372d431e3ac5fd0e4569b55f93555ce95."
   },
   "branchProtection": {
-    "status": "Failed",
-    "reason": "GitHub API inspection on 2026-06-27 returned 404 Branch not protected for master, and repository rulesets inspection returned an empty list."
+    "status": "Passed",
+    "reason": "GitHub API inspection on 2026-06-27 verified classic branch protection on master with required check Governance / Governance validation, strict up-to-date checks, pull-request requirement, conversation resolution, force-push block, deletion block, and administrator enforcement. Repository rulesets remain empty by design."
   },
   "releaseReadiness": {
     "status": "Blocked",
     "proposedVersion": "1.1.0",
     "proposedTag": "v1.1.0",
-    "targetCommitSha": "ad23160917584eacee2dd1a11369f7f81932ff57",
+    "targetCommitSha": "072df3c372d431e3ac5fd0e4569b55f93555ce95",
     "releaseCreated": false,
-    "reason": "Validated workflow evidence now exists for ad23160917584eacee2dd1a11369f7f81932ff57, but release publication remains blocked because master has no enforced classic branch protection, no repository rulesets, and no release authorization."
+    "reason": "Validated workflow evidence now exists for protected-master release target 072df3c372d431e3ac5fd0e4569b55f93555ce95, but release publication remains blocked because independent release approval, tag authorization, and GitHub release-publication authorization have not been granted."
   }
 }
