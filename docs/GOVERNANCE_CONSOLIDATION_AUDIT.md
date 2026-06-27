@@ -19,14 +19,14 @@ The machine-readable companion is [../governance/standards-consistency.json](../
 | Historical verified implementation commit | `da185738a83d2d4ab1d420ce4ded89bfe12b2cc7` |
 | Historical evidence metadata commit | `4ad0896bc42b5c826abbc168728facbfd0095965` |
 | Current validated implementation commit | `ad23160917584eacee2dd1a11369f7f81932ff57` |
-| Current evidence metadata commit | `a34d05fb77a1b969a139066b06d182970949d1a6` |
-| Current branch head commit | `a34d05fb77a1b969a139066b06d182970949d1a6` |
+| Documentation synchronization baseline commit | `ab45ee1f6b82449e3b595b7e0951dc00b4db364b` |
+| Repository head observed during release-protection review at `2026-06-27T13:45:00Z` | `ab45ee1f6b82449e3b595b7e0951dc00b4db364b` |
 | Current release target commit | `ad23160917584eacee2dd1a11369f7f81932ff57` |
 | Repository governance version | `1.1.0` |
 | Default branch | `master` |
 | Repository risk | `High` |
 | Release authorization | Not granted |
-| Branch-setting authorization | Not granted |
+| Branch-setting authorization | Granted for the 2026-06-27 release-protection task |
 
 ## Verified GitHub Evidence
 
@@ -42,9 +42,9 @@ Verified GitHub workflow evidence currently on record:
 | Current success proof | `28281939062` | `ad23160917584eacee2dd1a11369f7f81932ff57` | `success` | `governance-evidence-28281939062` | `0d4b00aaed3895bbbda7aa044519c473a9cde9fc0d228004b1a414df8a5c29a5` |
 | Current controlled failure proof | `28282082709` | `ad23160917584eacee2dd1a11369f7f81932ff57` | `failure` | `governance-evidence-28282082709` | `58efdb73e05da832e5062db25add144c1cc8f95203475ad36dd598a079c4c489` |
 
-The current controlled-failure run failed only at final enforcement after evidence upload and after final completion evidence validation succeeded. The current validated implementation is `ad23160917584eacee2dd1a11369f7f81932ff57`. A later metadata commit may record these results without forcing an infinite rerun loop.
+The current controlled-failure run failed only at final enforcement after evidence upload and after final completion evidence validation succeeded. The current validated implementation is `ad23160917584eacee2dd1a11369f7f81932ff57`. Later metadata or documentation commits may record these results without forcing an infinite rerun loop.
 
-The current branch head `a34d05fb77a1b969a139066b06d182970949d1a6` is a metadata-only commit that refreshed checked-in local evidence fields. GitHub push run `28282351706` succeeded for that head and produced artifact `governance-evidence-28282351706` (artifact ID `7922347847`, digest `d4856f71ae107eb24aa3f08d713380b8c9059a3314a0db92d257910fcf7e6c98`, expires `2026-07-27T07:25:21Z`). That run confirms the current head still validates, but it does not change the intended immutable release target because no later implementation changes exist after `ad23160917584eacee2dd1a11369f7f81932ff57`.
+During the release-protection review observed on `2026-06-27T13:45:00Z`, repository head inspection via `git rev-parse HEAD` and GitHub Actions inspection via `gh run view 28290761409` identified metadata and documentation commit `ab45ee1f6b82449e3b595b7e0951dc00b4db364b`. Push run `28290761409` succeeded for that observed head and produced artifact `governance-evidence-28290761409` (artifact ID `7924942185`, digest `aba7db3021f7368e13d398b939a7ea0fedf45836707a9aa283248a3e3fffbf03`, expires `2026-07-27T13:38:47Z`). That observed-head run confirms the latest documentation and evidence synchronization commit still validates, but it does not change the intended immutable release target because no later implementation changes exist after `ad23160917584eacee2dd1a11369f7f81932ff57`.
 
 ## Canonical Terms
 
@@ -85,11 +85,11 @@ Canonical completion statuses are:
 
 The repository-wide consolidation work is complete. The remaining active work is release-completion work only:
 
-- Branch protection or repository ruleset configuration, if and when explicit authorization is granted.
 - Release approval recording with approver identity, review location, and tag or publication authorization.
 - Annotated tag creation for `v1.1.0` against `ad23160917584eacee2dd1a11369f7f81932ff57`.
 - GitHub release publication from the approved immutable tag.
 - Post-release verification and creation of the public baseline record after publication.
+- CODEOWNERS remediation or an approved exception path for the sole-maintainer review gap if independent review remains unavailable.
 
 ## Workflow Inventory
 
@@ -116,7 +116,7 @@ Actual branch-protection and ruleset inspection was performed on 2026-06-27 thro
 gh api repos/AIAllTheThingz/Engineering-Standards/branches/master/protection
 ```
 
-Classic result: `404 Branch not protected`.
+Classic result before protection work: `404 Branch not protected`.
 
 Ruleset query:
 
@@ -128,11 +128,25 @@ Ruleset result: `[]`.
 
 Observed current state:
 
-- `master` is not protected by classic branch protection.
-- No required checks are enforced through classic branch protection.
-- No repository rulesets are configured.
-- No required checks are currently enforced by branch protection or rulesets.
+- `master` was unprotected at inspection start.
+- No required checks were enforced through classic branch protection at inspection start.
+- No repository rulesets were configured at inspection start.
+- No required checks were enforced by branch protection or rulesets at inspection start.
 - The observed governance check name from the successful run is `Governance / Governance validation`.
+- `CODEOWNERS` currently references team-style identities under `@AIAllTheThingz/...`, but live API inspection indicates the repository is owned under a user account and only direct collaborator `AIAllTheThingz` is currently visible. No eligible independent reviewer was identified during the protection review.
+
+Applied configuration on `2026-06-27T13:54:22Z`:
+
+- Classic branch protection was configured for `master`.
+- Pull requests are now required before merge.
+- Required status check `Governance / Governance validation` is now enforced with strict up-to-date behavior.
+- Conversation resolution is now required.
+- Force pushes are blocked.
+- Branch deletion is blocked.
+- Administrator enforcement is enabled.
+- Required approving review count is `0` because no eligible independent reviewer was identified.
+- CODEOWNERS review is not required because resolvable independent owners could not be verified.
+- Repository rulesets remain unconfigured because classic branch protection is the single active enforcement mechanism.
 
 ## Release Status
 
@@ -142,8 +156,8 @@ Current observed release status on 2026-06-27:
 - GitHub releases present: none
 - Release tag created: no
 - Release published: no
-- Current branch head: `a34d05fb77a1b969a139066b06d182970949d1a6`
-- Current head GitHub push validation: success run `28282351706`
+- Repository head observed during release-protection review at `2026-06-27T13:45:00Z`: `ab45ee1f6b82449e3b595b7e0951dc00b4db364b`
+- Observed-head GitHub push validation: success run `28290761409`
 
 Proposed version remains `1.1.0` unless the remaining implementation work introduces a breaking schema or workflow interface change that requires a larger version decision.
 
@@ -161,7 +175,7 @@ Current implementation validation state:
 
 ## Remaining Risks
 
-- `master` is currently unprotected by classic branch protection.
-- No repository rulesets are configured.
+- `master` was unprotected at inspection start, but verified classic branch protection is now configured.
+- No repository rulesets are configured because classic branch protection is the chosen single enforcement mechanism.
 - No release tag or GitHub release exists yet.
-- Release readiness remains blocked until branch protection is configured or an approved exception exists, and until tag and release publication are explicitly authorized.
+- Release readiness remains blocked until the sole-maintainer independent-review gap is remediated or formally excepted, and until tag and release publication are explicitly authorized.

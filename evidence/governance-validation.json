@@ -1,0 +1,141 @@
+{
+  "generatedAtUtc": "2026-06-27T14:17:19.8387201Z",
+  "results": [
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "JsonSchemas exited with code 0.",
+      "path": "scripts/Test-JsonSchemas.ps1",
+      "data": {
+        "exitCode": 0
+      }
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "MarkdownLinks exited with code 0.",
+      "path": "scripts/Test-MarkdownLinks.ps1",
+      "data": {
+        "exitCode": 0
+      }
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "DocumentationCompleteness exited with code 0.",
+      "path": "scripts/Test-DocumentationCompleteness.ps1",
+      "data": {
+        "exitCode": 0
+      }
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Contract exited with code 0.",
+      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
+      "data": {
+        "exitCode": 0
+      }
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "ForbiddenPatterns exited with code 0.",
+      "path": "actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1",
+      "data": {
+        "exitCode": 0
+      }
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "RepositoryHealth exited with code 0.",
+      "path": "actions/repository-health/Invoke-RepositoryHealth.ps1",
+      "data": {
+        "exitCode": 0
+      }
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Example combined-script-runner-project exited with code 0.",
+      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
+      "data": {
+        "exitCode": 0
+      }
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Example database-project exited with code 0.",
+      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
+      "data": {
+        "exitCode": 0
+      }
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Example dotnet-project exited with code 0.",
+      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
+      "data": {
+        "exitCode": 0
+      }
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Example infrastructure-project exited with code 0.",
+      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
+      "data": {
+        "exitCode": 0
+      }
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Example integration-project exited with code 0.",
+      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
+      "data": {
+        "exitCode": 0
+      }
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Example powershell-project exited with code 0.",
+      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
+      "data": {
+        "exitCode": 0
+      }
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Example web-project exited with code 0.",
+      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
+      "data": {
+        "exitCode": 0
+      }
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Example worker-service-project exited with code 0.",
+      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
+      "data": {
+        "exitCode": 0
+      }
+    },
+    {
+      "status": "Passed",
+      "severity": "info",
+      "message": "Evidence exited with code 0.",
+      "path": "actions/validate-evidence/Invoke-EvidenceValidation.ps1",
+      "data": {
+        "exitCode": 0
+      }
+    }
+  ],
+  "failed": 0
+}

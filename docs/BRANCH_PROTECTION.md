@@ -3,7 +3,7 @@
 | Status | Active |
 | Version | 1.0.0 |
 | Owner role | Repository Administrators |
-| Last reviewed | 2026-06-19 |
+| Last reviewed | 2026-06-27 |
 
 ## Purpose
 
@@ -26,6 +26,8 @@ Repositories handling production infrastructure, restricted data, authentication
 ## Observed Current State
 
 Inspection date: `2026-06-27`
+Observed-state timestamp: `2026-06-27T13:45:00Z`
+Protection-configuration timestamp: `2026-06-27T13:54:22Z`
 
 Inspection method:
 
@@ -33,17 +35,75 @@ Inspection method:
 gh api repos/AIAllTheThingz/Engineering-Standards/branches/master/protection
 ```
 
-Observed result for `AIAllTheThingz/Engineering-Standards`:
+Observed start state for `AIAllTheThingz/Engineering-Standards`:
 
 - Protected branch inspected: `master`
-- Classic branch protection: not configured
+- Classic branch protection before configuration: not configured
 - API result: `404 Branch not protected`
-- Required checks observed: none through classic branch protection
+- Required checks observed before configuration: none through classic branch protection
 - Repository rulesets API result: `[]`
-- Ruleset state: no repository rulesets configured
+- Ruleset state before configuration: no repository rulesets configured
 - Exact governance check name observed from the successful validation run: `Governance / Governance validation`
+- Observed repository head at inspection time: `ab45ee1f6b82449e3b595b7e0951dc00b4db364b`
+- Observed successful current-head run: `28290761409`
+
+Reviewer and ownership assessment during the same review:
+
+- Direct collaborators visible through `gh api repos/AIAllTheThingz/Engineering-Standards/collaborators?affiliation=direct`: only `AIAllTheThingz` with admin permission.
+- `CODEOWNERS` contains team-style identities under `@AIAllTheThingz/...`.
+- Live team resolution through `gh api orgs/AIAllTheThingz/teams?per_page=100` returned `404 Not Found`, consistent with a user-owned repository context rather than a resolvable organization-team context.
+- No eligible independent reviewer was identified at inspection time.
+- Because no independent reviewer was identified, CODEOWNERS review cannot be required safely today and approving-review count must remain at the strongest non-locking value until reviewer availability changes or an approved exception is recorded.
 
 This section is descriptive evidence, not a recommendation. The recommended configuration in this guide remains stricter than the currently observed repository setting.
+
+## Verified Applied State
+
+Verification method:
+
+```powershell
+gh api repos/AIAllTheThingz/Engineering-Standards/branches/master/protection
+```
+
+Verified configured state for `AIAllTheThingz/Engineering-Standards` after applying classic protection:
+
+- Protected branch: `master`
+- Protection mechanism: classic branch protection
+- Pull requests required: yes
+- Required governance check: `Governance / Governance validation`
+- Strict up-to-date checks required: yes
+- Conversation resolution required: yes
+- Force pushes allowed: no
+- Branch deletion allowed: no
+- Administrator enforcement enabled: yes
+- Required approving review count: `0`
+- Dismiss stale reviews: yes
+- Require CODEOWNERS review: no
+- Require last-push approval: no
+- Repository rulesets configured in parallel: none
+- Verification result: `Passed`
+
+This verified state reflects the strongest non-locking posture that could be applied without inventing an independent reviewer or requiring unresolved CODEOWNERS identities.
+
+## Applied Configuration Strategy
+
+When only the repository owner or sole maintainer is currently eligible to review, protection must remain strong without creating an unrecoverable lockout.
+
+For `AIAllTheThingz/Engineering-Standards`, the authorized release-protection task applies the strongest non-locking classic branch protection model:
+
+- pull requests required
+- required status check `Governance / Governance validation`
+- strict up-to-date branch requirement enabled
+- conversation resolution required
+- force pushes blocked
+- branch deletion blocked
+- administrators enforced
+- required approving review count set to `0`
+- stale approvals dismissed when new commits are pushed
+- CODEOWNERS review not required until resolvable independent owners exist
+- no repository ruleset used in parallel
+
+This configuration is a temporary sole-maintainer protection posture, not proof that independent review requirements have been satisfied for release approval.
 
 ## Required Checks
 
