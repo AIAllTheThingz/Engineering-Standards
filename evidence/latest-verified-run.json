@@ -22,7 +22,7 @@
     "The validated implementation commit advanced to protected-master merge commit 072df3c372d431e3ac5fd0e4569b55f93555ce95 because it contains the merged evidence-validator environment-leakage fix and regression test from PR #3.",
     "The success artifact ZIP SHA-256 was independently computed as f1fd73b8b59687ece9f3473b18eda98711eee0eb45700444760f2b44a8172c45; the GitHub-reported digest was sha256:f1fd73b8b59687ece9f3473b18eda98711eee0eb45700444760f2b44a8172c45.",
     "The controlled-failure artifact ZIP SHA-256 was independently computed as 30d3cca15513d87ae2068fc3b1c1303aa862ba7ce6b8e6d0d5b5de787082e997; the GitHub-reported digest was sha256:30d3cca15513d87ae2068fc3b1c1303aa862ba7ce6b8e6d0d5b5de787082e997.",
-    "The controlled-failure run failed only at the mandatory governance enforcement step after uploading the full governance evidence bundle and after final completion evidence validation succeeded.",
+    "The controlled-failure path deliberately injected a failed mandatory Markdown outcome after successful Markdown report generation. Evidence generation, completion-evidence validation, and artifact upload completed successfully; final mandatory enforcement rejected the synthetic failed mandatory result, producing the expected overall workflow failure.",
     "Later documentation and evidence metadata commits may record this verification without changing the immutable release target model.",
     "Artifact evidence uses evidenceCommitSha null because workflow artifacts are immutable GitHub Actions downloads and are not committed back to the validated source commit."
   ]

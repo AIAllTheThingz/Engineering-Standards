@@ -44,7 +44,7 @@ Verified GitHub workflow evidence currently on record:
 | Current protected-master success proof | `28293025156` | `072df3c372d431e3ac5fd0e4569b55f93555ce95` | `success` | `governance-evidence-28293025156` | `f1fd73b8b59687ece9f3473b18eda98711eee0eb45700444760f2b44a8172c45` |
 | Current protected-master controlled failure proof | `28297679210` | `072df3c372d431e3ac5fd0e4569b55f93555ce95` | `failure` | `governance-evidence-28297679210` | `30d3cca15513d87ae2068fc3b1c1303aa862ba7ce6b8e6d0d5b5de787082e997` |
 
-The current controlled-failure run failed only at final enforcement after evidence upload and after final completion evidence validation succeeded. The current validated release target is `072df3c372d431e3ac5fd0e4569b55f93555ce95`. Later metadata or documentation commits may record these results without forcing an infinite rerun loop.
+The current controlled-failure path deliberately injected a failed mandatory Markdown outcome after successful Markdown report generation. Evidence generation, completion-evidence validation, and artifact upload completed successfully; final mandatory enforcement rejected the synthetic failed mandatory result, producing the expected overall workflow failure. The current validated release target is `072df3c372d431e3ac5fd0e4569b55f93555ce95`. Later metadata or documentation commits may record these results without forcing an infinite rerun loop.
 
 The release target advanced when PR #3 merged the evidence-validator environment-leakage fix and regression test into protected `master`. The older `ad231609...` proof pair remains historical evidence for an earlier implementation target, but it is no longer the current `v1.1.0` release proof pair.
 
