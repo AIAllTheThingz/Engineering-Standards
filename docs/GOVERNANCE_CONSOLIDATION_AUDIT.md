@@ -19,6 +19,8 @@ The machine-readable companion is [../governance/standards-consistency.json](../
 | Historical verified implementation commit | `da185738a83d2d4ab1d420ce4ded89bfe12b2cc7` |
 | Historical evidence metadata commit | `4ad0896bc42b5c826abbc168728facbfd0095965` |
 | Current validated implementation commit | `ad23160917584eacee2dd1a11369f7f81932ff57` |
+| Current evidence metadata commit | `a34d05fb77a1b969a139066b06d182970949d1a6` |
+| Current branch head commit | `a34d05fb77a1b969a139066b06d182970949d1a6` |
 | Current release target commit | `ad23160917584eacee2dd1a11369f7f81932ff57` |
 | Repository governance version | `1.1.0` |
 | Default branch | `master` |
@@ -41,6 +43,8 @@ Verified GitHub workflow evidence currently on record:
 | Current controlled failure proof | `28282082709` | `ad23160917584eacee2dd1a11369f7f81932ff57` | `failure` | `governance-evidence-28282082709` | `58efdb73e05da832e5062db25add144c1cc8f95203475ad36dd598a079c4c489` |
 
 The current controlled-failure run failed only at final enforcement after evidence upload and after final completion evidence validation succeeded. The current validated implementation is `ad23160917584eacee2dd1a11369f7f81932ff57`. A later metadata commit may record these results without forcing an infinite rerun loop.
+
+The current branch head `a34d05fb77a1b969a139066b06d182970949d1a6` is a metadata-only commit that refreshed checked-in local evidence fields. GitHub push run `28282351706` succeeded for that head and produced artifact `governance-evidence-28282351706` (artifact ID `7922347847`, digest `d4856f71ae107eb24aa3f08d713380b8c9059a3314a0db92d257910fcf7e6c98`, expires `2026-07-27T07:25:21Z`). That run confirms the current head still validates, but it does not change the intended immutable release target because no later implementation changes exist after `ad23160917584eacee2dd1a11369f7f81932ff57`.
 
 ## Canonical Terms
 
@@ -79,13 +83,13 @@ Canonical completion statuses are:
 
 ## Remaining Consolidation Areas
 
-The completed standards work was preserved. Remaining active work is concentrated in:
+The repository-wide consolidation work is complete. The remaining active work is release-completion work only:
 
-- Evidence schema expansion from the minimal `1.0.0` shape to additive `1.1.0` fields.
-- Workflow semantic hardening and negative-path validation.
-- Example strengthening so Integration, Infrastructure, and the combined script runner execute real synthetic governed flows.
-- Documentation synchronization to the actual verified GitHub evidence and the current branch-protection state.
-- Release authorization, branch protection, and tag publication decisions that require explicit maintainer approval.
+- Branch protection or repository ruleset configuration, if and when explicit authorization is granted.
+- Release approval recording with approver identity, review location, and tag or publication authorization.
+- Annotated tag creation for `v1.1.0` against `ad23160917584eacee2dd1a11369f7f81932ff57`.
+- GitHub release publication from the approved immutable tag.
+- Post-release verification and creation of the public baseline record after publication.
 
 ## Workflow Inventory
 
@@ -138,6 +142,8 @@ Current observed release status on 2026-06-27:
 - GitHub releases present: none
 - Release tag created: no
 - Release published: no
+- Current branch head: `a34d05fb77a1b969a139066b06d182970949d1a6`
+- Current head GitHub push validation: success run `28282351706`
 
 Proposed version remains `1.1.0` unless the remaining implementation work introduces a breaking schema or workflow interface change that requires a larger version decision.
 

@@ -226,6 +226,8 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 - The latest independently verified success run is `28281939062` for validated implementation commit `ad23160917584eacee2dd1a11369f7f81932ff57`.
 - The paired controlled-failure proof run is `28282082709` and failed only at final enforcement after evidence upload.
 - The independently computed ZIP SHA-256 values are `0d4b00aaed3895bbbda7aa044519c473a9cde9fc0d228004b1a414df8a5c29a5` for the success artifact and `58efdb73e05da832e5062db25add144c1cc8f95203475ad36dd598a079c4c489` for the controlled-failure artifact.
+- The current branch head is metadata commit `a34d05fb77a1b969a139066b06d182970949d1a6`, and its push validation run `28282351706` succeeded with artifact `governance-evidence-28282351706` (artifact ID `7922347847`, digest `d4856f71ae107eb24aa3f08d713380b8c9059a3314a0db92d257910fcf7e6c98`, expires `2026-07-27T07:25:21Z`).
+- The intended immutable release target remains implementation commit `ad23160917584eacee2dd1a11369f7f81932ff57` because there are no later implementation changes after that repair commit.
 - `master` was inspected through the GitHub branch-protection API on 2026-06-27 and is currently not protected by classic branch protection.
 - Repository rulesets were inspected on 2026-06-27 and none are configured.
 - No Git tags or GitHub releases currently exist for this repository.

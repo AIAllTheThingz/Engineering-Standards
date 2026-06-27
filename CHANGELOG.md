@@ -6,6 +6,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Changed
 
+- Synchronized final public release documentation to distinguish the validated implementation commit, the later evidence metadata head, the current metadata-head GitHub validation run, and the remaining release-only blockers.
 - Fixed aggregate governance evidence generation so repo-level validation records use repository-relative script paths instead of workstation-specific absolute paths.
 - Added regression coverage for aggregate evidence path relativity and evidence-path normalization failure handling.
 - Regenerated local evidence for the aggregate evidence path repair and verified GitHub success run `28281939062` plus controlled-failure run `28282082709` for implementation commit `ad23160917584eacee2dd1a11369f7f81932ff57`.
