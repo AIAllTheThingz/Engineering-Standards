@@ -25,6 +25,8 @@
     "The controlled-failure path deliberately injected a failed mandatory Markdown outcome after successful Markdown report generation. Evidence generation, completion-evidence validation, and artifact upload completed successfully; final mandatory enforcement rejected the synthetic failed mandatory result, producing the expected overall workflow failure.",
     "Later documentation and evidence metadata commits may record this verification without changing the immutable release target model.",
     "Artifact evidence uses evidenceCommitSha null because workflow artifacts are immutable GitHub Actions downloads and are not committed back to the validated source commit.",
-    "Historical success run 28293025156 and controlled-failure run 28297679210 remain audit evidence for the earlier PR #3 release target 072df3c372d431e3ac5fd0e4569b55f93555ce95."
+    "Historical success run 28293025156 and controlled-failure run 28297679210 remain audit evidence for the earlier PR #3 release target 072df3c372d431e3ac5fd0e4569b55f93555ce95.",
+    "PR #6 metadata validation run 28306612395 passed for head 652a692fb587d393955e26c06ae44d49ec32d130 with artifact governance-evidence-28306612395 (artifact ID 7929571866; GitHub digest sha256:8affac855b1844923d8f8d71afc18cc9d957d79a4b988828a100c47c18f87b4d).",
+    "Post-PR #6 merge validation run 28306723435 passed for protected master metadata head e17240bb31abf03a3b0d66900fa7a9b9e01225cc with artifact governance-evidence-28306723435 (artifact ID 7929606721; GitHub digest sha256:14aa713c53d43cfc552a5d6dd59c0bd8504d88289cc3f563bf6ea8251c916d59). This metadata-head validation records release-preparation state and does not replace the exact-target release proof pair."
   ]
 }

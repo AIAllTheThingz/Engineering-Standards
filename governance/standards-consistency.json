@@ -4,8 +4,8 @@
   "repositoryVersion": "1.1.0",
   "defaultBranch": "master",
   "riskClassification": "High",
-  "generatedFromCommit": "2704049d7e826975d956611b194214dd79ea3686",
-  "generatedAtUtc": "2026-06-28T00:28:53.0735069Z",
+  "generatedFromCommit": "e17240bb31abf03a3b0d66900fa7a9b9e01225cc",
+  "generatedAtUtc": "2026-06-28T01:20:03.6401143Z",
   "canonicalStatusValues": [
     "Passed",
     "Failed",
@@ -457,7 +457,7 @@
   },
   "githubEvidence": {
     "status": "Passed",
-    "reason": "GitHub workflow success run 28304098315 and controlled-failure run 28306149811 were independently verified for protected-master release target 2704049d7e826975d956611b194214dd79ea3686."
+    "reason": "GitHub workflow success run 28304098315 and controlled-failure run 28306149811 were independently verified for protected-master release target 2704049d7e826975d956611b194214dd79ea3686. PR #6 validation run 28306612395 and post-merge master validation run 28306723435 passed for metadata-only release-preparation commits without changing the proposed release target."
   },
   "branchProtection": {
     "status": "Passed",
@@ -469,6 +469,6 @@
     "proposedTag": "v1.1.0",
     "targetCommitSha": "2704049d7e826975d956611b194214dd79ea3686",
     "releaseCreated": false,
-    "reason": "Validated workflow evidence now exists for protected-master release target 2704049d7e826975d956611b194214dd79ea3686, but release publication remains blocked because independent release approval, tag authorization, and GitHub release-publication authorization have not been granted."
+    "reason": "Validated workflow evidence exists for protected-master release target 2704049d7e826975d956611b194214dd79ea3686 and post-PR #6 metadata-head validation run 28306723435 passed for e17240bb31abf03a3b0d66900fa7a9b9e01225cc, but release publication remains blocked because independent release approval, tag authorization, and GitHub release-publication authorization have not been granted."
   }
 }

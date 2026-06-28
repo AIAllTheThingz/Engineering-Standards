@@ -22,6 +22,7 @@ The machine-readable companion is [../governance/standards-consistency.json](../
 | Historical documentation synchronization baseline commit | `ab45ee1f6b82449e3b595b7e0951dc00b4db364b` |
 | PR #3 final implementation commit | `ab86b6b7c34fde024f2933febea6461026323631` |
 | Current protected `master` release target commit | `2704049d7e826975d956611b194214dd79ea3686` |
+| Current protected `master` metadata head after PR #6 | `e17240bb31abf03a3b0d66900fa7a9b9e01225cc` |
 | Repository governance version | `1.1.0` |
 | Default branch | `master` |
 | Repository risk | `High` |
@@ -43,8 +44,9 @@ Verified GitHub workflow evidence currently on record:
 | Historical implementation controlled failure proof | `28282082709` | `ad23160917584eacee2dd1a11369f7f81932ff57` | `failure` | `governance-evidence-28282082709` | `58efdb73e05da832e5062db25add144c1cc8f95203475ad36dd598a079c4c489` |
 | Current protected-master success proof | `28304098315` | `2704049d7e826975d956611b194214dd79ea3686` | `success` | `governance-evidence-28304098315` | `8cb3dec5db93e1834c38b291ee4445f9c8c69f4954e3152a6c1f296da8d205dd` |
 | Current protected-master controlled failure proof | `28306149811` | `2704049d7e826975d956611b194214dd79ea3686` | `failure` | `governance-evidence-28306149811` | `b50936c7c1575af9cce201a9a0e36a46dfc1ce30752482c21d1ca008ae5b0bd2` |
+| Current metadata-head post-merge proof | `28306723435` | `e17240bb31abf03a3b0d66900fa7a9b9e01225cc` | `success` | `governance-evidence-28306723435` | `14aa713c53d43cfc552a5d6dd59c0bd8504d88289cc3f563bf6ea8251c916d59` |
 
-The current controlled-failure path deliberately injected a failed mandatory Markdown outcome after successful Markdown report generation. Evidence generation, completion-evidence validation, and artifact upload completed successfully; final mandatory enforcement rejected the synthetic failed mandatory result, producing the expected overall workflow failure. The current validated release target is `2704049d7e826975d956611b194214dd79ea3686`. Later metadata or documentation commits may record these results without forcing an infinite rerun loop.
+The current controlled-failure path deliberately injected a failed mandatory Markdown outcome after successful Markdown report generation. Evidence generation, completion-evidence validation, and artifact upload completed successfully; final mandatory enforcement rejected the synthetic failed mandatory result, producing the expected overall workflow failure. The current validated release target is `2704049d7e826975d956611b194214dd79ea3686`. Later metadata or documentation commits, including PR #6 merge commit `e17240bb31abf03a3b0d66900fa7a9b9e01225cc`, may record these results without forcing an infinite rerun loop or changing the immutable release-target proposal.
 
 The release target advanced again when PR #5 merged executable evidence-validator semantics, shared governance-validation behavior, and regression tests into protected `master`. The older `ad231609...` and `072df3...` proof pairs remain historical evidence for earlier implementation targets, but they are no longer the current `v1.1.0` release proof pair.
 
@@ -159,7 +161,9 @@ Current observed release status on 2026-06-28:
 - Release tag created: no
 - Release published: no
 - Protected `master` head observed during release-validation refresh after PR #5: `2704049d7e826975d956611b194214dd79ea3686`
+- Protected `master` metadata head observed after PR #6: `e17240bb31abf03a3b0d66900fa7a9b9e01225cc`
 - Exact-target GitHub push validation: success run `28304098315`
+- Metadata-head GitHub push validation: success run `28306723435`
 
 Proposed version remains `1.1.0` unless the remaining implementation work introduces a breaking schema or workflow interface change that requires a larger version decision.
 
@@ -172,6 +176,7 @@ Current implementation validation state:
 - Full local validation completed for the implementation update that fixed aggregate evidence path handling.
 - Fresh GitHub success validation completed for commit `2704049d7e826975d956611b194214dd79ea3686`.
 - Fresh controlled-failure validation completed for commit `2704049d7e826975d956611b194214dd79ea3686`.
+- Post-PR #6 metadata-head validation completed for commit `e17240bb31abf03a3b0d66900fa7a9b9e01225cc`.
 - Both new artifacts were downloaded, hashed independently, and verified with `scripts/Test-WorkflowEvidenceArtifact.ps1`.
 - `evidence/latest-verified-run.json` was updated after independent verification.
 
