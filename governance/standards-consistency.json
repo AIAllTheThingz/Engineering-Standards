@@ -4,8 +4,8 @@
   "repositoryVersion": "1.1.0",
   "defaultBranch": "master",
   "riskClassification": "High",
-  "generatedFromCommit": "072df3c372d431e3ac5fd0e4569b55f93555ce95",
-  "generatedAtUtc": "2026-06-27T07:15:00Z",
+  "generatedFromCommit": "2704049d7e826975d956611b194214dd79ea3686",
+  "generatedAtUtc": "2026-06-28T00:28:53.0735069Z",
   "canonicalStatusValues": [
     "Passed",
     "Failed",
@@ -28,7 +28,13 @@
       "lastReviewed": "2026-06-19",
       "ownerRole": "Engineering Governance",
       "parentDocuments": [],
-      "childOrHandoffStandards": [ "governance/COMPLETION_EVIDENCE.md", "governance/RISK_CLASSIFICATION.md", "governance/EXCEPTION_PROCESS.md", "governance/AI_GENERATED_CODE_POLICY.md", "agents/AGENTS_Base.md" ],
+      "childOrHandoffStandards": [
+        "governance/COMPLETION_EVIDENCE.md",
+        "governance/RISK_CLASSIFICATION.md",
+        "governance/EXCEPTION_PROCESS.md",
+        "governance/AI_GENERATED_CODE_POLICY.md",
+        "agents/AGENTS_Base.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -49,8 +55,14 @@
       "status": "Active",
       "lastReviewed": "2026-06-19",
       "ownerRole": "Engineering Governance",
-      "parentDocuments": [ "governance/ORGANIZATION_CONTRACT.md" ],
-      "childOrHandoffStandards": [ "schemas/completion-result.schema.json", "schemas/test-evidence.schema.json", "schemas/artifact-record.schema.json" ],
+      "parentDocuments": [
+        "governance/ORGANIZATION_CONTRACT.md"
+      ],
+      "childOrHandoffStandards": [
+        "schemas/completion-result.schema.json",
+        "schemas/test-evidence.schema.json",
+        "schemas/artifact-record.schema.json"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -71,8 +83,12 @@
       "status": "Active",
       "lastReviewed": "2026-06-19",
       "ownerRole": "Engineering Governance",
-      "parentDocuments": [ "governance/ORGANIZATION_CONTRACT.md" ],
-      "childOrHandoffStandards": [ "agents/AGENTS_Base.md" ],
+      "parentDocuments": [
+        "governance/ORGANIZATION_CONTRACT.md"
+      ],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_Base.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -93,8 +109,12 @@
       "status": "Active",
       "lastReviewed": "2026-06-19",
       "ownerRole": "Engineering Governance",
-      "parentDocuments": [ "governance/ORGANIZATION_CONTRACT.md" ],
-      "childOrHandoffStandards": [ "agents/AGENTS_Base.md" ],
+      "parentDocuments": [
+        "governance/ORGANIZATION_CONTRACT.md"
+      ],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_Base.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -115,8 +135,12 @@
       "status": "Active",
       "lastReviewed": "2026-06-19",
       "ownerRole": "Engineering Governance",
-      "parentDocuments": [ "governance/ORGANIZATION_CONTRACT.md" ],
-      "childOrHandoffStandards": [ "agents/AGENTS_Base.md" ],
+      "parentDocuments": [
+        "governance/ORGANIZATION_CONTRACT.md"
+      ],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_Base.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -137,8 +161,19 @@
       "status": "Active",
       "lastReviewed": "2026-06-21",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [ "agents/AGENTS_Base.md", "governance/ORGANIZATION_CONTRACT.md" ],
-      "childOrHandoffStandards": [ "agents/AGENTS_PowerShell.md", "agents/AGENTS_DotNet.md", "agents/AGENTS_Database.md", "agents/AGENTS_WorkerService.md", "agents/AGENTS_Integration.md", "agents/AGENTS_Infrastructure.md", "agents/AGENTS_WebFrontend.md" ],
+      "parentDocuments": [
+        "agents/AGENTS_Base.md",
+        "governance/ORGANIZATION_CONTRACT.md"
+      ],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_PowerShell.md",
+        "agents/AGENTS_DotNet.md",
+        "agents/AGENTS_Database.md",
+        "agents/AGENTS_WorkerService.md",
+        "agents/AGENTS_Integration.md",
+        "agents/AGENTS_Infrastructure.md",
+        "agents/AGENTS_WebFrontend.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -149,7 +184,9 @@
       "positiveValidatorCoverage": "Present",
       "negativeWeakeningCoverage": "Present",
       "pesterMutationCoverage": "Present",
-      "identifiedDiscrepancies": [ "Repository governance version was 1.0.0 while consolidation release is 1.1.0." ],
+      "identifiedDiscrepancies": [
+        "Repository governance version was 1.0.0 while consolidation release is 1.1.0."
+      ],
       "resolution": "Repository metadata updated to governance version 1.1.0."
     },
     {
@@ -159,8 +196,18 @@
       "status": "Active",
       "lastReviewed": "2026-06-19",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [ "governance/ORGANIZATION_CONTRACT.md" ],
-      "childOrHandoffStandards": [ "agents/AGENTS_PowerShell.md", "agents/AGENTS_DotNet.md", "agents/AGENTS_Database.md", "agents/AGENTS_WorkerService.md", "agents/AGENTS_Integration.md", "agents/AGENTS_Infrastructure.md", "agents/AGENTS_WebFrontend.md" ],
+      "parentDocuments": [
+        "governance/ORGANIZATION_CONTRACT.md"
+      ],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_PowerShell.md",
+        "agents/AGENTS_DotNet.md",
+        "agents/AGENTS_Database.md",
+        "agents/AGENTS_WorkerService.md",
+        "agents/AGENTS_Integration.md",
+        "agents/AGENTS_Infrastructure.md",
+        "agents/AGENTS_WebFrontend.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -181,8 +228,14 @@
       "status": "Active",
       "lastReviewed": "2026-06-20",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [ "agents/AGENTS_Base.md" ],
-      "childOrHandoffStandards": [ "agents/AGENTS_DotNet.md", "agents/AGENTS_Database.md", "agents/AGENTS_Infrastructure.md" ],
+      "parentDocuments": [
+        "agents/AGENTS_Base.md"
+      ],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_DotNet.md",
+        "agents/AGENTS_Database.md",
+        "agents/AGENTS_Infrastructure.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -203,8 +256,16 @@
       "status": "Active",
       "lastReviewed": "2026-06-20",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [ "agents/AGENTS_Base.md" ],
-      "childOrHandoffStandards": [ "agents/AGENTS_WebFrontend.md", "agents/AGENTS_Database.md", "agents/AGENTS_WorkerService.md", "agents/AGENTS_Integration.md", "agents/AGENTS_Infrastructure.md" ],
+      "parentDocuments": [
+        "agents/AGENTS_Base.md"
+      ],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_WebFrontend.md",
+        "agents/AGENTS_Database.md",
+        "agents/AGENTS_WorkerService.md",
+        "agents/AGENTS_Integration.md",
+        "agents/AGENTS_Infrastructure.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -225,8 +286,14 @@
       "status": "Active",
       "lastReviewed": "2026-06-20",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [ "agents/AGENTS_Base.md" ],
-      "childOrHandoffStandards": [ "agents/AGENTS_WorkerService.md", "agents/AGENTS_Integration.md", "agents/AGENTS_Infrastructure.md" ],
+      "parentDocuments": [
+        "agents/AGENTS_Base.md"
+      ],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_WorkerService.md",
+        "agents/AGENTS_Integration.md",
+        "agents/AGENTS_Infrastructure.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -247,8 +314,14 @@
       "status": "Active",
       "lastReviewed": "2026-06-20",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [ "agents/AGENTS_Base.md" ],
-      "childOrHandoffStandards": [ "agents/AGENTS_Database.md", "agents/AGENTS_Integration.md", "agents/AGENTS_Infrastructure.md" ],
+      "parentDocuments": [
+        "agents/AGENTS_Base.md"
+      ],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_Database.md",
+        "agents/AGENTS_Integration.md",
+        "agents/AGENTS_Infrastructure.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -269,8 +342,22 @@
       "status": "Active",
       "lastReviewed": "2026-06-21",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [ "agents/AGENTS_Base.md", "governance/ORGANIZATION_CONTRACT.md", "governance/COMPLETION_EVIDENCE.md", "governance/RISK_CLASSIFICATION.md", "governance/EXCEPTION_PROCESS.md", "governance/AI_GENERATED_CODE_POLICY.md" ],
-      "childOrHandoffStandards": [ "agents/AGENTS_PowerShell.md", "agents/AGENTS_DotNet.md", "agents/AGENTS_Database.md", "agents/AGENTS_WorkerService.md", "agents/AGENTS_Infrastructure.md", "agents/AGENTS_WebFrontend.md" ],
+      "parentDocuments": [
+        "agents/AGENTS_Base.md",
+        "governance/ORGANIZATION_CONTRACT.md",
+        "governance/COMPLETION_EVIDENCE.md",
+        "governance/RISK_CLASSIFICATION.md",
+        "governance/EXCEPTION_PROCESS.md",
+        "governance/AI_GENERATED_CODE_POLICY.md"
+      ],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_PowerShell.md",
+        "agents/AGENTS_DotNet.md",
+        "agents/AGENTS_Database.md",
+        "agents/AGENTS_WorkerService.md",
+        "agents/AGENTS_Infrastructure.md",
+        "agents/AGENTS_WebFrontend.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -281,7 +368,9 @@
       "positiveValidatorCoverage": "Present",
       "negativeWeakeningCoverage": "Present",
       "pesterMutationCoverage": "Present",
-      "identifiedDiscrepancies": [ "Integration previously declared 1.0.0 and lacked semantic validator coverage comparable to other technology standards." ],
+      "identifiedDiscrepancies": [
+        "Integration previously declared 1.0.0 and lacked semantic validator coverage comparable to other technology standards."
+      ],
       "resolution": "Integration strengthened to 1.1.0 with semantic validator and Pester mutation coverage."
     },
     {
@@ -291,8 +380,17 @@
       "status": "Active",
       "lastReviewed": "2026-06-20",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [ "agents/AGENTS_Base.md" ],
-      "childOrHandoffStandards": [ "agents/AGENTS_PowerShell.md", "agents/AGENTS_DotNet.md", "agents/AGENTS_Database.md", "agents/AGENTS_WorkerService.md", "agents/AGENTS_Integration.md", "agents/AGENTS_WebFrontend.md" ],
+      "parentDocuments": [
+        "agents/AGENTS_Base.md"
+      ],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_PowerShell.md",
+        "agents/AGENTS_DotNet.md",
+        "agents/AGENTS_Database.md",
+        "agents/AGENTS_WorkerService.md",
+        "agents/AGENTS_Integration.md",
+        "agents/AGENTS_WebFrontend.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -313,8 +411,15 @@
       "status": "Active",
       "lastReviewed": "2026-06-21",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [ "agents/AGENTS_Base.md" ],
-      "childOrHandoffStandards": [ "agents/AGENTS_DotNet.md", "agents/AGENTS_Integration.md", "agents/AGENTS_Infrastructure.md", "agents/AGENTS_WorkerService.md" ],
+      "parentDocuments": [
+        "agents/AGENTS_Base.md"
+      ],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_DotNet.md",
+        "agents/AGENTS_Integration.md",
+        "agents/AGENTS_Infrastructure.md",
+        "agents/AGENTS_WorkerService.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -352,7 +457,7 @@
   },
   "githubEvidence": {
     "status": "Passed",
-    "reason": "GitHub workflow success run 28293025156 and controlled-failure run 28297679210 were independently verified for protected-master release target 072df3c372d431e3ac5fd0e4569b55f93555ce95."
+    "reason": "GitHub workflow success run 28304098315 and controlled-failure run 28306149811 were independently verified for protected-master release target 2704049d7e826975d956611b194214dd79ea3686."
   },
   "branchProtection": {
     "status": "Passed",
@@ -362,8 +467,8 @@
     "status": "Blocked",
     "proposedVersion": "1.1.0",
     "proposedTag": "v1.1.0",
-    "targetCommitSha": "072df3c372d431e3ac5fd0e4569b55f93555ce95",
+    "targetCommitSha": "2704049d7e826975d956611b194214dd79ea3686",
     "releaseCreated": false,
-    "reason": "Validated workflow evidence now exists for protected-master release target 072df3c372d431e3ac5fd0e4569b55f93555ce95, but release publication remains blocked because independent release approval, tag authorization, and GitHub release-publication authorization have not been granted."
+    "reason": "Validated workflow evidence now exists for protected-master release target 2704049d7e826975d956611b194214dd79ea3686, but release publication remains blocked because independent release approval, tag authorization, and GitHub release-publication authorization have not been granted."
   }
 }

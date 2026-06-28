@@ -3,7 +3,7 @@
 | Status | Active |
 | Version | 1.1.0 |
 | Owner role | Engineering Standards Maintainers |
-| Last reviewed | 2026-06-27 |
+| Last reviewed | 2026-06-28 |
 
 ## Purpose
 
@@ -21,7 +21,7 @@ The machine-readable companion is [../governance/standards-consistency.json](../
 | Historical implementation validation commit | `ad23160917584eacee2dd1a11369f7f81932ff57` |
 | Historical documentation synchronization baseline commit | `ab45ee1f6b82449e3b595b7e0951dc00b4db364b` |
 | PR #3 final implementation commit | `ab86b6b7c34fde024f2933febea6461026323631` |
-| Current protected `master` release target commit | `072df3c372d431e3ac5fd0e4569b55f93555ce95` |
+| Current protected `master` release target commit | `2704049d7e826975d956611b194214dd79ea3686` |
 | Repository governance version | `1.1.0` |
 | Default branch | `master` |
 | Repository risk | `High` |
@@ -41,12 +41,12 @@ Verified GitHub workflow evidence currently on record:
 | Historical evidence metadata push run | `27915485743` | `4ad0896bc42b5c826abbc168728facbfd0095965` | `success` | `governance-evidence-27915485743` | `1073955aad4015aa8c77d338ddca23328c2e92739dfdebf202d2e7aab71160bc` |
 | Historical implementation success proof | `28281939062` | `ad23160917584eacee2dd1a11369f7f81932ff57` | `success` | `governance-evidence-28281939062` | `0d4b00aaed3895bbbda7aa044519c473a9cde9fc0d228004b1a414df8a5c29a5` |
 | Historical implementation controlled failure proof | `28282082709` | `ad23160917584eacee2dd1a11369f7f81932ff57` | `failure` | `governance-evidence-28282082709` | `58efdb73e05da832e5062db25add144c1cc8f95203475ad36dd598a079c4c489` |
-| Current protected-master success proof | `28293025156` | `072df3c372d431e3ac5fd0e4569b55f93555ce95` | `success` | `governance-evidence-28293025156` | `f1fd73b8b59687ece9f3473b18eda98711eee0eb45700444760f2b44a8172c45` |
-| Current protected-master controlled failure proof | `28297679210` | `072df3c372d431e3ac5fd0e4569b55f93555ce95` | `failure` | `governance-evidence-28297679210` | `30d3cca15513d87ae2068fc3b1c1303aa862ba7ce6b8e6d0d5b5de787082e997` |
+| Current protected-master success proof | `28304098315` | `2704049d7e826975d956611b194214dd79ea3686` | `success` | `governance-evidence-28304098315` | `8cb3dec5db93e1834c38b291ee4445f9c8c69f4954e3152a6c1f296da8d205dd` |
+| Current protected-master controlled failure proof | `28306149811` | `2704049d7e826975d956611b194214dd79ea3686` | `failure` | `governance-evidence-28306149811` | `b50936c7c1575af9cce201a9a0e36a46dfc1ce30752482c21d1ca008ae5b0bd2` |
 
-The current controlled-failure path deliberately injected a failed mandatory Markdown outcome after successful Markdown report generation. Evidence generation, completion-evidence validation, and artifact upload completed successfully; final mandatory enforcement rejected the synthetic failed mandatory result, producing the expected overall workflow failure. The current validated release target is `072df3c372d431e3ac5fd0e4569b55f93555ce95`. Later metadata or documentation commits may record these results without forcing an infinite rerun loop.
+The current controlled-failure path deliberately injected a failed mandatory Markdown outcome after successful Markdown report generation. Evidence generation, completion-evidence validation, and artifact upload completed successfully; final mandatory enforcement rejected the synthetic failed mandatory result, producing the expected overall workflow failure. The current validated release target is `2704049d7e826975d956611b194214dd79ea3686`. Later metadata or documentation commits may record these results without forcing an infinite rerun loop.
 
-The release target advanced when PR #3 merged the evidence-validator environment-leakage fix and regression test into protected `master`. The older `ad231609...` proof pair remains historical evidence for an earlier implementation target, but it is no longer the current `v1.1.0` release proof pair.
+The release target advanced again when PR #5 merged executable evidence-validator semantics, shared governance-validation behavior, and regression tests into protected `master`. The older `ad231609...` and `072df3...` proof pairs remain historical evidence for earlier implementation targets, but they are no longer the current `v1.1.0` release proof pair.
 
 ## Canonical Terms
 
@@ -88,7 +88,7 @@ Canonical completion statuses are:
 The repository-wide consolidation work is complete. The remaining active work is release-completion work only:
 
 - Release approval recording with approver identity, review location, and tag or publication authorization.
-- Annotated tag creation for `v1.1.0` against `072df3c372d431e3ac5fd0e4569b55f93555ce95`.
+- Annotated tag creation for `v1.1.0` against `2704049d7e826975d956611b194214dd79ea3686`.
 - GitHub release publication from the approved immutable tag.
 - Post-release verification and creation of the public baseline record after publication.
 - CODEOWNERS remediation or an approved exception path for the sole-maintainer review gap if independent review remains unavailable.
@@ -108,7 +108,7 @@ Distribution workflow templates inspected:
 - [../workflows/database-ci.yml](../workflows/database-ci.yml)
 - [../workflows/web-ci.yml](../workflows/web-ci.yml)
 
-Actual GitHub verification has now proved that the current governance workflow can succeed, can fail honestly after evidence upload, and can produce independently verifiable artifacts for commit `072df3c372d431e3ac5fd0e4569b55f93555ce95`.
+Actual GitHub verification has now proved that the current governance workflow can succeed, can fail honestly after evidence upload, and can produce independently verifiable artifacts for commit `2704049d7e826975d956611b194214dd79ea3686`.
 
 ## Branch Protection
 
@@ -152,14 +152,14 @@ Applied configuration on `2026-06-27T13:54:22Z`:
 
 ## Release Status
 
-Current observed release status on 2026-06-27:
+Current observed release status on 2026-06-28:
 
 - Git tags present: none
 - GitHub releases present: none
 - Release tag created: no
 - Release published: no
-- Protected `master` head observed during release-validation refresh: `072df3c372d431e3ac5fd0e4569b55f93555ce95`
-- Exact-target GitHub push validation: success run `28293025156`
+- Protected `master` head observed during release-validation refresh after PR #5: `2704049d7e826975d956611b194214dd79ea3686`
+- Exact-target GitHub push validation: success run `28304098315`
 
 Proposed version remains `1.1.0` unless the remaining implementation work introduces a breaking schema or workflow interface change that requires a larger version decision.
 
@@ -170,8 +170,8 @@ Historical GitHub validation exists and is real.
 Current implementation validation state:
 
 - Full local validation completed for the implementation update that fixed aggregate evidence path handling.
-- Fresh GitHub success validation completed for commit `072df3c372d431e3ac5fd0e4569b55f93555ce95`.
-- Fresh controlled-failure validation completed for commit `072df3c372d431e3ac5fd0e4569b55f93555ce95`.
+- Fresh GitHub success validation completed for commit `2704049d7e826975d956611b194214dd79ea3686`.
+- Fresh controlled-failure validation completed for commit `2704049d7e826975d956611b194214dd79ea3686`.
 - Both new artifacts were downloaded, hashed independently, and verified with `scripts/Test-WorkflowEvidenceArtifact.ps1`.
 - `evidence/latest-verified-run.json` was updated after independent verification.
 
