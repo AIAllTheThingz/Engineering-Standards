@@ -223,13 +223,13 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 - Forbidden-pattern scanning excludes generated evidence and build output by default. Use `-IncludeGeneratedEvidence` only for diagnostics.
 - Detailed Pester audit evidence is stored as sanitized JSON in `evidence/pester-details.json`; raw Pester XML is temporary and is not uploaded.
 - Final workflow enforcement occurs after final evidence validation and artifact upload, so controlled failures still produce downloadable evidence.
-- The latest independently verified success run is `28293025156` for protected `master` merge commit `072df3c372d431e3ac5fd0e4569b55f93555ce95`.
-- The paired controlled-failure proof run is `28297679210`. The controlled-failure path deliberately injected a failed mandatory Markdown outcome after successful Markdown report generation. Evidence generation, completion-evidence validation, and artifact upload completed successfully; final mandatory enforcement rejected the synthetic failed mandatory result, producing the expected overall workflow failure.
-- The independently computed ZIP SHA-256 values are `f1fd73b8b59687ece9f3473b18eda98711eee0eb45700444760f2b44a8172c45` for success artifact `governance-evidence-28293025156` and `30d3cca15513d87ae2068fc3b1c1303aa862ba7ce6b8e6d0d5b5de787082e997` for controlled-failure artifact `governance-evidence-28297679210`.
-- The release target advanced from historical implementation commit `ad23160917584eacee2dd1a11369f7f81932ff57` to `072df3c372d431e3ac5fd0e4569b55f93555ce95` because PR #3 merged the evidence-validator environment-leakage fix and its regression test into protected `master`.
-- Historical runs `28281939062`, `28282082709`, and observed-head run `28290761409` remain audit history, but they are no longer the current `v1.1.0` release-validation pair.
-- `master` was inspected through the GitHub branch-protection API on 2026-06-27 and currently has verified classic branch protection with required check `Governance / Governance validation`.
-- Repository rulesets were inspected on 2026-06-27 and none are configured; classic branch protection is the single active enforcement mechanism.
+- The latest independently verified success run is `28304098315` for protected `master` merge commit `2704049d7e826975d956611b194214dd79ea3686`.
+- The paired controlled-failure proof run is `28306149811`. The controlled-failure path deliberately injected a failed mandatory Markdown outcome after successful Markdown report generation. Evidence generation, completion-evidence validation, and artifact upload completed successfully; final mandatory enforcement rejected the synthetic failed mandatory result, producing the expected overall workflow failure.
+- The independently computed ZIP SHA-256 values are `8cb3dec5db93e1834c38b291ee4445f9c8c69f4954e3152a6c1f296da8d205dd` for success artifact `governance-evidence-28304098315` and `b50936c7c1575af9cce201a9a0e36a46dfc1ce30752482c21d1ca008ae5b0bd2` for controlled-failure artifact `governance-evidence-28306149811`.
+- The release target advanced to `2704049d7e826975d956611b194214dd79ea3686` because PR #5 merged executable evidence-validator semantics, shared governance-validation behavior, and regression tests into protected `master`.
+- Historical runs `28281939062`, `28282082709`, `28290761409`, `28293025156`, and `28297679210` remain audit history, but they are no longer the current `v1.1.0` release-validation pair.
+- `master` was inspected through the GitHub branch-protection API on 2026-06-28 and currently has verified classic branch protection with required check `Governance / Governance validation`.
+- Repository rulesets were inspected on 2026-06-28 and none are configured; classic branch protection is the single active enforcement mechanism.
 - No Git tags or GitHub releases currently exist for this repository.
 - Release readiness remains blocked until an eligible independent reviewer or approved exception path is recorded, and until tag or GitHub release authorization is granted.
 
