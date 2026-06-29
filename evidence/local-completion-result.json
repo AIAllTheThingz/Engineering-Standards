@@ -7,19 +7,19 @@
   "githubJob": null,
   "artifactName": null,
   "repository": "AIAllTheThingz/Engineering-Standards",
-  "commitSha": "2704049d7e826975d956611b194214dd79ea3686",
+  "commitSha": "e17240bb31abf03a3b0d66900fa7a9b9e01225cc",
   "validatedCommitSha": "2704049d7e826975d956611b194214dd79ea3686",
   "evidenceCommitSha": null,
-  "branch": "release-validation-finalize-20260627",
-  "pullRequest": "#5",
+  "branch": "release-approval-finalize-20260628",
+  "pullRequest": null,
   "governanceVersion": "1.1.0",
   "riskClassification": "High",
   "changeCategory": "documentation",
   "status": "Blocked",
   "startedAtUtc": "2026-06-27T18:35:14.3146135Z",
-  "completedAtUtc": "2026-06-28T00:38:32.4073646Z",
+  "completedAtUtc": "2026-06-28T01:20:03.6401143Z",
   "durationSeconds": 0,
-  "summary": "Refreshed v1.1.0 release validation after PR #5 implementation changes: validated release target is 2704049d7e826975d956611b194214dd79ea3686, exact-target success run 28304098315 passed, exact-target controlled-failure run 28306149811 deliberately injected the expected failed mandatory Markdown outcome and then failed at final mandatory enforcement after evidence generation, completion-evidence validation, and artifact upload, and release authorization remains blocked pending independent approval or an approved exception.",
+  "summary": "Finalized v1.1.0 release-approval preparation after PR #6 metadata merge: protected master metadata head e17240bb31abf03a3b0d66900fa7a9b9e01225cc passed post-merge validation run 28306723435, proposed release target remains 2704049d7e826975d956611b194214dd79ea3686, exact-target success run 28304098315 and controlled-failure run 28306149811 remain the release proof pair, and release authorization remains blocked pending independent approval or an approved exception.",
   "changedFiles": [
     "README.md",
     "CHANGELOG.md",
@@ -113,13 +113,18 @@
     "scripts/Test-GitHubWorkflowArchitecture.ps1 -Path . -DefaultBranch master",
     "Invoke-ScriptAnalyzer -Path . -Recurse -Severity Error",
     "PowerShell parser validation over *.ps1, *.psm1, and *.psd1",
-    "Invoke-Pester -Path tests -Output Detailed: 180 passed, 0 failed"
+    "Invoke-Pester -Path tests -Output Detailed: 180 passed, 0 failed",
+    "git status --short --branch",
+    "gh run view 28306612395 --repo AIAllTheThingz/Engineering-Standards",
+    "gh run view 28306723435 --repo AIAllTheThingz/Engineering-Standards",
+    "gh api repos/AIAllTheThingz/Engineering-Standards/actions/artifacts/7929606721"
   ],
   "commandsNotExecuted": [
     "No v1.1.0 tag creation was run because tag authorization was not granted.",
     "No GitHub release publication was run because release-publication authorization was not granted.",
     "No exception approval was recorded because no real approver supplied approval in a durable repository record.",
-    "No implementation, validator, script, workflow, schema, test, or agent-standard file was modified in this metadata-only refresh."
+    "No Dependabot PR merge was run because dependency-update PRs #1 and #2 have failed governance checks and are outside this release-finalization scope.",
+    "No implementation, validator, script, workflow, schema, test, or agent-standard file was modified in this metadata-only finalization."
   ],
   "tests": [
     {
@@ -519,16 +524,16 @@
       "status": "Passed",
       "requiredValidation": true,
       "evidenceSource": "GitHubArtifact",
-      "command": "Governance CI runs 28304098315 and 28306149811",
+      "command": "Governance CI runs 28304098315, 28306149811, 28306612395, and 28306723435",
       "workingDirectory": ".",
       "startedAtUtc": "2026-06-27T22:44:25Z",
-      "completedAtUtc": "2026-06-28T00:22:49Z",
-      "durationSeconds": 5894,
+      "completedAtUtc": "2026-06-28T00:49:42Z",
+      "durationSeconds": 7524,
       "runtime": "GitHub Actions ubuntu-latest / pwsh",
       "toolVersion": "GitHub Actions Governance CI",
       "environment": "GitHub Actions",
       "exitCode": 0,
-      "summary": "GitHub-hosted validation passed for exact release target success run 28304098315; controlled-failure run 28306149811 deliberately injected a failed mandatory Markdown outcome after successful Markdown report generation, evidence generation, completion-evidence validation, and artifact upload, then failed at final mandatory enforcement as designed.",
+      "summary": "GitHub-hosted validation passed for exact release target success run 28304098315; controlled-failure run 28306149811 failed at final mandatory enforcement as designed after evidence upload; PR #6 validation run 28306612395 and post-merge master metadata-head run 28306723435 also passed without changing the proposed release target.",
       "warnings": [],
       "failureReason": null,
       "blockedReason": null,
@@ -557,7 +562,20 @@
         "controlledFailureArtifactGitHubDigest": "sha256:b50936c7c1575af9cce201a9a0e36a46dfc1ce30752482c21d1ca008ae5b0bd2",
         "controlledFailureArtifactZipSha256": "b50936c7c1575af9cce201a9a0e36a46dfc1ce30752482c21d1ca008ae5b0bd2",
         "controlledFailureArtifactExpiresAtUtc": "2026-07-28T00:22:45Z",
-        "verifiedArtifactFileCount": 32
+        "verifiedArtifactFileCount": 32,
+        "pr6ValidationRunId": 28306612395,
+        "pr6ValidationHeadSha": "652a692fb587d393955e26c06ae44d49ec32d130",
+        "pr6Artifact": "governance-evidence-28306612395",
+        "pr6ArtifactId": 7929571866,
+        "pr6ArtifactGitHubDigest": "sha256:8affac855b1844923d8f8d71afc18cc9d957d79a4b988828a100c47c18f87b4d",
+        "postMergeMasterRunId": 28306723435,
+        "postMergeMasterHeadSha": "e17240bb31abf03a3b0d66900fa7a9b9e01225cc",
+        "postMergeMasterArtifact": "governance-evidence-28306723435",
+        "postMergeMasterArtifactId": 7929606721,
+        "postMergeMasterArtifactGitHubDigest": "sha256:14aa713c53d43cfc552a5d6dd59c0bd8504d88289cc3f563bf6ea8251c916d59",
+        "postMergeMasterArtifactSizeBytes": 48510,
+        "postMergeMasterArtifactExpiresAtUtc": "2026-07-28T00:49:39Z",
+        "releaseTargetRemains": "2704049d7e826975d956611b194214dd79ea3686"
       }
     },
     {
@@ -570,16 +588,16 @@
       "command": "Review release approval, independent reviewer availability, and GOV-2026-001 exception state",
       "workingDirectory": ".",
       "startedAtUtc": "2026-06-27T22:20:23.6510804Z",
-      "completedAtUtc": "2026-06-27T22:20:23.6510804Z",
+      "completedAtUtc": "2026-06-28T01:20:03.6401143Z",
       "durationSeconds": 0,
       "runtime": "Repository governance review",
       "toolVersion": "1.1.0",
       "environment": "Repository metadata",
       "exitCode": null,
-      "summary": "Release approval is blocked because no eligible independent reviewer or approved GOV-2026-001 exception has been recorded.",
+      "summary": "Release approval is blocked because no eligible independent reviewer or approved GOV-2026-001 exception has been recorded; PR #6 metadata validation and post-merge validation do not authorize tagging or publication.",
       "warnings": [],
       "failureReason": null,
-      "blockedReason": "No eligible independent reviewer or approved GOV-2026-001 exception has been recorded.",
+      "blockedReason": "No eligible independent reviewer or approved GOV-2026-001 exception has been recorded; tag and GitHub release authorization are not granted.",
       "notApplicableRationale": null,
       "manualProcedure": "Confirm independent reviewer availability or obtain approved scoped exception before tag creation or GitHub release publication.",
       "executionMode": {
@@ -596,7 +614,9 @@
         "directCollaboratorsObserved": [
           "AIAllTheThingz"
         ],
-        "codeownersReviewRequired": "No until resolvable independent CODEOWNERS identities exist"
+        "codeownersReviewRequired": "No until resolvable independent CODEOWNERS identities exist",
+        "postMergeMetadataHead": "e17240bb31abf03a3b0d66900fa7a9b9e01225cc",
+        "postMergeMasterRunId": 28306723435
       }
     }
   ],
@@ -1065,17 +1085,20 @@
     }
   ],
   "warnings": [
-    "Release approval remains blocked; technical validation does not authorize tag creation or release publication."
+    "Release approval remains blocked; technical validation does not authorize tag creation or release publication.",
+    "The post-PR #6 metadata-head run records release metadata validation but does not replace the exact-target release proof pair."
   ],
   "knownLimitations": [
     "No eligible independent reviewer has been confirmed.",
     "Draft GOV-2026-001 is not approved and does not authorize a tag or release.",
-    "CODEOWNERS references team-style identities that were not confirmed as resolvable review-capable principals in this repository context."
+    "CODEOWNERS references team-style identities that were not confirmed as resolvable review-capable principals in this repository context.",
+    "Open Dependabot PRs #1 and #2 remain unmerged because their governance checks are failed."
   ],
   "remainingRisks": [
     "No v1.1.0 tag exists yet.",
     "No GitHub release exists yet.",
-    "Release approval and publication remain blocked until independent approval or an approved exception is recorded."
+    "Release approval and publication remain blocked until independent approval or an approved exception is recorded.",
+    "Final metadata cleanup must be reviewed through a pull request before any protected-branch update."
   ],
   "exceptions": [
     "GOV-2026-001"
