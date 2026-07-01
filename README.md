@@ -231,8 +231,9 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 - Historical runs `28281939062`, `28282082709`, `28290761409`, `28293025156`, and `28297679210` remain audit history, but they are no longer the current `v1.1.0` release-validation pair.
 - `master` was inspected through the GitHub branch-protection API on 2026-06-28 and currently has verified classic branch protection with required check `Governance / Governance validation`.
 - Repository rulesets were inspected on 2026-06-28 and none are configured; classic branch protection is the single active enforcement mechanism.
-- No Git tags or GitHub releases currently exist for this repository.
-- Release readiness remains blocked until an eligible independent reviewer or approved exception path is recorded, and until tag or GitHub release authorization is granted.
+- Governance approval for `v1.1.0` is complete through PR #10, with formal GitHub approvals from `megad00die` and `mezuccolini`; `GOV-2026-001` is not required.
+- `v1.1.0` is approved for publication at immutable target `2704049d7e826975d956611b194214dd79ea3686`.
+- The annotated `v1.1.0` tag and GitHub Release are pending until the publication documentation pull request is reviewed, validated, and merged.
 
 ## Related Documents
 

@@ -4,6 +4,14 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ## [Unreleased]
 
+No unreleased changes are currently recorded.
+
+## [1.1.0] - 2026-06-30
+
+### Release Status
+
+Approved for publication. The authorized immutable tag target is `2704049d7e826975d956611b194214dd79ea3686`; the annotated tag and GitHub Release are created after the publication documentation pull request is reviewed, validated, approved, and merged.
+
 ### Changed
 
 - Reworked release-preparation documentation to use time-bound observed-head terminology instead of self-referential permanent "current head" claims, and completed verified sole-maintainer branch-protection documentation for enforced `master` protection.
