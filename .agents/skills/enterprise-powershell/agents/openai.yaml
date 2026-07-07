@@ -1,0 +1,6 @@
+interface:
+  display_name: "Enterprise PowerShell"
+  short_description: "Build governed enterprise PowerShell automation"
+  default_prompt: "Use $enterprise-powershell to create or substantially modify a governed enterprise PowerShell automation solution."
+policy:
+  allow_implicit_invocation: true
