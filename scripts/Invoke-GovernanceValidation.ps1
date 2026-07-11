@@ -155,15 +155,14 @@ function Invoke-TrustedValidation {
     $totalOutputLines = 0
     & pwsh -NoProfile -File $ScriptPath @Arguments 2>&1 | ForEach-Object {
         $totalOutputLines++
-        if ($output.Count -lt 200) {
-            $line = [string]$_
-            $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
-            $line = $line.Replace($workflowWorkspaceRoot, '[workspace]', $comparison)
-            if ($temporaryRoot) { $line = $line.Replace($temporaryRoot, '[temp]', $comparison) }
-            $line = [regex]::Replace($line, '[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '?')
-            if ($line -match '^\s*::') { $line = '[validator-output] ' + $line }
-            $output.Add($line)
-        }
+        $line = [string]$_
+        $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+        $line = $line.Replace($workflowWorkspaceRoot, '[workspace]', $comparison)
+        if ($temporaryRoot) { $line = $line.Replace($temporaryRoot, '[temp]', $comparison) }
+        $line = [regex]::Replace($line, '[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '?')
+        if ($line -match '^\s*::') { $line = '[validator-output] ' + $line }
+        if ($output.Count -eq 200) { $output.RemoveAt(0) }
+        $output.Add($line)
     }
     $exitCode = $LASTEXITCODE
     $completed = (Get-Date).ToUniversalTime()
@@ -188,7 +187,7 @@ function Invoke-TrustedValidation {
     }
     $script:results.Add($record)
     $output | ForEach-Object { Write-Output $_ }
-    if ($totalOutputLines -gt $output.Count) { Write-Output "[validator-output] $($totalOutputLines - $output.Count) additional lines were omitted." }
+    if ($totalOutputLines -gt $output.Count) { Write-Output "[validator-output] $($totalOutputLines - $output.Count) earlier lines were omitted." }
 }
 
 $callerRoot = (Resolve-Path -LiteralPath $Path).Path
