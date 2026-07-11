@@ -7,8 +7,8 @@
   "githubJob": null,
   "artifactName": null,
   "repository": "AIAllTheThingz/Engineering-Standards",
-  "commitSha": "f89ed8c14686de8a095c43e6c9dc458a23664765",
-  "validatedCommitSha": "f89ed8c14686de8a095c43e6c9dc458a23664765",
+  "commitSha": "cc5a055febb63a89f05ae405ad9cb0e7b9f33c66",
+  "validatedCommitSha": "cc5a055febb63a89f05ae405ad9cb0e7b9f33c66",
   "evidenceCommitSha": null,
   "branch": "record-v1.1.0-post-release-verification",
   "pullRequest": null,
@@ -19,11 +19,12 @@
   "startedAtUtc": "2026-06-27T18:35:14.3146135Z",
   "completedAtUtc": "2026-07-11T05:27:33.8270108Z",
   "durationSeconds": 1162339.5123973,
-  "summary": "The annotated v1.1.0 tag and GitHub Release were verified, all 13 Phase 8 local validation records passed, and hosted Governance CI run 29142197057 plus artifact governance-evidence-29142197057 were independently verified for commit B f89ed8c14686de8a095c43e6c9dc458a23664765. This executionContext Local record remains Blocked because it cannot itself claim mandatory hosted execution; the separate post-release and latest-run records contain the independently verified hosted facts, and evidence-only commit C records the two-stage binding without claiming its future SHA.",
+  "summary": "The annotated v1.1.0 tag and GitHub Release were verified, all 13 Phase 8 local validation records passed, and hosted Governance CI run 29142561087 plus artifact governance-evidence-29142561087 were independently verified for committed parent cc5a055febb63a89f05ae405ad9cb0e7b9f33c66. This executionContext Local record remains Blocked because run #78 does not validate the future follow-up containing these six metadata-alignment edits; Phase 3 and a new hosted run remain pending, and evidenceCommitSha stays null to avoid a future or self-referential claim.",
   "changedFiles": [
     "CHANGELOG.md",
     "README.md",
     "docs/releases/1.1.0.md",
+    "evidence/latest-verified-run.json",
     "evidence/local-completion-result.json",
     "evidence/releases/1.1.0-post-release-verification.json"
   ],
@@ -37,6 +38,7 @@
     "configuration": [],
     "tests": [],
     "generatedEvidence": [
+      "evidence/latest-verified-run.json",
       "evidence/local-completion-result.json",
       "evidence/releases/1.1.0-post-release-verification.json"
     ],
@@ -67,7 +69,7 @@
   "identityUsed": "Local maintainer context",
   "credentialMode": "Local workstation credentials",
   "notRunReason": null,
-  "blockedReason": "This executionContext Local record cannot be overall Passed while hosted execution is mandatory. Hosted run 29142197057 and artifact 8245556597 are independently verified for commit B in the separate post-release verification and canonical latest-run records.",
+  "blockedReason": "This executionContext Local record cannot be overall Passed while hosted execution is mandatory. Hosted run 29142561087 and artifact 8245676105 independently verify committed parent cc5a055febb63a89f05ae405ad9cb0e7b9f33c66, not these uncommitted six-file metadata-alignment edits; Phase 3 and a new hosted run are pending.",
   "notApplicableRationale": null,
   "commandsExecuted": [
     "git fetch --all --tags --prune",
@@ -111,7 +113,7 @@
     "Invoke-Pester -Path tests -Output Detailed: 180 passed, 0 failed, 0 skipped"
   ],
   "commandsNotExecuted": [
-    "No separate GitHub Actions run is claimed for evidence-only commit C; verified run 29142197057 applies to validated commit B f89ed8c14686de8a095c43e6c9dc458a23664765.",
+    "No GitHub Actions run is claimed for the future follow-up containing these six metadata-alignment edits; verified run 29142561087 applies to committed parent cc5a055febb63a89f05ae405ad9cb0e7b9f33c66.",
     "No Dependabot PR merge was run; Dependabot PR #1 and PR #2 remain outside v1.1.0.",
     "No implementation, validator, script, workflow, schema, test, agent-standard, or VERSION file was modified."
   ],
@@ -694,7 +696,7 @@
         "passedCommandCount": 13,
         "notRunCommandCount": 0,
         "resultsRecord": "evidence/releases/1.1.0-post-release-verification.json",
-        "validatedCommitSha": "f89ed8c14686de8a095c43e6c9dc458a23664765",
+        "validatedCommitSha": "cc5a055febb63a89f05ae405ad9cb0e7b9f33c66",
         "commitBindingStatus": "ValidatedTwoStage",
         "evidenceCommitSha": null
       }
@@ -706,21 +708,21 @@
       "status": "Passed",
       "requiredValidation": true,
       "evidenceSource": "GitHubArtifact",
-      "command": "Verify Governance CI run 29142197057 and artifact governance-evidence-29142197057",
+      "command": "Verify Governance CI run 29142561087 and artifact governance-evidence-29142561087",
       "workingDirectory": ".",
       "startedAtUtc": "2026-07-11T06:03:11Z",
       "completedAtUtc": "2026-07-11T06:13:25.9808376Z",
       "durationSeconds": 614.9808376,
       "runtime": "GitHub Actions and independent artifact verification",
-      "toolVersion": "Governance CI #77",
+      "toolVersion": "Governance CI #78",
       "environment": "GitHub Actions",
       "exitCode": 0,
-      "summary": "Governance CI run 29142197057 and job 86517371318 passed for commit B; artifact 8245556597 was independently verified with matching ZIP digest, 33 entries, and 17 of 17 contained hashes.",
+      "summary": "Governance CI run 29142561087 and job 86518350799 passed for committed parent cc5a055febb63a89f05ae405ad9cb0e7b9f33c66; artifact 8245676105 was independently verified with matching ZIP digest, 33 entries, and 17 of 17 contained hashes.",
       "warnings": [],
       "failureReason": null,
       "blockedReason": null,
       "notApplicableRationale": null,
-      "manualProcedure": "Verify run, job, merge-context SHA, artifact metadata, ZIP SHA-256, entry count, and contained file hashes without modifying evidence/latest-verified-run.json.",
+      "manualProcedure": "Verify run, job, distinct PR head and merge-context SHAs, artifact metadata, ZIP SHA-256, entry count, and contained file hashes, then align evidence/latest-verified-run.json to the canonical run.",
       "executionMode": {
         "dryRun": false,
         "whatIf": false,
@@ -729,18 +731,21 @@
       },
       "details": {
         "workflow": "Governance CI",
-        "workflowNumber": 77,
-        "runId": 29142197057,
-        "jobId": 86517371318,
-        "validatedCommitSha": "f89ed8c14686de8a095c43e6c9dc458a23664765",
-        "mergeContextSha": "a5bb94b1b808ce14a4fa8692b43e01c33bb35cc2",
-        "artifactId": 8245556597,
-        "artifactName": "governance-evidence-29142197057",
-        "artifactSizeBytes": 54481,
+        "workflowNumber": 78,
+        "runId": 29142561087,
+        "jobId": 86518350799,
+        "headBranch": "record-v1.1.0-post-release-verification",
+        "validatedCommitSha": "cc5a055febb63a89f05ae405ad9cb0e7b9f33c66",
+        "mergeContextSha": "b64089b2883b32b879e2a12cbfa66ea431960645",
+        "artifactId": 8245676105,
+        "artifactName": "governance-evidence-29142561087",
+        "artifactSizeBytes": 54649,
         "artifactEntryCount": 33,
-        "artifactZipSha256": "641eb358dbfe1db76e5bad5b93fc060f9659ee6bfdc9135b5e94117f7ae8bd7c",
+        "artifactGitHubDigest": "sha256:30ba86081754a03fd21e030b841066e06bed54b8292f77d9077fcbe6a8460a34",
+        "artifactZipSha256": "30ba86081754a03fd21e030b841066e06bed54b8292f77d9077fcbe6a8460a34",
         "matchedHashes": 17,
         "expectedHashes": 17,
+        "mismatchedHashes": 0,
         "commitBindingStatus": "ValidatedTwoStage"
       }
     }
@@ -1213,12 +1218,12 @@
     "Forbidden-pattern scan emitted known advisory warnings for documented examples and scanner test patterns, and exited successfully.",
     "The v1.1.0 tag is unsigned.",
     "Aggregate Phase 8 validation passed with 11 advisory warnings and no failures.",
-    "commitSha and validatedCommitSha bind to validated commit B f89ed8c14686de8a095c43e6c9dc458a23664765; evidenceCommitSha remains null so evidence-only commit C does not create a self-referential claim."
+    "commitSha and validatedCommitSha bind to run #78's committed PR head cc5a055febb63a89f05ae405ad9cb0e7b9f33c66; evidenceCommitSha remains null so the future follow-up does not create a future or self-referential claim."
   ],
   "knownLimitations": [
     "Current CODEOWNERS entries are not yet verified as enforceable review identities in this repository context.",
     "The annotated v1.1.0 tag is unsigned.",
-    "Hosted run 29142197057 verified commit B; evidence-only commit C records the two-stage binding and canonical latest-run metadata without self-representing a future commit SHA."
+    "Hosted run 29142561087 verified committed parent cc5a055febb63a89f05ae405ad9cb0e7b9f33c66; these six metadata-alignment edits remain pending Phase 3 and a new hosted run under the two-stage evidence lifecycle."
   ],
   "remainingRisks": [
     "The published tag must never be moved or rewritten."
