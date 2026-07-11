@@ -136,9 +136,20 @@ function Resolve-SafePath {
     $rootFull = [System.IO.Path]::GetFullPath((Resolve-Path -LiteralPath $Root).Path)
     $candidate = if ([System.IO.Path]::IsPathRooted($ChildPath)) { $ChildPath } else { Join-Path $rootFull $ChildPath }
     $candidateFull = [System.IO.Path]::GetFullPath($candidate)
+    $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
     $prefix = $rootFull.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
-    if (-not ($candidateFull.Equals($rootFull, [StringComparison]::OrdinalIgnoreCase) -or $candidateFull.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase))) {
+    if (-not ($candidateFull.Equals($rootFull, $comparison) -or $candidateFull.StartsWith($prefix, $comparison))) {
         throw "Path '$ChildPath' resolves outside '$Root'."
+    }
+    $relative = [System.IO.Path]::GetRelativePath($rootFull, $candidateFull)
+    $current = $rootFull
+    foreach ($segment in @($relative -split '[\\/]' | Where-Object { $_ -and $_ -ne '.' })) {
+        $current = Join-Path $current $segment
+        if (-not (Test-Path -LiteralPath $current)) { break }
+        $item = Get-Item -LiteralPath $current -Force
+        if ($item.LinkType -or ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            throw "Path '$ChildPath' traverses symbolic link or junction '$current'."
+        }
     }
     if (-not $AllowMissingLeaf -and -not (Test-Path -LiteralPath $candidateFull)) {
         throw "Path '$ChildPath' does not exist beneath '$Root'."
@@ -648,6 +659,29 @@ function ConvertTo-OrderedJson {
     process { $InputObject | ConvertTo-Json -Depth 100 }
 }
 
+function ConvertTo-SanitizedWorkflowOutputLine {
+    <#
+    .SYNOPSIS
+    Converts one output object into inert, sanitized physical log lines.
+    #>
+    [CmdletBinding()]
+    param(
+        [AllowNull()][AllowEmptyString()]$InputObject,
+        [string]$WorkspaceRoot,
+        [string]$TemporaryRoot
+    )
+
+    $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+    $normalized = ([string]$InputObject).Replace("`r`n", "`n").Replace("`r", "`n")
+    foreach ($physicalLine in $normalized.Split("`n")) {
+        $line = [regex]::Replace($physicalLine, '[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '')
+        if ($WorkspaceRoot) { $line = $line.Replace($WorkspaceRoot, '[workspace]', $comparison) }
+        if ($TemporaryRoot) { $line = $line.Replace($TemporaryRoot, '[temp]', $comparison) }
+        if ($line -match '^\s*::') { $line = '[validator-output] ' + $line }
+        Write-Output $line
+    }
+}
+
 Export-ModuleMember -Function @(
     'New-ValidationResult',
     'New-ValidationReport',
@@ -662,5 +696,6 @@ Export-ModuleMember -Function @(
     'Test-TestEvidenceObject',
     'Test-ArtifactRecordObject',
     'Test-VerifiedRunObject',
-    'ConvertTo-OrderedJson'
+    'ConvertTo-OrderedJson',
+    'ConvertTo-SanitizedWorkflowOutputLine'
 )

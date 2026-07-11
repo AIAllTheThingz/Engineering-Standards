@@ -57,7 +57,7 @@ External links may be reviewed manually if the repository does not enable extern
 
 ## Evidence Validation Failures
 
-Evidence validation fails when completion evidence is missing required fields, reports overall Passed while tests are Failed, Blocked, Skipped, or NotRun, omits required command metadata, references missing artifacts, or contains contradictory approval information.
+Evidence validation fails when completion evidence is missing required fields, reports overall Passed while tests are Failed, Blocked, or NotRun, omits required command metadata, references missing artifacts, or contains contradictory approval information. The completion status vocabulary is `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable`; framework-level skipped-test counts are recorded inside test details.
 
 Regenerate completion evidence after validation runs. Never edit evidence to claim a run occurred when it did not.
 
@@ -85,10 +85,16 @@ uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusa
 
 Entry workflows should call reusable workflows. Reusable workflows should not call entry workflows.
 
+Cross-repository runs should show sibling `caller`, `standards`, and `evidence` workspaces. A missing central script under `caller/` is not an adoption requirement; validators must load from `standards/`. Failures mentioning `job.workflow_sha` or `job.workflow_repository` usually mean the run is on GitHub Enterprise Server, which is unsupported because those immutable identity properties are unavailable and no safe fallback exists.
+
+If `project-path` fails validation, use a normal relative directory below the caller repository. Do not use absolute paths or `..`. Remove every symbolic link, junction, and reparse point from caller content, including links to internal files or directories and links outside the selected `project-path`. This is an intentional fail-closed defense against workspace-boundary and validator-confusion attacks, not only an escape check. If a caller still passes `run-examples`, `run-pester`, or `run-documentation-validation`, remove those retired inputs and keep project-specific execution in separate caller-owned jobs.
+
+If validation names `additionalForbiddenPatterns` or `reviewedAllowlist` as unsupported, leave that array empty for the central downstream workflow. These repository-provided scanner extensions are rejected rather than silently ignored until the reviewed configuration model in Issue #21 is implemented.
+
 For final evidence verification, trigger a success run with:
 
 ```powershell
-gh workflow run "Governance CI" --ref master -f controlled-failure-test=false -f run-examples=true -f run-pester=true -f run-documentation-validation=true
+gh workflow run "Governance CI" --ref master -f controlled-failure-test=false
 ```
 
 Trigger a controlled failure run with:

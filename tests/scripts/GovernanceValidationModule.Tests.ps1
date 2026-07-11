@@ -11,6 +11,28 @@ AfterAll {
 }
 
 Describe 'GovernanceValidation module' {
+    Context 'workflow output sanitization' {
+        It 'neutralizes every embedded workflow command physical line' {
+            $inputText = "ordinary text`r`n::warning::warn`n  ::error::error`r::add-mask::secret`n::stop-commands::token`n::set-output name=x::value"
+            $lines = @(ConvertTo-SanitizedWorkflowOutputLine -InputObject $inputText -WorkspaceRoot 'C:\workspace' -TemporaryRoot 'C:\temp')
+            $lines.Count | Should -Be 6
+            $lines[0] | Should -Be 'ordinary text'
+            foreach ($line in $lines[1..5]) {
+                $line | Should -Match '^\[validator-output\] '
+                $line | Should -Not -Match '^\s*::'
+            }
+            ($lines -join "`n") | Should -Match '\[validator-output\] ::warning::warn'
+            ($lines -join "`n") | Should -Match '\[validator-output\] ::add-mask::secret'
+            ($lines -join "`n") | Should -Match '\[validator-output\] ::stop-commands::token'
+            ($lines -join "`n") | Should -Match '\[validator-output\] ::set-output name=x::value'
+        }
+
+        It 'removes unsafe controls before redacting each physical line' {
+            $lines = @(ConvertTo-SanitizedWorkflowOutputLine -InputObject "C:\work$([char]7)space\one`nC:\temp\two$([char]7)" -WorkspaceRoot 'C:\workspace' -TemporaryRoot 'C:\temp')
+            $lines | Should -Be @('[workspace]\one','[temp]\two')
+        }
+    }
+
     Context 'safe path resolution' {
         It 'resolves a child path inside the root' {
             $file = Join-Path $script:tempRoot 'inside.txt'
@@ -129,7 +151,14 @@ Describe 'GovernanceValidation module' {
             $repoRoot = Resolve-Path "$PSScriptRoot/../.."
             $outputPath = Join-Path $script:tempRoot 'aggregate-governance.json'
 
-            & pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $repoRoot -Category JsonSchemas -OutputJson $outputPath
+            $priorGitHubActions = $env:GITHUB_ACTIONS
+            try {
+                $env:GITHUB_ACTIONS = $null
+                & pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $repoRoot -Category JsonSchemas -OutputJson $outputPath
+            }
+            finally {
+                $env:GITHUB_ACTIONS = $priorGitHubActions
+            }
             $LASTEXITCODE | Should -Be 0
 
             $report = Get-Content -LiteralPath $outputPath -Raw | ConvertFrom-Json

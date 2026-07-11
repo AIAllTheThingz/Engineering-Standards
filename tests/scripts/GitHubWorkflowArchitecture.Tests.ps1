@@ -29,7 +29,187 @@ function script:Set-FixtureFile {
     Set-Content -LiteralPath $path -Value $Content -Encoding utf8
 }
 
+function script:New-CurrentWorkflowFixture {
+    param([Parameter(Mandatory)][string]$Name)
+    $root = New-WorkflowFixture -Name $Name
+    Set-FixtureFile -Root $root -RelativePath 'project-manifest.json' -Content (Get-Content -LiteralPath (Join-Path $script:repoRoot 'project-manifest.json') -Raw)
+    foreach ($relative in @('.github/workflows/governance-ci.yml','.github/workflows/governance-ci-reusable.yml','.github/workflows/governance-ci-candidate.yml')) {
+        Set-FixtureFile -Root $root -RelativePath $relative -Content (Get-Content -LiteralPath (Join-Path $script:repoRoot $relative) -Raw)
+    }
+    $root
+}
+
 Describe 'GitHub workflow architecture validation' {
+    It 'requires immutable trusted baseline and candidate implementation validation' {
+        $root = New-CurrentWorkflowFixture -Name 'current-dual-validation'
+        $entryText = Get-Content -LiteralPath (Join-Path $root '.github/workflows/governance-ci.yml') -Raw
+        $pinMatch = [regex]::Match($entryText, 'governance-ci-candidate\.yml@([a-fA-F0-9]{40})')
+        $pinMatch.Success | Should -BeTrue
+        & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -ExpectedReusableWorkflowSha $pinMatch.Groups[1].Value -RequireCandidateValidation
+        $LASTEXITCODE | Should -Be 0
+    }
+
+    It 'rejects a missing candidate implementation validation call' {
+        $root = New-CurrentWorkflowFixture -Name 'missing-candidate-call'
+        $path = Join-Path $root '.github/workflows/governance-ci.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $content = [regex]::Replace($content, '(?ms)\r?\n  candidate_implementation:.*\z', '')
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'candidate-validation harness'
+    }
+
+    It 'does not allow manifest identity changes to opt out of candidate policy' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-manifest-opt-out'
+        $manifestPath = Join-Path $root 'project-manifest.json'
+        $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable
+        $manifest.repository = 'ExampleOrg/not-standards'
+        $manifest | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $manifestPath -Encoding utf8
+        $entryPath = Join-Path $root '.github/workflows/governance-ci.yml'
+        $entry = Get-Content -LiteralPath $entryPath -Raw
+        $entry = [regex]::Replace($entry, '(?ms)\r?\n  candidate_implementation:.*\z', '')
+        Set-Content -LiteralPath $entryPath -Value $entry -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'candidate-validation harness'
+    }
+
+    It 'rejects elevated candidate harness permissions' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-write-permission'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $content = $content.Replace("    permissions:`n      contents: read", "    permissions:`n      contents: write")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'permissions must be exactly contents: read|prohibited trigger, secret, or elevated permission'
+    }
+
+    It 'rejects pull_request_target for candidate validation' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-pull-request-target'
+        $path = Join-Path $root '.github/workflows/governance-ci.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace('  pull_request:', '  pull_request_target:')
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'pull_request_target'
+    }
+
+    It 'rejects additive pull_request_target alongside safe triggers' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-additive-pull-request-target'
+        $path = Join-Path $root '.github/workflows/governance-ci.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("  pull_request:`n", "  pull_request:`n  pull_request_target:`n")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must not use pull_request_target'
+    }
+
+    It 'rejects a condition that can skip candidate validation' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-if-false'
+        $path = Join-Path $root '.github/workflows/governance-ci.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $content = $content.Replace("  candidate_implementation:`n    name:", "  candidate_implementation:`n    if: false`n    name:")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must not use a condition that can skip execution'
+    }
+
+    It 'rejects candidate secret inheritance' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-secret-inheritance'
+        $path = Join-Path $root '.github/workflows/governance-ci.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $content = [regex]::Replace($content, '(?m)^(    uses: AIAllTheThingz/Engineering-Standards/\.github/workflows/governance-ci-candidate\.yml@[a-fA-F0-9]{40})$', "`$1`n    secrets: inherit")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must not receive secrets'
+    }
+
+    It 'rejects a candidate checkout that persists credentials or uses the wrong ref' {
+        $root = New-CurrentWorkflowFixture -Name 'unsafe-candidate-checkout'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $content = $content.Replace('ref: ${{ github.sha }}','ref: master').Replace('persist-credentials: false','persist-credentials: true')
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'Candidate checkout must use github.repository/github.sha|persist-credentials'
+    }
+
+    It 'rejects swallowed candidate failures' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-continue-on-error'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $content = $content.Replace("      - name: Run candidate implementation validation`n", "      - name: Run candidate implementation validation`n        continue-on-error: true`n")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must propagate failures'
+    }
+
+    It 'rejects a condition on the reusable candidate harness job' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-harness-job-if-false'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("  candidate:`n    name:", "  candidate:`n    if: false`n    name:")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'Candidate harness job must not use a condition that can skip execution'
+    }
+
+    It 'rejects a condition on the candidate validation step' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-validation-step-if-false'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("      - name: Run candidate implementation validation`n", "      - name: Run candidate implementation validation`n        if: false`n")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'Candidate implementation validation step must not use a condition that can skip execution'
+    }
+
+    It 'rejects RequireCandidateValidation mentioned only in a comment' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-comment-only-require-policy'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("'-RequireCandidateValidation','-OutputJson'", "'-OutputJson' # '-RequireCandidateValidation'")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must fail closed with RequireCandidateValidation'
+    }
+
+    It 'rejects workflow-command suspension mentioned only in a comment' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-comment-only-stop-commands'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace('          Write-Output "::stop-commands::$commandMarker"', '          # Write-Output "::stop-commands::$commandMarker"')
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must suspend workflow-command processing'
+    }
+
+    It 'rejects an omitted required candidate check' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-missing-check'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("            Invoke-CandidateScript 'scripts/Test-Examples.ps1'", "            Write-Output 'examples omitted'")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match "missing required candidate script invocation 'scripts/Test-Examples.ps1'"
+    }
+
+    It 'rejects a required candidate check mentioned only in a comment' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-comment-only-check'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("            Invoke-CandidateScript 'scripts/Test-Examples.ps1'", "            # Invoke-CandidateScript 'scripts/Test-Examples.ps1'")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match "missing required candidate script invocation 'scripts/Test-Examples.ps1'"
+    }
+
     It 'passes a valid one-way workflow call with a pinned action' {
         $root = New-WorkflowFixture -Name 'valid'
         Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci.yml' -Content @'
@@ -90,6 +270,90 @@ jobs:
 '@
         & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master
         $LASTEXITCODE | Should -Be 0
+    }
+
+    It 'accepts a full-SHA remote self-CI call that matches the expected trusted SHA' {
+        $root = New-WorkflowFixture -Name 'remote-self-call'
+        $sha = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci.yml' -Content @"
+name: Governance CI
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+concurrency:
+  group: governance-self
+  cancel-in-progress: true
+jobs:
+  governance:
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@$sha
+"@
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci-reusable.yml' -Content @'
+name: Reusable
+on:
+  workflow_call:
+    inputs:
+      project-path: { type: string, required: false, default: . }
+      governance-version: { type: string, required: false, default: 1.1.0 }
+      artifact-retention-days: { type: number, required: false, default: 30 }
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - run: |
+          echo '${{ inputs.project-path }}'
+          echo '${{ inputs.governance-version }}'
+          echo '${{ inputs.artifact-retention-days }}'
+'@
+        & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -ExpectedReusableWorkflowSha $sha
+        $LASTEXITCODE | Should -Be 0
+    }
+
+    It 'rejects a remote self-CI SHA that differs from the expected trusted SHA' {
+        $root = New-WorkflowFixture -Name 'remote-self-call-mismatch'
+        $entrySha = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        $expectedSha = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci.yml' -Content @"
+name: Governance CI
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+concurrency:
+  group: governance-self
+  cancel-in-progress: true
+jobs:
+  governance:
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@$entrySha
+"@
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci-reusable.yml' -Content @'
+name: Reusable
+on:
+  workflow_call:
+    inputs:
+      project-path: { type: string, required: false, default: . }
+      governance-version: { type: string, required: false, default: 1.1.0 }
+      artifact-retention-days: { type: number, required: false, default: 30 }
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - run: |
+          echo '${{ inputs.project-path }}'
+          echo '${{ inputs.governance-version }}'
+          echo '${{ inputs.artifact-retention-days }}'
+'@
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -ExpectedReusableWorkflowSha $expectedSha 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'does not match expected trusted SHA'
     }
 
     It 'fails direct self-reference' {
@@ -733,6 +997,39 @@ jobs:
 '@
         & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master
         $LASTEXITCODE | Should -Not -Be 0
+    }
+
+    It 'rejects direct execution of a caller-controlled PowerShell script' {
+        $root = New-CurrentWorkflowFixture -Name 'caller-script-execution'
+        $path = Join-Path $root '.github/workflows/governance-ci-reusable.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $insertion = "      - name: Malicious caller script`n        shell: pwsh`n        run: '& ./caller/evil.ps1'`n`n      - name: Normalize evidence report paths"
+        Set-Content -LiteralPath $path -Value $content.Replace('      - name: Normalize evidence report paths', $insertion) -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must not directly execute caller-controlled code'
+    }
+
+    It 'rejects a caller-controlled local composite action' {
+        $root = New-CurrentWorkflowFixture -Name 'caller-local-action'
+        $path = Join-Path $root '.github/workflows/governance-ci-reusable.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $insertion = "      - name: Malicious caller action`n        uses: ./caller/action`n`n      - name: Normalize evidence report paths"
+        Set-Content -LiteralPath $path -Value $content.Replace('      - name: Normalize evidence report paths', $insertion) -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must not load a caller-controlled local action'
+    }
+
+    It 'rejects caller working-directory command execution' {
+        $root = New-CurrentWorkflowFixture -Name 'caller-working-directory'
+        $path = Join-Path $root '.github/workflows/governance-ci-reusable.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $insertion = "      - name: Malicious caller working directory`n        working-directory: caller`n        run: npm test`n`n      - name: Normalize evidence report paths"
+        Set-Content -LiteralPath $path -Value $content.Replace('      - name: Normalize evidence report paths', $insertion) -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must not execute commands from the caller working directory'
     }
 }
 

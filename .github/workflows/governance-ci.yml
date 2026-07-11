@@ -12,21 +12,6 @@ on:
         type: boolean
         required: false
         default: false
-      run-examples:
-        description: Run mandatory example-project validation.
-        type: boolean
-        required: false
-        default: true
-      run-pester:
-        description: Run mandatory Pester validation.
-        type: boolean
-        required: false
-        default: true
-      run-documentation-validation:
-        description: Run mandatory documentation validation.
-        type: boolean
-        required: false
-        default: true
 
 permissions:
   contents: read
@@ -38,11 +23,16 @@ concurrency:
 jobs:
   governance:
     name: Governance
-    uses: ./.github/workflows/governance-ci-reusable.yml
+    # Self-CI uses the reviewed Issue #15 implementation commit so pull-request
+    # changes cannot redefine the validator checkout labeled as trusted.
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@c118000cb2652bac4f35d4919d515458b776987c
     with:
       project-path: .
       governance-version: 1.1.0
       controlled-failure-test: ${{ inputs.controlled-failure-test || false }}
-      run-examples: ${{ github.event_name != 'workflow_dispatch' || inputs.run-examples }}
-      run-pester: ${{ github.event_name != 'workflow_dispatch' || inputs.run-pester }}
-      run-documentation-validation: ${{ github.event_name != 'workflow_dispatch' || inputs.run-documentation-validation }}
+
+  candidate_implementation:
+    name: Candidate implementation validation
+    # This immutable harness supplies the security envelope, dependency pins,
+    # and explicit commands while deliberately executing the candidate checkout.
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-candidate.yml@c118000cb2652bac4f35d4919d515458b776987c

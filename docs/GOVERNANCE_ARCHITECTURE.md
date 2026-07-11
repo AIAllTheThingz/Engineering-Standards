@@ -36,15 +36,19 @@ sequenceDiagram
 
 ## Workflow Architecture
 
-The event-triggered workflow is `.github/workflows/governance-ci.yml`. It runs on pull requests, pushes to `master`, and manual `workflow_dispatch`, and its only job calls `.github/workflows/governance-ci-reusable.yml`.
+The event-triggered workflow is `.github/workflows/governance-ci.yml`. It runs on pull requests, pushes to `master`, and manual `workflow_dispatch`. One job calls the trusted baseline reusable workflow at a reviewed full commit SHA; a second job calls the candidate-validation harness at the same reviewed SHA. Repository self-CI does not use local reusable calls because a pull request could otherwise redefine the security envelope or code later labeled as trusted standards tooling.
+
+The candidate harness is `.github/workflows/governance-ci-candidate.yml`. Its immutable job definition checks out `${{ github.sha }}` beneath `candidate/` and deliberately executes candidate parsers, validators, Pester, ScriptAnalyzer, examples, and diff checks on a separate ephemeral runner. It has only `contents: read`, receives no secrets or environment, suspends workflow-command processing while candidate code runs, and shares no candidate output, artifact, or cache with the trusted baseline job.
 
 The reusable workflow is `.github/workflows/governance-ci-reusable.yml`. It is triggered only by `workflow_call`, defines all supported inputs, runs validation jobs, generates completion evidence, and uploads evidence artifacts. It MUST NOT call the event workflow, itself, or any workflow that calls it back.
 
-Root files under `workflows/` are distribution templates. GitHub does not execute reusable workflows directly from that location. Cross-repository callers must use `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<immutable-reference>`.
+Root files under `workflows/` are distribution templates. GitHub does not execute reusable workflows directly from that location. Cross-repository callers must use `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<full-commit-sha>`.
 
 ## Trust Boundaries
 
-Pull-request content, filenames, configuration, evidence, and generated artifacts are untrusted. Central workflow code is trusted only at the pinned version. Secrets are outside the validation boundary and are not required for pull-request validation.
+Pull-request content, filenames, configuration, evidence, and generated artifacts are untrusted. The caller repository is checked out at `${{ github.sha }}` beneath `caller/`. Central workflow code is checked out separately beneath `standards/` from `${{ job.workflow_repository }}` at the immutable `${{ job.workflow_sha }}`. Validators load only from `standards/`, receive the caller root explicitly, and write generated reports beneath the separate `evidence/` root. Secrets are outside the validation boundary and are not required for pull-request validation.
+
+The caller cannot override the standards repository or SHA. GitHub Enterprise Server does not expose the required `job.workflow_*` identity fields, so the workflow fails closed there rather than selecting a branch, tag, or caller-provided fallback.
 
 ## Failure Behavior
 
@@ -54,9 +58,9 @@ The workflow ordering is validation steps, initial test evidence, initial comple
 
 ## Reusable Inputs And Outputs
 
-Inputs are `project-path`, `governance-version`, `run-examples`, `run-pester`, `run-documentation-validation`, and `artifact-retention-days`. Outputs are `evidence-path` and `artifact-name`. Artifact uploads include validation reports, scanner reports, Pester output, and completion evidence.
+Inputs are `project-path`, `governance-version`, `artifact-retention-days`, and the repository-owned `controlled-failure-test`. Outputs are `evidence-path` and `artifact-name`. The obsolete mandatory-true `run-examples`, `run-pester`, and `run-documentation-validation` inputs were removed. Downstream checks are selected from validated manifest/configuration data; caller-owned code execution remains in caller CI. Artifact uploads identify both caller and standards workflow SHAs and include aggregate validation, dependency, environment, test, and completion evidence.
 
-Pester output is split into `pester-summary.json` and sanitized `pester-details.json`. Raw Pester XML is generated only as a temporary conversion input and is not uploaded unless it passes path-sanitization validation.
+Engineering Standards maintainer Pester results include structured discovered, passed, failed, skipped, and NotRun counts plus sanitized individual details in the evidence artifact. Zero discovery, failed tests, NotRun tests, or a non-Passed suite result fail validation. Downstream Pester suites are not executed by the central reusable workflow; callers record those results through their own CI and evidence process.
 
 Generated evidence, build output, package directories, coverage, and test result folders are excluded from ordinary forbidden-pattern scans. `-IncludeGeneratedEvidence` exists for explicit diagnostic scans.
 
@@ -64,7 +68,7 @@ Completion evidence uses `validatedCommitSha` for the validated repository conte
 
 ## Governance Operating Requirements
 
-Teams MUST apply this document together with the organization contract, completion evidence policy, exception process, and risk classification model. Validation MUST include the automated checks that apply to the repository type plus a reviewer assessment of any material risk that automation cannot prove. Evidence MUST be stored in the repository or attached to the pull request, and it must distinguish Passed, Failed, Blocked, Skipped, and NotRun results without contradiction.
+Teams MUST apply this document together with the organization contract, completion evidence policy, exception process, and risk classification model. Validation MUST include the automated checks that apply to the repository type plus a reviewer assessment of any material risk that automation cannot prove. Evidence MUST be stored in the repository or attached to the pull request, and it must distinguish `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable` results without contradiction. Raw framework-level skip counts remain details within a test record and are not completion statuses.
 
 ## Exception Handling
 

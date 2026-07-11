@@ -42,11 +42,11 @@ Describe 'Pester result conversion' {
     }
 
     It 'fails missing and malformed XML' {
-        & pwsh -NoProfile -File $script:converter -RepositoryPath $script:tempRoot -InputPath '.tmp/missing.xml' -OutputPath 'evidence/out.json'
+        & pwsh -NoProfile -File $script:converter -RepositoryPath $script:tempRoot -InputPath '.tmp/missing.xml' -OutputPath 'evidence/out.json' 2>$null
         $LASTEXITCODE | Should -Not -Be 0
         New-Item -ItemType Directory -Path (Join-Path $script:tempRoot '.tmp') -Force | Out-Null
         Set-Content -LiteralPath (Join-Path $script:tempRoot '.tmp/bad.xml') -Value '<not-closed>'
-        & pwsh -NoProfile -File $script:converter -RepositoryPath $script:tempRoot -InputPath '.tmp/bad.xml' -OutputPath 'evidence/out.json'
+        & pwsh -NoProfile -File $script:converter -RepositoryPath $script:tempRoot -InputPath '.tmp/bad.xml' -OutputPath 'evidence/out.json' 2>$null
         $LASTEXITCODE | Should -Not -Be 0
     }
 }

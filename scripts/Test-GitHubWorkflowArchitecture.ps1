@@ -11,6 +11,8 @@ Repository root path.
 Expected repository default branch. Defaults to master for this repository.
 .PARAMETER OutputJson
 Optional JSON report path.
+.PARAMETER ExpectedReusableWorkflowSha
+Optional immutable Engineering Standards SHA required for a remote self-CI call.
 .EXAMPLE
 pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path .
 #>
@@ -18,6 +20,8 @@ pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path .
 param(
     [string]$Path = '.',
     [string]$DefaultBranch = 'master',
+    [string]$ExpectedReusableWorkflowSha,
+    [switch]$RequireCandidateValidation,
     [string]$OutputJson
 )
 
@@ -314,17 +318,213 @@ foreach ($source in $callGraph.Keys) {
 }
 
 $entry = '.github/workflows/governance-ci.yml'
+$manifestFile = Join-Path $root 'project-manifest.json'
+$isStandardsRepository = [bool]$RequireCandidateValidation
+if (Test-Path -LiteralPath $manifestFile -PathType Leaf) {
+    try {
+        $repositoryManifest = Get-Content -LiteralPath $manifestFile -Raw | ConvertFrom-Json
+        $isStandardsRepository = $isStandardsRepository -or $repositoryManifest.repository -eq 'AIAllTheThingz/Engineering-Standards'
+    }
+    catch {
+        $results.Add((New-ValidationResult -Status Failed -Message 'project-manifest.json could not be parsed while validating workflow architecture.' -Path 'project-manifest.json'))
+    }
+}
 if ($workflows.ContainsKey($entry)) {
     $branches = @(Get-PushBranches -Workflow $workflows[$entry])
     if ($branches -notcontains $DefaultBranch) {
         $results.Add((New-ValidationResult -Status Failed -Message "Entry workflow push trigger does not include default branch '$DefaultBranch'." -Path $entry))
     }
-    if (@($callGraph[$entry]).Count -ne 1 -or @($callGraph[$entry])[0] -ne '.github/workflows/governance-ci-reusable.yml') {
-        $results.Add((New-ValidationResult -Status Failed -Message 'Entry workflow must call the reusable governance workflow exactly once.' -Path $entry))
+    $entryJobUses = @((Get-WorkflowUses -Workflow $workflows[$entry] -RelativePath $entry) | Where-Object kind -eq 'job')
+    $localCall = @($entryJobUses | Where-Object value -eq './.github/workflows/governance-ci-reusable.yml')
+    $remoteCall = @($entryJobUses | Where-Object value -match '^AIAllTheThingz/Engineering-Standards/\.github/workflows/governance-ci-reusable\.yml@([a-fA-F0-9]{40})$')
+    if (($localCall.Count + $remoteCall.Count) -ne 1) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Entry workflow must call the local reusable workflow or a full-SHA Engineering Standards reusable workflow exactly once.' -Path $entry))
+    }
+    elseif ($remoteCall.Count -eq 1 -and $ExpectedReusableWorkflowSha) {
+        $actualSha = ([string]$remoteCall[0].value -split '@')[-1]
+        if ($actualSha -ne $ExpectedReusableWorkflowSha) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Entry workflow reusable SHA '$actualSha' does not match expected trusted SHA '$ExpectedReusableWorkflowSha'." -Path $entry))
+        }
+    }
+
+    if ($isStandardsRepository) {
+        $entryWorkflow = $workflows[$entry]
+        $on = $entryWorkflow['on']
+        foreach ($requiredTrigger in @('pull_request','push','workflow_dispatch')) {
+            if ($on -isnot [hashtable] -or -not $on.ContainsKey($requiredTrigger)) {
+                $results.Add((New-ValidationResult -Status Failed -Message "Engineering Standards entry workflow is missing '$requiredTrigger' for candidate validation." -Path $entry))
+            }
+        }
+        if ($on -is [hashtable] -and $on.ContainsKey('pull_request_target')) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Engineering Standards entry workflow must not use pull_request_target.' -Path $entry))
+        }
+        if ($remoteCall.Count -ne 1) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Engineering Standards trusted baseline must use a full-SHA remote reusable workflow call.' -Path $entry))
+        }
+
+        $candidateCalls = @($entryJobUses | Where-Object value -match '^AIAllTheThingz/Engineering-Standards/\.github/workflows/governance-ci-candidate\.yml@([a-fA-F0-9]{40})$')
+        if ($candidateCalls.Count -ne 1) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Engineering Standards entry workflow must call the candidate-validation harness at a full immutable SHA exactly once.' -Path $entry))
+        }
+        else {
+            $candidateSha = ([string]$candidateCalls[0].value -split '@')[-1]
+            $baselineSha = if ($remoteCall.Count -eq 1) { ([string]$remoteCall[0].value -split '@')[-1] } else { $null }
+            if ($baselineSha -and $candidateSha -ne $baselineSha) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Trusted baseline and candidate-validation harness must use the same reviewed immutable SHA.' -Path $entry))
+            }
+            if ($ExpectedReusableWorkflowSha -and $candidateSha -ne $ExpectedReusableWorkflowSha) {
+                $results.Add((New-ValidationResult -Status Failed -Message "Candidate-validation harness SHA '$candidateSha' does not match expected trusted SHA '$ExpectedReusableWorkflowSha'." -Path $entry))
+            }
+            $candidateEntryJob = $entryWorkflow.jobs[$candidateCalls[0].job]
+            if ([string]$candidateEntryJob.name -ne 'Candidate implementation validation') {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Candidate validation entry job must be named Candidate implementation validation.' -Path $entry))
+            }
+            if ($candidateEntryJob.ContainsKey('secrets')) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Candidate validation entry job must not receive secrets.' -Path $entry))
+            }
+            if ($candidateEntryJob.ContainsKey('if')) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Candidate validation entry job must not use a condition that can skip execution.' -Path $entry))
+            }
+        }
     }
 }
 else {
     $results.Add((New-ValidationResult -Status Failed -Message 'Entry workflow is missing.' -Path $entry))
+}
+
+$candidateWorkflowPath = '.github/workflows/governance-ci-candidate.yml'
+if ($isStandardsRepository) {
+    if (-not $workflows.ContainsKey($candidateWorkflowPath)) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Candidate-validation reusable workflow is missing.' -Path $candidateWorkflowPath))
+    }
+    else {
+        $candidateWorkflow = $workflows[$candidateWorkflowPath]
+        if (-not (Test-HasWorkflowCall -Workflow $candidateWorkflow)) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Candidate-validation workflow must declare workflow_call.' -Path $candidateWorkflowPath))
+        }
+        if ($candidateWorkflow.permissions -isnot [hashtable] -or $candidateWorkflow.permissions.Count -ne 1 -or [string]$candidateWorkflow.permissions.contents -ne 'read') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Candidate workflow permissions must be exactly contents: read.' -Path $candidateWorkflowPath))
+        }
+        $candidateJob = $candidateWorkflow.jobs.candidate
+        if ($candidateJob -isnot [hashtable]) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Candidate-validation workflow must define the candidate job.' -Path $candidateWorkflowPath))
+        }
+        else {
+            if ([string]$candidateJob.name -ne 'Candidate implementation validation') {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness job must be named Candidate implementation validation.' -Path $candidateWorkflowPath))
+            }
+            if ($candidateJob.permissions -isnot [hashtable] -or $candidateJob.permissions.Count -ne 1 -or [string]$candidateJob.permissions.contents -ne 'read') {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness job permissions must be exactly contents: read.' -Path $candidateWorkflowPath))
+            }
+            if ($candidateJob.ContainsKey('environment') -or $candidateJob.ContainsKey('secrets')) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness job must not use environments or secrets.' -Path $candidateWorkflowPath))
+            }
+            if ($candidateJob.ContainsKey('continue-on-error')) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness job must fail when candidate validation fails.' -Path $candidateWorkflowPath))
+            }
+            if ($candidateJob.ContainsKey('if')) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness job must not use a condition that can skip execution.' -Path $candidateWorkflowPath))
+            }
+            $candidateSteps = @($candidateJob.steps)
+            $checkout = @($candidateSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Checkout candidate implementation' })
+            if ($checkout.Count -ne 1 -or $checkout[0].uses -notmatch '^actions/checkout@[a-fA-F0-9]{40}$') {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness must contain one full-SHA-pinned candidate checkout.' -Path $candidateWorkflowPath))
+            }
+            elseif ($checkout[0].with -isnot [hashtable] -or [string]$checkout[0].with.repository -ne '${{ github.repository }}' -or [string]$checkout[0].with.ref -ne '${{ github.sha }}' -or [string]$checkout[0].with.path -ne 'candidate' -or [string]$checkout[0].with['persist-credentials'] -ne 'false') {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Candidate checkout must use github.repository/github.sha, path candidate, and persist-credentials false.' -Path $candidateWorkflowPath))
+            }
+            $validationSteps = @($candidateSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Run candidate implementation validation' })
+            if ($validationSteps.Count -ne 1) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness must contain one candidate implementation validation step.' -Path $candidateWorkflowPath))
+            }
+            else {
+                $validationStep = $validationSteps[0]
+                if ($validationStep.ContainsKey('continue-on-error')) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Candidate implementation validation step must propagate failures.' -Path $candidateWorkflowPath))
+                }
+                if ($validationStep.ContainsKey('if')) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Candidate implementation validation step must not use a condition that can skip execution.' -Path $candidateWorkflowPath))
+                }
+                if ([string]$validationStep['working-directory'] -ne 'candidate') {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Candidate implementation validation must execute from the candidate checkout.' -Path $candidateWorkflowPath))
+                }
+                $runText = [string]$validationStep.run
+                $candidateTokens = $null
+                $candidateParseErrors = $null
+                $candidateAst = [System.Management.Automation.Language.Parser]::ParseInput($runText, [ref]$candidateTokens, [ref]$candidateParseErrors)
+                if (@($candidateParseErrors).Count -gt 0) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Candidate implementation validation PowerShell does not parse.' -Path $candidateWorkflowPath))
+                }
+                $candidateCommands = @($candidateAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] }, $true))
+                $candidateScriptPaths = @(
+                    $candidateCommands |
+                        Where-Object { $_.GetCommandName() -eq 'Invoke-CandidateScript' -and $_.CommandElements.Count -gt 1 } |
+                        ForEach-Object { [string]$_.CommandElements[1].Value }
+                )
+                foreach ($requiredScript in @(
+                    'scripts/Test-AgentStandards.ps1','scripts/Test-YamlSyntax.ps1','scripts/Test-GitHubWorkflowArchitecture.ps1',
+                    'scripts/Test-JsonSchemas.ps1','scripts/Test-MarkdownLinks.ps1','scripts/Test-DocumentationCompleteness.ps1',
+                    'actions/validate-contract/Invoke-ContractValidation.ps1','actions/repository-health/Invoke-RepositoryHealth.ps1',
+                    'actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1','scripts/Invoke-PesterSuite.ps1','scripts/Test-Examples.ps1'
+                )) {
+                    if ($candidateScriptPaths -notcontains $requiredScript) {
+                        $results.Add((New-ValidationResult -Status Failed -Message "Candidate harness is missing required candidate script invocation '$requiredScript'." -Path $candidateWorkflowPath))
+                    }
+                }
+                $gitDiffCommand = @($candidateCommands | Where-Object { $_.GetCommandName() -eq 'git' -and ($_.CommandElements.Extent.Text -join ' ') -match '\bdiff\b.*--check' })
+                if ($gitDiffCommand.Count -eq 0) { $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness is missing an executable git diff --check command.' -Path $candidateWorkflowPath)) }
+                if (@($candidateCommands | Where-Object { $_.GetCommandName() -eq 'Invoke-ScriptAnalyzer' }).Count -eq 0) { $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness is missing an executable Invoke-ScriptAnalyzer command.' -Path $candidateWorkflowPath)) }
+                $parseFileCalls = @($candidateAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.InvokeMemberExpressionAst] -and [string]$node.Member.Value -eq 'ParseFile' }, $true))
+                if ($parseFileCalls.Count -eq 0) { $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness is missing executable PowerShell parser validation.' -Path $candidateWorkflowPath)) }
+                $architectureCommands = @(
+                    $candidateCommands |
+                        Where-Object {
+                            $_.GetCommandName() -eq 'Invoke-CandidateScript' -and
+                            $_.CommandElements.Count -gt 1 -and
+                            [string]$_.CommandElements[1].Value -eq 'scripts/Test-GitHubWorkflowArchitecture.ps1'
+                        }
+                )
+                $candidatePolicyArguments = @(
+                    $architectureCommands |
+                        ForEach-Object {
+                            $_.FindAll({
+                                param($node)
+                                $node -is [System.Management.Automation.Language.StringConstantExpressionAst]
+                            }, $true)
+                        } |
+                        ForEach-Object { [string]$_.Value }
+                )
+                if ($candidatePolicyArguments -notcontains '-RequireCandidateValidation') {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Candidate workflow architecture validation must fail closed with RequireCandidateValidation.' -Path $candidateWorkflowPath))
+                }
+                $stopCommandCalls = @(
+                    $candidateCommands |
+                        Where-Object { $_.GetCommandName() -eq 'Write-Output' -and $_.Extent.Text -match '::stop-commands::' }
+                )
+                $restoringTryStatements = @(
+                    $candidateAst.FindAll({
+                        param($node)
+                        if ($node -isnot [System.Management.Automation.Language.TryStatementAst] -or $null -eq $node.Finally) { return $false }
+                        $resumeCommands = @($node.Finally.FindAll({
+                            param($child)
+                            $child -is [System.Management.Automation.Language.CommandAst] -and
+                            $child.GetCommandName() -eq 'Write-Output' -and
+                            $child.Extent.Text -match 'commandMarker'
+                        }, $true))
+                        return $resumeCommands.Count -gt 0
+                    }, $true)
+                )
+                if ($stopCommandCalls.Count -eq 0 -or $restoringTryStatements.Count -eq 0) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness must suspend workflow-command processing while candidate code runs and restore it in finally.' -Path $candidateWorkflowPath))
+                }
+            }
+        }
+        $candidateText = Get-Content -LiteralPath (Join-Path $root $candidateWorkflowPath) -Raw
+        $prohibitedCandidatePattern = 'pull_request_target|secrets\.|secrets:\s*inherit|id-' + ('tok' + 'en') + ':\s*write|contents:\s*write'
+        if ($candidateText -match $prohibitedCandidatePattern) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Candidate-validation workflow requests a prohibited trigger, secret, or elevated permission.' -Path $candidateWorkflowPath))
+        }
+    }
 }
 
 $reusable = '.github/workflows/governance-ci-reusable.yml'
@@ -335,13 +535,52 @@ if ($workflows.ContainsKey($reusable)) {
     if (@($callGraph[$reusable]).Count -gt 0) {
         $results.Add((New-ValidationResult -Status Failed -Message 'Reusable governance workflow must not call another reusable workflow.' -Path $reusable))
     }
-    $requiredInputs = @('project-path','governance-version','run-examples','run-pester','run-documentation-validation','artifact-retention-days')
+    $requiredInputs = @('project-path','governance-version','artifact-retention-days')
     foreach ($inputName in $requiredInputs) {
         if (-not $workflowInputs[$reusable].ContainsKey($inputName)) {
             $results.Add((New-ValidationResult -Status Failed -Message "Reusable governance workflow is missing input '$inputName'." -Path $reusable))
         }
     }
     if (Test-Path -LiteralPath (Join-Path $root 'project-manifest.json') -PathType Leaf) {
+        $governanceSteps = @($workflows[$reusable].jobs.governance.steps)
+        $callerCheckout = @($governanceSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Checkout caller' })
+        $standardsCheckout = @($governanceSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Checkout trusted standards' })
+        if ($callerCheckout.Count -ne 1 -or $callerCheckout[0].uses -notmatch '^actions/checkout@[a-fA-F0-9]{40}$') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Reusable workflow must contain one SHA-pinned caller checkout.' -Path $reusable))
+        }
+        elseif ($callerCheckout[0].with.repository -ne '${{ github.repository }}' -or $callerCheckout[0].with.ref -ne '${{ github.sha }}' -or $callerCheckout[0].with.path -ne 'caller') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Caller checkout must explicitly use github.repository, github.sha, and the caller workspace.' -Path $reusable))
+        }
+        if ($standardsCheckout.Count -ne 1 -or $standardsCheckout[0].uses -notmatch '^actions/checkout@[a-fA-F0-9]{40}$') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Reusable workflow must contain one SHA-pinned trusted standards checkout.' -Path $reusable))
+        }
+        elseif ($standardsCheckout[0].with.repository -ne '${{ job.workflow_repository }}' -or $standardsCheckout[0].with.ref -ne '${{ job.workflow_sha }}' -or $standardsCheckout[0].with.path -ne 'standards') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Standards checkout must use immutable job.workflow_repository and job.workflow_sha identity in the standards workspace.' -Path $reusable))
+        }
+        if ($workflowInputs[$reusable].ContainsKey('standards-repository') -or $workflowInputs[$reusable].ContainsKey('standards-sha') -or $workflowInputs[$reusable].ContainsKey('standards-ref')) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Callers must not be able to override the standards repository or workflow SHA.' -Path $reusable))
+        }
+        if ($workflowInputs[$reusable].ContainsKey('run-examples') -or $workflowInputs[$reusable].ContainsKey('run-pester') -or $workflowInputs[$reusable].ContainsKey('run-documentation-validation')) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Misleading mandatory-true compatibility inputs must not be exposed.' -Path $reusable))
+        }
+        foreach ($record in @(Get-JobStepRecords -Workflow $workflows[$reusable])) {
+            $step = $record.step
+            if ($step.ContainsKey('uses') -and [string]$step.uses -match '^\.?[/\\]caller([/\\]|$)') {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Reusable workflow must not load a caller-controlled local action.' -Path $reusable))
+            }
+            if ($step.ContainsKey('working-directory') -and [string]$step['working-directory'] -match '(^|[/\\])caller([/\\]|$)') {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Reusable workflow must not execute commands from the caller working directory.' -Path $reusable))
+            }
+            if ($step.ContainsKey('run')) {
+                $runText = [string]$step.run
+                $executesCallerFile = $runText -match '(?im)^\s*(?:&\s*)?(?:\./)?caller[/\\][^\r\n]*\.(?:ps1|psm1|sh|py|js|cmd|bat)\b'
+                $passesCallerToInterpreter = $runText -match '(?im)^\s*(?:pwsh|powershell|python|bash|sh|node|dotnet|npm|npx)\b[^\r\n]*(?:\./)?caller[/\\]'
+                $runsCallerTests = $runText -match '(?im)^\s*Invoke-Pester\b[^\r\n]*(?:\./)?caller[/\\]'
+                if ($executesCallerFile -or $passesCallerToInterpreter -or $runsCallerTests) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Reusable workflow must not directly execute caller-controlled code, tests, or package commands.' -Path $reusable))
+                }
+            }
+        }
         $steps = @()
         if ($workflows[$reusable].ContainsKey('jobs') -and $workflows[$reusable].jobs.ContainsKey('governance')) {
             $steps = @($workflows[$reusable].jobs.governance.steps | ForEach-Object { if ($_ -is [hashtable] -and $_.ContainsKey('name')) { [string]$_.name } })
