@@ -28,11 +28,11 @@ function Assert-LastExitCode {
 Assert-LastExitCode -Name 'PowerShell example'
 & pwsh -NoProfile -File (Join-Path $root 'examples/database-project/tools/Test-Migrations.ps1') -Path (Join-Path $root 'examples/database-project')
 Assert-LastExitCode -Name 'Database example'
-& pwsh -NoProfile -File (Join-Path $root 'examples/integration-project/tools/Test-Example.ps1') -Path (Join-Path $root 'examples/integration-project')
+& pwsh -NoProfile -File (Join-Path $root 'examples/integration-project/tools/Test-Example.ps1') -Path 'examples/integration-project'
 Assert-LastExitCode -Name 'Integration example'
-& pwsh -NoProfile -File (Join-Path $root 'examples/infrastructure-project/tools/Test-Example.ps1') -Path (Join-Path $root 'examples/infrastructure-project')
+& pwsh -NoProfile -File (Join-Path $root 'examples/infrastructure-project/tools/Test-Example.ps1') -Path 'examples/infrastructure-project'
 Assert-LastExitCode -Name 'Infrastructure example'
-& pwsh -NoProfile -File (Join-Path $root 'examples/combined-script-runner-project/tools/Test-Example.ps1') -Path (Join-Path $root 'examples/combined-script-runner-project')
+& pwsh -NoProfile -File (Join-Path $root 'examples/combined-script-runner-project/tools/Test-Example.ps1') -Path 'examples/combined-script-runner-project'
 Assert-LastExitCode -Name 'Combined script-runner example'
 
 $pester = Invoke-Pester -Path (Join-Path $root 'examples/worker-service-project/tests') -Output Detailed -PassThru
