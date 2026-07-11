@@ -232,8 +232,9 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 - `master` was inspected through the GitHub branch-protection API on 2026-06-28 and currently has verified classic branch protection with required check `Governance / Governance validation`.
 - Repository rulesets were inspected on 2026-06-28 and none are configured; classic branch protection is the single active enforcement mechanism.
 - Governance approval for `v1.1.0` is complete through PR #10, with formal GitHub approvals from `megad00die` and `mezuccolini`; `GOV-2026-001` is not required.
-- `v1.1.0` is approved for publication at immutable target `2704049d7e826975d956611b194214dd79ea3686`.
-- The annotated `v1.1.0` tag and GitHub Release are pending until the PR #11 formal-approval defect is remediated by a metadata-only pull request with actual GitHub `APPROVED` reviews from both required reviewers, Governance CI success on the final head, and merge into protected `master`.
+- PR #12 remediated the PR #11 formal-approval defect. Publication approval remediation is complete.
+- Tag and release-publication authorization are granted for `v1.1.0` at immutable target `2704049d7e826975d956611b194214dd79ea3686`.
+- The annotated `v1.1.0` tag and GitHub Release remain pending; neither publication action has occurred.
 
 ## Related Documents
 

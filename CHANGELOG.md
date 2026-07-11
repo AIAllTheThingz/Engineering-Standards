@@ -10,7 +10,7 @@ No unreleased changes are currently recorded.
 
 ### Release Status
 
-Approved for publication. The authorized immutable tag target is `2704049d7e826975d956611b194214dd79ea3686`; the annotated tag and GitHub Release are created after the publication documentation pull request is reviewed, validated, approved, and merged.
+Release approval is `Approved`; `GOV-2026-001` is `Not required`. PR #12 remediated the PR #11 formal-approval defect, so publication approval remediation is complete. Tag and release-publication authorization are granted for `v1.1.0` at immutable target `2704049d7e826975d956611b194214dd79ea3686`. The annotated tag and GitHub Release remain pending and have not been created or published.
 
 ### Changed
 
