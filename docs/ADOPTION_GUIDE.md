@@ -88,13 +88,18 @@ jobs:
     with:
       project-path: .
       governance-version: 1.1.0
-      run-examples: true
-      run-pester: true
-      run-documentation-validation: true
       artifact-retention-days: 30
 ```
 
-The workflow MUST run on pull requests and on pushes to protected long-lived branches. It MUST use least-privilege permissions and upload evidence artifacts with explicit retention. `project-path` is repository-relative and rejects path traversal; `governance-version` must match the manifest where applicable; `artifact-retention-days` must remain in the supported range. `run-examples`, `run-pester`, and `run-documentation-validation` control supported checks but must not be used to hide mandatory control failures.
+The workflow MUST run on pull requests and on pushes to protected long-lived branches. It uses only `contents: read` and uploads evidence with explicit retention. `project-path` is relative to the caller checkout and rejects absolute paths, traversal, workspace escapes, symbolic links, and junctions. `governance-version` must match the caller manifest, and `artifact-retention-days` must remain in the supported range.
+
+The job uses three sibling workspaces: `caller/` for the exact caller repository and `${{ github.sha }}`, `standards/` for the Engineering Standards repository and immutable `${{ job.workflow_sha }}`, and `evidence/` for generated reports. Validators execute only from `standards/` and receive the resolved caller root explicitly. The caller cannot override the standards repository or SHA. Evidence records both identities and selects the caller risk classification from the validated manifest.
+
+Downstream validation always includes the governance contract. Additional safe static checks are selected from validated `governance.config.json` categories. Repository-owned builds, Pester suites, scripts, and examples remain the responsibility of the caller's own least-privilege CI; the reusable governance workflow does not execute them. Engineering Standards maintainer tests and examples run only when the caller is this governance repository.
+
+GitHub Enterprise Server does not currently expose the `job.workflow_repository`, `job.workflow_sha`, and `job.workflow_ref` properties used for the trusted checkout. The workflow therefore fails closed on GHES and has no branch, tag, or caller-input fallback.
+
+Migration: remove the former `run-examples`, `run-pester`, and `run-documentation-validation` inputs from callers. They previously could not disable their corresponding checks and are no longer part of the interface. Keep project-specific checks in caller-owned jobs and use `governance.config.json` only for supported central static validation categories.
 
 The supported reusable workflow path is `.github/workflows/governance-ci-reusable.yml`. Files under the root `workflows/` directory are distribution templates and are not directly executable reusable workflows from their current location.
 

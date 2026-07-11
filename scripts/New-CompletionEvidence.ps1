@@ -5,12 +5,27 @@ Generates completion evidence.
 Creates a completion-result JSON document from supplied test records, commands, artifacts, warnings, and repository metadata.
 .PARAMETER RepositoryPath
 Repository root.
+.PARAMETER SourceRepositoryPath
+Optional checked-out source repository used for Git metadata and changed files
+when evidence is stored in a separate workspace.
 .PARAMETER OutputPath
 Output evidence path relative to repository.
 .PARAMETER GovernanceVersion
 Governance version used for validation.
 .PARAMETER RiskClassification
 Risk classification.
+.PARAMETER Repository
+Explicit validated caller repository owner/name.
+.PARAMETER Branch
+Explicit validated caller branch or ref name.
+.PARAMETER StandardsRepository
+Repository that supplied the trusted reusable workflow.
+.PARAMETER StandardsWorkflowSha
+Immutable commit that supplied the trusted reusable workflow and validators.
+.PARAMETER ValidationProfile
+Validated profile selected for the caller.
+.PARAMETER ChecksExecuted
+Names of checks executed by the trusted aggregate validator.
 .PARAMETER Status
 Optional caller status. The script computes the effective overall status from test records and rejects contradictions.
 .PARAMETER Summary
@@ -55,12 +70,27 @@ param(
     [string]$ChangeCategory = 'mixed',
     [switch]$ApprovalRequired,
     [switch]$ProductionChange,
-    [string]$DataClassification = 'Internal'
+    [string]$DataClassification = 'Internal',
+    [string]$Repository,
+    [string]$Branch,
+    [string]$StandardsRepository,
+    [string]$StandardsWorkflowSha,
+    [string]$ValidationProfile,
+    [string[]]$ChecksExecuted = @(),
+    [string]$SourceRepositoryPath
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'GovernanceValidation.psm1') -Force
 $root = (Resolve-Path -LiteralPath $RepositoryPath).Path
+$sourceRoot = if ($SourceRepositoryPath) { (Resolve-Path -LiteralPath $SourceRepositoryPath).Path } else { $root }
+if ($EvidenceExecutionContext -eq 'GitHubActions' -and $SourceRepositoryPath) {
+    $expectedSourceRoot = Resolve-SafePath -Root $root -ChildPath 'caller'
+    $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+    if (-not $sourceRoot.Equals($expectedSourceRoot, $comparison)) {
+        throw 'GitHub Actions SourceRepositoryPath must resolve to the dedicated caller workspace.'
+    }
+}
 $tests = @()
 if ($TestResultPath) { $tests = @(Read-JsonFile -Path (Resolve-SafePath -Root $root -ChildPath $TestResultPath)) }
 
@@ -84,13 +114,16 @@ if ($Status -ne $computedStatus) {
 }
 $commit = $env:GITHUB_SHA
 if (-not $commit) {
-    $commit = (& git -C $root rev-parse HEAD 2>$null)
+    $commit = (& git -C $sourceRoot rev-parse HEAD 2>$null)
     if ($LASTEXITCODE -ne 0 -or -not $commit) { $commit = 'unknown' }
 }
 $validatedCommit = if ($ValidatedCommitSha) { $ValidatedCommitSha } else { $commit }
 $branch = $env:GITHUB_REF_NAME
-if (-not $branch) {
-    $branch = (& git -C $root branch --show-current 2>$null)
+if ($Branch) {
+    $branch = $Branch
+}
+elseif (-not $branch) {
+    $branch = (& git -C $sourceRoot branch --show-current 2>$null)
     if ($LASTEXITCODE -ne 0 -or -not $branch) { $branch = 'unknown' }
 }
 $githubRunId = if ($env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID } else { $null }
@@ -195,9 +228,9 @@ function Get-ChangedFileCategories {
     $categories
 }
 
-$changedFiles = @(& git -C $root status --short 2>$null | ForEach-Object { $_.Substring(3).Replace('\','/') })
+$changedFiles = @(& git -C $sourceRoot status --short 2>$null | ForEach-Object { $_.Substring(3).Replace('\','/') })
 if ($changedFiles.Count -eq 0 -and $commit -ne 'unknown') {
-    $changedFiles = @(& git -C $root diff-tree --no-commit-id --name-only -r $commit 2>$null | ForEach-Object { $_.Replace('\','/') })
+    $changedFiles = @(& git -C $sourceRoot diff-tree --no-commit-id --name-only -r $commit 2>$null | ForEach-Object { $_.Replace('\','/') })
 }
 $changedFiles = @($changedFiles | Where-Object { -not (Test-GeneratedBuildOutputPath -Path $_) } | Sort-Object -Unique)
 if ($changedFiles.Count -eq 0) { $changedFiles = @('unknown') }
@@ -210,7 +243,7 @@ $evidence = [ordered]@{
     githubWorkflow = $githubWorkflow
     githubJob = $githubWorkflow
     artifactName = $(if ($ArtifactName) { $ArtifactName } else { $null })
-    repository = $(if ($env:GITHUB_REPOSITORY) { $env:GITHUB_REPOSITORY } else { Get-OriginRepositoryName -RepositoryRoot $root })
+    repository = $(if ($Repository) { $Repository } elseif ($env:GITHUB_REPOSITORY) { $env:GITHUB_REPOSITORY } else { Get-OriginRepositoryName -RepositoryRoot $sourceRoot })
     commitSha = $validatedCommit.Trim()
     validatedCommitSha = $validatedCommit.Trim()
     evidenceCommitSha = $(if ($EvidenceCommitSha) { $EvidenceCommitSha.Trim() } else { $null })
@@ -272,7 +305,20 @@ $evidence = [ordered]@{
         restoreVerification = $null
         destructiveOperations = $false
     }
-    technologyEvidence = [ordered]@{}
+    technologyEvidence = [ordered]@{
+        infrastructure = $(if ($StandardsRepository -or $StandardsWorkflowSha -or $ValidationProfile) {
+            [ordered]@{
+                governanceWorkflow = [ordered]@{
+                    callerRepository = $(if ($Repository) { $Repository } elseif ($env:GITHUB_REPOSITORY) { $env:GITHUB_REPOSITORY } else { Get-OriginRepositoryName -RepositoryRoot $sourceRoot })
+                    callerCommitSha = $validatedCommit.Trim()
+                    standardsRepository = $StandardsRepository
+                    standardsWorkflowSha = $StandardsWorkflowSha
+                    validationProfile = $ValidationProfile
+                    checksExecuted = @($ChecksExecuted)
+                }
+            }
+        } else { @{} })
+    }
 }
 $out = Resolve-SafePath -Root $root -ChildPath $OutputPath -AllowMissingLeaf
 New-Item -ItemType Directory -Path (Split-Path -Parent $out) -Force | Out-Null

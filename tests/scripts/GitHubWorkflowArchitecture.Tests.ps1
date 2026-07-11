@@ -29,6 +29,16 @@ function script:Set-FixtureFile {
     Set-Content -LiteralPath $path -Value $Content -Encoding utf8
 }
 
+function script:New-CurrentWorkflowFixture {
+    param([Parameter(Mandatory)][string]$Name)
+    $root = New-WorkflowFixture -Name $Name
+    Set-FixtureFile -Root $root -RelativePath 'project-manifest.json' -Content '{}'
+    foreach ($relative in @('.github/workflows/governance-ci.yml','.github/workflows/governance-ci-reusable.yml')) {
+        Set-FixtureFile -Root $root -RelativePath $relative -Content (Get-Content -LiteralPath (Join-Path $script:repoRoot $relative) -Raw)
+    }
+    $root
+}
+
 Describe 'GitHub workflow architecture validation' {
     It 'passes a valid one-way workflow call with a pinned action' {
         $root = New-WorkflowFixture -Name 'valid'
@@ -90,6 +100,90 @@ jobs:
 '@
         & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master
         $LASTEXITCODE | Should -Be 0
+    }
+
+    It 'accepts a full-SHA remote self-CI call that matches the expected trusted SHA' {
+        $root = New-WorkflowFixture -Name 'remote-self-call'
+        $sha = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci.yml' -Content @"
+name: Governance CI
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+concurrency:
+  group: governance-self
+  cancel-in-progress: true
+jobs:
+  governance:
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@$sha
+"@
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci-reusable.yml' -Content @'
+name: Reusable
+on:
+  workflow_call:
+    inputs:
+      project-path: { type: string, required: false, default: . }
+      governance-version: { type: string, required: false, default: 1.1.0 }
+      artifact-retention-days: { type: number, required: false, default: 30 }
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - run: |
+          echo '${{ inputs.project-path }}'
+          echo '${{ inputs.governance-version }}'
+          echo '${{ inputs.artifact-retention-days }}'
+'@
+        & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -ExpectedReusableWorkflowSha $sha
+        $LASTEXITCODE | Should -Be 0
+    }
+
+    It 'rejects a remote self-CI SHA that differs from the expected trusted SHA' {
+        $root = New-WorkflowFixture -Name 'remote-self-call-mismatch'
+        $entrySha = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        $expectedSha = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci.yml' -Content @"
+name: Governance CI
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+concurrency:
+  group: governance-self
+  cancel-in-progress: true
+jobs:
+  governance:
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@$entrySha
+"@
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci-reusable.yml' -Content @'
+name: Reusable
+on:
+  workflow_call:
+    inputs:
+      project-path: { type: string, required: false, default: . }
+      governance-version: { type: string, required: false, default: 1.1.0 }
+      artifact-retention-days: { type: number, required: false, default: 30 }
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - run: |
+          echo '${{ inputs.project-path }}'
+          echo '${{ inputs.governance-version }}'
+          echo '${{ inputs.artifact-retention-days }}'
+'@
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -ExpectedReusableWorkflowSha $expectedSha 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'does not match expected trusted SHA'
     }
 
     It 'fails direct self-reference' {
@@ -733,6 +827,39 @@ jobs:
 '@
         & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master
         $LASTEXITCODE | Should -Not -Be 0
+    }
+
+    It 'rejects direct execution of a caller-controlled PowerShell script' {
+        $root = New-CurrentWorkflowFixture -Name 'caller-script-execution'
+        $path = Join-Path $root '.github/workflows/governance-ci-reusable.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $insertion = "      - name: Malicious caller script`n        shell: pwsh`n        run: '& ./caller/evil.ps1'`n`n      - name: Normalize evidence report paths"
+        Set-Content -LiteralPath $path -Value $content.Replace('      - name: Normalize evidence report paths', $insertion) -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must not directly execute caller-controlled code'
+    }
+
+    It 'rejects a caller-controlled local composite action' {
+        $root = New-CurrentWorkflowFixture -Name 'caller-local-action'
+        $path = Join-Path $root '.github/workflows/governance-ci-reusable.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $insertion = "      - name: Malicious caller action`n        uses: ./caller/action`n`n      - name: Normalize evidence report paths"
+        Set-Content -LiteralPath $path -Value $content.Replace('      - name: Normalize evidence report paths', $insertion) -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must not load a caller-controlled local action'
+    }
+
+    It 'rejects caller working-directory command execution' {
+        $root = New-CurrentWorkflowFixture -Name 'caller-working-directory'
+        $path = Join-Path $root '.github/workflows/governance-ci-reusable.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $insertion = "      - name: Malicious caller working directory`n        working-directory: caller`n        run: npm test`n`n      - name: Normalize evidence report paths"
+        Set-Content -LiteralPath $path -Value $content.Replace('      - name: Normalize evidence report paths', $insertion) -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must not execute commands from the caller working directory'
     }
 }
 

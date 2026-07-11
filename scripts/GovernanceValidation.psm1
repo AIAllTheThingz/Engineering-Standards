@@ -136,9 +136,20 @@ function Resolve-SafePath {
     $rootFull = [System.IO.Path]::GetFullPath((Resolve-Path -LiteralPath $Root).Path)
     $candidate = if ([System.IO.Path]::IsPathRooted($ChildPath)) { $ChildPath } else { Join-Path $rootFull $ChildPath }
     $candidateFull = [System.IO.Path]::GetFullPath($candidate)
+    $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
     $prefix = $rootFull.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
-    if (-not ($candidateFull.Equals($rootFull, [StringComparison]::OrdinalIgnoreCase) -or $candidateFull.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase))) {
+    if (-not ($candidateFull.Equals($rootFull, $comparison) -or $candidateFull.StartsWith($prefix, $comparison))) {
         throw "Path '$ChildPath' resolves outside '$Root'."
+    }
+    $relative = [System.IO.Path]::GetRelativePath($rootFull, $candidateFull)
+    $current = $rootFull
+    foreach ($segment in @($relative -split '[\\/]' | Where-Object { $_ -and $_ -ne '.' })) {
+        $current = Join-Path $current $segment
+        if (-not (Test-Path -LiteralPath $current)) { break }
+        $item = Get-Item -LiteralPath $current -Force
+        if ($item.LinkType -or ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            throw "Path '$ChildPath' traverses symbolic link or junction '$current'."
+        }
     }
     if (-not $AllowMissingLeaf -and -not (Test-Path -LiteralPath $candidateFull)) {
         throw "Path '$ChildPath' does not exist beneath '$Root'."

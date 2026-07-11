@@ -54,6 +54,12 @@ The repository validator checks these controls semantically through `scripts/Tes
 
 Pull request content, filenames, workflow inputs, issue text, comments, generated evidence, and artifacts are untrusted. Workflows MUST NOT execute untrusted pull request code with privileged tokens.
 
+The reusable governance workflow maintains a dual-checkout boundary. `caller/` is explicitly checked out from `${{ github.repository }}` at `${{ github.sha }}` and is treated as untrusted validation data. `standards/` is explicitly checked out from `${{ job.workflow_repository }}` at the full immutable `${{ job.workflow_sha }}` and is the only source of validator scripts, modules, dependency requirements, tests, and examples. Generated reports are written to the sibling `evidence/` workspace. All checkouts use `persist-credentials: false`.
+
+Callers cannot provide a standards repository, ref, or SHA. The workflow validates the expected central repository and full SHA before use. It fails closed when GitHub does not provide workflow identity fields, including GitHub Enterprise Server environments where `job.workflow_*` is unavailable. No moving branch, tag, caller path, or caller-provided fallback is permitted.
+
+Downstream manifests, configuration, paths, and files remain untrusted. The aggregate validator canonicalizes the caller project root, rejects rooted paths and `..`, refuses link/junction traversal, requires nonoverlapping caller/standards/evidence roots, and loads modules only from the standards checkout. It does not execute downstream tests, scripts, examples, package hooks, or build commands.
+
 Avoid `pull_request_target` unless there is a documented security requirement and the workflow does not check out or execute untrusted code. If `pull_request_target` is used, reviewers MUST confirm:
 
 - The checkout ref is trusted.
@@ -142,7 +148,7 @@ pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Pat
 Invoke-Pester -Path tests/actions -Output Detailed
 ```
 
-Workflow syntax validation MUST run through `scripts/Test-YamlSyntax.ps1` with PyYAML pinned to a reviewed version in CI. Workflow semantic validation MUST run through `scripts/Test-GitHubWorkflowArchitecture.ps1` to detect recursion, invalid reusable paths, unsupported inputs, broad permissions, and unpinned third-party actions.
+Workflow syntax validation MUST run through `scripts/Test-YamlSyntax.ps1` with PyYAML pinned to a reviewed version in CI. Workflow semantic validation MUST run through `scripts/Test-GitHubWorkflowArchitecture.ps1` to detect recursion, invalid reusable paths, unsupported inputs, broad permissions, unpinned third-party actions, missing explicit caller identity, mutable standards identity, checkout collisions, caller override inputs, and direct downstream test/example execution.
 
 ## Exception Handling
 

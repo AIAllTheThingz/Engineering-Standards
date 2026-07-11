@@ -71,24 +71,28 @@ Do not introduce new enum values in downstream repositories. If a new value is n
 
 ## Path Rules
 
-Paths are repository-relative and MUST NOT escape the repository root. Validators treat missing required files as failures. Paths should use forward slashes in JSON examples for consistency across operating systems.
+Paths are repository-relative and MUST NOT escape the repository root. Absolute paths, traversal segments, symbolic-link or junction hops, and caller/standards workspace confusion are rejected. Validators treat missing required files as failures. Paths should use forward slashes in JSON examples for consistency across operating systems.
 
 Evidence paths should be stable. A changing path makes historical comparison and artifact review harder.
 
 ## Workflow Configuration
 
-Downstream repositories call `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<immutable-reference>`. Required inputs are:
+Downstream repositories call `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<full-commit-sha>`. Supported inputs are:
 
 | Input | Default | Meaning |
 | --- | --- | --- |
-| `project-path` | `.` | Repository-relative path to validate. Absolute paths and traversal are invalid. |
-| `governance-version` | `1.1.0` | Expected governance version, compared with `project-manifest.json` when present. |
-| `run-examples` | `true` | Runs functional example validations for this repository. |
-| `run-pester` | `true` | Runs repository Pester tests. |
-| `run-documentation-validation` | `true` | Runs substantive documentation checks. |
+| `project-path` | `.` | Caller-repository-relative path to validate. Absolute paths, traversal, link hops, and workspace escapes are invalid. |
+| `governance-version` | `1.1.0` | Expected governance version; it must match `project-manifest.json`. |
 | `artifact-retention-days` | `30` | Evidence artifact retention period. |
+| `controlled-failure-test` | `false` | Repository-owned proof path that records a failed check, uploads evidence, and then fails enforcement. |
 
 Outputs are `evidence-path` and `artifact-name`. Root files under `workflows/` are distribution templates and must not be referenced as cross-repository reusable workflows.
+
+The reusable workflow checks out caller content under `caller/`, trusted central tooling under `standards/`, and reports under `evidence/`. The standards checkout is selected from GitHub's immutable `job.workflow_repository` and `job.workflow_sha` context; callers cannot supply either value. Evidence keeps the caller repository and commit as `repository`, `commitSha`, and `validatedCommitSha`, and records the standards workflow repository/SHA separately.
+
+`Contract` is mandatory for all downstream callers. `MarkdownLinks`, `DocumentationCompleteness`, and `ForbiddenPatterns` are supported central static categories when present in validated configuration. Categories that imply repository-maintainer layout or caller code execution—such as `Examples`, `Pester`, `JsonSchemas`, `WorkflowArchitecture`, and `RepositoryHealth`—are rejected for downstream use; run caller-owned builds and tests in separate caller CI jobs. Any nonempty `controls.mandatoryControlsDisabled` fails closed unless a future interface can independently validate the approved exception.
+
+Existing callers must remove `run-examples`, `run-pester`, and `run-documentation-validation`. Those compatibility inputs were mandatory-true and misleading; removal is an intentional interface correction. GitHub Enterprise Server is unsupported because it does not provide the immutable `job.workflow_*` identity properties and the workflow does not use an unsafe fallback.
 
 ## Allowlist Rules
 

@@ -116,13 +116,10 @@ jobs:
     with:
       project-path: .
       governance-version: 1.1.0
-      run-examples: true
-      run-pester: true
-      run-documentation-validation: true
       artifact-retention-days: 30
 ```
 
-The local event workflow is `.github/workflows/governance-ci.yml`. It triggers on pull requests, pushes to `master`, and manual `workflow_dispatch`, then calls `.github/workflows/governance-ci-reusable.yml` exactly once. Downstream repositories must call the reusable workflow path under `.github/workflows`, not files under the root `workflows/` template directory.
+The local event workflow is `.github/workflows/governance-ci.yml`. It triggers on pull requests, pushes to `master`, and manual `workflow_dispatch`, then calls `.github/workflows/governance-ci-reusable.yml` exactly once. Downstream repositories must call the reusable workflow path under `.github/workflows`, not files under the root `workflows/` template directory. The reusable job separates caller content, immutable central tooling, and evidence into `caller/`, `standards/`, and `evidence/`; it never requires downstream copies of central `scripts/`, `actions/`, `tests/`, or `examples/`.
 
 ## Example Local AGENTS.md
 
@@ -217,14 +214,14 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 - `commitSha` and `validatedCommitSha` identify the repository commit that was validated. `evidenceCommitSha` identifies the commit containing a checked-in evidence file when that value is intentionally recorded. GitHub artifact evidence leaves `evidenceCommitSha` null because the artifact is not committed.
 - Local evidence remains `Blocked` overall when hosted execution is mandatory, even when a separately verified hosted run is recorded. A local record is not authoritative proof of a GitHub run.
 - `evidence/latest-verified-run.json` records metadata for the most recently downloaded and independently verified GitHub success artifact plus the controlled-failure run.
-- To trigger the success proof run: `gh workflow run "Governance CI" --ref master -f controlled-failure-test=false -f run-examples=true -f run-pester=true -f run-documentation-validation=true`.
+- To trigger the success proof run: `gh workflow run "Governance CI" --ref master -f controlled-failure-test=false`.
 - To trigger the controlled failure proof run: `gh workflow run "Governance CI" --ref master -f controlled-failure-test=true`.
 - Download workflow evidence with `gh run download <run-id> --name governance-evidence-<run-id> --dir <safe-temp-dir>` and verify it with `scripts/Test-WorkflowEvidenceArtifact.ps1`.
 - Forbidden-pattern scanning excludes generated evidence and build output by default. Use `-IncludeGeneratedEvidence` only for diagnostics.
 - Detailed Pester audit evidence is stored as sanitized JSON in `evidence/pester-details.json`; raw Pester XML is temporary and is not uploaded.
 - Final workflow enforcement occurs after final evidence validation and artifact upload, so controlled failures still produce downloadable evidence.
 - The latest independently verified success run is `28304098315` for protected `master` merge commit `2704049d7e826975d956611b194214dd79ea3686`.
-- The paired controlled-failure proof run is `28306149811`. The controlled-failure path deliberately injected a failed mandatory Markdown outcome after successful Markdown report generation. Evidence generation, completion-evidence validation, and artifact upload completed successfully; final mandatory enforcement rejected the synthetic failed mandatory result, producing the expected overall workflow failure.
+- The paired historical controlled-failure proof run is `28306149811`. That earlier workflow version injected a failed mandatory Markdown outcome after successful Markdown report generation. The repaired workflow instead records a dedicated `ControlledFailure` result after normal validation; both designs upload evidence before final enforcement.
 - The independently computed ZIP SHA-256 values are `8cb3dec5db93e1834c38b291ee4445f9c8c69f4954e3152a6c1f296da8d205dd` for success artifact `governance-evidence-28304098315` and `b50936c7c1575af9cce201a9a0e36a46dfc1ce30752482c21d1ca008ae5b0bd2` for controlled-failure artifact `governance-evidence-28306149811`.
 - The release target advanced to `2704049d7e826975d956611b194214dd79ea3686` because PR #5 merged executable evidence-validator semantics, shared governance-validation behavior, and regression tests into protected `master`.
 - PR #6 metadata cleanup merged at `e17240bb31abf03a3b0d66900fa7a9b9e01225cc`, and post-merge `master` run `28306723435` passed with artifact `governance-evidence-28306723435`; this records release evidence and does not move the immutable release target.

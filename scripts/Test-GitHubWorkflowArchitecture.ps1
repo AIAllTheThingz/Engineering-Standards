@@ -11,6 +11,8 @@ Repository root path.
 Expected repository default branch. Defaults to master for this repository.
 .PARAMETER OutputJson
 Optional JSON report path.
+.PARAMETER ExpectedReusableWorkflowSha
+Optional immutable Engineering Standards SHA required for a remote self-CI call.
 .EXAMPLE
 pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path .
 #>
@@ -18,6 +20,7 @@ pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path .
 param(
     [string]$Path = '.',
     [string]$DefaultBranch = 'master',
+    [string]$ExpectedReusableWorkflowSha,
     [string]$OutputJson
 )
 
@@ -319,8 +322,17 @@ if ($workflows.ContainsKey($entry)) {
     if ($branches -notcontains $DefaultBranch) {
         $results.Add((New-ValidationResult -Status Failed -Message "Entry workflow push trigger does not include default branch '$DefaultBranch'." -Path $entry))
     }
-    if (@($callGraph[$entry]).Count -ne 1 -or @($callGraph[$entry])[0] -ne '.github/workflows/governance-ci-reusable.yml') {
-        $results.Add((New-ValidationResult -Status Failed -Message 'Entry workflow must call the reusable governance workflow exactly once.' -Path $entry))
+    $entryJobUses = @((Get-WorkflowUses -Workflow $workflows[$entry] -RelativePath $entry) | Where-Object kind -eq 'job')
+    $localCall = @($entryJobUses | Where-Object value -eq './.github/workflows/governance-ci-reusable.yml')
+    $remoteCall = @($entryJobUses | Where-Object value -match '^AIAllTheThingz/Engineering-Standards/\.github/workflows/governance-ci-reusable\.yml@([a-fA-F0-9]{40})$')
+    if ($entryJobUses.Count -ne 1 -or ($localCall.Count + $remoteCall.Count) -ne 1) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Entry workflow must call the local reusable workflow or a full-SHA Engineering Standards reusable workflow exactly once.' -Path $entry))
+    }
+    elseif ($remoteCall.Count -eq 1 -and $ExpectedReusableWorkflowSha) {
+        $actualSha = ([string]$remoteCall[0].value -split '@')[-1]
+        if ($actualSha -ne $ExpectedReusableWorkflowSha) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Entry workflow reusable SHA '$actualSha' does not match expected trusted SHA '$ExpectedReusableWorkflowSha'." -Path $entry))
+        }
     }
 }
 else {
@@ -335,13 +347,52 @@ if ($workflows.ContainsKey($reusable)) {
     if (@($callGraph[$reusable]).Count -gt 0) {
         $results.Add((New-ValidationResult -Status Failed -Message 'Reusable governance workflow must not call another reusable workflow.' -Path $reusable))
     }
-    $requiredInputs = @('project-path','governance-version','run-examples','run-pester','run-documentation-validation','artifact-retention-days')
+    $requiredInputs = @('project-path','governance-version','artifact-retention-days')
     foreach ($inputName in $requiredInputs) {
         if (-not $workflowInputs[$reusable].ContainsKey($inputName)) {
             $results.Add((New-ValidationResult -Status Failed -Message "Reusable governance workflow is missing input '$inputName'." -Path $reusable))
         }
     }
     if (Test-Path -LiteralPath (Join-Path $root 'project-manifest.json') -PathType Leaf) {
+        $governanceSteps = @($workflows[$reusable].jobs.governance.steps)
+        $callerCheckout = @($governanceSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Checkout caller' })
+        $standardsCheckout = @($governanceSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Checkout trusted standards' })
+        if ($callerCheckout.Count -ne 1 -or $callerCheckout[0].uses -notmatch '^actions/checkout@[a-fA-F0-9]{40}$') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Reusable workflow must contain one SHA-pinned caller checkout.' -Path $reusable))
+        }
+        elseif ($callerCheckout[0].with.repository -ne '${{ github.repository }}' -or $callerCheckout[0].with.ref -ne '${{ github.sha }}' -or $callerCheckout[0].with.path -ne 'caller') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Caller checkout must explicitly use github.repository, github.sha, and the caller workspace.' -Path $reusable))
+        }
+        if ($standardsCheckout.Count -ne 1 -or $standardsCheckout[0].uses -notmatch '^actions/checkout@[a-fA-F0-9]{40}$') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Reusable workflow must contain one SHA-pinned trusted standards checkout.' -Path $reusable))
+        }
+        elseif ($standardsCheckout[0].with.repository -ne '${{ job.workflow_repository }}' -or $standardsCheckout[0].with.ref -ne '${{ job.workflow_sha }}' -or $standardsCheckout[0].with.path -ne 'standards') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Standards checkout must use immutable job.workflow_repository and job.workflow_sha identity in the standards workspace.' -Path $reusable))
+        }
+        if ($workflowInputs[$reusable].ContainsKey('standards-repository') -or $workflowInputs[$reusable].ContainsKey('standards-sha') -or $workflowInputs[$reusable].ContainsKey('standards-ref')) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Callers must not be able to override the standards repository or workflow SHA.' -Path $reusable))
+        }
+        if ($workflowInputs[$reusable].ContainsKey('run-examples') -or $workflowInputs[$reusable].ContainsKey('run-pester') -or $workflowInputs[$reusable].ContainsKey('run-documentation-validation')) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Misleading mandatory-true compatibility inputs must not be exposed.' -Path $reusable))
+        }
+        foreach ($record in @(Get-JobStepRecords -Workflow $workflows[$reusable])) {
+            $step = $record.step
+            if ($step.ContainsKey('uses') -and [string]$step.uses -match '^\.?[/\\]caller([/\\]|$)') {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Reusable workflow must not load a caller-controlled local action.' -Path $reusable))
+            }
+            if ($step.ContainsKey('working-directory') -and [string]$step['working-directory'] -match '(^|[/\\])caller([/\\]|$)') {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Reusable workflow must not execute commands from the caller working directory.' -Path $reusable))
+            }
+            if ($step.ContainsKey('run')) {
+                $runText = [string]$step.run
+                $executesCallerFile = $runText -match '(?im)^\s*(?:&\s*)?(?:\./)?caller[/\\][^\r\n]*\.(?:ps1|psm1|sh|py|js|cmd|bat)\b'
+                $passesCallerToInterpreter = $runText -match '(?im)^\s*(?:pwsh|powershell|python|bash|sh|node|dotnet|npm|npx)\b[^\r\n]*(?:\./)?caller[/\\]'
+                $runsCallerTests = $runText -match '(?im)^\s*Invoke-Pester\b[^\r\n]*(?:\./)?caller[/\\]'
+                if ($executesCallerFile -or $passesCallerToInterpreter -or $runsCallerTests) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Reusable workflow must not directly execute caller-controlled code, tests, or package commands.' -Path $reusable))
+                }
+            }
+        }
         $steps = @()
         if ($workflows[$reusable].ContainsKey('jobs') -and $workflows[$reusable].jobs.ContainsKey('governance')) {
             $steps = @($workflows[$reusable].jobs.governance.steps | ForEach-Object { if ($_ -is [hashtable] -and $_.ContainsKey('name')) { [string]$_.name } })
