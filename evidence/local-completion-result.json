@@ -7,40 +7,38 @@
   "githubJob": null,
   "artifactName": null,
   "repository": "AIAllTheThingz/Engineering-Standards",
-  "commitSha": "113ce92a933537eee15a51a2af10cd2c268e17e7",
-  "validatedCommitSha": "113ce92a933537eee15a51a2af10cd2c268e17e7",
+  "commitSha": "f08c52283c73af620e1f0691a3306b945553f3c8",
+  "validatedCommitSha": "f08c52283c73af620e1f0691a3306b945553f3c8",
   "evidenceCommitSha": null,
-  "branch": "remediate-pr11-formal-approval-gate-20260701",
+  "branch": "record-v1.1.0-post-release-verification",
   "pullRequest": null,
   "governanceVersion": "1.1.0",
   "riskClassification": "High",
   "changeCategory": "documentation",
   "status": "Blocked",
   "startedAtUtc": "2026-06-27T18:35:14.3146135Z",
-  "completedAtUtc": "2026-07-11T03:32:17.6106177Z",
-  "durationSeconds": 1155423.2960042,
-  "summary": "PR #11's historical review state remains accurately recorded, and PR #12 completed the required metadata-only formal-approval remediation. Release approval is Approved, GOV-2026-001 is Not required, and tag and release-publication authorization are Granted for v1.1.0 at 2704049d7e826975d956611b194214dd79ea3686. Tag creation and GitHub Release publication remain pending and were not performed.",
+  "completedAtUtc": "2026-07-11T05:27:33.8270108Z",
+  "durationSeconds": 1162339.5123973,
+  "summary": "The annotated v1.1.0 tag was created at authorized target 2704049d7e826975d956611b194214dd79ea3686, the non-draft, non-prerelease GitHub Release was published, and all 13 Phase 8 local validation records passed. Post-release verification remains Blocked solely because mandatory GitHub-hosted validation and independent artifact verification are NotRun.",
   "changedFiles": [
     "CHANGELOG.md",
     "README.md",
-    "docs/releases/1.1.0-independent-approval-record.md",
     "docs/releases/1.1.0.md",
-    "docs/releases/1.1.0-pr11-approval-remediation.md",
-    "evidence/local-completion-result.json"
+    "evidence/local-completion-result.json",
+    "evidence/releases/1.1.0-post-release-verification.json"
   ],
   "changedFileCategories": {
     "source": [],
     "documentation": [
       "CHANGELOG.md",
       "README.md",
-      "docs/releases/1.1.0-independent-approval-record.md",
-      "docs/releases/1.1.0-pr11-approval-remediation.md",
       "docs/releases/1.1.0.md"
     ],
     "configuration": [],
     "tests": [],
     "generatedEvidence": [
-      "evidence/local-completion-result.json"
+      "evidence/local-completion-result.json",
+      "evidence/releases/1.1.0-post-release-verification.json"
     ],
     "generatedBuildOutput": []
   },
@@ -69,7 +67,7 @@
   "identityUsed": "Local maintainer context",
   "credentialMode": "Local workstation credentials",
   "notRunReason": null,
-  "blockedReason": "Mandatory GitHub-hosted validation has not run for this Phase 2 publication-readiness patch. Overall completion remains Blocked until the required hosted workflow succeeds and its artifacts are independently verified.",
+  "blockedReason": "Mandatory GitHub-hosted validation and independent artifact verification are NotRun for this five-path patch.",
   "notApplicableRationale": null,
   "commandsExecuted": [
     "git fetch --all --tags --prune",
@@ -113,8 +111,7 @@
     "Invoke-Pester -Path tests -Output Detailed: 180 passed, 0 failed, 0 skipped"
   ],
   "commandsNotExecuted": [
-    "No v1.1.0 tag creation was run; the authorized annotated tag remains pending.",
-    "No GitHub release publication was run; the authorized GitHub Release remains pending.",
+    "No GitHub Actions run or artifact verification exists for this uncommitted Phase 7 patch.",
     "No Dependabot PR merge was run; Dependabot PR #1 and PR #2 remain outside v1.1.0.",
     "No implementation, validator, script, workflow, schema, test, agent-standard, or VERSION file was modified."
   ],
@@ -658,8 +655,48 @@
         "remediationMergedAtUtc": "2026-07-01T17:13:33Z",
         "remediationStatus": "Complete",
         "tagCreationAllowedBeforeMerge": false,
-        "tagState": "Pending",
-        "githubReleaseState": "Pending"
+        "tagState": "Created",
+        "githubReleaseState": "Published"
+      }
+    },
+    {
+      "schemaVersion": "1.1.0",
+      "name": "Phase 8 post-release evidence validation",
+      "category": "manual",
+      "status": "Passed",
+      "requiredValidation": true,
+      "evidenceSource": "Static",
+      "command": "Run the Phase 8 validation commands listed in evidence/releases/1.1.0-post-release-verification.json",
+      "workingDirectory": ".",
+      "startedAtUtc": "2026-07-11T05:08:41.6806116Z",
+      "completedAtUtc": "2026-07-11T05:08:41.6806116Z",
+      "durationSeconds": 0,
+      "runtime": "Repository validation",
+      "toolVersion": "1.1.0",
+      "environment": "Local",
+      "exitCode": 0,
+      "summary": "All 13 Phase 8 checks passed: JsonSchemas 24/0, MarkdownLinks 1/0, DocumentationCompleteness 1/0, Contract 3/0, RepositoryHealth 21/0, Evidence 2/0, YAML 24/0, WorkflowArchitecture 5/0, AgentStandards 754/0, ScriptAnalyzer 0 findings, Pester 180/0/0/0, diff check exit 0, and aggregate 99/0 with 11 advisory warnings.",
+      "warnings": [
+        "Aggregate governance validation completed with 11 advisory warnings and no failures."
+      ],
+      "failureReason": null,
+      "blockedReason": null,
+      "notApplicableRationale": null,
+      "manualProcedure": "GPT-5.6 Luna ran every Phase 8 validation command and confirmed exact exits, counts, and advisory warnings.",
+      "executionMode": {
+        "dryRun": false,
+        "whatIf": false,
+        "planOnly": false,
+        "applied": false
+      },
+      "details": {
+        "validationCommandCount": 13,
+        "passedCommandCount": 13,
+        "notRunCommandCount": 0,
+        "resultsRecord": "evidence/releases/1.1.0-post-release-verification.json",
+        "preCommitBaseSha": "f08c52283c73af620e1f0691a3306b945553f3c8",
+        "commitBindingStatus": "PreCommit",
+        "postCommitBindingRequired": true
       }
     }
   ],
@@ -1129,17 +1166,20 @@
   ],
   "warnings": [
     "Forbidden-pattern scan emitted known advisory warnings for documented examples and scanner test patterns, and exited successfully.",
-    "This local evidence records completed PR #12 remediation and pending publication state; it does not claim that Phase 3 validation, tag creation, or GitHub Release publication occurred."
+    "The v1.1.0 tag is unsigned.",
+    "Aggregate Phase 8 validation passed with 11 advisory warnings and no failures.",
+    "commitSha and validatedCommitSha identify pre-commit base f08c52283c73af620e1f0691a3306b945553f3c8 because the validated working-tree patch does not yet have a commit SHA; evidenceCommitSha remains null to avoid a self-referential evidence loop."
   ],
   "knownLimitations": [
     "Current CODEOWNERS entries are not yet verified as enforceable review identities in this repository context.",
-    "The authorized annotated v1.1.0 tag is pending and has not been created.",
-    "The authorized GitHub Release is pending and has not been published.",
-    "Post-release verification record is not yet created because publication has not occurred."
+    "The annotated v1.1.0 tag is unsigned.",
+    "GitHub-hosted validation remains NotRun and no hosted artifact exists for this uncommitted five-path patch.",
+    "The validated working-tree content has no commit SHA until the first post-release evidence commit is created and validated."
   ],
   "remainingRisks": [
-    "Annotated tag and release must resolve exactly to 2704049d7e826975d956611b194214dd79ea3686.",
-    "Tag must never be moved or rewritten once created."
+    "The published tag must never be moved or rewritten.",
+    "Mandatory GitHub-hosted validation and independent artifact verification remain NotRun for this five-path patch.",
+    "After the first post-release evidence commit, the committed tree must be validated or confirmed before commitSha and validatedCommitSha are rebound in a follow-up evidence-only commit."
   ],
   "exceptions": [],
   "approvals": [

@@ -1,0 +1,167 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordType": "post-release-verification",
+  "status": "Blocked",
+  "blockedReason": "Mandatory GitHub-hosted validation and independent artifact verification are NotRun for this five-path patch.",
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "version": "1.1.0",
+  "currentMasterSha": "f08c52283c73af620e1f0691a3306b945553f3c8",
+  "createdAtUtc": "2026-07-11T05:08:41.6806116Z",
+  "phase8ResultRecordedAtUtc": "2026-07-11T05:27:33.8270108Z",
+  "verifiedBy": "GPT-5.6 Luna",
+  "commitBinding": {
+    "status": "PreCommit",
+    "baseCommitSha": "f08c52283c73af620e1f0691a3306b945553f3c8",
+    "validatedContent": "Uncommitted five-path working tree based on baseCommitSha.",
+    "postCommitPlan": "After the five-path commit exists, validate or confirm the committed tree, then bind commitSha and validatedCommitSha in local completion evidence to that validated commit in a follow-up evidence-only commit. evidenceCommitSha may remain null to avoid a self-referential evidence loop."
+  },
+  "publication": {
+    "authorizedImmutableTarget": "2704049d7e826975d956611b194214dd79ea3686",
+    "tag": {
+      "name": "v1.1.0",
+      "state": "Created",
+      "type": "annotated",
+      "objectSha": "d60ed3f1385678364976dfde73b4bb5e3580d702",
+      "targetSha": "2704049d7e826975d956611b194214dd79ea3686",
+      "createdAtUtc": "2026-07-11T05:03:31Z",
+      "signed": false
+    },
+    "githubRelease": {
+      "state": "Published",
+      "url": "https://github.com/AIAllTheThingz/Engineering-Standards/releases/tag/v1.1.0",
+      "publishedAtUtc": "2026-07-11T05:05:47Z",
+      "tagName": "v1.1.0",
+      "targetCommitish": "2704049d7e826975d956611b194214dd79ea3686",
+      "draft": false,
+      "prerelease": false
+    }
+  },
+  "verificationCommands": [
+    {
+      "command": "git show v1.1.0 --no-patch",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "Displayed annotated tag v1.1.0 and target commit 2704049d7e826975d956611b194214dd79ea3686."
+    },
+    {
+      "command": "git rev-list -n 1 v1.1.0",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "Resolved v1.1.0 to 2704049d7e826975d956611b194214dd79ea3686."
+    },
+    {
+      "command": "gh api repos/AIAllTheThingz/Engineering-Standards/git/ref/tags/v1.1.0",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "Observed remote annotated tag object d60ed3f1385678364976dfde73b4bb5e3580d702."
+    },
+    {
+      "command": "gh release view v1.1.0 --repo AIAllTheThingz/Engineering-Standards --json tagName,targetCommitish,isDraft,isPrerelease,url,publishedAt,name",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "Observed published non-draft, non-prerelease release for v1.1.0 at the authorized target."
+    }
+  ],
+  "validationResults": [
+    {
+      "command": "pwsh -NoProfile -File scripts/Test-JsonSchemas.ps1 -Path .",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "24 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File scripts/Test-MarkdownLinks.ps1 -Path .",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "1 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "1 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File actions/validate-contract/Invoke-ContractValidation.ps1 -Path .",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "3 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path .",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "21 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path . -EvidencePath evidence/local-completion-result.json",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "2 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "24 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path . -DefaultBranch master",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "5 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File scripts/Test-AgentStandards.ps1 -Path .",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "754 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -Command \"Invoke-ScriptAnalyzer -Path . -Recurse -Severity Error\"",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "0 findings."
+    },
+    {
+      "command": "pwsh -NoProfile -Command \"Invoke-Pester -Path tests -Output Detailed\"",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "180 passed, 0 failed, 0 skipped, 0 not run."
+    },
+    {
+      "command": "git diff --check",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "Exit 0 with no whitespace errors."
+    },
+    {
+      "command": "pwsh -NoProfile -Command \"& './scripts/Invoke-GovernanceValidation.ps1' -Path . -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples\"",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "99 passed, 0 failed, with 11 advisory warnings.",
+      "advisoryWarnings": 11
+    }
+  ],
+  "githubHostedValidation": {
+    "status": "NotRun",
+    "runId": null,
+    "runAttempt": null,
+    "artifactName": null,
+    "artifactId": null,
+    "artifactSha256": null,
+    "reason": "Phase 8 passed locally, but this uncommitted five-path patch has not run in GitHub Actions and has no hosted artifact."
+  },
+  "knownLimitations": [
+    "The annotated v1.1.0 tag is unsigned.",
+    "GitHub-hosted validation remains NotRun and no hosted artifact exists for this uncommitted five-path patch.",
+    "The validated working-tree content has no commit SHA until the first post-release evidence commit is created and validated."
+  ],
+  "deferredItems": [
+    "Dependabot PR #1 and PR #2 remain outside v1.1.0."
+  ],
+  "dataHandling": {
+    "privateOrInternalRepositoryDataIncluded": false,
+    "secretsIncluded": false
+  }
+}
