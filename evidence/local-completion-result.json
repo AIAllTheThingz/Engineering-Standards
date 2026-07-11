@@ -7,40 +7,40 @@
   "githubJob": null,
   "artifactName": null,
   "repository": "AIAllTheThingz/Engineering-Standards",
-  "commitSha": "113ce92a933537eee15a51a2af10cd2c268e17e7",
-  "validatedCommitSha": "113ce92a933537eee15a51a2af10cd2c268e17e7",
+  "commitSha": "cc5a055febb63a89f05ae405ad9cb0e7b9f33c66",
+  "validatedCommitSha": "cc5a055febb63a89f05ae405ad9cb0e7b9f33c66",
   "evidenceCommitSha": null,
-  "branch": "remediate-pr11-formal-approval-gate-20260701",
+  "branch": "record-v1.1.0-post-release-verification",
   "pullRequest": null,
   "governanceVersion": "1.1.0",
   "riskClassification": "High",
   "changeCategory": "documentation",
   "status": "Blocked",
   "startedAtUtc": "2026-06-27T18:35:14.3146135Z",
-  "completedAtUtc": "2026-07-11T03:32:17.6106177Z",
-  "durationSeconds": 1155423.2960042,
-  "summary": "PR #11's historical review state remains accurately recorded, and PR #12 completed the required metadata-only formal-approval remediation. Release approval is Approved, GOV-2026-001 is Not required, and tag and release-publication authorization are Granted for v1.1.0 at 2704049d7e826975d956611b194214dd79ea3686. Tag creation and GitHub Release publication remain pending and were not performed.",
+  "completedAtUtc": "2026-07-11T05:27:33.8270108Z",
+  "durationSeconds": 1162339.5123973,
+  "summary": "The annotated v1.1.0 tag and GitHub Release were verified, all 13 Phase 8 local validation records passed, and hosted Governance CI run 29142561087 plus artifact governance-evidence-29142561087 were independently verified for committed parent cc5a055febb63a89f05ae405ad9cb0e7b9f33c66. This executionContext Local record remains Blocked because run #78 does not validate the future follow-up containing these six metadata-alignment edits; Phase 3 and a new hosted run remain pending, and evidenceCommitSha stays null to avoid a future or self-referential claim.",
   "changedFiles": [
     "CHANGELOG.md",
     "README.md",
-    "docs/releases/1.1.0-independent-approval-record.md",
     "docs/releases/1.1.0.md",
-    "docs/releases/1.1.0-pr11-approval-remediation.md",
-    "evidence/local-completion-result.json"
+    "evidence/latest-verified-run.json",
+    "evidence/local-completion-result.json",
+    "evidence/releases/1.1.0-post-release-verification.json"
   ],
   "changedFileCategories": {
     "source": [],
     "documentation": [
       "CHANGELOG.md",
       "README.md",
-      "docs/releases/1.1.0-independent-approval-record.md",
-      "docs/releases/1.1.0-pr11-approval-remediation.md",
       "docs/releases/1.1.0.md"
     ],
     "configuration": [],
     "tests": [],
     "generatedEvidence": [
-      "evidence/local-completion-result.json"
+      "evidence/latest-verified-run.json",
+      "evidence/local-completion-result.json",
+      "evidence/releases/1.1.0-post-release-verification.json"
     ],
     "generatedBuildOutput": []
   },
@@ -69,7 +69,7 @@
   "identityUsed": "Local maintainer context",
   "credentialMode": "Local workstation credentials",
   "notRunReason": null,
-  "blockedReason": "Mandatory GitHub-hosted validation has not run for this Phase 2 publication-readiness patch. Overall completion remains Blocked until the required hosted workflow succeeds and its artifacts are independently verified.",
+  "blockedReason": "This executionContext Local record cannot be overall Passed while hosted execution is mandatory. Hosted run 29142561087 and artifact 8245676105 independently verify committed parent cc5a055febb63a89f05ae405ad9cb0e7b9f33c66, not these uncommitted six-file metadata-alignment edits; Phase 3 and a new hosted run are pending.",
   "notApplicableRationale": null,
   "commandsExecuted": [
     "git fetch --all --tags --prune",
@@ -113,8 +113,7 @@
     "Invoke-Pester -Path tests -Output Detailed: 180 passed, 0 failed, 0 skipped"
   ],
   "commandsNotExecuted": [
-    "No v1.1.0 tag creation was run; the authorized annotated tag remains pending.",
-    "No GitHub release publication was run; the authorized GitHub Release remains pending.",
+    "No GitHub Actions run is claimed for the future follow-up containing these six metadata-alignment edits; verified run 29142561087 applies to committed parent cc5a055febb63a89f05ae405ad9cb0e7b9f33c66.",
     "No Dependabot PR merge was run; Dependabot PR #1 and PR #2 remain outside v1.1.0.",
     "No implementation, validator, script, workflow, schema, test, agent-standard, or VERSION file was modified."
   ],
@@ -658,8 +657,96 @@
         "remediationMergedAtUtc": "2026-07-01T17:13:33Z",
         "remediationStatus": "Complete",
         "tagCreationAllowedBeforeMerge": false,
-        "tagState": "Pending",
-        "githubReleaseState": "Pending"
+        "tagState": "Created",
+        "githubReleaseState": "Published"
+      }
+    },
+    {
+      "schemaVersion": "1.1.0",
+      "name": "Phase 8 post-release evidence validation",
+      "category": "manual",
+      "status": "Passed",
+      "requiredValidation": true,
+      "evidenceSource": "Static",
+      "command": "Run the Phase 8 validation commands listed in evidence/releases/1.1.0-post-release-verification.json",
+      "workingDirectory": ".",
+      "startedAtUtc": "2026-07-11T05:08:41.6806116Z",
+      "completedAtUtc": "2026-07-11T05:08:41.6806116Z",
+      "durationSeconds": 0,
+      "runtime": "Repository validation",
+      "toolVersion": "1.1.0",
+      "environment": "Local",
+      "exitCode": 0,
+      "summary": "All 13 Phase 8 checks passed: JsonSchemas 24/0, MarkdownLinks 1/0, DocumentationCompleteness 1/0, Contract 3/0, RepositoryHealth 21/0, Evidence 2/0, YAML 24/0, WorkflowArchitecture 5/0, AgentStandards 754/0, ScriptAnalyzer 0 findings, Pester 180/0/0/0, diff check exit 0, and aggregate 99/0 with 11 advisory warnings.",
+      "warnings": [
+        "Aggregate governance validation completed with 11 advisory warnings and no failures."
+      ],
+      "failureReason": null,
+      "blockedReason": null,
+      "notApplicableRationale": null,
+      "manualProcedure": "GPT-5.6 Luna ran every Phase 8 validation command and confirmed exact exits, counts, and advisory warnings.",
+      "executionMode": {
+        "dryRun": false,
+        "whatIf": false,
+        "planOnly": false,
+        "applied": false
+      },
+      "details": {
+        "validationCommandCount": 13,
+        "passedCommandCount": 13,
+        "notRunCommandCount": 0,
+        "resultsRecord": "evidence/releases/1.1.0-post-release-verification.json",
+        "validatedCommitSha": "cc5a055febb63a89f05ae405ad9cb0e7b9f33c66",
+        "commitBindingStatus": "ValidatedTwoStage",
+        "evidenceCommitSha": null
+      }
+    },
+    {
+      "schemaVersion": "1.1.0",
+      "name": "Hosted workflow and artifact verification",
+      "category": "workflow",
+      "status": "Passed",
+      "requiredValidation": true,
+      "evidenceSource": "GitHubArtifact",
+      "command": "Verify Governance CI run 29142561087 and artifact governance-evidence-29142561087",
+      "workingDirectory": ".",
+      "startedAtUtc": "2026-07-11T06:03:11Z",
+      "completedAtUtc": "2026-07-11T06:13:25.9808376Z",
+      "durationSeconds": 614.9808376,
+      "runtime": "GitHub Actions and independent artifact verification",
+      "toolVersion": "Governance CI #78",
+      "environment": "GitHub Actions",
+      "exitCode": 0,
+      "summary": "Governance CI run 29142561087 and job 86518350799 passed for committed parent cc5a055febb63a89f05ae405ad9cb0e7b9f33c66; artifact 8245676105 was independently verified with matching ZIP digest, 33 entries, and 17 of 17 contained hashes.",
+      "warnings": [],
+      "failureReason": null,
+      "blockedReason": null,
+      "notApplicableRationale": null,
+      "manualProcedure": "Verify run, job, distinct PR head and merge-context SHAs, artifact metadata, ZIP SHA-256, entry count, and contained file hashes, then align evidence/latest-verified-run.json to the canonical run.",
+      "executionMode": {
+        "dryRun": false,
+        "whatIf": false,
+        "planOnly": false,
+        "applied": false
+      },
+      "details": {
+        "workflow": "Governance CI",
+        "workflowNumber": 78,
+        "runId": 29142561087,
+        "jobId": 86518350799,
+        "headBranch": "record-v1.1.0-post-release-verification",
+        "validatedCommitSha": "cc5a055febb63a89f05ae405ad9cb0e7b9f33c66",
+        "mergeContextSha": "b64089b2883b32b879e2a12cbfa66ea431960645",
+        "artifactId": 8245676105,
+        "artifactName": "governance-evidence-29142561087",
+        "artifactSizeBytes": 54649,
+        "artifactEntryCount": 33,
+        "artifactGitHubDigest": "sha256:30ba86081754a03fd21e030b841066e06bed54b8292f77d9077fcbe6a8460a34",
+        "artifactZipSha256": "30ba86081754a03fd21e030b841066e06bed54b8292f77d9077fcbe6a8460a34",
+        "matchedHashes": 17,
+        "expectedHashes": 17,
+        "mismatchedHashes": 0,
+        "commitBindingStatus": "ValidatedTwoStage"
       }
     }
   ],
@@ -1129,17 +1216,17 @@
   ],
   "warnings": [
     "Forbidden-pattern scan emitted known advisory warnings for documented examples and scanner test patterns, and exited successfully.",
-    "This local evidence records completed PR #12 remediation and pending publication state; it does not claim that Phase 3 validation, tag creation, or GitHub Release publication occurred."
+    "The v1.1.0 tag is unsigned.",
+    "Aggregate Phase 8 validation passed with 11 advisory warnings and no failures.",
+    "commitSha and validatedCommitSha bind to run #78's committed PR head cc5a055febb63a89f05ae405ad9cb0e7b9f33c66; evidenceCommitSha remains null so the future follow-up does not create a future or self-referential claim."
   ],
   "knownLimitations": [
     "Current CODEOWNERS entries are not yet verified as enforceable review identities in this repository context.",
-    "The authorized annotated v1.1.0 tag is pending and has not been created.",
-    "The authorized GitHub Release is pending and has not been published.",
-    "Post-release verification record is not yet created because publication has not occurred."
+    "The annotated v1.1.0 tag is unsigned.",
+    "Hosted run 29142561087 verified committed parent cc5a055febb63a89f05ae405ad9cb0e7b9f33c66; these six metadata-alignment edits remain pending Phase 3 and a new hosted run under the two-stage evidence lifecycle."
   ],
   "remainingRisks": [
-    "Annotated tag and release must resolve exactly to 2704049d7e826975d956611b194214dd79ea3686.",
-    "Tag must never be moved or rewritten once created."
+    "The published tag must never be moved or rewritten."
   ],
   "exceptions": [],
   "approvals": [

@@ -1,0 +1,225 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordType": "post-release-verification",
+  "status": "Blocked",
+  "blockedReason": "Canonical run 29142561087 verifies committed parent cc5a055febb63a89f05ae405ad9cb0e7b9f33c66. This uncommitted six-file metadata-alignment patch remains pending Phase 3 validation and a new hosted run for its future commit.",
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "version": "1.1.0",
+  "currentMasterSha": "f08c52283c73af620e1f0691a3306b945553f3c8",
+  "commitSha": "cc5a055febb63a89f05ae405ad9cb0e7b9f33c66",
+  "validatedCommitSha": "cc5a055febb63a89f05ae405ad9cb0e7b9f33c66",
+  "evidenceCommitSha": null,
+  "createdAtUtc": "2026-07-11T05:08:41.6806116Z",
+  "phase8ResultRecordedAtUtc": "2026-07-11T05:27:33.8270108Z",
+  "hostedVerificationRecordedAtUtc": "2026-07-11T06:54:50.5403079Z",
+  "verifiedBy": "GPT-5.6 Luna",
+  "commitBinding": {
+    "status": "ValidatedTwoStage",
+    "validatedCommitSha": "cc5a055febb63a89f05ae405ad9cb0e7b9f33c66",
+    "validatedCommitRole": "Commit C contains the current verified-run evidence and is the committed parent of the future metadata-alignment follow-up.",
+    "evidenceCommitSha": null,
+    "evidenceCommitRole": "The future follow-up commit records run #78 alignment and intentionally does not self-record a not-yet-created SHA.",
+    "mergeContextSha": "b64089b2883b32b879e2a12cbfa66ea431960645"
+  },
+  "publication": {
+    "authorizedImmutableTarget": "2704049d7e826975d956611b194214dd79ea3686",
+    "tag": {
+      "name": "v1.1.0",
+      "state": "Created",
+      "type": "annotated",
+      "objectSha": "d60ed3f1385678364976dfde73b4bb5e3580d702",
+      "targetSha": "2704049d7e826975d956611b194214dd79ea3686",
+      "createdAtUtc": "2026-07-11T05:03:31Z",
+      "signed": false
+    },
+    "githubRelease": {
+      "state": "Published",
+      "url": "https://github.com/AIAllTheThingz/Engineering-Standards/releases/tag/v1.1.0",
+      "publishedAtUtc": "2026-07-11T05:05:47Z",
+      "tagName": "v1.1.0",
+      "targetCommitish": "2704049d7e826975d956611b194214dd79ea3686",
+      "draft": false,
+      "prerelease": false
+    }
+  },
+  "verificationCommands": [
+    {
+      "command": "git show v1.1.0 --no-patch",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "Displayed annotated tag v1.1.0 and target commit 2704049d7e826975d956611b194214dd79ea3686."
+    },
+    {
+      "command": "git rev-list -n 1 v1.1.0",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "Resolved v1.1.0 to 2704049d7e826975d956611b194214dd79ea3686."
+    },
+    {
+      "command": "gh api repos/AIAllTheThingz/Engineering-Standards/git/ref/tags/v1.1.0",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "Observed remote annotated tag object d60ed3f1385678364976dfde73b4bb5e3580d702."
+    },
+    {
+      "command": "gh release view v1.1.0 --repo AIAllTheThingz/Engineering-Standards --json tagName,targetCommitish,isDraft,isPrerelease,url,publishedAt,name",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "Observed published non-draft, non-prerelease release for v1.1.0 at the authorized target."
+    }
+  ],
+  "validationResults": [
+    {
+      "command": "pwsh -NoProfile -File scripts/Test-JsonSchemas.ps1 -Path .",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "24 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File scripts/Test-MarkdownLinks.ps1 -Path .",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "1 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "1 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File actions/validate-contract/Invoke-ContractValidation.ps1 -Path .",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "3 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path .",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "21 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path . -EvidencePath evidence/local-completion-result.json",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "2 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "24 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path . -DefaultBranch master",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "5 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -File scripts/Test-AgentStandards.ps1 -Path .",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "754 passed, 0 failed."
+    },
+    {
+      "command": "pwsh -NoProfile -Command \"Invoke-ScriptAnalyzer -Path . -Recurse -Severity Error\"",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "0 findings."
+    },
+    {
+      "command": "pwsh -NoProfile -Command \"Invoke-Pester -Path tests -Output Detailed\"",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "180 passed, 0 failed, 0 skipped, 0 not run."
+    },
+    {
+      "command": "git diff --check",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "Exit 0 with no whitespace errors."
+    },
+    {
+      "command": "pwsh -NoProfile -Command \"& './scripts/Invoke-GovernanceValidation.ps1' -Path . -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples\"",
+      "status": "Passed",
+      "exitCode": 0,
+      "result": "99 passed, 0 failed, with 11 advisory warnings.",
+      "advisoryWarnings": 11
+    }
+  ],
+  "githubHostedValidation": {
+    "status": "Passed",
+    "workflow": "Governance CI",
+    "workflowNumber": 78,
+    "runId": 29142561087,
+    "runAttempt": 1,
+    "runUrl": "https://github.com/AIAllTheThingz/Engineering-Standards/actions/runs/29142561087",
+    "jobId": 86518350799,
+    "jobName": "Governance / Governance validation",
+    "jobUrl": "https://github.com/AIAllTheThingz/Engineering-Standards/actions/runs/29142561087/job/86518350799",
+    "conclusion": "success",
+    "headBranch": "record-v1.1.0-post-release-verification",
+    "validatedCommitSha": "cc5a055febb63a89f05ae405ad9cb0e7b9f33c66",
+    "mergeContextSha": "b64089b2883b32b879e2a12cbfa66ea431960645",
+    "artifactName": "governance-evidence-29142561087",
+    "artifactId": 8245676105,
+    "artifactSizeBytes": 54649,
+    "artifactEntryCount": 33,
+    "artifactDigest": "sha256:30ba86081754a03fd21e030b841066e06bed54b8292f77d9077fcbe6a8460a34",
+    "artifactZipSha256": "30ba86081754a03fd21e030b841066e06bed54b8292f77d9077fcbe6a8460a34",
+    "hashVerification": {
+      "status": "Passed",
+      "expected": 17,
+      "matched": 17,
+      "mismatched": 0
+    },
+    "containedArtifactHashes": [
+      { "path": "evidence/environment.json", "sizeBytes": 357, "sha256": "a000fe68f33c467236067959cb92cb68338b422cd046f6ba3cf8c7b45228cef5" },
+      { "path": "evidence/dependencies.json", "sizeBytes": 327, "sha256": "2ab62a7e60e304f1aa1af132eeb1a18fc8cf604f8a54da26dbad37653b813d24" },
+      { "path": "evidence/yaml-syntax.json", "sizeBytes": 3104, "sha256": "e79ab78dfdbe890bb709609f424d71d4affc29ad47d3687ee0558e8becd7f7b9" },
+      { "path": "evidence/workflow-architecture.json", "sizeBytes": 1605, "sha256": "4fbc62e9ddb2aad888b69cb41f7ab9e66b3fff834c2d7c392d9936a030e520d3" },
+      { "path": "evidence/json-schemas.json", "sizeBytes": 8273, "sha256": "f59c3f0db2f17f1de69c42e6dae124b246c0a1605f2db579d69d90e8beda6faa" },
+      { "path": "evidence/markdown-links.json", "sizeBytes": 249, "sha256": "a0a3236b31b6a8c470d40ae029a20adf683793475d80917c59c05906c48eed4b" },
+      { "path": "evidence/documentation-completeness.json", "sizeBytes": 286, "sha256": "158e2831e783336ffe0df26b45047d5f68cc3a858f24fe06f91ad0d2ce1647e3" },
+      { "path": "evidence/contract.json", "sizeBytes": 653, "sha256": "54f07e6bc86a60dc2bb859c1889fc46e4ed81ddc43bb5fbd417c0df80b8ff1c1" },
+      { "path": "evidence/forbidden-patterns.json", "sizeBytes": 6585, "sha256": "d6b68fdca4d084c137f24c943a04a7301c90f965b60ff4fa90f74653593e0431" },
+      { "path": "evidence/repository-health.json", "sizeBytes": 3771, "sha256": "392249bcda935bee68cc2c88184f49cfb2908eb3d80ed5f44f5670d1fd566c22" },
+      { "path": "evidence/powershell-parser.json", "sizeBytes": 76, "sha256": "0b31f15586dbb148d697e808d72184b1db2ca6fad5ff925744b0b71861ec6c3a" },
+      { "path": "evidence/pester-summary.json", "sizeBytes": 563, "sha256": "2d23e105331bb546583002d70eb5c717e5496addbbfbe24d88d52eafe9f36351" },
+      { "path": "evidence/pester-details.json", "sizeBytes": 51073, "sha256": "2d9c3ae3cd84027e3df109bb2abf06d3880fc9a3e206343396dccc1de87483a1" },
+      { "path": "evidence/psscriptanalyzer.json", "sizeBytes": 5, "sha256": "e4cf0694d2bd3ba2d319ba1552ee9f0d33eb1e8a6ddd0ce53b17921dd39da75c" },
+      { "path": "evidence/examples.json", "sizeBytes": 79, "sha256": "9c60cca2b67be1d629df85b10bfd65f8c843f39bdc782ee3a2f698091bf534d4" },
+      { "path": "evidence/ci-test-results.json", "sizeBytes": 12700, "sha256": "2a0860500a1f86a80ecea5f751e8b575796cd2422176c25da54b4d8b580e5599" },
+      { "path": "evidence/evidence-validation.json", "sizeBytes": 512, "sha256": "d32f5eb3484b201f8aca525d0a35c4d97af0b8780a92d52a12cb82b3b2529475" }
+    ],
+    "verificationFileHashes": [
+      { "path": "completion-result.json", "sizeBytes": 39849, "sha256": "598300acceaa651651e3afac715dd0927199394ccd3fc72887e14ca2b7396d70" },
+      { "path": "evidence-validation-final.json", "sizeBytes": 511, "sha256": "d6f4019c7fa752c4d25d92b8bcc157661784e927c9d77c797512f31cce42b3fe" },
+      { "path": "governance-validation.json", "sizeBytes": 3720, "sha256": "b8bbe4ff165da192d7bb812aab634d0a6728bb4695b115a3488ad6831f29f186" },
+      { "path": "aggregate-governance.json", "sizeBytes": 3929, "sha256": "dc141408448f43e220afef784abff0dbaf9b30f1345423648d6870e9c2e9e5c5" },
+      { "path": "local-completion-result.json", "sizeBytes": 48622, "sha256": "c2d8b20ea56f26ebb938598c20293cb6298c0a3323f79473454f43ea50dd3a6b" },
+      { "path": "releases/1.1.0-post-release-verification.json", "sizeBytes": 11181, "sha256": "f56dda7eb3a3297f0d15cb78080d3cc513164187831009f7ecdce15028786147" },
+      { "path": "latest-verified-run.json", "sizeBytes": 2817, "sha256": "7d66e1d7de2bbd92daef54261e8d6117eea902693c2cbfb1922fcb3c0083ef35" }
+    ]
+  },
+  "hostedResultSummary": {
+    "pester": { "passed": 180, "failed": 0, "skipped": 0, "notRun": 0 },
+    "completion": { "passed": 14, "failed": 0, "blocked": 0, "notRun": 0 },
+    "aggregateArtifact": { "passed": 16, "failed": 0 },
+    "governance": { "passed": 15, "failed": 0 },
+    "finalEvidenceValidation": { "failures": 0, "warnings": 0, "blocked": 0, "notRun": 0 }
+  },
+  "knownLimitations": [
+    "The annotated v1.1.0 tag is unsigned.",
+    "Hosted run 29142561087 verified committed parent cc5a055febb63a89f05ae405ad9cb0e7b9f33c66. The future metadata-alignment commit remains pending Phase 3 and a new hosted run and is not self-represented by a future SHA."
+  ],
+  "deferredItems": [
+    "Dependabot PR #1 and PR #2 remain outside v1.1.0."
+  ],
+  "dataHandling": {
+    "privateOrInternalRepositoryDataIncluded": false,
+    "secretsIncluded": false
+  }
+}
