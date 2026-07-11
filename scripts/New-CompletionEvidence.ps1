@@ -146,7 +146,7 @@ foreach ($artifact in $ArtifactPath) {
             'forbidden-patterns' { 'Forbidden-pattern scanning'; break }
             'repository-health' { 'Repository-health validation'; break }
             'powershell-parser' { 'PowerShell parser validation'; break }
-            'pester' { 'Pester repository tests'; break }
+            'pester' { 'Pester'; break }
             'psscriptanalyzer' { 'PSScriptAnalyzer'; break }
             'examples' { 'Example-project validation'; break }
             'evidence-validation' { 'Completion-evidence validation'; break }
