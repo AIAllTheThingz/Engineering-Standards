@@ -215,7 +215,7 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 
 - Local checked-in evidence is stored in `evidence/local-completion-result.json`; GitHub-hosted completion evidence is stored in workflow artifacts.
 - `commitSha` and `validatedCommitSha` identify the repository commit that was validated. `evidenceCommitSha` identifies the commit containing a checked-in evidence file when that value is intentionally recorded. GitHub artifact evidence leaves `evidenceCommitSha` null because the artifact is not committed.
-- Local evidence remains `NotRun` overall when GitHub-hosted execution was not performed locally. It is not authoritative proof of a GitHub run.
+- Local evidence remains `Blocked` overall when hosted execution is mandatory, even when a separately verified hosted run is recorded. A local record is not authoritative proof of a GitHub run.
 - `evidence/latest-verified-run.json` records metadata for the most recently downloaded and independently verified GitHub success artifact plus the controlled-failure run.
 - To trigger the success proof run: `gh workflow run "Governance CI" --ref master -f controlled-failure-test=false -f run-examples=true -f run-pester=true -f run-documentation-validation=true`.
 - To trigger the controlled failure proof run: `gh workflow run "Governance CI" --ref master -f controlled-failure-test=true`.
@@ -235,7 +235,7 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 - PR #12 remediated the PR #11 formal-approval defect. Publication approval remediation is complete.
 - Tag and release-publication authorization are granted for `v1.1.0` at immutable target `2704049d7e826975d956611b194214dd79ea3686`.
 - The annotated `v1.1.0` tag was created at the authorized target, and the [Engineering Standards v1.1.0 GitHub Release](https://github.com/AIAllTheThingz/Engineering-Standards/releases/tag/v1.1.0) was published as non-draft and non-prerelease on 2026-07-11.
-- All 13 Phase 8 local validation records passed. Hosted Governance CI run `29142561087` (#78) and artifact `governance-evidence-29142561087` (ID `8245676105`, SHA-256 `30ba86081754a03fd21e030b841066e06bed54b8292f77d9077fcbe6a8460a34`) were independently verified for committed PR head `cc5a055febb63a89f05ae405ad9cb0e7b9f33c66`, distinct from merge context `b64089b2883b32b879e2a12cbfa66ea431960645`. Post-release verification was recorded, and the six-file metadata follow-up was completed by PR #27, which merged at `2026-07-11T13:30:42Z` as `1f93480003e71bbacfb179f72cde1a1898a9b446`; current-head Governance CI run `29144270291` (#79) validated the resulting `master` head. The annotated tag is unsigned.
+- All 13 Phase 8 local validation records passed. Hosted Governance CI run `29144270291` (#79) and artifact `governance-evidence-29144270291` (ID `8246254113`, SHA-256 `393fad60cc4a130e64fa9816c70d2f86f1cf66c95be75e97956f266a14ec57fb`) were independently verified for PR #27 head `49f9b08271ff55198fee1ed31175ae7e890c3672`, distinct from synthetic merge context `e1ca80c3065e7cb4d81df6cbacb92f332bde9119` at `27/merge`. Post-release verification was recorded, and the six-file metadata follow-up was completed by PR #27, which merged at `2026-07-11T13:30:42Z` as `1f93480003e71bbacfb179f72cde1a1898a9b446` with an identical tree. The local completion record remains `Blocked` solely because local evidence cannot claim overall hosted completion; the annotated tag is unsigned.
 
 ## Related Documents
 
