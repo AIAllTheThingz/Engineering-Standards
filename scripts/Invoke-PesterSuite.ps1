@@ -33,7 +33,16 @@ try {
     $config.TestResult.Enabled = $true
     $config.TestResult.OutputPath = $xmlPath
     $config.TestResult.OutputFormat = 'NUnitXml'
-    $result = Invoke-Pester -Configuration $config
+    $priorErrorActionPreference = $ErrorActionPreference
+    try {
+        # Some negative-path tests intentionally emit non-terminating errors.
+        # Let Pester classify those results instead of aborting evidence creation.
+        $ErrorActionPreference = 'Continue'
+        $result = Invoke-Pester -Configuration $config
+    }
+    finally {
+        $ErrorActionPreference = $priorErrorActionPreference
+    }
     $discovered = [int]$result.PassedCount + [int]$result.FailedCount + [int]$result.SkippedCount + [int]$result.NotRunCount
     [ordered]@{
         result = [string]$result.Result

@@ -129,7 +129,14 @@ Describe 'GovernanceValidation module' {
             $repoRoot = Resolve-Path "$PSScriptRoot/../.."
             $outputPath = Join-Path $script:tempRoot 'aggregate-governance.json'
 
-            & pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $repoRoot -Category JsonSchemas -OutputJson $outputPath
+            $priorGitHubActions = $env:GITHUB_ACTIONS
+            try {
+                $env:GITHUB_ACTIONS = $null
+                & pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $repoRoot -Category JsonSchemas -OutputJson $outputPath
+            }
+            finally {
+                $env:GITHUB_ACTIONS = $priorGitHubActions
+            }
             $LASTEXITCODE | Should -Be 0
 
             $report = Get-Content -LiteralPath $outputPath -Raw | ConvertFrom-Json
