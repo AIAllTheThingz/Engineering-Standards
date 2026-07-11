@@ -47,7 +47,7 @@ Historical start state for `AIAllTheThingz/Engineering-Standards` during the rel
 - Observed repository head at inspection time: `ab45ee1f6b82449e3b595b7e0951dc00b4db364b`
 - Observed successful current-head run: `28290761409`
 
-Current verification for the release-validation refresh:
+Historical verification for the 2026-06-27 release-validation refresh:
 
 - Protected branch inspected: `master`
 - Current protected `master` head: `072df3c372d431e3ac5fd0e4569b55f93555ce95`
@@ -63,7 +63,7 @@ Reviewer and ownership assessment during the same review:
 - `CODEOWNERS` contains team-style identities under `@AIAllTheThingz/...`.
 - Live team resolution through `gh api orgs/AIAllTheThingz/teams?per_page=100` returned `404 Not Found`, consistent with a user-owned repository context rather than a resolvable organization-team context.
 - No eligible independent reviewer was identified at inspection time.
-- Because no independent reviewer was identified, CODEOWNERS review cannot be required safely today and approving-review count must remain at the strongest non-locking value until reviewer availability changes or an approved exception is recorded.
+- At that inspection, CODEOWNERS review could not be required safely and the approving-review count remained at the strongest non-locking value then configured. The live state below supersedes that historical count.
 
 This section is descriptive evidence, not a recommendation. The recommended configuration in this guide remains stricter than the currently observed repository setting.
 
@@ -75,31 +75,31 @@ Verification method:
 gh api repos/AIAllTheThingz/Engineering-Standards/branches/master/protection
 ```
 
-Verified configured state for `AIAllTheThingz/Engineering-Standards` after applying classic protection and rechecking during release-validation refresh:
+Verified configured state for `AIAllTheThingz/Engineering-Standards` from live API inspection at `2026-07-11T23:10:37Z`:
 
 - Protected branch: `master`
 - Protection mechanism: classic branch protection
 - Pull requests required: yes
-- Required governance check: `Governance / Governance validation`
+- Required governance checks: `Governance / Governance validation` and `Candidate implementation validation / Candidate implementation validation`
 - Strict up-to-date checks required: yes
 - Conversation resolution required: yes
 - Force pushes allowed: no
 - Branch deletion allowed: no
 - Administrator enforcement enabled: yes
-- Required approving review count: `0`
+- Required approving review count: `1`
 - Dismiss stale reviews: yes
 - Require CODEOWNERS review: no
 - Require last-push approval: no
 - Repository rulesets configured in parallel: none
 - Verification result: `Passed`
 
-This verified state reflects the strongest non-locking posture that could be applied without inventing an independent reviewer or requiring unresolved CODEOWNERS identities.
+This verified state requires both immutable trusted-baseline validation and unprivileged candidate implementation validation before merge.
 
-## Applied Configuration Strategy
+## Historical Applied Configuration Strategy
 
 When only the repository owner or sole maintainer is currently eligible to review, protection must remain strong without creating an unrecoverable lockout.
 
-For `AIAllTheThingz/Engineering-Standards`, the authorized release-protection task applies the strongest non-locking classic branch protection model:
+For `AIAllTheThingz/Engineering-Standards`, the 2026-06-27 release-protection task applied the following classic branch protection model, since superseded by the live state above:
 
 - pull requests required
 - required status check `Governance / Governance validation`
@@ -113,7 +113,7 @@ For `AIAllTheThingz/Engineering-Standards`, the authorized release-protection ta
 - CODEOWNERS review not required until resolvable independent owners exist
 - no repository ruleset used in parallel
 
-This configuration is a temporary sole-maintainer protection posture, not proof that independent review requirements have been satisfied for release approval.
+This historical configuration is not the current enforcement state and is not proof that independent review requirements have been satisfied for release approval.
 
 ## Required Checks
 
