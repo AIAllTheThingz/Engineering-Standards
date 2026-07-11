@@ -58,6 +58,8 @@ The reusable governance workflow maintains a dual-checkout boundary. `caller/` i
 
 Callers cannot provide a standards repository, ref, or SHA. The workflow validates the expected central repository and full SHA before use. It fails closed when GitHub does not provide workflow identity fields, including GitHub Enterprise Server environments where `job.workflow_*` is unavailable. No moving branch, tag, caller path, or caller-provided fallback is permitted.
 
+Engineering Standards self-CI also calls the reusable workflow through a reviewed full remote SHA. A local reusable call on `pull_request` would make the pull-request commit both the untrusted caller and the implementation labeled as trusted. Maintainers must advance the self-CI pin intentionally after validating a new reusable-workflow implementation.
+
 Downstream manifests, configuration, paths, and files remain untrusted. The aggregate validator canonicalizes the caller project root, rejects rooted paths and `..`, refuses link/junction traversal, requires nonoverlapping caller/standards/evidence roots, and loads modules only from the standards checkout. It does not execute downstream tests, scripts, examples, package hooks, or build commands.
 
 Avoid `pull_request_target` unless there is a documented security requirement and the workflow does not check out or execute untrusted code. If `pull_request_target` is used, reviewers MUST confirm:

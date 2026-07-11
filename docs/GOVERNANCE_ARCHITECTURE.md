@@ -36,7 +36,7 @@ sequenceDiagram
 
 ## Workflow Architecture
 
-The event-triggered workflow is `.github/workflows/governance-ci.yml`. It runs on pull requests, pushes to `master`, and manual `workflow_dispatch`, and its only job calls `.github/workflows/governance-ci-reusable.yml`.
+The event-triggered workflow is `.github/workflows/governance-ci.yml`. It runs on pull requests, pushes to `master`, and manual `workflow_dispatch`, and its only job calls the central reusable workflow at a reviewed full commit SHA. Repository self-CI does not use a local reusable call because a pull request could otherwise redefine the code later labeled as trusted standards tooling.
 
 The reusable workflow is `.github/workflows/governance-ci-reusable.yml`. It is triggered only by `workflow_call`, defines all supported inputs, runs validation jobs, generates completion evidence, and uploads evidence artifacts. It MUST NOT call the event workflow, itself, or any workflow that calls it back.
 

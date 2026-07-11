@@ -23,7 +23,9 @@ concurrency:
 jobs:
   governance:
     name: Governance
-    uses: ./.github/workflows/governance-ci-reusable.yml
+    # Self-CI uses the reviewed Issue #15 implementation commit so pull-request
+    # changes cannot redefine the validator checkout labeled as trusted.
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@a164ce591b270a745d8eccbff6338590f83e4e21
     with:
       project-path: .
       governance-version: 1.1.0
