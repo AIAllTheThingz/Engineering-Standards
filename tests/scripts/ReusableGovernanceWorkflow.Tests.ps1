@@ -55,7 +55,9 @@ function script:Invoke-DownstreamValidation {
     $env:GITHUB_ACTIONS = 'true'
     try {
         $output = @(& pwsh -NoProfile -File $script:validator -Path $CallerRoot -ProjectPath $ProjectPath -EvidenceRoot $EvidenceRoot -ExpectedGovernanceVersion '1.1.0' -CallerRepository 'ExampleOrg/downstream-fixture' -CallerCommitSha $script:callerSha -StandardsRepository $StandardsRepository -StandardsWorkflowSha $StandardsSha -ControlledFailure:$ControlledFailure 2>&1)
-        [pscustomobject]@{ ExitCode=$LASTEXITCODE; Output=($output -join [Environment]::NewLine); EvidenceRoot=$EvidenceRoot }
+        $joinedOutput = $output -join [Environment]::NewLine
+        $joinedOutput = [regex]::Replace($joinedOutput, '\x1B\[[0-9;?]*[ -/]*[@-~]', '')
+        [pscustomobject]@{ ExitCode=$LASTEXITCODE; Output=$joinedOutput; EvidenceRoot=$EvidenceRoot }
     }
     finally {
         $env:GITHUB_ACTIONS = $prior

@@ -126,9 +126,9 @@ elseif (-not $branch) {
     $branch = (& git -C $sourceRoot branch --show-current 2>$null)
     if ($LASTEXITCODE -ne 0 -or -not $branch) { $branch = 'unknown' }
 }
-$githubRunId = if ($env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID } else { $null }
-$githubRunAttempt = if ($env:GITHUB_RUN_ATTEMPT) { $env:GITHUB_RUN_ATTEMPT } else { $null }
-$githubWorkflow = if ($env:GITHUB_WORKFLOW) { $env:GITHUB_WORKFLOW } else { $null }
+$githubRunId = if ($EvidenceExecutionContext -eq 'GitHubActions' -and $env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID } else { $null }
+$githubRunAttempt = if ($EvidenceExecutionContext -eq 'GitHubActions' -and $env:GITHUB_RUN_ATTEMPT) { $env:GITHUB_RUN_ATTEMPT } else { $null }
+$githubWorkflow = if ($EvidenceExecutionContext -eq 'GitHubActions' -and $env:GITHUB_WORKFLOW) { $env:GITHUB_WORKFLOW } else { $null }
 $artifacts = @()
 foreach ($artifact in $ArtifactPath) {
     if ($artifact -eq $OutputPath) { continue }
