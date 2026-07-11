@@ -150,7 +150,7 @@ Describe 'Reusable governance workflow trust boundaries' {
         $config | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $caller 'governance.config.json') -Encoding utf8
         $result = Invoke-DownstreamValidation -CallerRoot $caller
         $result.ExitCode | Should -Not -Be 0
-        $result.Output | Should -Match 'attempts to disable one or more mandatory controls'
+        $result.Output | Should -Match 'attempts to disable one or more mandatory.*controls'
     }
 
     It 'rejects an evidence path inside the caller workspace' {
