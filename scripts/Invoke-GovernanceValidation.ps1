@@ -61,6 +61,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $standardsRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
+$workflowWorkspaceRoot = Split-Path -Parent $standardsRoot
+$temporaryRoot = [System.IO.Path]::GetTempPath().TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
 Import-Module (Join-Path $standardsRoot 'scripts/GovernanceValidation.psm1') -Force
 
 function Test-PathWithinRoot {
@@ -154,7 +156,11 @@ function Invoke-TrustedValidation {
     & pwsh -NoProfile -File $ScriptPath @Arguments 2>&1 | ForEach-Object {
         $totalOutputLines++
         if ($output.Count -lt 200) {
-            $line = [regex]::Replace([string]$_, '[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '?')
+            $line = [string]$_
+            $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+            $line = $line.Replace($workflowWorkspaceRoot, '[workspace]', $comparison)
+            if ($temporaryRoot) { $line = $line.Replace($temporaryRoot, '[temp]', $comparison) }
+            $line = [regex]::Replace($line, '[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '?')
             if ($line -match '^\s*::') { $line = '[validator-output] ' + $line }
             $output.Add($line)
         }

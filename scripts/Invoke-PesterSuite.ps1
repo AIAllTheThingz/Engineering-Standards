@@ -34,14 +34,18 @@ try {
     $config.TestResult.OutputPath = $xmlPath
     $config.TestResult.OutputFormat = 'NUnitXml'
     $priorErrorActionPreference = $ErrorActionPreference
+    $priorNativeErrorPreference = $PSNativeCommandUseErrorActionPreference
     try {
         # Some negative-path tests intentionally emit non-terminating errors.
+        # They also invoke child processes that intentionally return nonzero.
         # Let Pester classify those results instead of aborting evidence creation.
         $ErrorActionPreference = 'Continue'
+        $PSNativeCommandUseErrorActionPreference = $false
         $result = Invoke-Pester -Configuration $config
     }
     finally {
         $ErrorActionPreference = $priorErrorActionPreference
+        $PSNativeCommandUseErrorActionPreference = $priorNativeErrorPreference
     }
     $discovered = [int]$result.PassedCount + [int]$result.FailedCount + [int]$result.SkippedCount + [int]$result.NotRunCount
     [ordered]@{
