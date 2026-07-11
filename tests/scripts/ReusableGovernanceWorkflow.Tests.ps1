@@ -57,6 +57,7 @@ function script:Invoke-DownstreamValidation {
         $output = @(& pwsh -NoProfile -File $script:validator -Path $CallerRoot -ProjectPath $ProjectPath -EvidenceRoot $EvidenceRoot -ExpectedGovernanceVersion '1.1.0' -CallerRepository 'ExampleOrg/downstream-fixture' -CallerCommitSha $script:callerSha -StandardsRepository $StandardsRepository -StandardsWorkflowSha $StandardsSha -ControlledFailure:$ControlledFailure 2>&1)
         $joinedOutput = $output -join [Environment]::NewLine
         $joinedOutput = [regex]::Replace($joinedOutput, '\x1B\[[0-9;?]*[ -/]*[@-~]', '')
+        $joinedOutput = [regex]::Replace($joinedOutput, '\s+', ' ')
         [pscustomobject]@{ ExitCode=$LASTEXITCODE; Output=$joinedOutput; EvidenceRoot=$EvidenceRoot }
     }
     finally {
