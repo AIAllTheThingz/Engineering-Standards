@@ -235,7 +235,7 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 - PR #12 remediated the PR #11 formal-approval defect. Publication approval remediation is complete.
 - Tag and release-publication authorization are granted for `v1.1.0` at immutable target `2704049d7e826975d956611b194214dd79ea3686`.
 - The annotated `v1.1.0` tag was created at the authorized target, and the [Engineering Standards v1.1.0 GitHub Release](https://github.com/AIAllTheThingz/Engineering-Standards/releases/tag/v1.1.0) was published as non-draft and non-prerelease on 2026-07-11.
-- All 13 Phase 8 local validation records passed. Post-release verification remains `Blocked` solely pending mandatory GitHub-hosted validation and independent artifact verification; the annotated tag is unsigned.
+- All 13 Phase 8 local validation records passed. Hosted Governance CI run `29141798603` and artifact `governance-evidence-29141798603` were independently verified for commit `dfd3acb854ec60477db448b99e34d5002ef53538`, completing post-release verification; the annotated tag is unsigned.
 
 ## Related Documents
 

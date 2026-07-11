@@ -10,7 +10,7 @@ No unreleased changes are currently recorded.
 
 ### Release Status
 
-Release approval is `Approved`; `GOV-2026-001` is `Not required`. PR #12 remediated the PR #11 formal-approval defect. Annotated tag `v1.1.0` was created at immutable target `2704049d7e826975d956611b194214dd79ea3686`, and the non-draft, non-prerelease GitHub Release was published on 2026-07-11. All 13 Phase 8 local validation records passed. Post-release verification remains `Blocked` solely pending mandatory GitHub-hosted validation and independent artifact verification; the tag is unsigned.
+Release approval is `Approved`; `GOV-2026-001` is `Not required`. PR #12 remediated the PR #11 formal-approval defect. Annotated tag `v1.1.0` was created at immutable target `2704049d7e826975d956611b194214dd79ea3686`, and the non-draft, non-prerelease GitHub Release was published on 2026-07-11. All 13 Phase 8 local validation records passed, and hosted Governance CI run `29141798603` plus artifact `governance-evidence-29141798603` were independently verified for commit `dfd3acb854ec60477db448b99e34d5002ef53538`, completing post-release verification; the tag is unsigned.
 
 ### Changed
 
