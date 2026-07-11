@@ -36,7 +36,9 @@ sequenceDiagram
 
 ## Workflow Architecture
 
-The event-triggered workflow is `.github/workflows/governance-ci.yml`. It runs on pull requests, pushes to `master`, and manual `workflow_dispatch`, and its only job calls the central reusable workflow at a reviewed full commit SHA. Repository self-CI does not use a local reusable call because a pull request could otherwise redefine the code later labeled as trusted standards tooling.
+The event-triggered workflow is `.github/workflows/governance-ci.yml`. It runs on pull requests, pushes to `master`, and manual `workflow_dispatch`. One job calls the trusted baseline reusable workflow at a reviewed full commit SHA; a second job calls the candidate-validation harness at the same reviewed SHA. Repository self-CI does not use local reusable calls because a pull request could otherwise redefine the security envelope or code later labeled as trusted standards tooling.
+
+The candidate harness is `.github/workflows/governance-ci-candidate.yml`. Its immutable job definition checks out `${{ github.sha }}` beneath `candidate/` and deliberately executes candidate parsers, validators, Pester, ScriptAnalyzer, examples, and diff checks on a separate ephemeral runner. It has only `contents: read`, receives no secrets or environment, suspends workflow-command processing while candidate code runs, and shares no candidate output, artifact, or cache with the trusted baseline job.
 
 The reusable workflow is `.github/workflows/governance-ci-reusable.yml`. It is triggered only by `workflow_call`, defines all supported inputs, runs validation jobs, generates completion evidence, and uploads evidence artifacts. It MUST NOT call the event workflow, itself, or any workflow that calls it back.
 

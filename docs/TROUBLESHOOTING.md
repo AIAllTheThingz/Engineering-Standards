@@ -87,7 +87,9 @@ Entry workflows should call reusable workflows. Reusable workflows should not ca
 
 Cross-repository runs should show sibling `caller`, `standards`, and `evidence` workspaces. A missing central script under `caller/` is not an adoption requirement; validators must load from `standards/`. Failures mentioning `job.workflow_sha` or `job.workflow_repository` usually mean the run is on GitHub Enterprise Server, which is unsupported because those immutable identity properties are unavailable and no safe fallback exists.
 
-If `project-path` fails validation, use a normal relative directory below the caller repository. Do not use absolute paths, `..`, symbolic links, or junctions. If a caller still passes `run-examples`, `run-pester`, or `run-documentation-validation`, remove those retired inputs and keep project-specific execution in separate caller-owned jobs.
+If `project-path` fails validation, use a normal relative directory below the caller repository. Do not use absolute paths or `..`. Remove every symbolic link, junction, and reparse point from caller content, including links to internal files or directories and links outside the selected `project-path`. This is an intentional fail-closed defense against workspace-boundary and validator-confusion attacks, not only an escape check. If a caller still passes `run-examples`, `run-pester`, or `run-documentation-validation`, remove those retired inputs and keep project-specific execution in separate caller-owned jobs.
+
+If validation names `additionalForbiddenPatterns` or `reviewedAllowlist` as unsupported, leave that array empty for the central downstream workflow. These repository-provided scanner extensions are rejected rather than silently ignored until the reviewed configuration model in Issue #21 is implemented.
 
 For final evidence verification, trigger a success run with:
 

@@ -91,7 +91,7 @@ jobs:
       artifact-retention-days: 30
 ```
 
-The workflow MUST run on pull requests and on pushes to protected long-lived branches. It uses only `contents: read` and uploads evidence with explicit retention. `project-path` is relative to the caller checkout and rejects absolute paths, traversal, workspace escapes, symbolic links, and junctions. `governance-version` must match the caller manifest, and `artifact-retention-days` must remain in the supported range.
+The workflow MUST run on pull requests and on pushes to protected long-lived branches. It uses only `contents: read` and uploads evidence with explicit retention. `project-path` is relative to the caller checkout and rejects absolute paths, traversal, and workspace escapes. Every symbolic link, junction, or reparse point anywhere in caller content is unsupported, even when its target stays inside the checkout. This conservative fail-closed rule prevents workspace-boundary and validator-confusion attacks. `governance-version` must match the caller manifest, and `artifact-retention-days` must remain in the supported range.
 
 The job uses three sibling workspaces: `caller/` for the exact caller repository and `${{ github.sha }}`, `standards/` for the Engineering Standards repository and immutable `${{ job.workflow_sha }}`, and `evidence/` for generated reports. Validators execute only from `standards/` and receive the resolved caller root explicitly. The caller cannot override the standards repository or SHA. Evidence records both identities and selects the caller risk classification from the validated manifest.
 

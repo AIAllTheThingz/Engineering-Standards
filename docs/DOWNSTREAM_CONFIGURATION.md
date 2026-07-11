@@ -55,8 +55,8 @@ The governance config MUST NOT be used to remove mandatory controls silently. If
 | `evidencePath` | Yes | Evidence directory or root. | Must be written by validation workflows. |
 | `requiredDocumentationPaths` | Yes | Required local documents. | Must include README, SECURITY, CONTRIBUTING, and AGENTS. |
 | `applicableAgentStandards` | Yes | Central standard paths. | Must align with manifest standards. |
-| `additionalForbiddenPatterns` | No | Repository-specific scanner rules. | Must not duplicate central rules without reason. |
-| `reviewedAllowlist` | No | Approved scanner exceptions. | Must include owner, reason, scope, and expiration. |
+| `additionalForbiddenPatterns` | No | Repository-specific scanner rules. | Must remain empty for central downstream validation until Issue #21 defines the supported model. |
+| `reviewedAllowlist` | No | Approved scanner exceptions. | Must remain empty for central downstream validation until Issue #21 defines the supported model. |
 | `schemaSupport` | No | Supported evidence schema versions and compatibility window. | Use to declare additive migration support explicitly. |
 | `workflowInterfaces` | No | Named workflow interfaces used by the repository. | Keep aligned with reusable workflow consumers. |
 | `branchProtectionCheckName` | No | Exact required GitHub check name. | Use the exact check string after it exists in GitHub. |
@@ -71,7 +71,7 @@ Do not introduce new enum values in downstream repositories. If a new value is n
 
 ## Path Rules
 
-Paths are repository-relative and MUST NOT escape the repository root. Absolute paths, traversal segments, symbolic-link or junction hops, and caller/standards workspace confusion are rejected. Validators treat missing required files as failures. Paths should use forward slashes in JSON examples for consistency across operating systems.
+Paths are repository-relative and MUST NOT escape the repository root. Absolute paths, traversal segments, and caller/standards workspace confusion are rejected. The caller checkout MUST contain no symbolic links, junctions, or other reparse points, including links whose targets remain inside the checkout. This deliberate fail-closed policy prevents workspace-boundary and validator-confusion attacks. Validators treat missing required files as failures. Paths should use forward slashes in JSON examples for consistency across operating systems.
 
 Evidence paths should be stable. A changing path makes historical comparison and artifact review harder.
 
@@ -91,6 +91,8 @@ Outputs are `evidence-path` and `artifact-name`. Root files under `workflows/` a
 The reusable workflow checks out caller content under `caller/`, trusted central tooling under `standards/`, and reports under `evidence/`. The standards checkout is selected from GitHub's immutable `job.workflow_repository` and `job.workflow_sha` context; callers cannot supply either value. Evidence keeps the caller repository and commit as `repository`, `commitSha`, and `validatedCommitSha`, and records the standards workflow repository/SHA separately.
 
 `Contract` is mandatory for all downstream callers. `MarkdownLinks`, `DocumentationCompleteness`, and `ForbiddenPatterns` are supported central static categories when present in validated configuration. Categories that imply repository-maintainer layout or caller code execution—such as `Examples`, `Pester`, `JsonSchemas`, `WorkflowArchitecture`, and `RepositoryHealth`—are rejected for downstream use; run caller-owned builds and tests in separate caller CI jobs. Any nonempty `controls.mandatoryControlsDisabled` fails closed unless a future interface can independently validate the approved exception.
+
+The central downstream workflow does not yet apply repository-provided `additionalForbiddenPatterns` or `reviewedAllowlist`. Both arrays MUST be empty; a nonempty value fails with the unsupported field name instead of being silently ignored. The complete reviewed scanner-configuration model remains deferred to Issue #21.
 
 Existing callers must remove `run-examples`, `run-pester`, and `run-documentation-validation`. Those compatibility inputs were mandatory-true and misleading; removal is an intentional interface correction. GitHub Enterprise Server is unsupported because it does not provide the immutable `job.workflow_*` identity properties and the workflow does not use an unsafe fallback.
 

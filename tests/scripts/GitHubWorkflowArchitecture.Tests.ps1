@@ -32,14 +32,184 @@ function script:Set-FixtureFile {
 function script:New-CurrentWorkflowFixture {
     param([Parameter(Mandatory)][string]$Name)
     $root = New-WorkflowFixture -Name $Name
-    Set-FixtureFile -Root $root -RelativePath 'project-manifest.json' -Content '{}'
-    foreach ($relative in @('.github/workflows/governance-ci.yml','.github/workflows/governance-ci-reusable.yml')) {
+    Set-FixtureFile -Root $root -RelativePath 'project-manifest.json' -Content (Get-Content -LiteralPath (Join-Path $script:repoRoot 'project-manifest.json') -Raw)
+    foreach ($relative in @('.github/workflows/governance-ci.yml','.github/workflows/governance-ci-reusable.yml','.github/workflows/governance-ci-candidate.yml')) {
         Set-FixtureFile -Root $root -RelativePath $relative -Content (Get-Content -LiteralPath (Join-Path $script:repoRoot $relative) -Raw)
     }
     $root
 }
 
 Describe 'GitHub workflow architecture validation' {
+    It 'requires immutable trusted baseline and candidate implementation validation' {
+        $root = New-CurrentWorkflowFixture -Name 'current-dual-validation'
+        $entryText = Get-Content -LiteralPath (Join-Path $root '.github/workflows/governance-ci.yml') -Raw
+        $pinMatch = [regex]::Match($entryText, 'governance-ci-candidate\.yml@([a-fA-F0-9]{40})')
+        $pinMatch.Success | Should -BeTrue
+        & pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -ExpectedReusableWorkflowSha $pinMatch.Groups[1].Value -RequireCandidateValidation
+        $LASTEXITCODE | Should -Be 0
+    }
+
+    It 'rejects a missing candidate implementation validation call' {
+        $root = New-CurrentWorkflowFixture -Name 'missing-candidate-call'
+        $path = Join-Path $root '.github/workflows/governance-ci.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $content = [regex]::Replace($content, '(?ms)\r?\n  candidate_implementation:.*\z', '')
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'candidate-validation harness'
+    }
+
+    It 'does not allow manifest identity changes to opt out of candidate policy' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-manifest-opt-out'
+        $manifestPath = Join-Path $root 'project-manifest.json'
+        $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable
+        $manifest.repository = 'ExampleOrg/not-standards'
+        $manifest | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $manifestPath -Encoding utf8
+        $entryPath = Join-Path $root '.github/workflows/governance-ci.yml'
+        $entry = Get-Content -LiteralPath $entryPath -Raw
+        $entry = [regex]::Replace($entry, '(?ms)\r?\n  candidate_implementation:.*\z', '')
+        Set-Content -LiteralPath $entryPath -Value $entry -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'candidate-validation harness'
+    }
+
+    It 'rejects elevated candidate harness permissions' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-write-permission'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $content = $content.Replace("    permissions:`n      contents: read", "    permissions:`n      contents: write")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'permissions must be exactly contents: read|prohibited trigger, secret, or elevated permission'
+    }
+
+    It 'rejects pull_request_target for candidate validation' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-pull-request-target'
+        $path = Join-Path $root '.github/workflows/governance-ci.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace('  pull_request:', '  pull_request_target:')
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'pull_request_target'
+    }
+
+    It 'rejects additive pull_request_target alongside safe triggers' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-additive-pull-request-target'
+        $path = Join-Path $root '.github/workflows/governance-ci.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("  pull_request:`n", "  pull_request:`n  pull_request_target:`n")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must not use pull_request_target'
+    }
+
+    It 'rejects a condition that can skip candidate validation' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-if-false'
+        $path = Join-Path $root '.github/workflows/governance-ci.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $content = $content.Replace("  candidate_implementation:`n    name:", "  candidate_implementation:`n    if: false`n    name:")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must not use a condition that can skip execution'
+    }
+
+    It 'rejects candidate secret inheritance' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-secret-inheritance'
+        $path = Join-Path $root '.github/workflows/governance-ci.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $content = [regex]::Replace($content, '(?m)^(    uses: AIAllTheThingz/Engineering-Standards/\.github/workflows/governance-ci-candidate\.yml@[a-fA-F0-9]{40})$', "`$1`n    secrets: inherit")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must not receive secrets'
+    }
+
+    It 'rejects a candidate checkout that persists credentials or uses the wrong ref' {
+        $root = New-CurrentWorkflowFixture -Name 'unsafe-candidate-checkout'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $content = $content.Replace('ref: ${{ github.sha }}','ref: master').Replace('persist-credentials: false','persist-credentials: true')
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'Candidate checkout must use github.repository/github.sha|persist-credentials'
+    }
+
+    It 'rejects swallowed candidate failures' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-continue-on-error'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $content = $content.Replace("      - name: Run candidate implementation validation`n", "      - name: Run candidate implementation validation`n        continue-on-error: true`n")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must propagate failures'
+    }
+
+    It 'rejects a condition on the reusable candidate harness job' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-harness-job-if-false'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("  candidate:`n    name:", "  candidate:`n    if: false`n    name:")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'Candidate harness job must not use a condition that can skip execution'
+    }
+
+    It 'rejects a condition on the candidate validation step' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-validation-step-if-false'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("      - name: Run candidate implementation validation`n", "      - name: Run candidate implementation validation`n        if: false`n")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'Candidate implementation validation step must not use a condition that can skip execution'
+    }
+
+    It 'rejects RequireCandidateValidation mentioned only in a comment' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-comment-only-require-policy'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("'-RequireCandidateValidation','-OutputJson'", "'-OutputJson' # '-RequireCandidateValidation'")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must fail closed with RequireCandidateValidation'
+    }
+
+    It 'rejects workflow-command suspension mentioned only in a comment' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-comment-only-stop-commands'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace('          Write-Output "::stop-commands::$commandMarker"', '          # Write-Output "::stop-commands::$commandMarker"')
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must suspend workflow-command processing'
+    }
+
+    It 'rejects an omitted required candidate check' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-missing-check'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("            Invoke-CandidateScript 'scripts/Test-Examples.ps1'", "            Write-Output 'examples omitted'")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match "missing required candidate script invocation 'scripts/Test-Examples.ps1'"
+    }
+
+    It 'rejects a required candidate check mentioned only in a comment' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-comment-only-check'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("            Invoke-CandidateScript 'scripts/Test-Examples.ps1'", "            # Invoke-CandidateScript 'scripts/Test-Examples.ps1'")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match "missing required candidate script invocation 'scripts/Test-Examples.ps1'"
+    }
+
     It 'passes a valid one-way workflow call with a pinned action' {
         $root = New-WorkflowFixture -Name 'valid'
         Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci.yml' -Content @'

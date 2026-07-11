@@ -82,6 +82,36 @@ Describe 'Reusable governance workflow trust boundaries' {
         $report.results[0].target | Should -Be 'caller'
     }
 
+    It 'accepts empty downstream scanner configuration arrays' {
+        $caller = New-DownstreamFixture -Name 'empty-scanner-configuration'
+        $result = Invoke-DownstreamValidation -CallerRoot $caller
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'rejects nonempty additionalForbiddenPatterns for downstream validation' {
+        $caller = New-DownstreamFixture -Name 'unsupported-additional-patterns'
+        $configPath = Join-Path $caller 'governance.config.json'
+        $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json -AsHashtable
+        $config.additionalForbiddenPatterns = @('unsafe-synthetic-pattern')
+        $config | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $configPath -Encoding utf8
+        $result = Invoke-DownstreamValidation -CallerRoot $caller
+        $result.ExitCode | Should -Not -Be 0
+        $result.Output | Should -Match 'additionalForbiddenPatterns'
+        $result.Output | Should -Match 'Issue #21'
+    }
+
+    It 'rejects nonempty reviewedAllowlist for downstream validation' {
+        $caller = New-DownstreamFixture -Name 'unsupported-reviewed-allowlist'
+        $configPath = Join-Path $caller 'governance.config.json'
+        $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json -AsHashtable
+        $config.reviewedAllowlist = @([ordered]@{ patternId='synthetic'; path='README.md'; owner='@test'; reason='synthetic'; expiresOn='2099-01-01' })
+        $config | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $configPath -Encoding utf8
+        $result = Invoke-DownstreamValidation -CallerRoot $caller
+        $result.ExitCode | Should -Not -Be 0
+        $result.Output | Should -Match 'reviewedAllowlist'
+        $result.Output | Should -Match 'Issue #21'
+    }
+
     It 'rejects an absolute project path' {
         $caller = New-DownstreamFixture -Name 'absolute-path'
         $result = Invoke-DownstreamValidation -CallerRoot $caller -ProjectPath $caller
@@ -225,12 +255,11 @@ Describe 'Reusable governance workflow trust boundaries' {
         $result.Output | Should -Match 'symbolic link or junction'
     }
 
-    It 'rejects a nested symbolic link anywhere in caller content when links are supported' {
+    It 'rejects every symbolic link in caller content, including internal targets' {
         $caller = New-DownstreamFixture -Name 'nested-symlink-caller'
-        $outside = New-DownstreamFixture -Name 'nested-symlink-outside'
         $link = Join-Path $caller 'docs-link'
         try {
-            New-Item -ItemType SymbolicLink -Path $link -Target $outside -ErrorAction Stop | Out-Null
+            New-Item -ItemType SymbolicLink -Path $link -Target (Join-Path $caller 'README.md') -ErrorAction Stop | Out-Null
         }
         catch {
             Set-ItResult -Skipped -Because "Symbolic links are unavailable in this test environment: $($_.Exception.Message)"
@@ -238,7 +267,27 @@ Describe 'Reusable governance workflow trust boundaries' {
         }
         $result = Invoke-DownstreamValidation -CallerRoot $caller
         $result.ExitCode | Should -Not -Be 0
-        $result.Output | Should -Match 'Caller project contains unsupported symbolic link or junction'
+        $result.Output | Should -Match 'Caller content contains unsupported symbolic link or junction'
+    }
+
+    It 'rejects a caller link outside the selected project path' {
+        $caller = New-DownstreamFixture -Name 'link-outside-project-path'
+        $project = Join-Path $caller 'selected-project'
+        New-Item -ItemType Directory -Path $project -Force | Out-Null
+        foreach ($name in @('README.md','SECURITY.md','CONTRIBUTING.md','AGENTS.md','project-manifest.json','governance.config.json')) {
+            Copy-Item -LiteralPath (Join-Path $caller $name) -Destination (Join-Path $project $name)
+        }
+        $link = Join-Path $caller 'outside-selected-project-link'
+        try {
+            New-Item -ItemType SymbolicLink -Path $link -Target (Join-Path $caller 'README.md') -ErrorAction Stop | Out-Null
+        }
+        catch {
+            Set-ItResult -Skipped -Because "Symbolic links are unavailable in this test environment: $($_.Exception.Message)"
+            return
+        }
+        $result = Invoke-DownstreamValidation -CallerRoot $caller -ProjectPath 'selected-project'
+        $result.ExitCode | Should -Not -Be 0
+        $result.Output | Should -Match 'Caller content contains unsupported symbolic link or junction'
     }
 
     It 'rejects a symbolic-link evidence root when links are supported' {

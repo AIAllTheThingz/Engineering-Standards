@@ -105,7 +105,7 @@ function Assert-NoNestedLinks {
     foreach ($item in Get-ChildItem -LiteralPath $Root -Recurse -Force -ErrorAction Stop) {
         if ($item.LinkType -or ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
             $relative = [System.IO.Path]::GetRelativePath($Root, $item.FullName).Replace('\','/')
-            throw "Caller project contains unsupported symbolic link or junction '$relative'."
+            throw "Caller content contains unsupported symbolic link or junction '$relative'."
         }
     }
 }
@@ -154,15 +154,11 @@ function Invoke-TrustedValidation {
     $output = [System.Collections.Generic.List[string]]::new()
     $totalOutputLines = 0
     & pwsh -NoProfile -File $ScriptPath @Arguments 2>&1 | ForEach-Object {
-        $totalOutputLines++
-        $line = [string]$_
-        $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
-        $line = $line.Replace($workflowWorkspaceRoot, '[workspace]', $comparison)
-        if ($temporaryRoot) { $line = $line.Replace($temporaryRoot, '[temp]', $comparison) }
-        $line = [regex]::Replace($line, '[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '?')
-        if ($line -match '^\s*::') { $line = '[validator-output] ' + $line }
-        if ($output.Count -eq 200) { $output.RemoveAt(0) }
-        $output.Add($line)
+        foreach ($line in @(ConvertTo-SanitizedWorkflowOutputLine -InputObject $_ -WorkspaceRoot $workflowWorkspaceRoot -TemporaryRoot $temporaryRoot)) {
+            $totalOutputLines++
+            if ($output.Count -eq 200) { $output.RemoveAt(0) }
+            $output.Add($line)
+        }
     }
     $exitCode = $LASTEXITCODE
     $completed = (Get-Date).ToUniversalTime()
@@ -244,7 +240,7 @@ if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw 'Require
 if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) { throw 'Required governance.config.json is missing.' }
 Assert-NoLinkTraversal -Root $projectRoot -Candidate $manifestPath
 Assert-NoLinkTraversal -Root $projectRoot -Candidate $configPath
-Assert-NoNestedLinks -Root $projectRoot
+Assert-NoNestedLinks -Root $callerRoot
 
 $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable
 $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json -AsHashtable
@@ -260,6 +256,13 @@ if (@($config.controls.mandatoryControlsDisabled).Count -gt 0) {
 
 $isMaintainerProfile = $manifest.projectType -eq 'governance' -and $manifest.repository -eq $StandardsRepository
 $validationProfile = if ($isMaintainerProfile) { 'standards-maintainer' } else { 'downstream' }
+if (-not $isMaintainerProfile) {
+    foreach ($unsupportedField in @('additionalForbiddenPatterns','reviewedAllowlist')) {
+        if (@($config[$unsupportedField]).Count -gt 0) {
+            throw "governance.config.json field '$unsupportedField' is not yet supported by the central downstream workflow and must be empty. Support is deferred to Issue #21."
+        }
+    }
+}
 $requestedCategories = if ($Category) { @($Category) } else { @($config.validationCategories) }
 $selected = [System.Collections.Generic.List[string]]::new()
 if (-not $Category) { $selected.Add('Contract') }
@@ -285,7 +288,7 @@ $toolMap = @{
     Contract = @{ path='actions/validate-contract/Invoke-ContractValidation.ps1'; args=@('-Path',$projectRoot) }
     JsonSchemas = @{ path='scripts/Test-JsonSchemas.ps1'; args=@('-Path',$projectRoot) }
     YamlSyntax = @{ path='scripts/Test-YamlSyntax.ps1'; args=@('-Path',$projectRoot) }
-    WorkflowArchitecture = @{ path='scripts/Test-GitHubWorkflowArchitecture.ps1'; args=@('-Path',$projectRoot,'-DefaultBranch','master') + $(if ($StandardsWorkflowSha) { @('-ExpectedReusableWorkflowSha',$StandardsWorkflowSha) } else { @() }) }
+    WorkflowArchitecture = @{ path='scripts/Test-GitHubWorkflowArchitecture.ps1'; args=@('-Path',$projectRoot,'-DefaultBranch','master') + $(if ($StandardsWorkflowSha) { @('-ExpectedReusableWorkflowSha',$StandardsWorkflowSha) } else { @() }) + $(if ($isMaintainerProfile) { @('-RequireCandidateValidation') } else { @() }) }
     MarkdownLinks = @{ path='scripts/Test-MarkdownLinks.ps1'; args=@('-Path',$projectRoot) }
     DocumentationCompleteness = @{ path='scripts/Test-DocumentationCompleteness.ps1'; args=@('-Path',$projectRoot) }
     ForbiddenPatterns = @{ path='actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1'; args=@('-Path',$projectRoot) }

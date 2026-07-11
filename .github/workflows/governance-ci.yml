@@ -30,3 +30,9 @@ jobs:
       project-path: .
       governance-version: 1.1.0
       controlled-failure-test: ${{ inputs.controlled-failure-test || false }}
+
+  candidate_implementation:
+    name: Candidate implementation validation
+    # This immutable harness supplies the security envelope, dependency pins,
+    # and explicit commands while deliberately executing the candidate checkout.
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-candidate.yml@6d3d3d04d427eb2ea4734e320389bacb2267bd6d
