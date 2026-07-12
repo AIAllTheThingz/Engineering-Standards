@@ -349,6 +349,39 @@ Describe 'CODEOWNERS structural validation' {
                 $finding.EffectiveOwners | Should -Be @('@bar-owner')
             }
         }
+
+        It 'anchors non-leading patterns that contain an internal slash to the repository root' {
+            $content = "* @root-owner`ndocs/* @docs-owner"
+            $rootFinding = @(Test-CodeownersContent -Content $content -RequiredPaths '/docs/file.md' | Where-Object RequiredPath -eq '/docs/file.md')[-1]
+            $rootFinding.Status | Should -Be 'Passed'
+            $rootFinding.EffectivePattern | Should -Be 'docs/*'
+            $rootFinding.EffectiveOwners | Should -Be @('@docs-owner')
+
+            $nestedFinding = @(Test-CodeownersContent -Content $content -RequiredPaths '/foo/docs/file.md' | Where-Object RequiredPath -eq '/foo/docs/file.md')[-1]
+            $nestedFinding.Status | Should -Be 'Passed'
+            $nestedFinding.EffectivePattern | Should -Be '*'
+            $nestedFinding.EffectiveOwners | Should -Be @('@root-owner')
+        }
+
+        It 'matches a trailing-slash name without an internal slash at any depth' {
+            $content = "* @root-owner`napps/ @apps-owner"
+            foreach ($requiredPath in @('/apps/', '/src/apps/', '/src/apps/file.txt')) {
+                $finding = @(Test-CodeownersContent -Content $content -RequiredPaths $requiredPath | Where-Object RequiredPath -eq $requiredPath)[-1]
+                $finding.Status | Should -Be 'Passed' -Because $requiredPath
+                $finding.EffectivePattern | Should -Be 'apps/'
+                $finding.EffectiveOwners | Should -Be @('@apps-owner')
+            }
+        }
+
+        It 'preserves leading globstar matching at the root and any depth' {
+            $content = "* @root-owner`n**/logs @logs-owner"
+            foreach ($requiredPath in @('/logs', '/src/logs', '/src/feature/logs')) {
+                $finding = @(Test-CodeownersContent -Content $content -RequiredPaths $requiredPath | Where-Object RequiredPath -eq $requiredPath)[-1]
+                $finding.Status | Should -Be 'Passed' -Because $requiredPath
+                $finding.EffectivePattern | Should -Be '**/logs'
+                $finding.EffectiveOwners | Should -Be @('@logs-owner')
+            }
+        }
     }
 }
 

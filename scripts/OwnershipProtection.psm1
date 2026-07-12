@@ -51,8 +51,9 @@ function Test-CodeownersPatternMatch {
     if ($Pattern -eq '*') { return $true }
 
     $candidate = '/' + $RequiredPath.TrimStart('/')
-    $rooted = $Pattern.StartsWith('/')
     $directoryPattern = $Pattern.EndsWith('/')
+    $patternWithoutTrailingDirectorySlash = $Pattern.TrimEnd('/')
+    $rooted = $Pattern.StartsWith('/') -or $patternWithoutTrailingDirectorySlash.Contains('/')
     $body = $Pattern.Trim('/')
     $expression = [regex]::Escape($body)
     if ($expression -eq '\*\*') {
