@@ -14,6 +14,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot '../../scripts/GovernanceValidation.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot '../../scripts/OwnershipProtection.psm1') -Force
 
 $root = (Resolve-Path -LiteralPath $Path).Path
 $results = [System.Collections.Generic.List[object]]::new()
@@ -111,11 +112,10 @@ else {
 $codeowners = Join-Path $root 'CODEOWNERS'
 if (Test-Path -LiteralPath $codeowners) {
     $text = Get-Content -LiteralPath $codeowners -Raw
-    if ($text -notmatch '@[^/\s]+/[^/\s]+') {
-        $results.Add((New-ValidationResult -Status Failed -Message 'CODEOWNERS must include at least one GitHub team owner.' -Path 'CODEOWNERS'))
-    }
-    if ($text -match '(?i)replace|placeholder') {
-        $results.Add((New-ValidationResult -Status Passed -Message 'CODEOWNERS contains language that may need organization-specific confirmation.' -Path 'CODEOWNERS' -Severity warning))
+    $ownerType = if ((Read-JsonFile -Path (Join-Path $root 'project-manifest.json')).repository -match '^AIAllTheThingz/') { 'User' } else { 'Unknown' }
+    foreach ($finding in @(Test-CodeownersContent -Content $text -RepositoryOwnerType $ownerType)) {
+        $severity = if ($finding.Status -eq 'Passed') { 'info' } else { 'error' }
+        $results.Add((New-ValidationResult -Status $finding.Status -Message $finding.Message -Path 'CODEOWNERS' -Severity $severity))
     }
 }
 

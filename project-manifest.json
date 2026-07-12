@@ -12,7 +12,7 @@
   "riskClassification": "High",
   "dataClassification": "Internal",
   "owners": [
-    "@AIAllTheThingz/engineering-standards-maintainers"
+    "@AIAllTheThingz"
   ],
   "environments": [
     {

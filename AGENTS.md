@@ -13,7 +13,7 @@ This file defines repository-specific instructions for `AIAllTheThingz/Engineeri
 | Risk classification | `High` |
 | Repository type | `governance` |
 | Data classification | `Internal` |
-| Maintainers | `@AIAllTheThingz/engineering-standards-maintainers` |
+| Maintainers | `@AIAllTheThingz`, `@mezuccolini`, `@megad00die` |
 
 Agents MUST treat this repository as security-sensitive because downstream repositories may rely on its policies, workflows, schemas, and agent instructions.
 

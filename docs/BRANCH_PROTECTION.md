@@ -3,7 +3,7 @@
 | Status | Active |
 | Version | 1.0.0 |
 | Owner role | Repository Administrators |
-| Last reviewed | 2026-06-27 |
+| Last reviewed | 2026-07-12 |
 
 ## Purpose
 
@@ -92,6 +92,14 @@ Verified configured state for `AIAllTheThingz/Engineering-Standards` from live A
 - Require last-push approval: no
 - Repository rulesets configured in parallel: none
 - Verification result: `Passed`
+
+## Issue 18 Pre-Change Inspection
+
+Live inspection at `2026-07-12T17:10:00Z` confirmed that `AIAllTheThingz/Engineering-Standards` is owned by the GitHub user `AIAllTheThingz`, not an organization. Direct collaborators eligible to review were `AIAllTheThingz` (admin), `mezuccolini` (write), and `megad00die` (write). One expired invitation was observed and excluded. The existing team-style CODEOWNERS entries all produced live `Unknown owner` parser errors.
+
+Classic protection on `master` remained the active branch mechanism: pull requests, one approval, both documented required checks, strict mode, stale-review dismissal, conversation resolution, administrator enforcement, force-push blocking, and deletion blocking were active. CODEOWNERS and last-push approval were not active. No repository rulesets existed.
+
+The Issue 18 design preserves classic branch protection and does not stack a branch ruleset over it. After the corrected CODEOWNERS reaches `master`, the settings phase enables CODEOWNERS and last-push approval because two independent write collaborators exist in addition to the admin author identity. A separate tag-only ruleset targets `v*`; its final ID and verified post-change state must be recorded after mutation. The sanitized pre-change record is [`../evidence/github-settings-issue-18-pre.json`](../evidence/github-settings-issue-18-pre.json).
 
 This verified state requires both immutable trusted-baseline validation and unprivileged candidate implementation validation before merge.
 

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectName": "Contact Owner Fixture",
+  "repository": "ExampleOrg/example-project",
+  "description": "A valid project manifest fixture preserving the existing email contact representation.",
+  "projectType": "governance",
+  "technologies": ["governance"],
+  "governanceVersion": "1.1.0",
+  "riskClassification": "High",
+  "dataClassification": "Internal",
+  "owners": ["maintainers@contoso.invalid"],
+  "environments": [{"name": "local", "type": "development", "production": false}],
+  "applicableStandards": ["agents/AGENTS_Base.md"],
+  "requiredWorkflows": ["governance"],
+  "externalIntegrations": [],
+  "secretsProvider": "none-required-for-example",
+  "productionApprovalRequired": true,
+  "evidence": {"completionEvidencePath": "evidence/completion.json", "testEvidencePath": "evidence/tests.json"},
+  "exceptions": []
+}

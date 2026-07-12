@@ -5,7 +5,7 @@
 | Status | Active |
 | Version | 1.0.0 |
 | Owner role | GitHub Actions Maintainers |
-| Last reviewed | 2026-06-19 |
+| Last reviewed | 2026-07-12 |
 | Changelog | See [../../CHANGELOG.md](../../CHANGELOG.md). |
 
 ## Purpose
@@ -34,6 +34,7 @@ The action checks:
 - Documentation completeness.
 - Schema and fixture validation.
 - Presence of Pester tests.
+- Deterministic CODEOWNERS validation for user or team token syntax, placeholders, active default coverage, and explicit high-risk path coverage. This offline check does not claim that an identity exists or can review; live eligibility requires GitHub API evidence.
 - Presence of action metadata and README files for local actions.
 
 ## Exit Codes

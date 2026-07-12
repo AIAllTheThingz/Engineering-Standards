@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0.0",
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "capturedAtUtc": "2026-07-12T17:10:00Z",
+  "executionContext": "GitHubApiReadOnly",
+  "phase": "PreChange",
+  "repositoryOwner": {"login": "AIAllTheThingz", "type": "User"},
+  "defaultBranch": "master",
+  "authenticatedPermission": "ADMIN",
+  "eligibleReviewers": [
+    {"login": "AIAllTheThingz", "permission": "admin"},
+    {"login": "mezuccolini", "permission": "write"},
+    {"login": "megad00die", "permission": "write"}
+  ],
+  "excludedInvitations": [{"state": "expired", "permission": "write"}],
+  "codeowners": {"parserErrorCount": 18, "allActiveOwnersResolved": false},
+  "classicBranchProtection": {
+    "branch": "master",
+    "strict": true,
+    "requiredChecks": ["Governance / Governance validation", "Candidate implementation validation / Candidate implementation validation"],
+    "requiredApprovingReviewCount": 1,
+    "dismissStaleReviews": true,
+    "requireCodeOwnerReviews": false,
+    "requireLastPushApproval": false,
+    "requireConversationResolution": true,
+    "enforceAdmins": true,
+    "allowForcePushes": false,
+    "allowDeletions": false
+  },
+  "repositoryRulesets": [],
+  "mutationPerformed": false,
+  "sanitization": "Tokens, authorization headers, invitation identifiers, email addresses, and unrelated profile data are omitted."
+}
