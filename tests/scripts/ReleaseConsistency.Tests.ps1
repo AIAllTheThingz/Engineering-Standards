@@ -98,6 +98,29 @@ Current `master` contains development after the published target. Historical evi
         $script:output -join "`n" | Should -Match 'Post-tag commits exist'
     }
 
+    It 'fails a blank Unreleased section when post-tag commits exist' {
+        Push-Location $script:fixture
+        try {
+            git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'
+            git add .; git commit -qm baseline; git tag -a v1.1.0 -m release
+            $tagObject = git rev-parse v1.1.0
+            $target = git rev-parse 'v1.1.0^{}'
+            $text = (Get-Content docs/RELEASE_STATUS.md -Raw).Replace('tag-object SHA `1111111111111111111111111111111111111111`', "tag-object SHA ``$tagObject``").Replace('resolves to immutable commit `1111111111111111111111111111111111111111`', "resolves to immutable commit ``$target``")
+            Set-Content docs/RELEASE_STATUS.md $text
+            Add-Content README.md 'post tag'; git add .; git commit -qm later
+            Set-Content CHANGELOG.md "# Changelog`n`n## [Unreleased]`n`n## [1.1.0] - 2026-07-11"
+        } finally { Pop-Location }
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match 'no substantive entries'
+    }
+
+    It 'requires the recorded tag object even when local tag verification is skipped' {
+        (Get-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md') -Raw).Replace('tag-object SHA `1111111111111111111111111111111111111111`', 'tag metadata unavailable') | Set-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md')
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $script:fixture -SkipTagVerification 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'annotated tag object as a full SHA'
+    }
+
     It 'fails a version mismatch' {
         Set-Content (Join-Path $script:fixture 'VERSION') '1.2.0'
         & $script:invokeFixtureValidation | Should -Not -Be 0

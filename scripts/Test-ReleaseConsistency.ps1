@@ -50,6 +50,9 @@ $tagObjectMatch = [regex]::Match($status, ('tag-object SHA `{0}`' -f "($fullShaP
 if (-not $targetMatch.Success) {
     $failures.Add('Release status does not identify the published target as a full immutable commit SHA.')
 }
+if (-not $tagObjectMatch.Success) {
+    $failures.Add('Release status does not identify the annotated tag object as a full SHA.')
+}
 
 if ($version) {
     foreach ($record in @($readme, $status)) {
@@ -83,10 +86,7 @@ if (-not $SkipTagVerification -and (Test-Path -LiteralPath $gitDirectory)) {
         }
 
         $actualTagObject = (& git -C $root rev-parse $tagName 2>$null).Trim()
-        if (-not $tagObjectMatch.Success) {
-            $failures.Add('Release status does not identify the annotated tag object as a full SHA.')
-        }
-        elseif ($actualTagObject -ne $tagObjectMatch.Groups[1].Value) {
+        if ($tagObjectMatch.Success -and $actualTagObject -ne $tagObjectMatch.Groups[1].Value) {
             $failures.Add("Recorded tag object '$($tagObjectMatch.Groups[1].Value)' does not match local tag object '$actualTagObject'.")
         }
 
@@ -96,6 +96,17 @@ if (-not $SkipTagVerification -and (Test-Path -LiteralPath $gitDirectory)) {
         }
 
         $postTagCount = [int]((& git -C $root rev-list --count "$tagName^{}..HEAD" 2>$null).Trim())
+        $unreleasedMatch = [regex]::Match($changelog, '(?ms)^## \[Unreleased\]\s*$(.*?)(?=^## |\z)')
+        $substantiveUnreleasedLines = @()
+        if ($unreleasedMatch.Success) {
+            $substantiveUnreleasedLines = @($unreleasedMatch.Groups[1].Value -split '\r?\n' | Where-Object {
+                $line = $_.Trim()
+                $line -and $line -notmatch '^#' -and $line -notmatch '^No unreleased changes are currently recorded\.?$'
+            })
+        }
+        if ($postTagCount -gt 0 -and $substantiveUnreleasedLines.Count -eq 0) {
+            $failures.Add('Post-tag commits exist while the [Unreleased] section has no substantive entries.')
+        }
         if ($postTagCount -gt 0 -and $changelog -match '(?im)^No unreleased changes are currently recorded\.?\s*$') {
             $failures.Add('Post-tag commits exist while CHANGELOG.md claims no unreleased changes.')
         }
