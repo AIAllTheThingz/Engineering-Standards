@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-07-12T21:33:26.3780552Z",
+  "generatedAtUtc": "2026-07-12T22:33:11.3389780Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -7,7 +7,7 @@
   "patternFile": "actions/forbidden-pattern-scan/forbidden-patterns.json",
   "allowlistFile": null,
   "advisory": false,
-  "scannedFiles": 280,
+  "scannedFiles": 283,
   "skippedFiles": [
     {
       "path": "evidence/agent-standards.json",
@@ -256,7 +256,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
-      "line": 523,
+      "line": 545,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
