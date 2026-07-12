@@ -78,6 +78,23 @@ Current `master` contains development after the published target. Historical evi
         $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
     }
 
+    It 'accepts an explicitly prepared and unpublished version before tag creation' {
+        Set-Content (Join-Path $script:fixture 'README.md') @'
+# Repository
+
+The prepared version is `1.1.0` and is unpublished. See [Release Status](docs/RELEASE_STATUS.md) and [Unreleased](CHANGELOG.md#unreleased).
+'@
+        Set-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md') @'
+# Release Status
+
+The prepared version is `1.1.0` and is unpublished.
+
+Current `master` contains development after the published target. Historical evidence does not validate current `master`.
+'@
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $script:fixture 2>&1)
+        $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
+    }
+
     It 'fails when Unreleased is missing' {
         (Get-Content (Join-Path $script:fixture 'CHANGELOG.md') -Raw).Replace('## [Unreleased]', '## Upcoming') | Set-Content (Join-Path $script:fixture 'CHANGELOG.md')
         & $script:invokeFixtureValidation | Should -Not -Be 0

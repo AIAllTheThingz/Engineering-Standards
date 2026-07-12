@@ -31,6 +31,11 @@ $status = Get-RequiredText 'docs/RELEASE_STATUS.md'
 if ($version -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$') {
     $failures.Add("VERSION '$version' is not canonical semantic version syntax.")
 }
+$isPublished = $version -and $status -match [regex]::Escape(('latest published version is `{0}`' -f $version))
+$isPrepared = $version -and $status -match [regex]::Escape(('prepared version is `{0}` and is unpublished' -f $version))
+if ($isPublished -eq $isPrepared) {
+    $failures.Add('Release status must declare exactly one canonical state: published or prepared and unpublished.')
+}
 
 $releaseDocument = "docs/releases/$version.md"
 if ($version -and -not (Test-Path -LiteralPath (Join-Path $root $releaseDocument) -PathType Leaf)) {
@@ -50,14 +55,14 @@ $tagObjectMatch = [regex]::Match($status, ('tag-object SHA `{0}`' -f "($fullShaP
 $readmeTargetMatch = [regex]::Match($readme, ('resolves to immutable commit `{0}`' -f "($fullShaPattern)"))
 $readmeTagMatch = [regex]::Match($readme, 'Annotated tag `(v[^`]+)` resolves to immutable commit')
 $statusTagMatch = [regex]::Match($status, 'Annotated tag `(v[^`]+)` has tag-object SHA')
-if (-not $targetMatch.Success) {
+if ($isPublished -and -not $targetMatch.Success) {
     $failures.Add('Release status does not identify the published target as a full immutable commit SHA.')
 }
-if (-not $tagObjectMatch.Success) {
+if ($isPublished -and -not $tagObjectMatch.Success) {
     $failures.Add('Release status does not identify the annotated tag object as a full SHA.')
 }
-if (-not $readmeTargetMatch.Success -or
-    ($targetMatch.Success -and $readmeTargetMatch.Groups[1].Value -ne $targetMatch.Groups[1].Value)) {
+if ($isPublished -and (-not $readmeTargetMatch.Success -or
+    ($targetMatch.Success -and $readmeTargetMatch.Groups[1].Value -ne $targetMatch.Groups[1].Value))) {
     $failures.Add('README published target does not match release status.')
 }
 
@@ -65,9 +70,11 @@ if ($version) {
     foreach ($record in @($readme, $status)) {
         $colonPhrase = 'published version: `{0}`' -f $version
         $sentencePhrase = 'published version is `{0}`' -f $version
-        if ($record -notmatch [regex]::Escape($colonPhrase) -and
-            $record -notmatch [regex]::Escape($sentencePhrase)) {
-            $failures.Add("A current release summary does not identify published version '$version'.")
+        $preparedPhrase = 'prepared version is `{0}` and is unpublished' -f $version
+        if (($isPublished -and $record -notmatch [regex]::Escape($colonPhrase) -and
+            $record -notmatch [regex]::Escape($sentencePhrase)) -or
+            ($isPrepared -and $record -notmatch [regex]::Escape($preparedPhrase))) {
+            $failures.Add("A current release summary does not identify the canonical state for version '$version'.")
         }
     }
 }
@@ -75,7 +82,7 @@ if ($version) {
 if ($readme -notmatch 'docs/RELEASE_STATUS\.md' -or $readme -notmatch 'CHANGELOG\.md#unreleased') {
     $failures.Add('README.md must link to release status and [Unreleased].')
 }
-if ($version -and
+if ($isPublished -and
     (-not $readmeTagMatch.Success -or $readmeTagMatch.Groups[1].Value -ne "v$version" -or
      -not $statusTagMatch.Success -or $statusTagMatch.Groups[1].Value -ne "v$version")) {
     $failures.Add("README and release status must identify expected tag 'v$version'.")
@@ -85,7 +92,7 @@ if ($status -notmatch '(?i)does not validate current `master`') {
 }
 
 $gitDirectory = Join-Path $root '.git'
-if (-not $SkipTagVerification -and (Test-Path -LiteralPath $gitDirectory)) {
+if ($isPublished -and -not $SkipTagVerification -and (Test-Path -LiteralPath $gitDirectory)) {
     $tagName = "v$version"
     & git -C $root rev-parse --verify --quiet "$tagName^{}" *> $null
     if ($LASTEXITCODE -ne 0) {
@@ -133,7 +140,8 @@ if (-not $SkipTagVerification -and (Test-Path -LiteralPath $gitDirectory)) {
 
 foreach ($line in ($status -split '\r?\n')) {
     if ($line -match '(?i)(?:tag|GitHub Release).*(?:pending|not published|not created)' -and
-        $line -notmatch '(?i)retains stale preparation-era statements') {
+        $line -notmatch '(?i)retains stale preparation-era statements' -and
+        -not ($isPrepared -and $line -match '(?i)prepared version.*unpublished')) {
         $failures.Add('Current published release status contains stale pending-publication wording.')
     }
 }
