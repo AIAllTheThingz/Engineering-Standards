@@ -233,6 +233,18 @@ Describe 'GovernanceValidation module' {
             $results = Test-GovernanceJsonDocument -Path $path -Kind 'project-manifest'
             @($results | Where-Object { $_.message -match 'production approval' }).Count | Should -Be 1
         }
+
+        It 'rejects placeholder email local parts case-insensitively' {
+            foreach ($fixture in Get-ChildItem "$PSScriptRoot/../fixtures/invalid" -Filter 'project-manifest*placeholder-email*.json') {
+                $results = Test-GovernanceJsonDocument -Path $fixture.FullName -Kind 'project-manifest'
+                @($results | Where-Object { $_.status -eq 'Failed' -and $_.message -match 'placeholder' }).Count | Should -Be 1 -Because $fixture.Name
+            }
+        }
+
+        It 'accepts similar legitimate email local parts' {
+            $results = Test-GovernanceJsonDocument -Path "$PSScriptRoot/../fixtures/valid/project-manifest-similar-email-owner.json" -Kind 'project-manifest'
+            @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
+        }
     }
 
     Context 'governance configuration ownership semantics' {

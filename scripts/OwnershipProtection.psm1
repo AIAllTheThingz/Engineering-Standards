@@ -52,6 +52,7 @@ function Test-CodeownersPatternMatch {
 
     $candidate = '/' + $RequiredPath.TrimStart('/')
     $directoryPattern = $Pattern.EndsWith('/')
+    $literalPattern = -not $Pattern.Contains('*')
     $patternWithoutTrailingDirectorySlash = $Pattern.TrimEnd('/')
     $rooted = $Pattern.StartsWith('/') -or $patternWithoutTrailingDirectorySlash.Contains('/')
     $body = $Pattern.Trim('/')
@@ -71,7 +72,15 @@ function Test-CodeownersPatternMatch {
     }
 
     $prefix = if ($rooted) { '^/' } else { '(?:^|/)' }
-    $suffix = if ($directoryPattern) { '(?:/.*)?/?$' } else { '$' }
+    $suffix = if ($directoryPattern) {
+        '(?:/.*)?/?$'
+    }
+    elseif ($literalPattern) {
+        '(?:/.*)?$'
+    }
+    else {
+        '$'
+    }
     [regex]::IsMatch(
         $candidate,
         ($prefix + $expression + $suffix),

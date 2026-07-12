@@ -445,10 +445,17 @@ function Test-GovernanceJsonDocument {
         foreach ($item in @(Test-UniqueValues -Items @($json.owners) -Name 'owners' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.applicableStandards) -Name 'applicableStandards' -Path $Path)) { $results.Add($item) }
         foreach ($owner in @($json.owners)) {
+            $isEmailOwner = $owner -match '^[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
             if ($owner -notmatch '^(@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?(?:/[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?)?|[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})$') {
                 $results.Add((New-ValidationResult -Status Failed -Message "Owner '$owner' must be a GitHub user handle, organization/team handle, or email address." -Path $Path))
             }
-            if ($owner -match '(?i)(?:^@|/)(?:placeholder|changeme|replace-me|todo)(?:/|$)') {
+            $isPlaceholderOwner = if ($isEmailOwner) {
+                ($owner -split '@', 2)[0] -match '(?i)^(?:placeholder|changeme|replace-me|todo)$'
+            }
+            else {
+                $owner -match '(?i)(?:^@|/)(?:placeholder|changeme|replace-me|todo)(?:/|$)'
+            }
+            if ($isPlaceholderOwner) {
                 $results.Add((New-ValidationResult -Status Failed -Message "Owner '$owner' is a placeholder and is not allowed." -Path $Path))
             }
         }

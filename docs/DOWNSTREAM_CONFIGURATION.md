@@ -34,7 +34,7 @@ The manifest is intentionally concise. It should identify the project clearly wi
 | `governanceVersion` | Yes | Adopted standards version. | Must identify the central standards version or SHA. |
 | `riskClassification` | Yes | Low, Moderate, High, or Critical. | Must reflect data, production, infrastructure, and security impact. |
 | `applicableStandards` | Yes | Central agent standard files. | Must include the base standard and relevant technology standards. |
-| `owners` | Yes | Accountable maintainers. | Must be real owners, not unowned aliases. |
+| `owners` | Yes | Accountable GitHub users, organization/teams, or email contacts. | Reserved exact placeholder identities and email local parts are rejected case-insensitively; legitimate names that merely contain those substrings remain valid. |
 | `evidence` | Yes | Evidence file paths. | Must match generated evidence artifacts. |
 | `exceptions` | No | Approved `GOV-*` exceptions. | Must be current, scoped, and unexpired. |
 | `workflowInterfaceVersion` | No | Workflow interface version expected by the repository. | Use when downstream automation binds to a specific reusable workflow contract. |

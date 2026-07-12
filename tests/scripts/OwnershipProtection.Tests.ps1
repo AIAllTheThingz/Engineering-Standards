@@ -382,6 +382,35 @@ Describe 'CODEOWNERS structural validation' {
                 $finding.EffectiveOwners | Should -Be @('@logs-owner')
             }
         }
+
+        It 'matches a literal directory pattern exactly and through descendants' {
+            $content = "* @root-owner`n/apps/ @apps-owner`n/apps/github @github-owner"
+            foreach ($requiredPath in @('/apps/github', '/apps/github/file.txt', '/apps/github/src/tool.ps1')) {
+                $finding = @(Test-CodeownersContent -Content $content -RequiredPaths $requiredPath | Where-Object RequiredPath -eq $requiredPath)[-1]
+                $finding.Status | Should -Be 'Passed' -Because $requiredPath
+                $finding.EffectivePattern | Should -Be '/apps/github'
+                $finding.EffectiveOwners | Should -Be @('@github-owner')
+            }
+        }
+
+        It 'lets a later ownerless literal directory override descendants' {
+            $content = "* @root-owner`n/apps/ @apps-owner`n/apps/github"
+            $finding = @(Test-CodeownersContent -Content $content -RequiredPaths '/apps/github/file.txt' | Where-Object RequiredPath -eq '/apps/github/file.txt')[-1]
+            $finding.Status | Should -Be 'Failed'
+            $finding.EffectivePattern | Should -Be '/apps/github'
+            $finding.EffectiveOwners.Count | Should -Be 0
+            $finding.RuleIndex | Should -Be 3
+        }
+
+        It 'does not extend a literal pattern across a similar-name boundary' {
+            $content = "* @root-owner`n/apps/ @apps-owner`n/apps/github @github-owner"
+            foreach ($requiredPath in @('/apps/github-old', '/apps/github.txt')) {
+                $finding = @(Test-CodeownersContent -Content $content -RequiredPaths $requiredPath | Where-Object RequiredPath -eq $requiredPath)[-1]
+                $finding.Status | Should -Be 'Passed' -Because $requiredPath
+                $finding.EffectivePattern | Should -Be '/apps/'
+                $finding.EffectiveOwners | Should -Be @('@apps-owner')
+            }
+        }
     }
 }
 
