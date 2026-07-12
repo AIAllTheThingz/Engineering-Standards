@@ -119,21 +119,33 @@ function New-RepositoryProtectionPlan {
     param(
         [Parameter(Mandatory)][ValidateRange(0, 100)][int]$EligibleReviewerCount,
         [Parameter(Mandatory)][ValidateRange(0, 100)][int]$IndependentReviewerCount,
+        [ValidateSet('Low', 'Moderate', 'High', 'Critical')][string]$RiskClassification = 'High',
+        [ValidateRange(0, 100)][int]$RequestedApprovalCount = 0,
+        [ValidateRange(0, 100)][int]$IndependentCodeOwnerCount = $IndependentReviewerCount,
+        [ValidateRange(0, 100)][int]$ReviewersOtherThanLastPusherCount = $IndependentReviewerCount,
         [switch]$RequestCodeOwnerReviews,
         [switch]$RequestLastPushApproval,
         [switch]$Execute
     )
 
-    $codeowners = $RequestCodeOwnerReviews -and $IndependentReviewerCount -ge 1
-    $lastPush = $RequestLastPushApproval -and $EligibleReviewerCount -ge 2 -and $IndependentReviewerCount -ge 1
+    $policyApprovalCount = if ($RiskClassification -in @('High', 'Critical')) { 2 } else { 1 }
+    $desiredApprovalCount = if ($RequestedApprovalCount -gt 0) { $RequestedApprovalCount } else { $policyApprovalCount }
+    $recommendedApprovalCount = [Math]::Min($desiredApprovalCount, $IndependentReviewerCount)
+    $codeowners = $RequestCodeOwnerReviews -and $IndependentCodeOwnerCount -ge 1
+    $lastPush = $RequestLastPushApproval -and $EligibleReviewerCount -ge 2 -and $ReviewersOtherThanLastPusherCount -ge 1
     $warnings = [System.Collections.Generic.List[string]]::new()
+    if ($desiredApprovalCount -gt $IndependentReviewerCount) { $warnings.Add("Requested approval count $desiredApprovalCount exceeds independent reviewer capacity $IndependentReviewerCount; strongest non-locking count is $recommendedApprovalCount.") }
     if ($RequestCodeOwnerReviews -and -not $codeowners) { $warnings.Add('CODEOWNERS review refused because no independent eligible reviewer is available.') }
     if ($RequestLastPushApproval -and -not $lastPush) { $warnings.Add('Last-push approval refused because the reviewer population would create lockout.') }
 
     [pscustomobject]@{
         Mode = if ($Execute) { 'ExecuteRequested' } else { 'DryRun' }
         MutationPerformed = $false
-        RequiredApprovingReviewCount = if ($IndependentReviewerCount -ge 1) { 1 } else { 0 }
+        RiskClassification = $RiskClassification
+        PolicyApprovalCount = $policyApprovalCount
+        RequestedApprovalCount = $desiredApprovalCount
+        RequestedApprovalCountEnforceable = $desiredApprovalCount -le $IndependentReviewerCount
+        RequiredApprovingReviewCount = $recommendedApprovalCount
         RequireCodeOwnerReviews = $codeowners
         RequireLastPushApproval = $lastPush
         Warnings = @($warnings)

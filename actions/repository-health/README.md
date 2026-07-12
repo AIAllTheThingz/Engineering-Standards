@@ -17,6 +17,7 @@ This action validates that a repository has the minimum governance structure nee
 - `path`: repository root. Defaults to `.`.
 - `output-json`: optional repository-relative JSON report path.
 - `advisory`: when `true`, records findings but returns success.
+- `RepositoryOwnerType`: optional trusted owner type (`Unknown`, `User`, or `Organization`); defaults to `Unknown` so offline validation never infers live GitHub ownership from a repository name.
 
 ## Outputs
 
@@ -34,7 +35,7 @@ The action checks:
 - Documentation completeness.
 - Schema and fixture validation.
 - Presence of Pester tests.
-- Deterministic CODEOWNERS validation for user or team token syntax, placeholders, active default coverage, and explicit high-risk path coverage. This offline check does not claim that an identity exists or can review; live eligibility requires GitHub API evidence.
+- Deterministic CODEOWNERS validation for user or team token syntax, placeholders, active default coverage, and explicit high-risk path coverage. With owner type `Unknown`, structurally valid user and team forms are accepted without a live-eligibility claim. User-versus-organization compatibility is enforced only from explicit trusted input; identity existence and repository review access require separate GitHub API evidence.
 - Presence of action metadata and README files for local actions.
 
 ## Exit Codes

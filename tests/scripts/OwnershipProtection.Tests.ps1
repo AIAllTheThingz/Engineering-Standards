@@ -28,6 +28,14 @@ Describe 'CODEOWNERS structural validation' {
         @($result | Where-Object Status -eq 'Failed').Count | Should -Be 0
     }
 
+    It 'accepts user and team syntax when owner type is unknown without claiming eligibility' {
+        foreach ($owner in @('@octocat', '@ContosoOrg/maintainers')) {
+            $result = Test-CodeownersContent -Content (New-CodeownersFixture $owner) -RepositoryOwnerType Unknown
+            @($result | Where-Object Status -eq 'Failed').Count | Should -Be 0
+            @($result | Where-Object Message -match 'eligible').Count | Should -Be 0
+        }
+    }
+
     It 'rejects malformed and placeholder owner tokens' {
         @(Test-CodeownersContent -Content (New-CodeownersFixture '@bad/user/name') -RepositoryOwnerType Organization | Where-Object Message -match 'Malformed').Count | Should -BeGreaterThan 0
         @(Test-CodeownersContent -Content (New-CodeownersFixture '@placeholder') -RepositoryOwnerType User | Where-Object Message -match 'Placeholder').Count | Should -BeGreaterThan 0
@@ -70,14 +78,36 @@ Describe 'Protection planning' {
         $plan = New-RepositoryProtectionPlan -EligibleReviewerCount 1 -IndependentReviewerCount 0 -RequestCodeOwnerReviews -RequestLastPushApproval
         $plan.RequireCodeOwnerReviews | Should -BeFalse
         $plan.RequireLastPushApproval | Should -BeFalse
-        $plan.Warnings.Count | Should -Be 2
+        $plan.Warnings.Count | Should -BeGreaterOrEqual 2
     }
 
     It 'permits both controls with multiple eligible reviewers' {
-        $plan = New-RepositoryProtectionPlan -EligibleReviewerCount 3 -IndependentReviewerCount 2 -RequestCodeOwnerReviews -RequestLastPushApproval
+        $plan = New-RepositoryProtectionPlan -EligibleReviewerCount 3 -IndependentReviewerCount 2 -RiskClassification High -RequestCodeOwnerReviews -RequestLastPushApproval
         $plan.RequireCodeOwnerReviews | Should -BeTrue
         $plan.RequireLastPushApproval | Should -BeTrue
+        $plan.RequiredApprovingReviewCount | Should -Be 2
+    }
+
+    It 'reports a High-risk policy gap and chooses the strongest non-locking count' {
+        $plan = New-RepositoryProtectionPlan -EligibleReviewerCount 2 -IndependentReviewerCount 1 -RiskClassification High
         $plan.RequiredApprovingReviewCount | Should -Be 1
+        $plan.RequestedApprovalCountEnforceable | Should -BeFalse
+        $plan.Warnings.Count | Should -BeGreaterThan 0
+    }
+
+    It 'does not silently collapse Critical policy or excess requested approvals' {
+        $critical = New-RepositoryProtectionPlan -EligibleReviewerCount 2 -IndependentReviewerCount 1 -RiskClassification Critical
+        $critical.PolicyApprovalCount | Should -Be 2
+        $critical.Warnings.Count | Should -BeGreaterThan 0
+        $requested = New-RepositoryProtectionPlan -EligibleReviewerCount 3 -IndependentReviewerCount 2 -RequestedApprovalCount 3
+        $requested.RequestedApprovalCountEnforceable | Should -BeFalse
+        $requested.RequiredApprovingReviewCount | Should -Be 2
+    }
+
+    It 'requires independent code-owner and last-pusher reviewer capacity' {
+        $plan = New-RepositoryProtectionPlan -EligibleReviewerCount 3 -IndependentReviewerCount 2 -IndependentCodeOwnerCount 0 -ReviewersOtherThanLastPusherCount 0 -RequestCodeOwnerReviews -RequestLastPushApproval
+        $plan.RequireCodeOwnerReviews | Should -BeFalse
+        $plan.RequireLastPushApproval | Should -BeFalse
     }
 
     It 'keeps dry-run and plan mode non-mutating' {

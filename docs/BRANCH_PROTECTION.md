@@ -99,7 +99,9 @@ Live inspection at `2026-07-12T17:10:00Z` confirmed that `AIAllTheThingz/Enginee
 
 Classic protection on `master` remained the active branch mechanism: pull requests, one approval, both documented required checks, strict mode, stale-review dismissal, conversation resolution, administrator enforcement, force-push blocking, and deletion blocking were active. CODEOWNERS and last-push approval were not active. No repository rulesets existed.
 
-The Issue 18 design preserves classic branch protection and does not stack a branch ruleset over it. After the corrected CODEOWNERS reaches `master`, the settings phase enables CODEOWNERS and last-push approval because two independent write collaborators exist in addition to the admin author identity. A separate tag-only ruleset targets `v*`; its final ID and verified post-change state must be recorded after mutation. The sanitized pre-change record is [`../evidence/github-settings-issue-18-pre.json`](../evidence/github-settings-issue-18-pre.json).
+The Issue 18 design preserves classic branch protection and does not stack a branch ruleset over it. With two independent write collaborators available for an owner-authored change, the High-risk plan recommends two approvals. After the corrected CODEOWNERS reaches `master`, the settings phase enables two approvals, CODEOWNERS review, and last-push approval. A separate tag-only ruleset targets `v*`; its final ID and verified post-change state must be recorded after mutation. The sanitized pre-change record is [`../evidence/github-settings-issue-18-pre.json`](../evidence/github-settings-issue-18-pre.json).
+
+Repository health performs offline structural CODEOWNERS validation with owner type `Unknown` by default. It does not infer user or organization ownership from repository text, resolve identities, or prove repository access. Compatibility checks require explicit owner type from trusted live API evidence; reviewer eligibility requires separate collaborator and identity API reads.
 
 This verified state requires both immutable trusted-baseline validation and unprivileged candidate implementation validation before merge.
 

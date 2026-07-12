@@ -8,7 +8,8 @@ Checks required governance files, JSON parsing, schemas and fixtures, documentat
 param(
     [string]$Path = '.',
     [string]$OutputJson,
-    [switch]$Advisory
+    [switch]$Advisory,
+    [ValidateSet('Unknown', 'User', 'Organization')][string]$RepositoryOwnerType = 'Unknown'
 )
 
 Set-StrictMode -Version Latest
@@ -112,8 +113,7 @@ else {
 $codeowners = Join-Path $root 'CODEOWNERS'
 if (Test-Path -LiteralPath $codeowners) {
     $text = Get-Content -LiteralPath $codeowners -Raw
-    $ownerType = if ((Read-JsonFile -Path (Join-Path $root 'project-manifest.json')).repository -match '^AIAllTheThingz/') { 'User' } else { 'Unknown' }
-    foreach ($finding in @(Test-CodeownersContent -Content $text -RepositoryOwnerType $ownerType)) {
+    foreach ($finding in @(Test-CodeownersContent -Content $text -RepositoryOwnerType $RepositoryOwnerType)) {
         $severity = if ($finding.Status -eq 'Passed') { 'info' } else { 'error' }
         $results.Add((New-ValidationResult -Status $finding.Status -Message $finding.Message -Path 'CODEOWNERS' -Severity $severity))
     }

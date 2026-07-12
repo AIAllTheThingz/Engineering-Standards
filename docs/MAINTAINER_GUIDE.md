@@ -37,7 +37,7 @@ Policy changes require review from a governance maintainer. Schema changes requi
 
 Security-sensitive changes require review against `docs/ACTION_SECURITY.md`. Changes that affect AI-generated code, secrets, dependency review, authentication, authorization, cryptography, infrastructure, database migrations, or destructive operations require heightened scrutiny.
 
-The protected `master` branch requires one approval. CODEOWNERS and last-push enforcement are safe only while at least one eligible reviewer other than the author or last pusher remains available. Pending invitations, bots, comments, and the author reviewing their own pull request do not satisfy independent review. If reviewer availability drops below that threshold, administrators must preserve checks, conversation resolution, stale-review dismissal, force-push blocking, deletion blocking, and administrator enforcement while documenting the segregation-of-duties limitation.
+The protected `master` branch currently requires one approval, but the High-risk target is two while two independent reviewers remain available. CODEOWNERS and last-push enforcement are safe only while at least one eligible reviewer other than the author or last pusher remains available. Pending invitations, bots, comments, and the author reviewing their own pull request do not satisfy independent review. If reviewer availability cannot meet the risk target, administrators must select the strongest non-locking approval count, preserve checks, conversation resolution, stale-review dismissal, force-push blocking, deletion blocking, and administrator enforcement, and document the segregation-of-duties gap.
 
 ## Schema Maintenance
 

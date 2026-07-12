@@ -5,6 +5,12 @@ Describe 'Repository health' {
             $LASTEXITCODE | Should -Be 0
         }
 
+        It 'defaults owner type to Unknown without repository-name inference' {
+            $scriptText = Get-Content -LiteralPath "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Raw
+            $scriptText | Should -Match "RepositoryOwnerType = 'Unknown'"
+            $scriptText | Should -Not -Match '\^AIAllTheThingz/'
+        }
+
         It 'does not track generated build output directories' {
             $root = Resolve-Path "$PSScriptRoot/../.."
             $tracked = @(& git -C $root ls-files | Where-Object {

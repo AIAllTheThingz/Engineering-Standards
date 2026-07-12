@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-07-12T17:33:55.8167421Z",
+  "generatedAtUtc": "2026-06-27T14:03:29.6554839Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -7,1026 +7,854 @@
   "patternFile": "actions/forbidden-pattern-scan/forbidden-patterns.json",
   "allowlistFile": null,
   "advisory": false,
-  "scannedFiles": 264,
+  "scannedFiles": 240,
   "skippedFiles": [
     {
-      "path": ".tmp/final-failure-29161515777-verification.json",
+      "path": ".tmp/agent-standards-debug.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-success-29161389215-verification.json",
+      "path": ".tmp/agent-standards-debug.txt",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue-15-comment.md",
+      "path": ".tmp/aggregate-smoke.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue-15-pin-rotation-comment.md",
+      "path": ".tmp/failure-artifact-verification.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue-15-pr-body.md",
+      "path": ".tmp/gh-evidence-27915176022-verification-rerun.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue-15-status-comment.md",
+      "path": ".tmp/gh-evidence-27915176022-verification.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pin-rotation-pr-body.md",
+      "path": ".tmp/gh-evidence-27915324851-verification-rerun.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact-final-verification.json",
+      "path": ".tmp/gh-evidence-27915324851-verification.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact-verification.json",
+      "path": ".tmp/gh-evidence-27915485743-verification.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-failure-29161515777/ci-test-results.json",
+      "path": ".tmp/git-ls-files.txt",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-failure-29161515777/completion-result.json",
+      "path": ".tmp/pester-results.xml",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-failure-29161515777/dependencies.json",
+      "path": ".tmp/success-artifact-verification.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-failure-29161515777/environment.json",
+      "path": ".tmp/gh-evidence-27915176022/agent-standards.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-failure-29161515777/evidence-validation-final.json",
+      "path": ".tmp/gh-evidence-27915176022/aggregate-governance.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-failure-29161515777/evidence-validation.json",
+      "path": ".tmp/gh-evidence-27915176022/ci-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-failure-29161515777/governance-validation.json",
+      "path": ".tmp/gh-evidence-27915176022/completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-failure-29161515777/pester-details.json",
+      "path": ".tmp/gh-evidence-27915176022/contract.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-failure-29161515777/pester-summary.json",
+      "path": ".tmp/gh-evidence-27915176022/dependencies.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-pester-evidence/pester-details.json",
+      "path": ".tmp/gh-evidence-27915176022/documentation-completeness.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-pester-evidence/pester-summary.json",
+      "path": ".tmp/gh-evidence-27915176022/environment.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-pester-evidence-2/pester-details.json",
+      "path": ".tmp/gh-evidence-27915176022/evidence-validation-final.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-pester-evidence-2/pester-summary.json",
+      "path": ".tmp/gh-evidence-27915176022/evidence-validation.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-pester-evidence-3/pester-details.json",
+      "path": ".tmp/gh-evidence-27915176022/examples.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-pester-evidence-3/pester-summary.json",
+      "path": ".tmp/gh-evidence-27915176022/forbidden-patterns.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-success-29161389215/ci-test-results.json",
+      "path": ".tmp/gh-evidence-27915176022/json-schemas.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-success-29161389215/completion-result.json",
+      "path": ".tmp/gh-evidence-27915176022/latest-verified-run.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-success-29161389215/dependencies.json",
+      "path": ".tmp/gh-evidence-27915176022/local-completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-success-29161389215/environment.json",
+      "path": ".tmp/gh-evidence-27915176022/local-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-success-29161389215/evidence-validation-final.json",
+      "path": ".tmp/gh-evidence-27915176022/markdown-links.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-success-29161389215/evidence-validation.json",
+      "path": ".tmp/gh-evidence-27915176022/pester-details.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-success-29161389215/governance-validation.json",
+      "path": ".tmp/gh-evidence-27915176022/pester-summary.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-success-29161389215/pester-details.json",
+      "path": ".tmp/gh-evidence-27915176022/powershell-parser.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/final-success-29161389215/pester-summary.json",
+      "path": ".tmp/gh-evidence-27915176022/psscriptanalyzer.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/canary-pr-body.md",
+      "path": ".tmp/gh-evidence-27915176022/repository-health.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/issue15-canary-comment.md",
+      "path": ".tmp/gh-evidence-27915176022/test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/issue16-correction-comment.md",
+      "path": ".tmp/gh-evidence-27915176022/workflow-architecture.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/issue16-final-comment.md",
+      "path": ".tmp/gh-evidence-27915176022/yaml-syntax.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/standards-pr-body.md",
+      "path": ".tmp/gh-evidence-27915324851/agent-standards.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/controlled-failure-verification.json",
+      "path": ".tmp/gh-evidence-27915324851/aggregate-governance.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/governance-version-mismatch-verification.json",
+      "path": ".tmp/gh-evidence-27915324851/ci-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/mandatory-control-disablement-verification.json",
+      "path": ".tmp/gh-evidence-27915324851/completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/missing-required-file-verification.json",
+      "path": ".tmp/gh-evidence-27915324851/contract.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/success-verification.json",
+      "path": ".tmp/gh-evidence-27915324851/dependencies.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/controlled-failure/ci-test-results.json",
+      "path": ".tmp/gh-evidence-27915324851/documentation-completeness.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/controlled-failure/completion-result.json",
+      "path": ".tmp/gh-evidence-27915324851/environment.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/controlled-failure/dependencies.json",
+      "path": ".tmp/gh-evidence-27915324851/evidence-validation-final.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/controlled-failure/environment.json",
+      "path": ".tmp/gh-evidence-27915324851/evidence-validation.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/controlled-failure/evidence-validation-final.json",
+      "path": ".tmp/gh-evidence-27915324851/examples.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/controlled-failure/evidence-validation.json",
+      "path": ".tmp/gh-evidence-27915324851/forbidden-patterns.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/controlled-failure/governance-validation.json",
+      "path": ".tmp/gh-evidence-27915324851/json-schemas.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/governance-version-mismatch/ci-test-results.json",
+      "path": ".tmp/gh-evidence-27915324851/latest-verified-run.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/governance-version-mismatch/completion-result.json",
+      "path": ".tmp/gh-evidence-27915324851/local-completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/governance-version-mismatch/dependencies.json",
+      "path": ".tmp/gh-evidence-27915324851/local-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/governance-version-mismatch/environment.json",
+      "path": ".tmp/gh-evidence-27915324851/markdown-links.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/governance-version-mismatch/evidence-validation-final.json",
+      "path": ".tmp/gh-evidence-27915324851/pester-details.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/governance-version-mismatch/evidence-validation.json",
+      "path": ".tmp/gh-evidence-27915324851/pester-summary.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/governance-version-mismatch/governance-validation.json",
+      "path": ".tmp/gh-evidence-27915324851/powershell-parser.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/mandatory-control-disablement/ci-test-results.json",
+      "path": ".tmp/gh-evidence-27915324851/psscriptanalyzer.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/mandatory-control-disablement/completion-result.json",
+      "path": ".tmp/gh-evidence-27915324851/repository-health.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/mandatory-control-disablement/dependencies.json",
+      "path": ".tmp/gh-evidence-27915324851/test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/mandatory-control-disablement/environment.json",
+      "path": ".tmp/gh-evidence-27915324851/workflow-architecture.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/mandatory-control-disablement/evidence-validation-final.json",
+      "path": ".tmp/gh-evidence-27915324851/yaml-syntax.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/mandatory-control-disablement/evidence-validation.json",
+      "path": ".tmp/gh-evidence-27915485743/agent-standards.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/mandatory-control-disablement/governance-validation.json",
+      "path": ".tmp/gh-evidence-27915485743/aggregate-governance.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/missing-required-file/ci-test-results.json",
+      "path": ".tmp/gh-evidence-27915485743/ci-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/missing-required-file/completion-result.json",
+      "path": ".tmp/gh-evidence-27915485743/completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/missing-required-file/dependencies.json",
+      "path": ".tmp/gh-evidence-27915485743/contract.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/missing-required-file/environment.json",
+      "path": ".tmp/gh-evidence-27915485743/dependencies.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/missing-required-file/evidence-validation-final.json",
+      "path": ".tmp/gh-evidence-27915485743/documentation-completeness.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/missing-required-file/evidence-validation.json",
+      "path": ".tmp/gh-evidence-27915485743/environment.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/missing-required-file/governance-validation.json",
+      "path": ".tmp/gh-evidence-27915485743/evidence-validation-final.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/success/ci-test-results.json",
+      "path": ".tmp/gh-evidence-27915485743/evidence-validation.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/success/completion-result.json",
+      "path": ".tmp/gh-evidence-27915485743/examples.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/success/dependencies.json",
+      "path": ".tmp/gh-evidence-27915485743/forbidden-patterns.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/success/environment.json",
+      "path": ".tmp/gh-evidence-27915485743/json-schemas.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/success/evidence-validation-final.json",
+      "path": ".tmp/gh-evidence-27915485743/latest-verified-run.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/success/evidence-validation.json",
+      "path": ".tmp/gh-evidence-27915485743/local-completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/artifacts/success/governance-validation.json",
+      "path": ".tmp/gh-evidence-27915485743/local-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/controlled-failure/governance-evidence-29174961493.zip",
+      "path": ".tmp/gh-evidence-27915485743/markdown-links.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/controlled-failure/verification.json",
+      "path": ".tmp/gh-evidence-27915485743/pester-details.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/controlled-failure/extracted/ci-test-results.json",
+      "path": ".tmp/gh-evidence-27915485743/pester-summary.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/controlled-failure/extracted/completion-result.json",
+      "path": ".tmp/gh-evidence-27915485743/powershell-parser.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/controlled-failure/extracted/dependencies.json",
+      "path": ".tmp/gh-evidence-27915485743/psscriptanalyzer.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/controlled-failure/extracted/environment.json",
+      "path": ".tmp/gh-evidence-27915485743/repository-health.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/controlled-failure/extracted/evidence-validation-final.json",
+      "path": ".tmp/gh-evidence-27915485743/test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/controlled-failure/extracted/evidence-validation.json",
+      "path": ".tmp/gh-evidence-27915485743/workflow-architecture.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/controlled-failure/extracted/governance-validation.json",
+      "path": ".tmp/gh-evidence-27915485743/yaml-syntax.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/governance-version-mismatch/governance-evidence-29174962200.zip",
+      "path": ".tmp/github-run-27882026684/agent-standards.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/governance-version-mismatch/verification.json",
+      "path": ".tmp/github-run-27882026684/aggregate-governance.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/governance-version-mismatch/extracted/ci-test-results.json",
+      "path": ".tmp/github-run-27882026684/ci-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/governance-version-mismatch/extracted/completion-result.json",
+      "path": ".tmp/github-run-27882026684/completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/governance-version-mismatch/extracted/dependencies.json",
+      "path": ".tmp/github-run-27882026684/contract.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/governance-version-mismatch/extracted/environment.json",
+      "path": ".tmp/github-run-27882026684/dependencies.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/governance-version-mismatch/extracted/evidence-validation-final.json",
+      "path": ".tmp/github-run-27882026684/documentation-completeness.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/governance-version-mismatch/extracted/evidence-validation.json",
+      "path": ".tmp/github-run-27882026684/environment.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/governance-version-mismatch/extracted/governance-validation.json",
+      "path": ".tmp/github-run-27882026684/evidence-validation-final.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/mandatory-control-disablement/governance-evidence-29174963655.zip",
+      "path": ".tmp/github-run-27882026684/evidence-validation.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/mandatory-control-disablement/verification.json",
+      "path": ".tmp/github-run-27882026684/examples.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/mandatory-control-disablement/extracted/ci-test-results.json",
+      "path": ".tmp/github-run-27882026684/forbidden-patterns.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/mandatory-control-disablement/extracted/completion-result.json",
+      "path": ".tmp/github-run-27882026684/json-schemas.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/mandatory-control-disablement/extracted/dependencies.json",
+      "path": ".tmp/github-run-27882026684/latest-verified-run.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/mandatory-control-disablement/extracted/environment.json",
+      "path": ".tmp/github-run-27882026684/local-completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/mandatory-control-disablement/extracted/evidence-validation-final.json",
+      "path": ".tmp/github-run-27882026684/local-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/mandatory-control-disablement/extracted/evidence-validation.json",
+      "path": ".tmp/github-run-27882026684/markdown-links.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/mandatory-control-disablement/extracted/governance-validation.json",
+      "path": ".tmp/github-run-27882026684/pester-details.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/missing-required-file/governance-evidence-29174962956.zip",
+      "path": ".tmp/github-run-27882026684/pester-summary.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/missing-required-file/verification.json",
+      "path": ".tmp/github-run-27882026684/powershell-parser.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/missing-required-file/extracted/ci-test-results.json",
+      "path": ".tmp/github-run-27882026684/psscriptanalyzer.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/missing-required-file/extracted/completion-result.json",
+      "path": ".tmp/github-run-27882026684/repository-health.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/missing-required-file/extracted/dependencies.json",
+      "path": ".tmp/github-run-27882026684/test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/missing-required-file/extracted/environment.json",
+      "path": ".tmp/github-run-27882026684/workflow-architecture.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/missing-required-file/extracted/evidence-validation-final.json",
+      "path": ".tmp/github-run-27882026684/yaml-syntax.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/missing-required-file/extracted/evidence-validation.json",
+      "path": ".tmp/github-run-27884064235/agent-standards.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/missing-required-file/extracted/governance-validation.json",
+      "path": ".tmp/github-run-27884064235/aggregate-governance.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/success/governance-evidence-29174960763.zip",
+      "path": ".tmp/github-run-27884064235/ci-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/success/verification.json",
+      "path": ".tmp/github-run-27884064235/completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/success/extracted/ci-test-results.json",
+      "path": ".tmp/github-run-27884064235/contract.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/success/extracted/completion-result.json",
+      "path": ".tmp/github-run-27884064235/dependencies.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/success/extracted/dependencies.json",
+      "path": ".tmp/github-run-27884064235/documentation-completeness.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/success/extracted/environment.json",
+      "path": ".tmp/github-run-27884064235/environment.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/success/extracted/evidence-validation-final.json",
+      "path": ".tmp/github-run-27884064235/evidence-validation-final.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/success/extracted/evidence-validation.json",
+      "path": ".tmp/github-run-27884064235/evidence-validation.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/correction-artifacts/success/extracted/governance-validation.json",
+      "path": ".tmp/github-run-27884064235/examples.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/AGENTS.md",
+      "path": ".tmp/github-run-27884064235/forbidden-patterns.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/CONTRIBUTING.md",
+      "path": ".tmp/github-run-27884064235/json-schemas.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/governance.config.json",
+      "path": ".tmp/github-run-27884064235/latest-verified-run.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/project-manifest.json",
+      "path": ".tmp/github-run-27884064235/local-completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/README.md",
+      "path": ".tmp/github-run-27884064235/local-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/SECURITY.md",
+      "path": ".tmp/github-run-27884064235/markdown-links.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/.github/workflows/governance.yml",
+      "path": ".tmp/github-run-27884064235/pester-details.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/canary-scenarios/mandatory-control-disablement/AGENTS.md",
+      "path": ".tmp/github-run-27884064235/pester-summary.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/canary-scenarios/mandatory-control-disablement/CONTRIBUTING.md",
+      "path": ".tmp/github-run-27884064235/powershell-parser.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/canary-scenarios/mandatory-control-disablement/governance.config.json",
+      "path": ".tmp/github-run-27884064235/psscriptanalyzer.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/canary-scenarios/mandatory-control-disablement/project-manifest.json",
+      "path": ".tmp/github-run-27884064235/repository-health.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/canary-scenarios/mandatory-control-disablement/README.md",
+      "path": ".tmp/github-run-27884064235/test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/canary-scenarios/mandatory-control-disablement/SECURITY.md",
+      "path": ".tmp/github-run-27884064235/workflow-architecture.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/canary-scenarios/missing-required-file/AGENTS.md",
+      "path": ".tmp/github-run-27884064235/yaml-syntax.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/canary-scenarios/missing-required-file/CONTRIBUTING.md",
+      "path": ".tmp/github-run-27884847805/agent-standards.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/canary-scenarios/missing-required-file/governance.config.json",
+      "path": ".tmp/github-run-27884847805/aggregate-governance.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/canary-scenarios/missing-required-file/project-manifest.json",
+      "path": ".tmp/github-run-27884847805/ci-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/canary-scenarios/missing-required-file/README.md",
+      "path": ".tmp/github-run-27884847805/completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/issue16/Engineering-Standards-Canary/docs/CANARY_OPERATIONS.md",
+      "path": ".tmp/github-run-27884847805/contract.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/failure-verification.json",
+      "path": ".tmp/github-run-27884847805/dependencies.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/success-verification.json",
+      "path": ".tmp/github-run-27884847805/documentation-completeness.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/failure/ci-test-results.json",
+      "path": ".tmp/github-run-27884847805/environment.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/failure/completion-result.json",
+      "path": ".tmp/github-run-27884847805/evidence-validation-final.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/failure/dependencies.json",
+      "path": ".tmp/github-run-27884847805/evidence-validation.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/failure/environment.json",
+      "path": ".tmp/github-run-27884847805/examples.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/failure/evidence-validation-final.json",
+      "path": ".tmp/github-run-27884847805/forbidden-patterns.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/failure/evidence-validation.json",
+      "path": ".tmp/github-run-27884847805/json-schemas.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/failure/governance-validation.json",
+      "path": ".tmp/github-run-27884847805/latest-verified-run.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/failure/pester-details.json",
+      "path": ".tmp/github-run-27884847805/local-completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/failure/pester-summary.json",
+      "path": ".tmp/github-run-27884847805/local-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/success/ci-test-results.json",
+      "path": ".tmp/github-run-27884847805/markdown-links.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/success/completion-result.json",
+      "path": ".tmp/github-run-27884847805/pester-details.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/success/dependencies.json",
+      "path": ".tmp/github-run-27884847805/pester-summary.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/success/environment.json",
+      "path": ".tmp/github-run-27884847805/powershell-parser.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/success/evidence-validation-final.json",
+      "path": ".tmp/github-run-27884847805/psscriptanalyzer.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/success/evidence-validation.json",
+      "path": ".tmp/github-run-27884847805/repository-health.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/success/governance-validation.json",
+      "path": ".tmp/github-run-27884847805/test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/success/pester-details.json",
+      "path": ".tmp/github-run-27884847805/workflow-architecture.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr29-artifacts/success/pester-summary.json",
+      "path": ".tmp/github-run-27884847805/yaml-syntax.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact/ci-test-results.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact-verification.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact/completion-result.json",
+      "path": ".tmp/github-runs/failure-27864201100/governance-evidence.zip",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact/dependencies.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/aggregate-governance.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact/environment.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/ci-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact/evidence-validation-final.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact/evidence-validation.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/contract.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact/governance-validation.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/dependencies.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact/pester-details.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/documentation-completeness.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact/pester-summary.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/environment.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact-final/ci-test-results.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/evidence-validation-final.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact-final/completion-result.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/evidence-validation.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact-final/dependencies.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/examples.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact-final/environment.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/forbidden-patterns.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact-final/evidence-validation-final.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/json-schemas.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact-final/evidence-validation.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/local-completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact-final/governance-validation.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/local-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact-final/pester-details.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/markdown-links.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/pr30-artifact-final/pester-summary.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/pester-details.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/review-correction-pester/pester-details.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/pester-summary.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/review-correction-pester/pester-summary.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/powershell-parser.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/review-correction-pester-final/pester-details.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/psscriptanalyzer.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/review-correction-pester-final/pester-summary.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/repository-health.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/review-correction-pester-stable/pester-details.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/review-correction-pester-stable/pester-summary.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/workflow-architecture.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159586094/ci-test-results.json",
+      "path": ".tmp/github-runs/failure-27864201100/artifact/yaml-syntax.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159586094/completion-result.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact-verification.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159586094/dependencies.json",
+      "path": ".tmp/github-runs/success-27864137259/governance-evidence.zip",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159586094/environment.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/aggregate-governance.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159586094/evidence-validation-final.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/ci-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159586094/evidence-validation.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159586094/governance-validation.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/contract.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159591482/ci-test-results.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/dependencies.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159591482/completion-result.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/documentation-completeness.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159591482/dependencies.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/environment.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159591482/environment.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/evidence-validation-final.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159591482/evidence-validation-final.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/evidence-validation.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159591482/evidence-validation.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/examples.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159591482/governance-validation.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/forbidden-patterns.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159844931/ci-test-results.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/json-schemas.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159844931/completion-result.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/local-completion-result.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159844931/dependencies.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/local-test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159844931/environment.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/markdown-links.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159844931/evidence-validation-final.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/pester-details.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159844931/evidence-validation.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/pester-summary.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29159844931/governance-validation.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/powershell-parser.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29160110197/ci-test-results.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/psscriptanalyzer.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29160110197/completion-result.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/repository-health.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29160110197/dependencies.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/test-results.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29160110197/environment.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/workflow-architecture.json",
       "reason": "excluded-path"
     },
     {
-      "path": ".tmp/run-29160110197/evidence-validation-final.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160110197/evidence-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160110197/governance-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160294437/ci-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160294437/completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160294437/dependencies.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160294437/environment.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160294437/evidence-validation-final.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160294437/evidence-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160294437/governance-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160534506/ci-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160534506/completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160534506/dependencies.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160534506/environment.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160534506/evidence-validation-final.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160534506/evidence-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160534506/governance-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160765418/ci-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160765418/completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160765418/dependencies.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160765418/environment.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160765418/evidence-validation-final.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160765418/evidence-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160765418/governance-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160765418/pester-details.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160765418/pester-summary.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160999688/ci-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160999688/completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160999688/dependencies.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160999688/environment.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160999688/evidence-validation-final.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160999688/evidence-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160999688/governance-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160999688/pester-details.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29160999688/pester-summary.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29161194988/ci-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29161194988/completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29161194988/dependencies.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29161194988/environment.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29161194988/evidence-validation-final.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29161194988/evidence-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29161194988/governance-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29161194988/pester-details.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/run-29161194988/pester-summary.json",
+      "path": ".tmp/github-runs/success-27864137259/artifact/yaml-syntax.json",
       "reason": "excluded-path"
     },
     {
@@ -1064,14 +892,6 @@
     {
       "path": "evidence/forbidden-patterns.json",
       "reason": "scanner-output"
-    },
-    {
-      "path": "evidence/github-settings-issue-18-pre.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "evidence/governance-validation.json",
-      "reason": "excluded-path"
     },
     {
       "path": "evidence/json-schemas.json",
@@ -1147,90 +967,6 @@
     },
     {
       "path": "evidence/history/2026-06-20-database-phase/psscriptanalyzer.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "evidence/releases/1.1.0-post-release-verification.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/bin/Release/net8.0/Example.Service.deps.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/bin/Release/net8.0/Example.Service.dll",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/bin/Release/net8.0/Example.Service.pdb",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/Example.Service.csproj.nuget.dgspec.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/Example.Service.csproj.nuget.g.props",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/Example.Service.csproj.nuget.g.targets",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/project.assets.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/project.nuget.cache",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/Release/net8.0/.NETCoreApp,Version=v8.0.AssemblyAttributes.cs",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.AssemblyInfo.cs",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.AssemblyInfoInputs.cache",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.assets.cache",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.csproj.CoreCompileInputs.cache",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.csproj.FileListAbsolute.txt",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.dll",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.GeneratedMSBuildEditorConfig.editorconfig",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.pdb",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/Release/net8.0/Example.Service.sourcelink.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/Release/net8.0/ref/Example.Service.dll",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/obj/Release/net8.0/refint/Example.Service.dll",
       "reason": "excluded-path"
     },
     {
@@ -1314,34 +1050,6 @@
       "reason": "excluded-path"
     },
     {
-      "path": "examples/dotnet-project/tests/bin/Release/net8.0/Example.dll",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/bin/Release/net8.0/Example.pdb",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/bin/Release/net8.0/Example.Service.Tests.deps.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/bin/Release/net8.0/Example.Service.Tests.dll",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/bin/Release/net8.0/Example.Service.Tests.exe",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/bin/Release/net8.0/Example.Service.Tests.pdb",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/bin/Release/net8.0/Example.Service.Tests.runtimeconfig.json",
-      "reason": "excluded-path"
-    },
-    {
       "path": "examples/dotnet-project/tests/obj/Example.Service.Tests.csproj.nuget.dgspec.json",
       "reason": "excluded-path"
     },
@@ -1359,70 +1067,6 @@
     },
     {
       "path": "examples/dotnet-project/tests/obj/project.nuget.cache",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/.NETCoreApp,Version=v8.0.AssemblyAttributes.cs",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/apphost.exe",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example..F4C71C71.Up2Date",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.AssemblyInfo.cs",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.AssemblyInfoInputs.cache",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.assets.cache",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.csproj.AssemblyReference.cache",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.csproj.CoreCompileInputs.cache",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.csproj.FileListAbsolute.txt",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.dll",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.GeneratedMSBuildEditorConfig.editorconfig",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.genruntimeconfig.cache",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.pdb",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/Example.Service.Tests.sourcelink.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/ref/Example.Service.Tests.dll",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Release/net8.0/refint/Example.Service.Tests.dll",
       "reason": "excluded-path"
     },
     {
@@ -1462,7 +1106,7 @@
       "patternId": "dangerous-powershell-expression",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 80,
+      "line": 68,
       "description": "Dynamic PowerShell execution.",
       "redactedMatch": "Invo...[redacted]...sion",
       "allowlisted": false
@@ -1471,7 +1115,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 69,
+      "line": 57,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -1480,7 +1124,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 69,
+      "line": 57,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -1489,7 +1133,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 161,
+      "line": 149,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -1498,7 +1142,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/RELEASE_PROCESS.md",
-      "line": 92,
+      "line": 87,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -1516,7 +1160,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
-      "line": 259,
+      "line": 255,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -1525,93 +1169,12 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
-      "line": 260,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
-      "line": 358,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
-      "line": 359,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
-      "line": 523,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "tests/scripts/GitHubWorkflowArchitecture.Tests.ps1",
-      "line": 89,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "tests/scripts/GitHubWorkflowArchitecture.Tests.ps1",
-      "line": 92,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "tests/scripts/GitHubWorkflowArchitecture.Tests.ps1",
-      "line": 96,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "tests/scripts/GitHubWorkflowArchitecture.Tests.ps1",
-      "line": 99,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "tests/scripts/GitHubWorkflowArchitecture.Tests.ps1",
-      "line": 102,
-      "description": "pull_request_target requires review.",
-      "redactedMatch": "pull...[redacted]...rget",
-      "allowlisted": false
-    },
-    {
-      "patternId": "pull-request-target",
-      "severity": "warning",
-      "path": "tests/scripts/GitHubWorkflowArchitecture.Tests.ps1",
-      "line": 106,
+      "line": 256,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
     }
   ],
   "failed": 0,
-  "warnings": 20
+  "warnings": 11
 }
