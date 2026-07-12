@@ -130,6 +130,13 @@ For complete repository validation, run:
 pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Category JsonSchemas,Contract,RepositoryHealth,Evidence
 ```
 
+The aggregate validator uses `RepositoryOwnerType` value `Unknown` by default
+and does not infer ownership from the repository name. A trusted caller that
+has verified the live repository owner type may pass exactly `User` or
+`Organization`, for example `-RepositoryOwnerType User`. The value is forwarded
+to repository-health ownership checks; other values and case variants fail
+parameter validation.
+
 ## Evidence
 
 Configuration changes require evidence that schema validation passed, contract validation passed, and affected examples still validate. If the change affects required documentation or agent standards, include documentation completeness evidence.

@@ -497,6 +497,28 @@ if ($isStandardsRepository) {
                 if ($candidatePolicyArguments -notcontains '-RequireCandidateValidation') {
                     $results.Add((New-ValidationResult -Status Failed -Message 'Candidate workflow architecture validation must fail closed with RequireCandidateValidation.' -Path $candidateWorkflowPath))
                 }
+                $repositoryHealthCommands = @(
+                    $candidateCommands |
+                        Where-Object {
+                            $_.GetCommandName() -eq 'Invoke-CandidateScript' -and
+                            $_.CommandElements.Count -gt 1 -and
+                            [string]$_.CommandElements[1].Value -eq 'actions/repository-health/Invoke-RepositoryHealth.ps1'
+                        }
+                )
+                $repositoryHealthArguments = @(
+                    $repositoryHealthCommands |
+                        ForEach-Object {
+                            $_.FindAll({
+                                param($node)
+                                $node -is [System.Management.Automation.Language.StringConstantExpressionAst]
+                            }, $true)
+                        } |
+                        ForEach-Object { [string]$_.Value }
+                )
+                $ownerTypeArgumentIndex = [array]::IndexOf($repositoryHealthArguments, '-RepositoryOwnerType')
+                if ($ownerTypeArgumentIndex -lt 0 -or $ownerTypeArgumentIndex + 1 -ge $repositoryHealthArguments.Count -or $repositoryHealthArguments[$ownerTypeArgumentIndex + 1] -cne 'User') {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Candidate repository-health validation must explicitly use RepositoryOwnerType User.' -Path $candidateWorkflowPath))
+                }
                 $stopCommandCalls = @(
                     $candidateCommands |
                         Where-Object { $_.GetCommandName() -eq 'Write-Output' -and $_.Extent.Text -match '::stop-commands::' }

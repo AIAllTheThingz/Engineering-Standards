@@ -173,6 +173,37 @@ Describe 'GovernanceValidation module' {
     }
 
     Context 'aggregate governance evidence' {
+        It 'forwards the trusted repository owner type to repository-health behavior' {
+            $repoRoot = Resolve-Path "$PSScriptRoot/../.."
+            $callerRoot = Join-Path $script:tempRoot 'aggregate-owner-type-caller'
+            New-Item -ItemType Directory -Path $callerRoot -Force | Out-Null
+            Copy-Item -LiteralPath "$repoRoot/project-manifest.json" -Destination $callerRoot
+            $config = Get-Content -LiteralPath "$repoRoot/governance.config.json" -Raw | ConvertFrom-Json -AsHashtable
+            $config.ownership.requiredCodeownerPaths = @('/AGENTS.md')
+            $config.validationCategories = @('RepositoryHealth')
+            $config | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $callerRoot 'governance.config.json') -Encoding utf8
+            Set-Content -LiteralPath (Join-Path $callerRoot 'AGENTS.md') -Value '# Synthetic instructions' -Encoding utf8
+            Set-Content -LiteralPath (Join-Path $callerRoot 'CODEOWNERS') -Value "* @root-owner`n/AGENTS.md @ExampleOrg/maintainers" -Encoding utf8
+
+            $userEvidence = Join-Path $script:tempRoot 'aggregate-owner-type-user-evidence'
+            $userOutput = @(& pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $callerRoot -Category RepositoryHealth -RepositoryOwnerType User -EvidenceRoot $userEvidence 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $userOutput -join "`n" | Should -Match "incompatible with a User-owned repository"
+
+            $organizationEvidence = Join-Path $script:tempRoot 'aggregate-owner-type-organization-evidence'
+            $organizationOutput = @(& pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $callerRoot -Category RepositoryHealth -RepositoryOwnerType Organization -EvidenceRoot $organizationEvidence 2>&1)
+            $organizationOutput -join "`n" | Should -Not -Match "incompatible with a User-owned repository"
+        }
+
+        It 'rejects invalid and case-variant repository owner types at the aggregate entry point' {
+            $repoRoot = Resolve-Path "$PSScriptRoot/../.."
+            foreach ($ownerType in @('user', 'Enterprise', '')) {
+                $output = @(& pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $repoRoot -Category JsonSchemas -RepositoryOwnerType $ownerType 2>&1)
+                $LASTEXITCODE | Should -Not -Be 0
+                $output -join "`n" | Should -Match 'RepositoryOwnerType must be exactly Unknown, User, or Organization'
+            }
+        }
+
         It 'writes repository-relative validator script paths' {
             $repoRoot = Resolve-Path "$PSScriptRoot/../.."
             $outputPath = Join-Path $script:tempRoot 'aggregate-governance.json'

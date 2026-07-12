@@ -106,9 +106,13 @@ Common drift examples include a schema field that documentation does not describ
 Run the maintainer validation set before merging substantive changes:
 
 ```powershell
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
 pwsh -NoProfile -Command "Invoke-Pester -Path tests -Output Detailed"
 ```
+
+`User` is explicit because this repository is verified as user-owned. Generic
+downstream invocation retains the safe `Unknown` default; validation must not
+derive owner type from a repository-name string.
 
 If Pester is unavailable, record `NotRun` with the reason, tool version context, and compensating review.
 

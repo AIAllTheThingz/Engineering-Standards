@@ -200,6 +200,26 @@ Describe 'GitHub workflow architecture validation' {
         $output -join "`n" | Should -Match "missing required candidate script invocation 'scripts/Test-Examples.ps1'"
     }
 
+    It 'rejects candidate repository-health validation without the explicit central User owner type' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-owner-type-unknown'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("'-RepositoryOwnerType','User',", '')
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must explicitly use RepositoryOwnerType User'
+    }
+
+    It 'rejects a case-variant candidate repository owner type' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-owner-type-case-variant'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("'-RepositoryOwnerType','User'", "'-RepositoryOwnerType','user'")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must explicitly use RepositoryOwnerType User'
+    }
+
     It 'rejects a required candidate check mentioned only in a comment' {
         $root = New-CurrentWorkflowFixture -Name 'candidate-comment-only-check'
         $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
