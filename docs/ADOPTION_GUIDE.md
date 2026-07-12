@@ -103,6 +103,8 @@ Migration: remove the former `run-examples`, `run-pester`, and `run-documentatio
 
 The supported reusable workflow path is `.github/workflows/governance-ci-reusable.yml`. Files under the root `workflows/` directory are distribution templates and are not directly executable reusable workflows from their current location.
 
+The public `AIAllTheThingz/Engineering-Standards-Canary` repository demonstrates the supported minimal cross-repository integration and verifies release candidates across success and four isolated failure paths. See [Downstream Governance Canary](DOWNSTREAM_CANARY.md). Consumers may compare their workflow boundary and configuration with that canary, but must still run their own builds, tests, security checks, and deployment validation.
+
 ## Advisory Mode
 
 Advisory mode is used to discover gaps before enforcement. Findings in advisory mode MUST be triaged into remediation, approved exception, or documented non-applicability. Advisory mode is time-bound; High and Critical repositories SHOULD define an enforcement date before merging the adoption branch.

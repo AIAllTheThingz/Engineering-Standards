@@ -187,30 +187,44 @@ function Invoke-TrustedValidation {
 }
 
 $callerRoot = (Resolve-Path -LiteralPath $Path).Path
-$projectRoot = Resolve-CallerProjectRoot -CallerRoot $callerRoot -RelativePath $ProjectPath
-
+$evidenceFull = $null
+$bootstrapEvidenceReady = $false
 if (-not $EvidenceRoot -and $OutputJson) {
     $EvidenceRoot = Split-Path -Parent ([System.IO.Path]::GetFullPath($OutputJson))
 }
-if (-not $EvidenceRoot) {
-    $EvidenceRoot = Join-Path $projectRoot 'evidence'
-}
-$evidenceFull = [System.IO.Path]::GetFullPath($EvidenceRoot)
-if ($env:GITHUB_ACTIONS -eq 'true' -and (Test-RootsOverlap -First $callerRoot -Second $standardsRoot)) {
-    throw 'Caller and standards workspaces must be separate and must not overlap.'
-}
-if ($EvidenceRoot -and ((Test-RootsOverlap -First $evidenceFull -Second $callerRoot) -or (Test-RootsOverlap -First $evidenceFull -Second $standardsRoot))) {
-    if ($env:GITHUB_ACTIONS -eq 'true') {
+if ($EvidenceRoot) {
+    $evidenceFull = [System.IO.Path]::GetFullPath($EvidenceRoot)
+    if ($env:GITHUB_ACTIONS -eq 'true' -and ((Test-RootsOverlap -First $evidenceFull -Second $callerRoot) -or (Test-RootsOverlap -First $evidenceFull -Second $standardsRoot))) {
         throw 'Evidence workspace must be separate from both caller and standards workspaces.'
     }
-}
-if (Test-Path -LiteralPath $evidenceFull) {
-    $evidenceItem = Get-Item -LiteralPath $evidenceFull -Force
-    if ($evidenceItem.LinkType -or ($evidenceItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
-        throw 'Evidence workspace must not be a symbolic link or junction.'
+    if (Test-Path -LiteralPath $evidenceFull) {
+        $evidenceItem = Get-Item -LiteralPath $evidenceFull -Force
+        if ($evidenceItem.LinkType -or ($evidenceItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            throw 'Evidence workspace must not be a symbolic link or junction.'
+        }
     }
+    New-Item -ItemType Directory -Path $evidenceFull -Force | Out-Null
+    $bootstrapEvidenceReady = $true
 }
-New-Item -ItemType Directory -Path $evidenceFull -Force | Out-Null
+
+try {
+    $projectRoot = Resolve-CallerProjectRoot -CallerRoot $callerRoot -RelativePath $ProjectPath
+    if (-not $evidenceFull) {
+        $EvidenceRoot = Join-Path $projectRoot 'evidence'
+        $evidenceFull = [System.IO.Path]::GetFullPath($EvidenceRoot)
+        if (Test-Path -LiteralPath $evidenceFull) {
+            $evidenceItem = Get-Item -LiteralPath $evidenceFull -Force
+            if ($evidenceItem.LinkType -or ($evidenceItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+                throw 'Evidence workspace must not be a symbolic link or junction.'
+            }
+        }
+        New-Item -ItemType Directory -Path $evidenceFull -Force | Out-Null
+        $bootstrapEvidenceReady = $true
+    }
+
+    if ($env:GITHUB_ACTIONS -eq 'true' -and (Test-RootsOverlap -First $callerRoot -Second $standardsRoot)) {
+        throw 'Caller and standards workspaces must be separate and must not overlap.'
+    }
 
 if ($CallerCommitSha -and $CallerCommitSha -notmatch '^[a-fA-F0-9]{40}$') {
     throw 'Caller commit SHA must be a full 40-character hexadecimal commit SHA.'
@@ -360,5 +374,25 @@ if ($OutputJson) {
     $report | ConvertTo-OrderedJson | Set-Content -LiteralPath $legacyReportPath -Encoding utf8
 }
 $script:results | ForEach-Object { "[$($_.status)] $($_.name): $($_.summary)" }
-if ($report.failed -gt 0) { exit 1 }
+    if ($report.failed -gt 0) { exit 1 }
+}
+catch {
+    $safeFailure = ConvertTo-SanitizedWorkflowFailureMessage -InputObject $_.Exception.Message -WorkspaceRoot $workflowWorkspaceRoot -TemporaryRoot $temporaryRoot
+    if ($bootstrapEvidenceReady) {
+        Write-GovernanceBootstrapFailureReport `
+            -EvidenceRoot $evidenceFull `
+            -FailureMessage $safeFailure `
+            -CallerRepository $CallerRepository `
+            -CallerCommitSha $CallerCommitSha `
+            -ProjectPath $ProjectPath `
+            -StandardsRepository $StandardsRepository `
+            -StandardsWorkflowSha $StandardsWorkflowSha `
+            -GovernanceVersion $ExpectedGovernanceVersion `
+            -WorkspaceRoot $workflowWorkspaceRoot `
+            -TemporaryRoot $temporaryRoot | Out-Null
+    }
+    if ([string]::IsNullOrWhiteSpace($safeFailure)) { $safeFailure = 'Trusted governance validation failed before the aggregate report could be finalized.' }
+    Write-Error $safeFailure
+    exit 1
+}
 exit 0

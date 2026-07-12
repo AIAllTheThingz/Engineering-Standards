@@ -35,6 +35,28 @@ Describe 'Workflow evidence artifact verification' {
         $LASTEXITCODE | Should -Be 0
     }
 
+    It 'accepts a failed artifact that preserves a specific sanitized reason' {
+        $root = New-ArtifactFixture -Name 'specific-failure' -Status 'Failed'
+        $completionPath = Join-Path $root 'completion-result.json'
+        $completion = Get-Content -LiteralPath $completionPath -Raw | ConvertFrom-Json -AsHashtable
+        $completion.tests[0].failureReason = "Governance version mismatch: workflow expects '1.1.0' but manifest declares '1.0.0'."
+        $completion | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $completionPath
+        & pwsh -NoProfile -File $script:verifier -ArtifactPath $root -ExpectedRepository 'AIAllTheThingz/Engineering-Standards' -ExpectedCommitSha $script:sha -ExpectedBranch master -ExpectedRunId 123 -ExpectedConclusion failure
+        $LASTEXITCODE | Should -Be 0
+    }
+
+    It 'rejects expanded credential forms in artifact content' {
+        $root = New-ArtifactFixture -Name 'credential-output'
+        $completionPath = Join-Path $root 'completion-result.json'
+        $completion = Get-Content -LiteralPath $completionPath -Raw | ConvertFrom-Json -AsHashtable
+        $authorization = 'Author' + 'ization: Bearer unsafe-bearer-value'
+        $pat = 'github_' + 'pat_' + 'abcdefghijklmnopqrstuvwxyz123456'
+        $completion.summary = "$authorization https://user:password@example.invalid/path $pat"
+        $completion | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $completionPath
+        & pwsh -NoProfile -File $script:verifier -ArtifactPath $root -ExpectedRepository 'AIAllTheThingz/Engineering-Standards' -ExpectedCommitSha $script:sha -ExpectedBranch master -ExpectedRunId 123 -ExpectedConclusion success
+        $LASTEXITCODE | Should -Not -Be 0
+    }
+
     It 'rejects wrong commit, wrong run id, modified file, absolute path, and unexpected executable' {
         $root = New-ArtifactFixture -Name 'bad'
         Set-Content -LiteralPath (Join-Path $root 'report.json') -Value '{"ok":false}' -NoNewline

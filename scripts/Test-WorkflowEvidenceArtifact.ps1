@@ -141,7 +141,13 @@ else {
 $absoluteMatches = @(Select-String -LiteralPath $files.FullName -Pattern '([A-Za-z]:\\|^\\\\[^\\]|/home/runner|/tmp/)' -ErrorAction SilentlyContinue)
 foreach ($match in $absoluteMatches) { Add-Result Failed 'Absolute path leaked into artifact.' ([System.IO.Path]::GetRelativePath($root, $match.Path).Replace('\','/')) }
 
-$secretMatches = @(Select-String -LiteralPath $files.FullName -Pattern '(?i)(password|passwd|pwd|secret|api[_-]?key|token)\s*[:=]\s*\S{8,}' -ErrorAction SilentlyContinue)
+$secretPatterns = @(
+    '(?i)(password|passwd|pwd|secret|client[_-]?secret|api[_-]?key|access[_-]?token|refresh[_-]?token|token)\s*[:=]\s*\S{8,}',
+    '(?i)Authorization\s*[:=]\s*(Bearer|Basic)\s+\S+',
+    '(?i)\b(gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,})\b',
+    '(?i)https?://[^/\s:@]+:[^@\s/]+@'
+)
+$secretMatches = @($secretPatterns | ForEach-Object { Select-String -LiteralPath $files.FullName -Pattern $_ -ErrorAction SilentlyContinue })
 foreach ($match in $secretMatches) { Add-Result Failed 'Credential-like output found in artifact.' ([System.IO.Path]::GetRelativePath($root, $match.Path).Replace('\','/')) }
 
 $executables = @($relativeFiles | Where-Object { $_ -match '\.(exe|dll|so|dylib|bat|cmd|sh)$' })

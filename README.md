@@ -82,6 +82,7 @@ flowchart TD
 - [AI Generated Code Policy](governance/AI_GENERATED_CODE_POLICY.md)
 - [Adoption Guide](docs/ADOPTION_GUIDE.md)
 - [Downstream Configuration](docs/DOWNSTREAM_CONFIGURATION.md)
+- [Downstream Governance Canary](docs/DOWNSTREAM_CANARY.md)
 - [Action Security](docs/ACTION_SECURITY.md)
 - [Maintainer Guide](docs/MAINTAINER_GUIDE.md)
 - [Versioning](docs/VERSIONING.md)
@@ -120,6 +121,8 @@ jobs:
 ```
 
 The local event workflow is `.github/workflows/governance-ci.yml`. It triggers on pull requests, pushes to `master`, and manual `workflow_dispatch`, then calls both the trusted baseline and the unprivileged candidate-validation harness at the same reviewed full commit SHA. Pinning both self-CI jobs prevents pull-request changes from redefining either security envelope; the baseline treats candidate content as data, while the isolated candidate job deliberately executes proposed validators and tests without secrets or write permissions. Downstream repositories must call the reusable workflow path under `.github/workflows`, not files under the root `workflows/` template directory. The baseline reusable job separates caller content, immutable central tooling, and evidence into `caller/`, `standards/`, and `evidence/`; it never requires downstream copies of central `scripts/`, `actions/`, `tests/`, or `examples/`.
+
+Reusable-workflow releases also require the external proof described in [Downstream Governance Canary](docs/DOWNSTREAM_CANARY.md). Self-CI and the public canary test different trust boundaries; maintainers must run and independently verify all five canary scenarios against the exact candidate SHA before release approval or an authoritative pin rotation.
 
 ## Example Local AGENTS.md
 

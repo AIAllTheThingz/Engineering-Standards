@@ -155,7 +155,7 @@ if ($AggregateReportPath) {
         Contract='workflow'; JsonSchemas='schema'; YamlSyntax='schema'; WorkflowArchitecture='workflow'
         MarkdownLinks='documentation'; DocumentationCompleteness='documentation'; ForbiddenPatterns='security'
         RepositoryHealth='workflow'; PowerShellParser='lint'; Pester='unit'; PSScriptAnalyzer='lint'
-        Examples='integration'; ControlledFailure='workflow'
+        Examples='integration'; ControlledFailure='workflow'; BootstrapValidation='workflow'
     }
     foreach ($result in @($aggregate.results)) {
         $category = if ($categoryMap.ContainsKey([string]$result.name)) { $categoryMap[[string]$result.name] } else { 'other' }
