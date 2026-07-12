@@ -22,7 +22,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 ### Migration Notes
 
 - `v1.1.0` remains the latest published release and does not contain these changes. Consumers needing that control set may use tag `v1.1.0` at `2704049d7e826975d956611b194214dd79ea3686`.
-- Consumers needing the canary-proven workflow repair should pin `.github/workflows/governance-ci-reusable.yml` to `091841c94fba6039443a40b7c4a28e5b9a3af2d2`.
+- Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `de32b77e2043f5336a54b92ab9ed867abe93ba7e`.
 - See [Release Status](docs/RELEASE_STATUS.md) for the authoritative published-versus-unreleased boundary.
 
 ## [1.1.0] - 2026-06-30

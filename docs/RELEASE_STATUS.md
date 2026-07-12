@@ -5,7 +5,7 @@
 | Status | Active |
 | Version | 1.1.0 |
 | Owner role | Release Maintainers |
-| Last verified | 2026-07-11 |
+| Last verified | 2026-07-12 |
 
 ## Published Release
 
@@ -26,7 +26,7 @@ PRs #26 through #28 performed post-publication verification and release-record m
 ## Immutable Consumer References
 
 - Published `v1.1.0` control set: `2704049d7e826975d956611b194214dd79ea3686` (tag `v1.1.0`).
-- Canary-proven repaired reusable workflow: `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@091841c94fba6039443a40b7c4a28e5b9a3af2d2`.
+- Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e`.
 
 The second reference is an immutable post-release commit, not a published release. Production consumers must not substitute a moving branch.
 

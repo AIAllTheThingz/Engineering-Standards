@@ -8,6 +8,8 @@ Describe 'Release consistency validation' {
     }
 
     BeforeEach {
+        $script:canarySha = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        $script:historicalSha = '091841c94fba6039443a40b7c4a28e5b9a3af2d2'
         $script:fixture = Join-Path ([System.IO.Path]::GetTempPath()) ('release-consistency-' + [guid]::NewGuid())
         New-Item -ItemType Directory -Path (Join-Path $script:fixture 'docs/releases') -Force | Out-Null
         Set-Content -LiteralPath (Join-Path $script:fixture 'VERSION') -Value '1.1.0'
@@ -20,12 +22,16 @@ Describe 'Release consistency validation' {
 
 - A post-release correction.
 
+- Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`.
+
 ## [1.1.0] - 2026-07-11
 '@
         Set-Content -LiteralPath (Join-Path $script:fixture 'README.md') -Value @'
 # Repository
 
 Current published version: `1.1.0`. Annotated tag `v1.1.0` resolves to immutable commit `1111111111111111111111111111111111111111`. See [Release Status](docs/RELEASE_STATUS.md) and [Unreleased](CHANGELOG.md#unreleased).
+
+Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`.
 '@
         Set-Content -LiteralPath (Join-Path $script:fixture 'docs/RELEASE_STATUS.md') -Value @'
 # Release Status
@@ -33,6 +39,15 @@ Current published version: `1.1.0`. Annotated tag `v1.1.0` resolves to immutable
 The latest published version is `1.1.0`. Annotated tag `v1.1.0` has tag-object SHA `1111111111111111111111111111111111111111` and resolves to immutable commit `1111111111111111111111111111111111111111`.
 
 Current `master` contains development after the published target. Historical evidence does not validate current `master`.
+
+Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`.
+'@
+        Set-Content -LiteralPath (Join-Path $script:fixture 'docs/DOWNSTREAM_CANARY.md') -Value @'
+# Downstream Canary
+
+| Field | Value |
+| --- | --- |
+| Validated standards SHA | `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` |
 '@
         Set-Content -LiteralPath (Join-Path $script:fixture 'docs/releases/1.1.0.md') -Value '# Release 1.1.0'
     }
@@ -57,7 +72,7 @@ Current `master` contains development after the published target. Historical evi
             $text = (Get-Content docs/RELEASE_STATUS.md -Raw).Replace('tag-object SHA `1111111111111111111111111111111111111111`', "tag-object SHA ``$tagObject``").Replace('resolves to immutable commit `1111111111111111111111111111111111111111`', "resolves to immutable commit ``$target``").Replace('Current `master` contains development after the published target. ', '')
             Set-Content docs/RELEASE_STATUS.md $text
             (Get-Content README.md -Raw).Replace('1111111111111111111111111111111111111111', $target) | Set-Content README.md
-            Set-Content CHANGELOG.md "# Changelog`n`n## [Unreleased]`n`nNo unreleased changes are currently recorded.`n`n## [1.1.0] - 2026-07-11"
+            Set-Content CHANGELOG.md "# Changelog`n`n## [Unreleased]`n`nNo unreleased changes are currently recorded.`n`n## [1.1.0] - 2026-07-11`n`nConsumers requiring the final canary-validated repaired reusable workflow should pin .github/workflows/governance-ci-reusable.yml to immutable post-release commit aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
         } finally { Pop-Location }
         & $script:invokeFixtureValidation | Should -Be 0
     }
@@ -83,6 +98,8 @@ Current `master` contains development after the published target. Historical evi
 # Repository
 
 The prepared version is `1.1.0` and is unpublished. See [Release Status](docs/RELEASE_STATUS.md) and [Unreleased](CHANGELOG.md#unreleased).
+
+Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`.
 '@
         Set-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md') @'
 # Release Status
@@ -94,14 +111,16 @@ Tag state: Not created.
 GitHub Release state: Not published.
 
 Current `master` contains development after the published target. Historical evidence does not validate current `master`.
+
+Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`.
 '@
         $output = @(& pwsh -NoProfile -File $script:validator -Path $script:fixture 2>&1)
         $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
     }
 
     It 'rejects a prepared and unpublished state after its tag exists' {
-        Set-Content (Join-Path $script:fixture 'README.md') "# Repository`n`nThe prepared version is ``1.1.0`` and is unpublished. See [Release Status](docs/RELEASE_STATUS.md) and [Unreleased](CHANGELOG.md#unreleased)."
-        Set-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md') "# Release Status`n`nThe prepared version is ``1.1.0`` and is unpublished.`n`nTag state: Not created."
+        Set-Content (Join-Path $script:fixture 'README.md') "# Repository`n`nThe prepared version is ``1.1.0`` and is unpublished. See [Release Status](docs/RELEASE_STATUS.md) and [Unreleased](CHANGELOG.md#unreleased).`n`nConsumers requiring the final canary-validated repaired reusable workflow should pin .github/workflows/governance-ci-reusable.yml to immutable post-release commit aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
+        Set-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md') "# Release Status`n`nThe prepared version is ``1.1.0`` and is unpublished.`n`nTag state: Not created.`n`nFinal canary-validated repaired reusable workflow: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
         Push-Location $script:fixture
         try { git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'; git add .; git commit -qm baseline; git tag -a v1.1.0 -m release } finally { Pop-Location }
         & $script:invokeFixtureValidation | Should -Not -Be 0
@@ -124,7 +143,7 @@ Current `master` contains development after the published target. Historical evi
             Set-Content docs/RELEASE_STATUS.md $text
             (Get-Content README.md -Raw).Replace('1111111111111111111111111111111111111111', $target) | Set-Content README.md
             Add-Content README.md 'post tag'; git add .; git commit -qm later
-            Set-Content CHANGELOG.md "# Changelog`n`n## [Unreleased]`n`nNo unreleased changes are currently recorded.`n`n## [1.1.0] - 2026-07-11"
+            Set-Content CHANGELOG.md "# Changelog`n`n## [Unreleased]`n`nNo unreleased changes are currently recorded.`n`nConsumers requiring the final canary-validated repaired reusable workflow should pin .github/workflows/governance-ci-reusable.yml to immutable post-release commit aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.`n`n## [1.1.0] - 2026-07-11"
         } finally { Pop-Location }
         & $script:invokeFixtureValidation | Should -Not -Be 0
         $script:output -join "`n" | Should -Match 'Post-tag commits exist'
@@ -271,5 +290,64 @@ Current `master` contains development after the published target. Historical evi
     It 'fails README and release-status disagreement' {
         (Get-Content (Join-Path $script:fixture 'README.md') -Raw).Replace('1.1.0', '1.0.0') | Set-Content (Join-Path $script:fixture 'README.md')
         & $script:invokeFixtureValidation | Should -Not -Be 0
+    }
+
+    It 'fails when README recommends a different canary SHA' {
+        (Get-Content (Join-Path $script:fixture 'README.md') -Raw).Replace($script:canarySha, 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb') | Set-Content (Join-Path $script:fixture 'README.md')
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match "README.md recommends workflow SHA 'bbbb"
+    }
+
+    It 'fails when CHANGELOG recommends a different canary SHA' {
+        (Get-Content (Join-Path $script:fixture 'CHANGELOG.md') -Raw).Replace($script:canarySha, 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb') | Set-Content (Join-Path $script:fixture 'CHANGELOG.md')
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match "CHANGELOG.md recommends workflow SHA 'bbbb"
+    }
+
+    It 'fails when release status recommends a different canary SHA' {
+        (Get-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md') -Raw).Replace($script:canarySha, 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb') | Set-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md')
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match "docs/RELEASE_STATUS.md recommends workflow SHA 'bbbb"
+    }
+
+    It 'fails when the canary SHA record is missing' {
+        (Get-Content (Join-Path $script:fixture 'docs/DOWNSTREAM_CANARY.md') -Raw).Replace('Validated standards SHA', 'Candidate standards SHA') | Set-Content (Join-Path $script:fixture 'docs/DOWNSTREAM_CANARY.md')
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match "missing the 'Validated standards SHA' record"
+    }
+
+    It 'fails when the canary SHA is shortened' {
+        (Get-Content (Join-Path $script:fixture 'docs/DOWNSTREAM_CANARY.md') -Raw).Replace($script:canarySha, 'aaaaaaa') | Set-Content (Join-Path $script:fixture 'docs/DOWNSTREAM_CANARY.md')
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match 'invalid Validated standards SHA'
+    }
+
+    It 'fails when the canary SHA is not hexadecimal' {
+        (Get-Content (Join-Path $script:fixture 'docs/DOWNSTREAM_CANARY.md') -Raw).Replace($script:canarySha, 'gggggggggggggggggggggggggggggggggggggggg') | Set-Content (Join-Path $script:fixture 'docs/DOWNSTREAM_CANARY.md')
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match 'invalid Validated standards SHA'
+    }
+
+    It 'fails when a recommendation uses a moving branch' {
+        (Get-Content (Join-Path $script:fixture 'README.md') -Raw).Replace("commit ``$($script:canarySha)``", 'commit `@master`') | Set-Content (Join-Path $script:fixture 'README.md')
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match 'exactly one immutable canary-validated workflow recommendation'
+    }
+
+    It 'fails when a recommendation uses a release tag' {
+        (Get-Content (Join-Path $script:fixture 'README.md') -Raw).Replace("commit ``$($script:canarySha)``", 'commit `@v1.1.0`') | Set-Content (Join-Path $script:fixture 'README.md')
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match 'exactly one immutable canary-validated workflow recommendation'
+    }
+
+    It 'allows the prior self-CI pin when clearly recorded as historical' {
+        Add-Content (Join-Path $script:fixture 'CHANGELOG.md') "Historical PR #30 trusted self-CI pin rotation used ``$($script:historicalSha)``."
+        & $script:invokeFixtureValidation | Should -Be 0
+    }
+
+    It 'fails conflicting canary workflow recommendations in one document' {
+        Add-Content (Join-Path $script:fixture 'README.md') 'A canary-proven repaired reusable workflow should pin bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.'
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match 'exactly one immutable canary-validated workflow recommendation'
     }
 }

@@ -208,7 +208,7 @@ The repository uses semantic versioning. Breaking governance changes require maj
 
 Current published version: `1.1.0`. Annotated tag `v1.1.0` resolves to immutable commit `2704049d7e826975d956611b194214dd79ea3686`. Current `master` contains [unreleased changes](CHANGELOG.md#unreleased) beyond that release.
 
-Consumers requiring the newer, canary-proven cross-repository workflow repair should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `091841c94fba6039443a40b7c4a28e5b9a3af2d2`; the repair is not part of `v1.1.0`. See [Release Status](docs/RELEASE_STATUS.md).
+Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `de32b77e2043f5336a54b92ab9ed867abe93ba7e`; the repair is not part of `v1.1.0`. See [Release Status](docs/RELEASE_STATUS.md).
 
 ## Security Reporting And Contributions
 

@@ -27,6 +27,7 @@ $version = (Get-RequiredText 'VERSION').Trim()
 $changelog = Get-RequiredText 'CHANGELOG.md'
 $readme = Get-RequiredText 'README.md'
 $status = Get-RequiredText 'docs/RELEASE_STATUS.md'
+$canary = Get-RequiredText 'docs/DOWNSTREAM_CANARY.md'
 
 if ($version -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$') {
     $failures.Add("VERSION '$version' is not canonical semantic version syntax.")
@@ -81,6 +82,42 @@ if ($version) {
 
 if ($readme -notmatch 'docs/RELEASE_STATUS\.md' -or $readme -notmatch 'CHANGELOG\.md#unreleased') {
     $failures.Add('README.md must link to release status and [Unreleased].')
+}
+
+$canaryShaRow = [regex]::Match($canary, '(?m)^\|\s*Validated standards SHA\s*\|\s*`([^`]+)`\s*\|\s*$')
+$canarySha = if ($canaryShaRow.Success) { $canaryShaRow.Groups[1].Value } else { '' }
+if (-not $canaryShaRow.Success) {
+    $failures.Add("docs/DOWNSTREAM_CANARY.md is missing the 'Validated standards SHA' record.")
+}
+elseif ($canarySha -notmatch '^[0-9a-f]{40}$') {
+    $failures.Add("docs/DOWNSTREAM_CANARY.md has invalid Validated standards SHA '$canarySha'; expected a full lowercase hexadecimal SHA.")
+}
+
+foreach ($recommendationDocument in @(
+    @{ Path = 'README.md'; Text = $readme },
+    @{ Path = 'CHANGELOG.md'; Text = $changelog },
+    @{ Path = 'docs/RELEASE_STATUS.md'; Text = $status }
+)) {
+    $recommendationLines = @($recommendationDocument.Text -split '\r?\n' | Where-Object {
+        $_ -match '(?i)canary-(?:proven|validated).*repaired.*workflow'
+    })
+    $recommendedShas = @($recommendationLines | ForEach-Object {
+        [regex]::Matches($_, '(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])') | ForEach-Object Value
+    })
+
+    if ($recommendationLines.Count -ne 1 -or $recommendedShas.Count -ne 1) {
+        $found = if ($recommendationLines.Count -gt 0) { $recommendationLines -join ' | ' } else { '<none>' }
+        $failures.Add("$($recommendationDocument.Path) must contain exactly one immutable canary-validated workflow recommendation; found '$found'.")
+        continue
+    }
+
+    $recommendedSha = $recommendedShas[0]
+    if ($canarySha -match '^[0-9a-f]{40}$' -and $recommendedSha -ne $canarySha) {
+        $failures.Add("$($recommendationDocument.Path) recommends workflow SHA '$recommendedSha'; expected canary-validated SHA '$canarySha'.")
+    }
+    if ($recommendationLines[0] -match '(?i)@(master|main|v\d[^\s`]*)') {
+        $failures.Add("$($recommendationDocument.Path) uses non-commit workflow reference '$($Matches[0])'; expected immutable SHA '$canarySha'.")
+    }
 }
 if ($isPublished -and
     (-not $readmeTagMatch.Success -or $readmeTagMatch.Groups[1].Value -ne "v$version" -or
