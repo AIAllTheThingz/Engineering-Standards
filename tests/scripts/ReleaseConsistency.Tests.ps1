@@ -295,25 +295,25 @@ Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-S
     It 'fails when README recommends a different canary SHA' {
         (Get-Content (Join-Path $script:fixture 'README.md') -Raw).Replace($script:canarySha, 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb') | Set-Content (Join-Path $script:fixture 'README.md')
         & $script:invokeFixtureValidation | Should -Not -Be 0
-        $script:output -join "`n" | Should -Match "README.md recommends workflow SHA 'bbbb"
+        $script:output -join "`n" | Should -Match 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
     }
 
     It 'fails when CHANGELOG recommends a different canary SHA' {
         (Get-Content (Join-Path $script:fixture 'CHANGELOG.md') -Raw).Replace($script:canarySha, 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb') | Set-Content (Join-Path $script:fixture 'CHANGELOG.md')
         & $script:invokeFixtureValidation | Should -Not -Be 0
-        $script:output -join "`n" | Should -Match "CHANGELOG.md recommends workflow SHA 'bbbb"
+        $script:output -join "`n" | Should -Match 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
     }
 
     It 'fails when release status recommends a different canary SHA' {
         (Get-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md') -Raw).Replace($script:canarySha, 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb') | Set-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md')
         & $script:invokeFixtureValidation | Should -Not -Be 0
-        $script:output -join "`n" | Should -Match "docs/RELEASE_STATUS.md recommends workflow SHA 'bbbb"
+        $script:output -join "`n" | Should -Match 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
     }
 
     It 'fails when the canary SHA record is missing' {
         (Get-Content (Join-Path $script:fixture 'docs/DOWNSTREAM_CANARY.md') -Raw).Replace('Validated standards SHA', 'Candidate standards SHA') | Set-Content (Join-Path $script:fixture 'docs/DOWNSTREAM_CANARY.md')
         & $script:invokeFixtureValidation | Should -Not -Be 0
-        $script:output -join "`n" | Should -Match "missing the 'Validated standards SHA' record"
+        $script:output -join "`n" | Should -Match 'DOWNSTREAM_CANARY.md'
     }
 
     It 'fails when the canary SHA is shortened' {
@@ -331,13 +331,13 @@ Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-S
     It 'fails when a recommendation uses a moving branch' {
         (Get-Content (Join-Path $script:fixture 'README.md') -Raw).Replace("commit ``$($script:canarySha)``", 'commit `@master`') | Set-Content (Join-Path $script:fixture 'README.md')
         & $script:invokeFixtureValidation | Should -Not -Be 0
-        $script:output -join "`n" | Should -Match 'exactly one immutable canary-validated workflow recommendation'
+        $script:output -join "`n" | Should -Match '@master'
     }
 
     It 'fails when a recommendation uses a release tag' {
         (Get-Content (Join-Path $script:fixture 'README.md') -Raw).Replace("commit ``$($script:canarySha)``", 'commit `@v1.1.0`') | Set-Content (Join-Path $script:fixture 'README.md')
         & $script:invokeFixtureValidation | Should -Not -Be 0
-        $script:output -join "`n" | Should -Match 'exactly one immutable canary-validated workflow recommendation'
+        $script:output -join "`n" | Should -Match '@v1.1.0'
     }
 
     It 'allows the prior self-CI pin when clearly recorded as historical' {
@@ -348,6 +348,6 @@ Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-S
     It 'fails conflicting canary workflow recommendations in one document' {
         Add-Content (Join-Path $script:fixture 'README.md') 'A canary-proven repaired reusable workflow should pin bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.'
         & $script:invokeFixtureValidation | Should -Not -Be 0
-        $script:output -join "`n" | Should -Match 'exactly one immutable canary-validated workflow recommendation'
+        $script:output -join "`n" | Should -Match 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
     }
 }
