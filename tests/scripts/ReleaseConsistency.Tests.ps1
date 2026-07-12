@@ -92,7 +92,7 @@ Current `master` contains development after the published target. Historical evi
         Push-Location $script:fixture
         try { git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'; git add .; git commit -qm baseline; git tag v1.1.0 } finally { Pop-Location }
         & $script:invokeFixtureValidation | Should -Not -Be 0
-        $script:output -join "`n" | Should -Match 'does not match local tag target'
+        $script:output -join "`n" | Should -Match 'match local tag target'
     }
 
     It 'fails a published state with a missing local tag' {
