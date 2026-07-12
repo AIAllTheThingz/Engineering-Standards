@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-07-12T18:17:51.0367426Z",
+  "generatedAtUtc": "2026-07-12T21:11:30.8286602Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -7,7 +7,7 @@
   "patternFile": "actions/forbidden-pattern-scan/forbidden-patterns.json",
   "allowlistFile": null,
   "advisory": false,
-  "scannedFiles": 269,
+  "scannedFiles": 280,
   "skippedFiles": [
     {
       "path": "evidence/agent-standards.json",
@@ -262,6 +262,15 @@
       "allowlisted": false
     },
     {
+      "patternId": "dangerous-powershell-expression",
+      "severity": "warning",
+      "path": "tests/actions/RepositoryHealth.Tests.ps1",
+      "line": 96,
+      "description": "Dynamic PowerShell execution.",
+      "redactedMatch": "Invo...[redacted]...sion",
+      "allowlisted": false
+    },
+    {
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "tests/scripts/GitHubWorkflowArchitecture.Tests.ps1",
@@ -317,5 +326,5 @@
     }
   ],
   "failed": 0,
-  "warnings": 20
+  "warnings": 21
 }
