@@ -59,7 +59,7 @@ Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-S
     }
 
     It 'accepts a valid published release with unreleased development' {
-        & $script:invokeFixtureValidation | Should -Be 0 -Because ($script:output -join "`n")
+        & $script:invokeFixtureValidation | Should -Be 0
     }
 
     It 'accepts a published tag with no post-tag development wording' {
@@ -74,7 +74,7 @@ Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-S
             (Get-Content README.md -Raw).Replace('1111111111111111111111111111111111111111', $target) | Set-Content README.md
             Set-Content CHANGELOG.md "# Changelog`n`n## [Unreleased]`n`nNo unreleased changes are currently recorded.`n`n## [1.1.0] - 2026-07-11`n`nConsumers requiring the final canary-validated repaired reusable workflow should pin .github/workflows/governance-ci-reusable.yml to immutable post-release commit aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
         } finally { Pop-Location }
-        & $script:invokeFixtureValidation | Should -Be 0 -Because ($script:output -join "`n")
+        & $script:invokeFixtureValidation | Should -Be 0
     }
 
     It 'validates the current repository release records' {
