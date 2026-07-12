@@ -59,7 +59,7 @@ Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-S
     }
 
     It 'accepts a valid published release with unreleased development' {
-        & $script:invokeFixtureValidation | Should -Be 0
+        & $script:invokeFixtureValidation | Should -Be 0 -Because ($script:output -join "`n")
     }
 
     It 'accepts a published tag with no post-tag development wording' {
@@ -74,7 +74,7 @@ Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-S
             (Get-Content README.md -Raw).Replace('1111111111111111111111111111111111111111', $target) | Set-Content README.md
             Set-Content CHANGELOG.md "# Changelog`n`n## [Unreleased]`n`nNo unreleased changes are currently recorded.`n`n## [1.1.0] - 2026-07-11`n`nConsumers requiring the final canary-validated repaired reusable workflow should pin .github/workflows/governance-ci-reusable.yml to immutable post-release commit aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
         } finally { Pop-Location }
-        & $script:invokeFixtureValidation | Should -Be 0
+        & $script:invokeFixtureValidation | Should -Be 0 -Because ($script:output -join "`n")
     }
 
     It 'validates the current repository release records' {
@@ -340,8 +340,20 @@ Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-S
         $script:output -join "`n" | Should -Match '@v1.1.0'
     }
 
+    It 'fails when a recommendation uses any other named ref' {
+        $path = Join-Path $script:fixture 'docs/RELEASE_STATUS.md'
+        (Get-Content $path -Raw).Replace("@$($script:canarySha)", '@stable') + "`nValidated canary SHA: ``$($script:canarySha)``." | Set-Content $path
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match '@stable'
+    }
+
     It 'allows the prior self-CI pin when clearly recorded as historical' {
         Add-Content (Join-Path $script:fixture 'CHANGELOG.md') "Historical PR #30 trusted self-CI pin rotation used ``$($script:historicalSha)``."
+        & $script:invokeFixtureValidation | Should -Be 0
+    }
+
+    It 'ignores a historical canary workflow recommendation outside Unreleased' {
+        Add-Content (Join-Path $script:fixture 'CHANGELOG.md') "## [1.0.0] - 2026-01-01`n`nConsumers requiring the historical canary-proven repaired reusable workflow pinned .github/workflows/governance-ci-reusable.yml@$($script:historicalSha)."
         & $script:invokeFixtureValidation | Should -Be 0
     }
 

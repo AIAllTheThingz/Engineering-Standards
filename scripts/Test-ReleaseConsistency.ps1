@@ -46,6 +46,16 @@ if ($version -and -not (Test-Path -LiteralPath (Join-Path $root $releaseDocument
 if ($changelog -notmatch '(?m)^## \[Unreleased\]\s*$') {
     $failures.Add("CHANGELOG.md is missing an [Unreleased] section.")
 }
+$unreleasedMatch = [regex]::Match($changelog, '(?ms)^## \[Unreleased\]\s*$(.*?)(?=^## |\z)')
+$unreleasedText = if ($unreleasedMatch.Success) { $unreleasedMatch.Groups[1].Value } else { '' }
+$currentReleasePattern = '(?ms)^## \[{0}\][^\r\n]*$(.*?)(?=^## |\z)' -f [regex]::Escape($version)
+$currentReleaseMatch = [regex]::Match($changelog, $currentReleasePattern)
+$currentReleaseText = if ($currentReleaseMatch.Success) { $currentReleaseMatch.Groups[1].Value } else { '' }
+$changelogRecommendationText = if ($unreleasedText -match '(?i)canary-(?:proven|validated).*repaired.*workflow') {
+    $unreleasedText
+} else {
+    $currentReleaseText
+}
 if ($version -and $changelog -notmatch "(?m)^## \[$([regex]::Escape($version))\](?:\s|$)") {
     $failures.Add("CHANGELOG.md has no released section for VERSION '$version'.")
 }
@@ -95,7 +105,7 @@ elseif ($canarySha -notmatch '^[0-9a-f]{40}$') {
 
 foreach ($recommendationDocument in @(
     @{ Path = 'README.md'; Text = $readme },
-    @{ Path = 'CHANGELOG.md'; Text = $changelog },
+    @{ Path = 'CHANGELOG.md'; Text = $changelogRecommendationText },
     @{ Path = 'docs/RELEASE_STATUS.md'; Text = $status }
 )) {
     $recommendationLines = @($recommendationDocument.Text -split '\r?\n' | Where-Object {
@@ -112,11 +122,15 @@ foreach ($recommendationDocument in @(
     }
 
     $recommendedSha = $recommendedShas[0]
+    if ($recommendationLines[0] -notmatch '(?i)\.github/workflows/governance-ci-reusable\.yml') {
+        $failures.Add("$($recommendationDocument.Path) canary recommendation must identify '.github/workflows/governance-ci-reusable.yml'.")
+    }
     if ($canarySha -match '^[0-9a-f]{40}$' -and $recommendedSha -ne $canarySha) {
         $failures.Add("$($recommendationDocument.Path) recommends workflow SHA '$recommendedSha'; expected canary-validated SHA '$canarySha'.")
     }
-    if ($recommendationLines[0] -match '(?i)@(master|main|v\d[^\s`]*)') {
-        $failures.Add("$($recommendationDocument.Path) uses non-commit workflow reference '$($Matches[0])'; expected immutable SHA '$canarySha'.")
+    $workflowReferenceMatch = [regex]::Match($recommendationLines[0], '(?i)\.github/workflows/governance-ci-reusable\.yml@([^\s`]+)')
+    if ($workflowReferenceMatch.Success -and $workflowReferenceMatch.Groups[1].Value -ne $canarySha) {
+        $failures.Add("$($recommendationDocument.Path) uses non-canary workflow reference '@$($workflowReferenceMatch.Groups[1].Value)'; expected immutable SHA '$canarySha'.")
     }
 }
 if ($isPublished -and
@@ -154,7 +168,6 @@ if ($isPublished -and -not $SkipTagVerification -and (Test-Path -LiteralPath $gi
         }
 
         $postTagCount = [int]((& git -C $root rev-list --count "$tagName^{}..HEAD" 2>$null).Trim())
-        $unreleasedMatch = [regex]::Match($changelog, '(?ms)^## \[Unreleased\]\s*$(.*?)(?=^## |\z)')
         $substantiveUnreleasedLines = @()
         if ($unreleasedMatch.Success) {
             $substantiveUnreleasedLines = @($unreleasedMatch.Groups[1].Value -split '\r?\n' | Where-Object {
