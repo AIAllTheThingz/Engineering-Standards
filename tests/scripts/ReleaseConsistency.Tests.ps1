@@ -30,7 +30,7 @@ Current published version: `1.1.0`. See [Release Status](docs/RELEASE_STATUS.md)
         Set-Content -LiteralPath (Join-Path $script:fixture 'docs/RELEASE_STATUS.md') -Value @'
 # Release Status
 
-The latest published version is `1.1.0`. Annotated tag `v1.1.0` resolves to immutable commit `1111111111111111111111111111111111111111`.
+The latest published version is `1.1.0`. Annotated tag `v1.1.0` has tag-object SHA `1111111111111111111111111111111111111111` and resolves to immutable commit `1111111111111111111111111111111111111111`.
 
 Current `master` contains development after the published target. Historical evidence does not validate current `master`.
 '@
@@ -45,6 +45,22 @@ Current `master` contains development after the published target. Historical evi
 
     It 'accepts a valid published release with unreleased development' {
         & $script:invokeFixtureValidation | Should -Be 0
+    }
+
+    It 'accepts a published tag with no post-tag development wording' {
+        Push-Location $script:fixture
+        try {
+            git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'
+            git add .; git commit -qm baseline; git tag v1.1.0
+            $tag = git rev-parse v1.1.0
+            (Get-Content docs/RELEASE_STATUS.md -Raw).Replace('1111111111111111111111111111111111111111', $tag).Replace('Current `master` contains development after the published target. ', '') | Set-Content docs/RELEASE_STATUS.md
+        } finally { Pop-Location }
+        & $script:invokeFixtureValidation | Should -Be 0
+    }
+
+    It 'validates the current repository release records' {
+        $output = @(& pwsh -NoProfile -File $script:validator -Path (Join-Path $PSScriptRoot '../..') 2>&1)
+        $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
     }
 
     It 'fails when Unreleased is missing' {
@@ -90,9 +106,29 @@ Current `master` contains development after the published target. Historical evi
 
     It 'fails when the recorded target differs from the local tag' {
         Push-Location $script:fixture
-        try { git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'; git add .; git commit -qm baseline; git tag v1.1.0 } finally { Pop-Location }
+        try {
+            git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'; git add .; git commit -qm baseline; git tag v1.1.0
+            $tagObject = git rev-parse v1.1.0
+            $text = Get-Content docs/RELEASE_STATUS.md -Raw
+            $text = $text.Replace('tag-object SHA `1111111111111111111111111111111111111111`', "tag-object SHA ``$tagObject``")
+            Set-Content docs/RELEASE_STATUS.md $text
+        } finally { Pop-Location }
         & $script:invokeFixtureValidation | Should -Not -Be 0
         $script:output -join "`n" | Should -Match 'match local tag target'
+    }
+
+    It 'fails when the recorded annotated tag object differs from the local tag object' {
+        Push-Location $script:fixture
+        try {
+            git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'; git add .; git commit -qm baseline
+            git tag -a v1.1.0 -m release
+            $target = git rev-parse 'v1.1.0^{}'
+            $text = Get-Content docs/RELEASE_STATUS.md -Raw
+            $text = $text.Replace('resolves to immutable commit `1111111111111111111111111111111111111111`', "resolves to immutable commit ``$target``")
+            Set-Content docs/RELEASE_STATUS.md $text
+        } finally { Pop-Location }
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match 'match local tag object'
     }
 
     It 'fails a published state with a missing local tag' {

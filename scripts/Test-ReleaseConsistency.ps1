@@ -43,6 +43,7 @@ if ($version -and $changelog -notmatch "(?m)^## \[$([regex]::Escape($version))\]
 
 $fullShaPattern = '[0-9a-f]{40}'
 $targetMatch = [regex]::Match($status, ('resolves to immutable commit `{0}`' -f "($fullShaPattern)"))
+$tagObjectMatch = [regex]::Match($status, ('tag-object SHA `{0}`' -f "($fullShaPattern)"))
 if (-not $targetMatch.Success) {
     $failures.Add('Release status does not identify the published target as a full immutable commit SHA.')
 }
@@ -61,9 +62,6 @@ if ($version) {
 if ($readme -notmatch 'docs/RELEASE_STATUS\.md' -or $readme -notmatch 'CHANGELOG\.md#unreleased') {
     $failures.Add('README.md must link to release status and [Unreleased].')
 }
-if ($status -notmatch '(?i)current `master` contains development after the published target') {
-    $failures.Add('Release status does not distinguish current master from the published target.')
-}
 if ($status -notmatch '(?i)does not validate current `master`') {
     $failures.Add('Release status does not bound historical evidence to its recorded commit.')
 }
@@ -76,6 +74,14 @@ if (Test-Path -LiteralPath $gitDirectory) {
         $failures.Add("Published tag '$tagName' does not exist locally.")
     }
     elseif ($targetMatch.Success) {
+        $actualTagObject = (& git -C $root rev-parse $tagName 2>$null).Trim()
+        if (-not $tagObjectMatch.Success) {
+            $failures.Add('Release status does not identify the annotated tag object as a full SHA.')
+        }
+        elseif ($actualTagObject -ne $tagObjectMatch.Groups[1].Value) {
+            $failures.Add("Recorded tag object '$($tagObjectMatch.Groups[1].Value)' does not match local tag object '$actualTagObject'.")
+        }
+
         $actualTarget = (& git -C $root rev-parse "$tagName^{}" 2>$null).Trim()
         if ($actualTarget -ne $targetMatch.Groups[1].Value) {
             $failures.Add("Recorded tag target '$($targetMatch.Groups[1].Value)' does not match local tag target '$actualTarget'.")
@@ -85,12 +91,17 @@ if (Test-Path -LiteralPath $gitDirectory) {
         if ($postTagCount -gt 0 -and $changelog -match '(?im)^No unreleased changes are currently recorded\.?\s*$') {
             $failures.Add('Post-tag commits exist while CHANGELOG.md claims no unreleased changes.')
         }
+        if ($postTagCount -gt 0 -and $status -notmatch '(?i)current `master` contains development after the published target') {
+            $failures.Add('Release status does not distinguish current master from the published target.')
+        }
     }
 }
 
-if ($status -match '(?im)^.*(?:tag|GitHub Release).*(?:pending|not published|not created).*$' -and
-    $status -notmatch '(?i)retains stale preparation-era statements') {
-    $failures.Add('Current published release status contains stale pending-publication wording.')
+foreach ($line in ($status -split '\r?\n')) {
+    if ($line -match '(?i)(?:tag|GitHub Release).*(?:pending|not published|not created)' -and
+        $line -notmatch '(?i)retains stale preparation-era statements') {
+        $failures.Add('Current published release status contains stale pending-publication wording.')
+    }
 }
 
 if ($failures.Count -gt 0) {
