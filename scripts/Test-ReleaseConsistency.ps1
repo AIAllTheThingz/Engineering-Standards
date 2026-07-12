@@ -207,5 +207,6 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-Write-Host "Release consistency validation passed for published version $version."
+$validatedState = if ($isPublished) { 'published version' } else { 'prepared unpublished version' }
+Write-Host "Release consistency validation passed for $validatedState $version."
 exit 0

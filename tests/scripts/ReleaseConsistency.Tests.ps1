@@ -116,6 +116,7 @@ Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-S
 '@
         $output = @(& pwsh -NoProfile -File $script:validator -Path $script:fixture 2>&1)
         $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
+        $output -join "`n" | Should -Match 'passed for prepared unpublished version 1\.1\.0'
     }
 
     It 'rejects a prepared and unpublished state after its tag exists' {
