@@ -70,6 +70,8 @@ When a candidate fails unexpectedly, leave the candidate unapproved, preserve th
 
 If a released workflow regresses downstream behavior, advise consumers to retain or restore the last independently verified full SHA while a focused corrective change is reviewed. Do not force-push canary history, rewrite release tags, weaken a scenario, or rotate the authoritative pin until the external proof is clean.
 
+An exception to a mandatory canary scenario or verification requirement must follow the central exception process, remain scoped and time-bounded, and be recorded in release evidence. An exception must not relabel an unrun, failed, or unverifiable external scenario as Passed.
+
 ## Limitations
 
 The canary validates the reusable governance contract and its security boundary. It does not exercise consumer builds, tests, deployments, private repositories, GitHub Enterprise Server, repository-specific scanner extensions, or every supported static category. Those concerns remain with caller-owned CI and their applicable adoption evidence.

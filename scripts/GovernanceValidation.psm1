@@ -682,6 +682,140 @@ function ConvertTo-SanitizedWorkflowOutputLine {
     }
 }
 
+function ConvertTo-SanitizedWorkflowFailureMessage {
+    <#
+    .SYNOPSIS
+    Produces a bounded, one-line failure message safe for workflow evidence.
+    .DESCRIPTION
+    Removes control characters, replaces workspace paths, neutralizes workflow
+    commands, and redacts common credential forms without serializing exception
+    objects, stack traces, or execution context.
+    .PARAMETER InputObject
+    Raw exception message or failure text to sanitize.
+    .PARAMETER WorkspaceRoot
+    Workflow workspace path replaced with a neutral marker.
+    .PARAMETER TemporaryRoot
+    Runner temporary path replaced with a neutral marker.
+    .PARAMETER MaximumLength
+    Maximum length of the resulting single-line message.
+    #>
+    [CmdletBinding()]
+    param(
+        [AllowNull()][AllowEmptyString()]$InputObject,
+        [string]$WorkspaceRoot,
+        [string]$TemporaryRoot,
+        [ValidateRange(256, 16384)][int]$MaximumLength = 4096
+    )
+
+    $lines = @(
+        ConvertTo-SanitizedWorkflowOutputLine `
+            -InputObject ([string]$InputObject).Replace([char]0x2028, "`n").Replace([char]0x2029, "`n") `
+            -WorkspaceRoot $WorkspaceRoot `
+            -TemporaryRoot $TemporaryRoot
+    )
+    $message = ($lines | ForEach-Object {
+        $line = [string]$_
+        $line = [regex]::Replace($line, '(?i)\b(https?://)[^/\s:@]+:[^@\s/]+@', '$1[redacted]@')
+        $line = [regex]::Replace($line, '(?i)(\bAuthorization\s*[:=]\s*)(?:Bearer|Basic)\s+[^\s|]+', '$1[redacted]')
+        $line = [regex]::Replace($line, '(?i)\b(password|passwd|pwd|secret|client[_-]?secret|api[_-]?key|access[_-]?token|refresh[_-]?token|token)(\s*[:=]\s*)(?:"[^"]*"|''[^'']*''|[^\s|]+)', '$1$2[redacted]')
+        $line = [regex]::Replace($line, '(?i)\b(?:gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,})\b', '[redacted]')
+        $line.Trim()
+    } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }) -join ' | '
+
+    if ([string]::IsNullOrWhiteSpace($message)) { return $null }
+    if ($message.Length -gt $MaximumLength) {
+        $message = $message.Substring(0, $MaximumLength - 15) + '...[truncated]'
+    }
+    $message
+}
+
+function Write-GovernanceBootstrapFailureReport {
+    <#
+    .SYNOPSIS
+    Writes a schema-shaped early-failure report without replacing existing evidence.
+    .DESCRIPTION
+    Writes a single failed bootstrap result into an existing physical evidence
+    directory. Existing aggregate evidence is returned unchanged.
+    .PARAMETER EvidenceRoot
+    Existing physical evidence directory beneath the trusted workflow workspace.
+    .PARAMETER FailureMessage
+    Specific raw failure message to sanitize and record.
+    .PARAMETER GenericFallbackMessage
+    Fallback used only when no safe specific failure text remains.
+    .PARAMETER CallerRepository
+    GitHub owner/name of the caller repository.
+    .PARAMETER CallerCommitSha
+    Immutable caller commit identity.
+    .PARAMETER ProjectPath
+    Requested repository-relative caller project path.
+    .PARAMETER StandardsRepository
+    Trusted repository that supplied the reusable workflow.
+    .PARAMETER StandardsWorkflowSha
+    Immutable trusted workflow commit identity.
+    .PARAMETER GovernanceVersion
+    Governance interface version requested by the caller.
+    .PARAMETER WorkspaceRoot
+    Workflow workspace path to redact from the failure message.
+    .PARAMETER TemporaryRoot
+    Runner temporary path to redact from the failure message.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$EvidenceRoot,
+        [AllowNull()][AllowEmptyString()][string]$FailureMessage,
+        [string]$GenericFallbackMessage = 'Input, workspace, manifest, configuration, or dependency validation failed before the aggregate report could be finalized.',
+        [string]$CallerRepository,
+        [string]$CallerCommitSha,
+        [string]$ProjectPath = '.',
+        [string]$StandardsRepository = 'AIAllTheThingz/Engineering-Standards',
+        [string]$StandardsWorkflowSha,
+        [string]$GovernanceVersion,
+        [string]$WorkspaceRoot,
+        [string]$TemporaryRoot
+    )
+
+    $evidenceItem = Get-Item -LiteralPath $EvidenceRoot -Force -ErrorAction Stop
+    if (-not $evidenceItem.PSIsContainer -or $evidenceItem.LinkType -or ($evidenceItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+        throw 'Bootstrap evidence root must be an existing physical directory.'
+    }
+    $reportPath = Join-Path $evidenceItem.FullName 'governance-validation.json'
+    if (Test-Path -LiteralPath $reportPath -PathType Leaf) { return $reportPath }
+
+    $safeFailure = ConvertTo-SanitizedWorkflowFailureMessage -InputObject $FailureMessage -WorkspaceRoot $WorkspaceRoot -TemporaryRoot $TemporaryRoot
+    if ([string]::IsNullOrWhiteSpace($safeFailure)) {
+        $safeFailure = ConvertTo-SanitizedWorkflowFailureMessage -InputObject $GenericFallbackMessage -WorkspaceRoot $WorkspaceRoot -TemporaryRoot $TemporaryRoot
+    }
+    if ([string]::IsNullOrWhiteSpace($safeFailure)) { $safeFailure = 'Trusted governance validation failed before the aggregate report could be finalized.' }
+
+    $safeProjectPath = if (
+        -not [string]::IsNullOrWhiteSpace($ProjectPath) -and
+        -not [System.IO.Path]::IsPathRooted($ProjectPath) -and
+        $ProjectPath -notmatch '(^|[\\/])\.\.([\\/]|$)' -and
+        $ProjectPath -notmatch '[\x00-\x1F\x7F]'
+    ) { $ProjectPath } else { '[invalid]' }
+    $now = (Get-Date).ToUniversalTime().ToString('o')
+    [ordered]@{
+        schemaVersion = '1.0.0'
+        generatedAtUtc = $now
+        caller = [ordered]@{ repository=$CallerRepository; commitSha=$CallerCommitSha; workspace='caller'; projectPath=$safeProjectPath }
+        standards = [ordered]@{ repository=$StandardsRepository; workflowSha=$StandardsWorkflowSha; workspace='standards' }
+        evidenceWorkspace = 'evidence'
+        governanceVersion = $GovernanceVersion
+        riskClassification = 'High'
+        validationProfile = 'unresolved'
+        checksExecuted = @('BootstrapValidation')
+        results = @([ordered]@{
+            name='BootstrapValidation'; category='workflow'; status='Failed'; requiredValidation=$true
+            command='standards/scripts/Invoke-GovernanceValidation.ps1'; toolPath='standards/scripts/Invoke-GovernanceValidation.ps1'; target='caller'
+            startedAtUtc=$now; completedAtUtc=$now; durationSeconds=0; exitCode=1
+            summary='Trusted governance validation failed before the aggregate report was finalized.'
+            failureReason=$safeFailure
+        })
+        failed = 1
+    } | ConvertTo-OrderedJson | Set-Content -LiteralPath $reportPath -Encoding utf8
+    $reportPath
+}
+
 Export-ModuleMember -Function @(
     'New-ValidationResult',
     'New-ValidationReport',
@@ -697,5 +831,7 @@ Export-ModuleMember -Function @(
     'Test-ArtifactRecordObject',
     'Test-VerifiedRunObject',
     'ConvertTo-OrderedJson',
-    'ConvertTo-SanitizedWorkflowOutputLine'
+    'ConvertTo-SanitizedWorkflowOutputLine',
+    'ConvertTo-SanitizedWorkflowFailureMessage',
+    'Write-GovernanceBootstrapFailureReport'
 )

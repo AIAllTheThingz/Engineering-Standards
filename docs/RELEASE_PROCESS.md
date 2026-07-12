@@ -67,9 +67,9 @@ Before release approval, maintainers MUST also confirm:
 - Success GitHub run for the exact release target
 - Controlled-failure proof run for the exact release target
 - Independent artifact download and verification
-- External downstream canary success and four isolated expected-failure runs against the exact release candidate SHA
+- For releases that modify the reusable governance workflow, its public downstream interface, or an authoritative reusable-workflow pin: external downstream canary success and four isolated expected-failure runs against the exact release candidate SHA
 
-For reusable-workflow changes, the external canary is mandatory even when self-CI passes. Follow [Downstream Governance Canary](DOWNSTREAM_CANARY.md), verify every downloaded artifact independently, and record the canary commit, candidate standards SHA, run IDs, artifact IDs, hashes, and expected failure reasons in the release review. Any missing or unexpected result blocks release approval and authoritative pin rotation.
+For releases that modify the reusable governance workflow, its public downstream interface, or an authoritative reusable-workflow pin, the external canary is mandatory even when self-CI passes. Follow [Downstream Governance Canary](DOWNSTREAM_CANARY.md), verify every downloaded artifact independently, and record the canary commit, candidate standards SHA, run IDs, artifact IDs, hashes, and expected failure reasons in the release review. Any missing or unexpected result blocks release approval and authoritative pin rotation. Documentation-, policy-, schema-, or metadata-only releases that do not change those workflow surfaces do not require a new external canary run.
 
 ## Evidence Generation
 

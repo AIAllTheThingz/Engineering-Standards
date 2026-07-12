@@ -212,28 +212,23 @@ jobs:
           GOVERNANCE_VERSION: ${{ inputs.governance-version }}
           PROJECT_PATH: ${{ inputs.project-path }}
         run: |
-          if (-not (Test-Path -LiteralPath evidence/governance-validation.json -PathType Leaf)) {
-            $now = (Get-Date).ToUniversalTime().ToString('o')
-            [ordered]@{
-              schemaVersion = '1.0.0'
-              generatedAtUtc = $now
-              caller = [ordered]@{ repository=$env:CALLER_REPOSITORY; commitSha=$env:CALLER_COMMIT_SHA; workspace='caller'; projectPath=$env:PROJECT_PATH }
-              standards = [ordered]@{ repository=$env:STANDARDS_REPOSITORY; workflowSha=$env:STANDARDS_WORKFLOW_SHA; workspace='standards' }
-              evidenceWorkspace = 'evidence'
-              governanceVersion = $env:GOVERNANCE_VERSION
-              riskClassification = 'High'
-              validationProfile = 'unresolved'
-              checksExecuted = @('ValidationBootstrap')
-              results = @([ordered]@{
-                name='ValidationBootstrap'; category='workflow'; status='Failed'; requiredValidation=$true
-                command='standards/scripts/Invoke-GovernanceValidation.ps1'; toolPath='standards/scripts/Invoke-GovernanceValidation.ps1'; target='caller'
-                startedAtUtc=$now; completedAtUtc=$now; durationSeconds=0; exitCode=1
-                summary='Trusted governance validation did not produce its required report.'
-                failureReason='Input, workspace, manifest, configuration, or dependency validation failed before the aggregate report could be finalized.'
-              })
-              failed = 1
-            } | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath evidence/governance-validation.json -Encoding utf8
+          Import-Module ./standards/scripts/GovernanceValidation.psm1 -Force
+          $failure = $null
+          if (Test-Path -LiteralPath evidence/dependencies.json -PathType Leaf) {
+            $dependencies = Get-Content -LiteralPath evidence/dependencies.json -Raw | ConvertFrom-Json
+            if ($dependencies.status -eq 'Failed') { $failure = [string]$dependencies.failureReason }
           }
+          Write-GovernanceBootstrapFailureReport `
+            -EvidenceRoot ./evidence `
+            -FailureMessage $failure `
+            -CallerRepository $env:CALLER_REPOSITORY `
+            -CallerCommitSha $env:CALLER_COMMIT_SHA `
+            -ProjectPath $env:PROJECT_PATH `
+            -StandardsRepository $env:STANDARDS_REPOSITORY `
+            -StandardsWorkflowSha $env:STANDARDS_WORKFLOW_SHA `
+            -GovernanceVersion $env:GOVERNANCE_VERSION `
+            -WorkspaceRoot $env:GITHUB_WORKSPACE `
+            -TemporaryRoot $env:RUNNER_TEMP | Out-Null
 
       - name: Normalize evidence report paths
         id: normalize_evidence_initial

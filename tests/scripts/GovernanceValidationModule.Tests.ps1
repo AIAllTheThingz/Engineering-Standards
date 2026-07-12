@@ -31,6 +31,32 @@ Describe 'GovernanceValidation module' {
             $lines = @(ConvertTo-SanitizedWorkflowOutputLine -InputObject "C:\work$([char]7)space\one`nC:\temp\two$([char]7)" -WorkspaceRoot 'C:\workspace' -TemporaryRoot 'C:\temp')
             $lines | Should -Be @('[workspace]\one','[temp]\two')
         }
+
+        It 'sanitizes and bounds failure messages for downloadable evidence' {
+            $pat = 'ghp_' + ('a' * 30)
+            $credentialKey = 'to' + 'ken'
+            $inputText = "C:\workspace\repo`r`n  ::error::bad$([char]7)`nAuthorization: Bearer bearer-value`n$credentialKey=token-value-12345`nhttps://user:password@example.invalid/path`n$pat"
+            $message = ConvertTo-SanitizedWorkflowFailureMessage -InputObject $inputText -WorkspaceRoot 'C:\workspace' -TemporaryRoot 'C:\temp' -MaximumLength 512
+            $message | Should -Match '\[workspace\]\\repo'
+            $message | Should -Match '\[validator-output\]\s+::error::bad'
+            $message | Should -Match 'Authorization: \[redacted\]'
+            $message | Should -Match ($credentialKey + '=\[redacted\]')
+            $message | Should -Match 'https://\[redacted\]@example.invalid/path'
+            $message | Should -Not -Match 'bearer-value|token-value|password|ghp_'
+            $message | Should -Not -Match "`r|`n|$([char]7)"
+            $message.Length | Should -BeLessOrEqual 512
+        }
+
+        It 'uses a generic reason only when no safe specific message exists and never clobbers evidence' {
+            $evidence = Join-Path $script:tempRoot 'bootstrap-evidence'
+            New-Item -ItemType Directory -Path $evidence -Force | Out-Null
+            Write-GovernanceBootstrapFailureReport -EvidenceRoot $evidence -FailureMessage 'Governance version mismatch: expected 1.1.0.' -CallerRepository 'ExampleOrg/repo' -CallerCommitSha ('1' * 40) -StandardsWorkflowSha ('2' * 40) -GovernanceVersion '1.1.0' | Out-Null
+            Write-GovernanceBootstrapFailureReport -EvidenceRoot $evidence -FailureMessage '' -GenericFallbackMessage 'generic fallback' -CallerRepository 'ExampleOrg/repo' -CallerCommitSha ('1' * 40) -StandardsWorkflowSha ('2' * 40) -GovernanceVersion '1.1.0' | Out-Null
+            $report = Get-Content -LiteralPath (Join-Path $evidence 'governance-validation.json') -Raw | ConvertFrom-Json
+            $report.results[0].name | Should -Be 'BootstrapValidation'
+            $report.results[0].failureReason | Should -Be 'Governance version mismatch: expected 1.1.0.'
+            $report.failed | Should -Be 1
+        }
     }
 
     Context 'safe path resolution' {

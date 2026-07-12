@@ -1056,6 +1056,7 @@ Describe 'Governance workflow enforcement ordering' {
     It 'uploads artifacts before final enforcement and validates final evidence first' {
         $workflow = Get-Content -LiteralPath (Join-Path $script:repoRoot '.github/workflows/governance-ci-reusable.yml') -Raw
         $ordered = @(
+            'Ensure validation failure evidence',
             'Generate workflow test evidence',
             'Generate completion evidence',
             'Validate completion evidence',
@@ -1072,5 +1073,7 @@ Describe 'Governance workflow enforcement ordering' {
             $last = $index
         }
         $workflow | Should -Match "steps\.final_evidence_validation\.outcome"
+        $workflow | Should -Match 'Write-GovernanceBootstrapFailureReport'
+        $workflow | Should -Not -Match "Set-Content -LiteralPath evidence/governance-validation\.json"
     }
 }

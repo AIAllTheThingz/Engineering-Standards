@@ -117,6 +117,8 @@ Describe 'Reusable governance workflow trust boundaries' {
         $result = Invoke-DownstreamValidation -CallerRoot $caller -ProjectPath $caller
         $result.ExitCode | Should -Not -Be 0
         $result.Output | Should -Match 'Absolute paths are not allowed'
+        $report = Get-Content -LiteralPath (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
+        $report.caller.projectPath | Should -Be '[invalid]'
     }
 
     It 'rejects project path traversal outside the caller workspace' {
@@ -171,6 +173,10 @@ Describe 'Reusable governance workflow trust boundaries' {
         $result = Invoke-DownstreamValidation -CallerRoot $caller
         $result.ExitCode | Should -Not -Be 0
         $result.Output | Should -Match 'Governance version mismatch'
+        $report = Get-Content -LiteralPath (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
+        $report.failed | Should -Be 1
+        $report.results[0].name | Should -Be 'BootstrapValidation'
+        $report.results[0].failureReason | Should -Be "Governance version mismatch: workflow expects '1.1.0' but manifest declares '1.0.0'."
     }
 
     It 'rejects an attempt to disable a mandatory control' {
@@ -181,6 +187,22 @@ Describe 'Reusable governance workflow trust boundaries' {
         $result = Invoke-DownstreamValidation -CallerRoot $caller
         $result.ExitCode | Should -Not -Be 0
         $result.Output | Should -Match 'attempts to disable one or more mandatory.*controls'
+        $report = Get-Content -LiteralPath (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
+        $report.failed | Should -Be 1
+        $report.results[0].name | Should -Be 'BootstrapValidation'
+        $report.results[0].failureReason | Should -Be 'governance.config.json attempts to disable one or more mandatory controls. Reusable workflow validation requires an independently validated approved exception.'
+    }
+
+    It 'records the missing required documentation path in aggregate evidence' {
+        $caller = New-DownstreamFixture -Name 'missing-required-document'
+        Remove-Item -LiteralPath (Join-Path $caller 'SECURITY.md')
+        $result = Invoke-DownstreamValidation -CallerRoot $caller
+        $result.ExitCode | Should -Not -Be 0
+        $report = Get-Content -LiteralPath (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
+        $contract = @($report.results | Where-Object name -eq 'Contract')[0]
+        $contract.status | Should -Be 'Failed'
+        $contract.failureReason | Should -Match 'SECURITY\.md'
+        $contract.failureReason | Should -Not -Match 'before the aggregate report could be finalized'
     }
 
     It 'rejects an evidence path inside the caller workspace' {
