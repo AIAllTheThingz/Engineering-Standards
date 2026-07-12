@@ -87,10 +87,6 @@ if ($isPublished -and
      -not $statusTagMatch.Success -or $statusTagMatch.Groups[1].Value -ne "v$version")) {
     $failures.Add("README and release status must identify expected tag 'v$version'.")
 }
-if ($status -notmatch '(?i)does not validate current `master`') {
-    $failures.Add('Release status does not bound historical evidence to its recorded commit.')
-}
-
 $gitDirectory = Join-Path $root '.git'
 if ($isPublished -and -not $SkipTagVerification -and (Test-Path -LiteralPath $gitDirectory)) {
     $tagName = "v$version"
@@ -135,13 +131,17 @@ if ($isPublished -and -not $SkipTagVerification -and (Test-Path -LiteralPath $gi
         if ($postTagCount -gt 0 -and $status -notmatch '(?i)current `master` contains development after the published target') {
             $failures.Add('Release status does not distinguish current master from the published target.')
         }
+        if ($postTagCount -gt 0 -and $status -notmatch '(?i)does not validate current `master`') {
+            $failures.Add('Release status does not bound historical evidence to its recorded commit.')
+        }
     }
 }
 
 foreach ($line in ($status -split '\r?\n')) {
-    if ($line -match '(?i)(?:tag|GitHub Release).*(?:pending|not published|not created)' -and
+    if (-not $isPrepared -and
+        $line -match '(?i)(?:tag|GitHub Release).*(?:pending|not published|not created)' -and
         $line -notmatch '(?i)retains stale preparation-era statements' -and
-        -not ($isPrepared -and $line -match '(?i)prepared version.*unpublished')) {
+        $line -notmatch '(?i)prepared version.*unpublished') {
         $failures.Add('Current published release status contains stale pending-publication wording.')
     }
 }

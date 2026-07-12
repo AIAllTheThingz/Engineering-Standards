@@ -89,6 +89,10 @@ The prepared version is `1.1.0` and is unpublished. See [Release Status](docs/RE
 
 The prepared version is `1.1.0` and is unpublished.
 
+Tag state: Not created.
+
+GitHub Release state: Not published.
+
 Current `master` contains development after the published target. Historical evidence does not validate current `master`.
 '@
         $output = @(& pwsh -NoProfile -File $script:validator -Path $script:fixture 2>&1)
