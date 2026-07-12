@@ -94,6 +94,8 @@ The reusable workflow checks out caller content under `caller/`, trusted central
 
 The central downstream workflow does not yet apply repository-provided `additionalForbiddenPatterns` or `reviewedAllowlist`. Both arrays MUST be empty; a nonempty value fails with the unsupported field name instead of being silently ignored. The complete reviewed scanner-configuration model remains deferred to Issue #21.
 
+The public downstream canary uses the smallest supported profile: `Contract` as its only validation category, empty repository-provided scanner arrays, and no disabled mandatory controls. Its negative fixtures separately prove version mismatch, required-file enforcement, and mandatory-control disablement. See [Downstream Governance Canary](DOWNSTREAM_CANARY.md); the canary profile does not remove additional controls applicable to a real consumer.
+
 Existing callers must remove `run-examples`, `run-pester`, and `run-documentation-validation`. Those compatibility inputs were mandatory-true and misleading; removal is an intentional interface correction. GitHub Enterprise Server is unsupported because it does not provide the immutable `job.workflow_*` identity properties and the workflow does not use an unsafe fallback.
 
 ## Allowlist Rules
@@ -141,5 +143,6 @@ If a downstream repository cannot satisfy a required field because the schema do
 - `schemas/governance-config.schema.json`
 - `governance/ORGANIZATION_CONTRACT.md`
 - `governance/EXCEPTION_PROCESS.md`
+- `docs/DOWNSTREAM_CANARY.md`
 - `docs/ADOPTION_GUIDE.md`
 - `docs/TROUBLESHOOTING.md`

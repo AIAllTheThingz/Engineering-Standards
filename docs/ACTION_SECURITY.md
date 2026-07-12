@@ -64,6 +64,8 @@ Self-CI uses a second reusable harness at the same reviewed full SHA for candida
 
 Downstream manifests, configuration, paths, and files remain untrusted. The aggregate validator canonicalizes the caller project root, rejects rooted paths and `..`, rejects every symbolic link, junction, or reparse point anywhere in caller content—including internal-target links—requires nonoverlapping caller/standards/evidence roots, and loads modules only from the standards checkout. The all-links-denied rule deliberately fails closed against workspace-boundary and validator-confusion attacks. It does not execute downstream tests, scripts, examples, package hooks, or build commands.
 
+The public downstream canary tests this cross-repository boundary before reusable-workflow release. It contains no secrets or production environments, grants only `contents: read`, pins all reusable calls to one full candidate SHA, and rejects copied central implementation directories. All five scenario artifacts must be independently verified; see [Downstream Governance Canary](DOWNSTREAM_CANARY.md). Public canary evidence must contain only sanitized governance metadata and must not be treated as authorization to introduce credentials or privileged integration tests.
+
 Avoid `pull_request_target` unless there is a documented security requirement and the workflow does not check out or execute untrusted code. If `pull_request_target` is used, reviewers MUST confirm:
 
 - The checkout ref is trusted.
@@ -166,3 +168,4 @@ Exceptions MUST follow [../governance/EXCEPTION_PROCESS.md](../governance/EXCEPT
 - [../governance/EXCEPTION_PROCESS.md](../governance/EXCEPTION_PROCESS.md)
 - [../actions/forbidden-pattern-scan/README.md](../actions/forbidden-pattern-scan/README.md)
 - [../actions/repository-health/README.md](../actions/repository-health/README.md)
+- [Downstream Governance Canary](DOWNSTREAM_CANARY.md)

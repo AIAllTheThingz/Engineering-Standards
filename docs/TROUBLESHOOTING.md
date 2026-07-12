@@ -112,6 +112,12 @@ pwsh -NoProfile -File scripts/Test-WorkflowEvidenceArtifact.ps1 -ArtifactPath <s
 
 `evidence/latest-verified-run.json` is metadata for the most recent independently verified success artifact and controlled-failure run. It is not a copy of the artifact.
 
+### External Canary Failures
+
+For a reusable-workflow candidate, use the public canary procedure in [Downstream Governance Canary](DOWNSTREAM_CANARY.md). Confirm that all five jobs use the same exact candidate SHA and that the repository-shape job succeeds. A success-scenario failure is always blocking. A negative scenario is valid only when it fails for its named reason after uploading evidence; an unrelated setup, checkout, syntax, permissions, or artifact failure is not a successful negative test.
+
+Download each artifact separately and verify its caller repository, exact caller commit or documented pull-request merge commit, branch, run ID, conclusion, and standards workflow identity. If verification fails, preserve the run reference, correct the owning workflow or fixture, and rerun all five scenarios. Do not rotate pins, weaken fixtures, or treat self-CI as a substitute.
+
 ## Pester Failures
 
 Pester failures indicate validator behavior changed or a regression was introduced. Read the failing test name before changing implementation. If a test is obsolete because governance policy changed, update the policy, validator, and test together.
@@ -170,5 +176,6 @@ When a tool was unavailable, include runtime context and mark the status honestl
 - `docs/DOWNSTREAM_CONFIGURATION.md`
 - `docs/BRANCH_PROTECTION.md`
 - `docs/ACTION_SECURITY.md`
+- `docs/DOWNSTREAM_CANARY.md`
 - `governance/COMPLETION_EVIDENCE.md`
 - `governance/EXCEPTION_PROCESS.md`
