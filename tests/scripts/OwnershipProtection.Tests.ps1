@@ -51,6 +51,80 @@ Describe 'CODEOWNERS structural validation' {
         $content = (New-CodeownersFixture) -replace '(?m)^/schemas/.*\r?\n?', ''
         @(Test-CodeownersContent -Content $content | Where-Object Path -eq '/schemas/').Count | Should -Be 1
     }
+
+    Context 'owner tokens and comments' {
+        BeforeAll {
+            function Test-CodeownersRule([string]$Rule, [string]$OwnerType = 'Unknown') {
+                Test-CodeownersContent -Content "* @root-owner`n$Rule" -RepositoryOwnerType $OwnerType -RequiredPaths @()
+            }
+        }
+
+        It 'accepts users teams emails multiple owners comments blank lines and full-line comments' {
+            $rules = @(
+                '/user/ @octocat',
+                '/team/ @ContosoOrg/maintainers',
+                '/email/ docs@example.com',
+                '/email2/ security.team@example.org',
+                '/email3/ first.last+governance@example.co.uk',
+                '/multiple/ @octocat @hubot',
+                '/mixed/ @octocat docs@example.com',
+                '/user-comment/ @octocat # script owner',
+                '/email-comment/ docs@example.com # documentation owner',
+                '/multiple-comment/ @octocat docs@example.com # owners'
+            )
+            foreach ($rule in $rules) {
+                @(Test-CodeownersRule $rule | Where-Object Status -eq 'Failed').Count | Should -Be 0 -Because $rule
+            }
+            $withComments = "# full line`n`n* @root-owner`n/docs/ docs@example.com # contact"
+            @(Test-CodeownersContent -Content $withComments -RequiredPaths @() | Where-Object Status -eq 'Failed').Count | Should -Be 0
+        }
+
+        It 'accepts placeholder-like names that are not complete placeholder segments' {
+            foreach ($owner in @('@todoist', '@placeholder-tools', '@ContosoOrg/placeholder-tools', 'todoist@example.com', 'placeholder-tools@example.com')) {
+                @(Test-CodeownersRule "/valid/ $owner" | Where-Object Status -eq 'Failed').Count | Should -Be 0 -Because $owner
+            }
+        }
+
+        It 'accepts users teams and emails for unknown owner type without eligibility claims' {
+            $result = Test-CodeownersRule '/owners/ @octocat @ContosoOrg/maintainers docs@example.com' Unknown
+            @($result | Where-Object Status -eq 'Failed').Count | Should -Be 0
+            @($result | Where-Object Message -match 'eligible').Count | Should -Be 0
+        }
+
+        It 'rejects missing malformed unsupported and placeholder owners with the correct path' {
+            $invalidRules = @(
+                '/missing/', '/comment-only/ # missing owner', '/bad-user/ @bad/user/name',
+                '/bad-email1/ docs@', '/bad-email2/ @example.com', '/bad-email3/ docs@example',
+                '/bad-email4/ docs@@example.com', '/random/ @octocat random-token # comment',
+                '/bad-email5/ .docs@example.com', '/bad-email6/ docs..ops@example.com',
+                '/bad-email7/ docs@example..com', '/bad-email8/ docs@example-.com',
+                '/placeholder-user/ @placeholder', '/placeholder-org/ @changeme/team',
+                '/placeholder-team/ @ContosoOrg/todo', '/placeholder-email/ placeholder@example.com'
+            )
+            foreach ($rule in $invalidRules) {
+                $path = ($rule -split '\s+')[0]
+                $result = Test-CodeownersRule $rule
+                @($result | Where-Object { $_.Status -eq 'Failed' -and $_.Path -eq $path }).Count | Should -BeGreaterThan 0 -Because $rule
+            }
+        }
+
+        It 'does not interpret inline comment text as an owner' {
+            $result = Test-CodeownersRule '/scripts/ @octocat # not-an-owner random-token'
+            @($result | Where-Object Status -eq 'Failed').Count | Should -Be 0
+        }
+
+        It 'treats the first hash as a comment because CODEOWNERS does not support escaping it' {
+            foreach ($rule in @('/scripts/ @octocat \# comment', '/foo\#bar @octocat')) {
+                $result = Test-CodeownersRule $rule
+                @($result | Where-Object Status -eq 'Failed').Count | Should -BeGreaterThan 0 -Because $rule
+            }
+        }
+
+        It 'rejects team owners only when explicit owner type is User' {
+            @(Test-CodeownersRule '/team/ @ContosoOrg/maintainers' User | Where-Object Message -match 'incompatible').Count | Should -Be 1
+            @(Test-CodeownersRule '/team/ @ContosoOrg/maintainers' Organization | Where-Object Status -eq 'Failed').Count | Should -Be 0
+        }
+    }
 }
 
 Describe 'Live CODEOWNERS identity result classification' {

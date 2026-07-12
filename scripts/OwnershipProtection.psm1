@@ -32,7 +32,9 @@ function Test-CodeownersContent {
     $rules = [System.Collections.Generic.List[object]]::new()
     $lines = @($Content -split "`r?`n")
     foreach ($line in $lines) {
-        $trimmed = $line.Trim()
+        $commentIndex = $line.IndexOf('#')
+        $ruleText = if ($commentIndex -ge 0) { $line.Substring(0, $commentIndex) } else { $line }
+        $trimmed = $ruleText.Trim()
         if (-not $trimmed -or $trimmed.StartsWith('#')) { continue }
         $parts = @($trimmed -split '\s+' | Where-Object { $_ })
         if ($parts.Count -lt 2) {
@@ -42,14 +44,22 @@ function Test-CodeownersContent {
         $owners = @($parts[1..($parts.Count - 1)])
         $rules.Add([pscustomobject]@{ Pattern = $parts[0]; Owners = $owners })
         foreach ($owner in $owners) {
-            if ($owner -notmatch '^@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?(?:/[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?)?$') {
+            $isGitHubOwner = $owner -match '^@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?(?:/[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?)?$'
+            $isEmailOwner = $owner -match '^[A-Za-z0-9_+-]+(?:\.[A-Za-z0-9_+-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}$'
+            if (-not $isGitHubOwner -and -not $isEmailOwner) {
                 $results.Add((New-OwnershipResult -Status Failed -Message "Malformed CODEOWNERS owner token '$owner'." -Identity $owner -Path $parts[0]))
                 continue
             }
-            if ($owner -match '(?i)(?:^@|/)(?:placeholder|changeme|replace-me|todo)(?:/|$)') {
+            $isPlaceholder = if ($isEmailOwner) {
+                ($owner -split '@', 2)[0] -match '(?i)^(?:placeholder|changeme|replace-me|todo)$'
+            }
+            else {
+                $owner -match '(?i)(?:^@|/)(?:placeholder|changeme|replace-me|todo)(?:/|$)'
+            }
+            if ($isPlaceholder) {
                 $results.Add((New-OwnershipResult -Status Failed -Message "Placeholder CODEOWNERS identity '$owner' is not allowed." -Identity $owner -Path $parts[0]))
             }
-            if ($RepositoryOwnerType -eq 'User' -and $owner.Contains('/')) {
+            if ($isGitHubOwner -and $RepositoryOwnerType -eq 'User' -and $owner.Contains('/')) {
                 $results.Add((New-OwnershipResult -Status Failed -Message "Organization-team CODEOWNER '$owner' is incompatible with a user-owned repository." -Identity $owner -Path $parts[0]))
             }
         }

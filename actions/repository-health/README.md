@@ -17,7 +17,7 @@ This action validates that a repository has the minimum governance structure nee
 - `path`: repository root. Defaults to `.`.
 - `output-json`: optional repository-relative JSON report path.
 - `advisory`: when `true`, records findings but returns success.
-- `RepositoryOwnerType`: optional trusted owner type (`Unknown`, `User`, or `Organization`); defaults to `Unknown` so offline validation never infers live GitHub ownership from a repository name.
+- `repository-owner-type`: optional trusted owner type with exact accepted values `Unknown`, `User`, or `Organization`. It defaults to `Unknown`, so offline validation never infers live GitHub ownership from a repository name. Supply `User` or `Organization` only from trusted repository metadata or verified GitHub API evidence. This compatibility input does not prove that an owner identity exists or has repository review access.
 
 ## Outputs
 
@@ -35,7 +35,7 @@ The action checks:
 - Documentation completeness.
 - Schema and fixture validation.
 - Presence of Pester tests.
-- Deterministic CODEOWNERS validation for user or team token syntax, placeholders, active default coverage, and explicit high-risk path coverage. With owner type `Unknown`, structurally valid user and team forms are accepted without a live-eligibility claim. User-versus-organization compatibility is enforced only from explicit trusted input; identity existence and repository review access require separate GitHub API evidence.
+- Deterministic CODEOWNERS validation for user, organization/team, and conservative email-owner syntax; full-line and inline comments; placeholders; active default coverage; and explicit high-risk path coverage. With owner type `Unknown`, structurally valid user, team, and email forms are accepted without a live-eligibility claim. User-versus-organization compatibility is enforced only from explicit trusted input; identity existence and repository review access require separate GitHub API evidence.
 - Presence of action metadata and README files for local actions.
 
 ## Exit Codes
@@ -58,6 +58,24 @@ The action reads repository files and runs repository-local validators from this
   with:
     path: .
     output-json: evidence/repository-health.json
+```
+
+User-owned repository with verified owner metadata:
+
+```yaml
+- uses: AIAllTheThingz/Engineering-Standards/actions/repository-health@0123456789abcdef0123456789abcdef01234567
+  with:
+    path: .
+    repository-owner-type: User
+```
+
+Organization-owned repository with verified owner metadata:
+
+```yaml
+- uses: AIAllTheThingz/Engineering-Standards/actions/repository-health@0123456789abcdef0123456789abcdef01234567
+  with:
+    path: .
+    repository-owner-type: Organization
 ```
 
 ## Related Documents

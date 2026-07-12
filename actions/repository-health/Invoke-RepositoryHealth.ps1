@@ -3,13 +3,23 @@
 Checks repository governance health.
 .DESCRIPTION
 Checks required governance files, JSON parsing, schemas and fixtures, documentation completeness, tests, CODEOWNERS, Dependabot, workflows, action metadata, and evidence presence.
+.PARAMETER Path
+Repository root to validate. Defaults to the current directory.
+.PARAMETER OutputJson
+Optional repository-relative path for the structured validation report.
+.PARAMETER Advisory
+Records findings but exits successfully when blocking findings exist.
+.PARAMETER RepositoryOwnerType
+Exact trusted owner type: Unknown, User, or Organization. Unknown performs structural validation only. User or Organization must come from trusted repository metadata or verified GitHub API evidence and does not prove identity existence or review eligibility.
+.EXAMPLE
+pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path . -RepositoryOwnerType User
 #>
 [CmdletBinding()]
 param(
     [string]$Path = '.',
     [string]$OutputJson,
     [switch]$Advisory,
-    [ValidateSet('Unknown', 'User', 'Organization')][string]$RepositoryOwnerType = 'Unknown'
+    [ValidateScript({ @('Unknown', 'User', 'Organization') -ccontains $_ }, ErrorMessage = 'RepositoryOwnerType must be exactly Unknown, User, or Organization.')][string]$RepositoryOwnerType = 'Unknown'
 )
 
 Set-StrictMode -Version Latest
@@ -115,7 +125,8 @@ if (Test-Path -LiteralPath $codeowners) {
     $text = Get-Content -LiteralPath $codeowners -Raw
     foreach ($finding in @(Test-CodeownersContent -Content $text -RepositoryOwnerType $RepositoryOwnerType)) {
         $severity = if ($finding.Status -eq 'Passed') { 'info' } else { 'error' }
-        $results.Add((New-ValidationResult -Status $finding.Status -Message $finding.Message -Path 'CODEOWNERS' -Severity $severity))
+        $findingData = [ordered]@{ rulePattern = $finding.Path; identity = $finding.Identity }
+        $results.Add((New-ValidationResult -Status $finding.Status -Message $finding.Message -Path 'CODEOWNERS' -Severity $severity -Data $findingData))
     }
 }
 
