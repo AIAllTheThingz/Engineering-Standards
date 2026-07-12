@@ -190,6 +190,7 @@ Current `master` contains development after the published target. Historical evi
             $text = Get-Content docs/RELEASE_STATUS.md -Raw
             $text = $text.Replace('resolves to immutable commit `1111111111111111111111111111111111111111`', "resolves to immutable commit ``$target``")
             Set-Content docs/RELEASE_STATUS.md $text
+            (Get-Content README.md -Raw).Replace('1111111111111111111111111111111111111111', $target) | Set-Content README.md
         } finally { Pop-Location }
         & $script:invokeFixtureValidation | Should -Not -Be 0
         $script:output -join "`n" | Should -Match 'match local tag object'
@@ -201,6 +202,7 @@ Current `master` contains development after the published target. Historical evi
             git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'; git add .; git commit -qm baseline; git tag v1.1.0
             $commit = git rev-parse v1.1.0
             (Get-Content docs/RELEASE_STATUS.md -Raw).Replace('1111111111111111111111111111111111111111', $commit) | Set-Content docs/RELEASE_STATUS.md
+            (Get-Content README.md -Raw).Replace('1111111111111111111111111111111111111111', $commit) | Set-Content README.md
         } finally { Pop-Location }
         & $script:invokeFixtureValidation | Should -Not -Be 0
         $script:output -join "`n" | Should -Match 'must be an annotated tag object'
