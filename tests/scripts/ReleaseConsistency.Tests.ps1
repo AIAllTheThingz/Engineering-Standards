@@ -25,7 +25,7 @@ Describe 'Release consistency validation' {
         Set-Content -LiteralPath (Join-Path $script:fixture 'README.md') -Value @'
 # Repository
 
-Current published version: `1.1.0`. See [Release Status](docs/RELEASE_STATUS.md) and [Unreleased](CHANGELOG.md#unreleased).
+Current published version: `1.1.0`. Annotated tag `v1.1.0` resolves to immutable commit `1111111111111111111111111111111111111111`. See [Release Status](docs/RELEASE_STATUS.md) and [Unreleased](CHANGELOG.md#unreleased).
 '@
         Set-Content -LiteralPath (Join-Path $script:fixture 'docs/RELEASE_STATUS.md') -Value @'
 # Release Status
@@ -56,6 +56,8 @@ Current `master` contains development after the published target. Historical evi
             $target = git rev-parse 'v1.1.0^{}'
             $text = (Get-Content docs/RELEASE_STATUS.md -Raw).Replace('tag-object SHA `1111111111111111111111111111111111111111`', "tag-object SHA ``$tagObject``").Replace('resolves to immutable commit `1111111111111111111111111111111111111111`', "resolves to immutable commit ``$target``").Replace('Current `master` contains development after the published target. ', '')
             Set-Content docs/RELEASE_STATUS.md $text
+            (Get-Content README.md -Raw).Replace('1111111111111111111111111111111111111111', $target) | Set-Content README.md
+            Set-Content CHANGELOG.md "# Changelog`n`n## [Unreleased]`n`nNo unreleased changes are currently recorded.`n`n## [1.1.0] - 2026-07-11"
         } finally { Pop-Location }
         & $script:invokeFixtureValidation | Should -Be 0
     }
@@ -91,6 +93,7 @@ Current `master` contains development after the published target. Historical evi
             $target = git rev-parse 'v1.1.0^{}'
             $text = (Get-Content docs/RELEASE_STATUS.md -Raw).Replace('tag-object SHA `1111111111111111111111111111111111111111`', "tag-object SHA ``$tagObject``").Replace('resolves to immutable commit `1111111111111111111111111111111111111111`', "resolves to immutable commit ``$target``")
             Set-Content docs/RELEASE_STATUS.md $text
+            (Get-Content README.md -Raw).Replace('1111111111111111111111111111111111111111', $target) | Set-Content README.md
             Add-Content README.md 'post tag'; git add .; git commit -qm later
             Set-Content CHANGELOG.md "# Changelog`n`n## [Unreleased]`n`nNo unreleased changes are currently recorded.`n`n## [1.1.0] - 2026-07-11"
         } finally { Pop-Location }
@@ -107,6 +110,7 @@ Current `master` contains development after the published target. Historical evi
             $target = git rev-parse 'v1.1.0^{}'
             $text = (Get-Content docs/RELEASE_STATUS.md -Raw).Replace('tag-object SHA `1111111111111111111111111111111111111111`', "tag-object SHA ``$tagObject``").Replace('resolves to immutable commit `1111111111111111111111111111111111111111`', "resolves to immutable commit ``$target``")
             Set-Content docs/RELEASE_STATUS.md $text
+            (Get-Content README.md -Raw).Replace('1111111111111111111111111111111111111111', $target) | Set-Content README.md
             Add-Content README.md 'post tag'; git add .; git commit -qm later
             Set-Content CHANGELOG.md "# Changelog`n`n## [Unreleased]`n`n## [1.1.0] - 2026-07-11"
         } finally { Pop-Location }
@@ -118,6 +122,29 @@ Current `master` contains development after the published target. Historical evi
         $output = @(& pwsh -NoProfile -File $script:validator -Path $script:fixture -SkipTagVerification 2>&1)
         $LASTEXITCODE | Should -Not -Be 0
         $output -join "`n" | Should -Match 'annotated tag object as a full SHA'
+    }
+
+    It 'fails when README records a different published target' {
+        (Get-Content (Join-Path $script:fixture 'README.md') -Raw).Replace('1111111111111111111111111111111111111111', '2222222222222222222222222222222222222222') | Set-Content (Join-Path $script:fixture 'README.md')
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+    }
+
+    It 'fails when the expected release tag is absent from README' {
+        (Get-Content (Join-Path $script:fixture 'README.md') -Raw).Replace('v1.1.0', 'release-tag') | Set-Content (Join-Path $script:fixture 'README.md')
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+    }
+
+    It 'fails stale unreleased content when no post-tag commits exist' {
+        Push-Location $script:fixture
+        try {
+            git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'; git add .; git commit -qm baseline; git tag -a v1.1.0 -m release
+            $tagObject = git rev-parse v1.1.0
+            $target = git rev-parse 'v1.1.0^{}'
+            $statusText = (Get-Content docs/RELEASE_STATUS.md -Raw).Replace('tag-object SHA `1111111111111111111111111111111111111111`', "tag-object SHA ``$tagObject``").Replace('resolves to immutable commit `1111111111111111111111111111111111111111`', "resolves to immutable commit ``$target``").Replace('Current `master` contains development after the published target. ', '')
+            Set-Content docs/RELEASE_STATUS.md $statusText
+            (Get-Content README.md -Raw).Replace('1111111111111111111111111111111111111111', $target) | Set-Content README.md
+        } finally { Pop-Location }
+        & $script:invokeFixtureValidation | Should -Not -Be 0
     }
 
     It 'fails a version mismatch' {
