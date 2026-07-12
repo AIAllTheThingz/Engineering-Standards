@@ -6,7 +6,7 @@
 | Governance version | 1.1.0 |
 | Owner role | Engineering Standards Maintainers |
 | Canary repository | `AIAllTheThingz/Engineering-Standards-Canary` |
-| Validated standards SHA | `091841c94fba6039443a40b7c4a28e5b9a3af2d2` |
+| Validated standards SHA | `de32b77e2043f5336a54b92ab9ed867abe93ba7e` |
 | Last verified | 2026-07-11 |
 
 ## Purpose
@@ -33,17 +33,17 @@ Only the selected scenario job runs during manual dispatch. Pull requests and pu
 
 ## Verified Baseline
 
-The initial cross-repository proof used canary commit `e3e841e67f27606c43b5e2179f838f3f0314aaf1` and Engineering Standards commit `091841c94fba6039443a40b7c4a28e5b9a3af2d2`. Every run uploaded evidence, and each downloaded artifact passed independent verification with `scripts/Test-WorkflowEvidenceArtifact.ps1`.
+The corrected cross-repository proof used canary commit `a7671ec1b8b702fc7703e49a7819bbffffd04fc3` and Engineering Standards functional candidate `de32b77e2043f5336a54b92ab9ed867abe93ba7e`. Every run uploaded evidence, and each downloaded artifact passed independent verification with `scripts/Test-WorkflowEvidenceArtifact.ps1`. This table validates that functional candidate, not a later metadata-only documentation commit.
 
 | Scenario | Run | Governance job | Artifact ID | Artifact SHA-256 | Result |
 | --- | ---: | ---: | ---: | --- | --- |
-| Success | `29172568985` | `86596048593` | `8253932910` | `6f9960dbfe7c7aa4929dc8a34473ed3c74c1d62d40192591d214b6da41160680` | Passed |
-| Controlled failure | `29172598746` | `86596124907` | `8253939949` | `601c1b78456c01387ca13a803b239e115ff93ed50a5a37c955e775accdfebc19` | Expected failure verified |
-| Governance version mismatch | `29172599524` | `86596125975` | `8253940477` | `598cebbd5cb8ca4c8f0fb7af90a11867401a58a8f5382ebc9baf8f7d79b2d1d3` | Expected failure verified |
-| Missing required file | `29172600326` | `86596128396` | `8253940162` | `c996a6bab915f5fe3c755cdaab878ebe56aff0e50c4729e3e0a7bacc3f6c2d49` | Expected failure verified |
-| Mandatory control disablement | `29172601001` | `86596130760` | `8253940790` | `36bfd31bedd1c6799ae1201e175dad2b6019ae128e23458c3bd0d9f6d8599d39` | Expected failure verified |
+| Success | `29174960763` | `86602384012` | `8254615849` | `5442a898d2fef5d957b2c982c4c932fe58dad01da3c5b92b3758657f47d7293f` | Passed |
+| Controlled failure | `29174961493` | `86602386096` | `8254615773` | `a12f37222cf30c98296e85ebbffb97f8e13bd467ae3d923783163d4141b59e97` | Expected failure verified |
+| Governance version mismatch | `29174962200` | `86602384436` | `8254615629` | `1099b349006aaa8ea7801a30cebda46370258622d5cfcef06c792c21ad4df922` | Exact mismatch reason verified |
+| Missing required file | `29174962956` | `86602391036` | `8254616287` | `4dd42b75ea3d992cabe0b6c1519753fc17e86eb5cb01eac79f90bfb9fdfd606f` | Exact `SECURITY.md` reason verified |
+| Mandatory control disablement | `29174963655` | `86602388751` | `8254616945` | `3a6ba0b648c0adf3fd7a4b0fb7f27ccf526a6e5e0110197c36da755724c6b3ac` | Exact disablement reason verified |
 
-The pull-request success artifact records the GitHub-generated merge commit `6597c1acc53e04862d8e755d2df6267b17477727` at `1/merge`; manual scenario artifacts record the exact canary head above. All artifacts record the immutable standards workflow identity. This distinction prevents a synthetic pull-request merge identity from being misreported as the branch head.
+All five manual artifacts record the exact canary head and immutable standards workflow identity above. The version-mismatch and mandatory-disablement artifacts use `BootstrapValidation` and preserve the sanitized exception message; the missing-file artifact preserves the Contract diagnostic identifying `SECURITY.md`.
 
 ## Release Gate
 
