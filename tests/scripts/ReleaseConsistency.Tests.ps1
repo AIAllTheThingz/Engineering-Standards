@@ -134,6 +134,11 @@ Current `master` contains development after the published target. Historical evi
         & $script:invokeFixtureValidation | Should -Not -Be 0
     }
 
+    It 'fails when the published release sentence names the wrong status tag' {
+        (Get-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md') -Raw).Replace('Annotated tag `v1.1.0`', 'Annotated tag `v1.0.0`') | Set-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md')
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+    }
+
     It 'fails stale unreleased content when no post-tag commits exist' {
         Push-Location $script:fixture
         try {

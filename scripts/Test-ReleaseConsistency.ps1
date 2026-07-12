@@ -48,6 +48,8 @@ $fullShaPattern = '[0-9a-f]{40}'
 $targetMatch = [regex]::Match($status, ('resolves to immutable commit `{0}`' -f "($fullShaPattern)"))
 $tagObjectMatch = [regex]::Match($status, ('tag-object SHA `{0}`' -f "($fullShaPattern)"))
 $readmeTargetMatch = [regex]::Match($readme, ('resolves to immutable commit `{0}`' -f "($fullShaPattern)"))
+$readmeTagMatch = [regex]::Match($readme, 'Annotated tag `(v[^`]+)` resolves to immutable commit')
+$statusTagMatch = [regex]::Match($status, 'Annotated tag `(v[^`]+)` has tag-object SHA')
 if (-not $targetMatch.Success) {
     $failures.Add('Release status does not identify the published target as a full immutable commit SHA.')
 }
@@ -73,7 +75,9 @@ if ($version) {
 if ($readme -notmatch 'docs/RELEASE_STATUS\.md' -or $readme -notmatch 'CHANGELOG\.md#unreleased') {
     $failures.Add('README.md must link to release status and [Unreleased].')
 }
-if ($version -and ($readme -notmatch [regex]::Escape("v$version") -or $status -notmatch [regex]::Escape("v$version"))) {
+if ($version -and
+    (-not $readmeTagMatch.Success -or $readmeTagMatch.Groups[1].Value -ne "v$version" -or
+     -not $statusTagMatch.Success -or $statusTagMatch.Groups[1].Value -ne "v$version")) {
     $failures.Add("README and release status must identify expected tag 'v$version'.")
 }
 if ($status -notmatch '(?i)does not validate current `master`') {
