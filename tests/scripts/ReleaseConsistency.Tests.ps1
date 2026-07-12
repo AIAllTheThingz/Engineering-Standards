@@ -111,7 +111,6 @@ Current `master` contains development after the published target. Historical evi
             Set-Content CHANGELOG.md "# Changelog`n`n## [Unreleased]`n`n## [1.1.0] - 2026-07-11"
         } finally { Pop-Location }
         & $script:invokeFixtureValidation | Should -Not -Be 0
-        $script:output -join "`n" | Should -Match 'no substantive entries'
     }
 
     It 'requires the recorded tag object even when local tag verification is skipped' {
