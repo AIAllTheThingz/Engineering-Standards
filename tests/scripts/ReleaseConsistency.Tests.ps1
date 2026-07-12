@@ -247,7 +247,16 @@ Current `master` contains development after the published target. Historical evi
     }
 
     It 'fails when historical evidence is presented as current proof' {
-        (Get-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md') -Raw).Replace('does not validate current `master`', 'validates current `master`') | Set-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md')
+        Push-Location $script:fixture
+        try {
+            git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'; git add .; git commit -qm baseline; git tag -a v1.1.0 -m release
+            $tagObject = git rev-parse v1.1.0
+            $target = git rev-parse 'v1.1.0^{}'
+            $statusText = (Get-Content docs/RELEASE_STATUS.md -Raw).Replace('tag-object SHA `1111111111111111111111111111111111111111`', "tag-object SHA ``$tagObject``").Replace('resolves to immutable commit `1111111111111111111111111111111111111111`', "resolves to immutable commit ``$target``").Replace('does not validate current `master`', 'validates current `master`')
+            Set-Content docs/RELEASE_STATUS.md $statusText
+            (Get-Content README.md -Raw).Replace('1111111111111111111111111111111111111111', $target) | Set-Content README.md
+            Add-Content README.md 'post tag'; git add .; git commit -qm later
+        } finally { Pop-Location }
         & $script:invokeFixtureValidation | Should -Not -Be 0
     }
 
