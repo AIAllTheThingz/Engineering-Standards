@@ -21,7 +21,7 @@ Current `master` contains development after the published target. The authoritat
 
 Post-release implementation includes the enterprise PowerShell Codex skill, cross-repository reusable-workflow repair, trusted pin rotation, downstream canary gate, and specific bootstrap failure evidence. None is part of `v1.1.0`.
 
-PRs #26 through #28 performed post-publication verification and release-record maintenance. Their historical evidence remains valid only for the commits it names; `evidence/latest-verified-run.json` does not validate current `master`.
+PRs #26 through #28 performed post-publication verification and release-record maintenance. Their historical evidence remains valid only for the commits it names. `evidence/latest-verified-run.json` records the latest independently verified Issue #17 functional candidate and merge context; it does not validate its later metadata-only evidence commit and does not validate current `master`.
 
 ## Immutable Consumer References
 
