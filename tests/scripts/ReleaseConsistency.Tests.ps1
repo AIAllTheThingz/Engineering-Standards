@@ -51,9 +51,11 @@ Current `master` contains development after the published target. Historical evi
         Push-Location $script:fixture
         try {
             git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'
-            git add .; git commit -qm baseline; git tag v1.1.0
-            $tag = git rev-parse v1.1.0
-            (Get-Content docs/RELEASE_STATUS.md -Raw).Replace('1111111111111111111111111111111111111111', $tag).Replace('Current `master` contains development after the published target. ', '') | Set-Content docs/RELEASE_STATUS.md
+            git add .; git commit -qm baseline; git tag -a v1.1.0 -m release
+            $tagObject = git rev-parse v1.1.0
+            $target = git rev-parse 'v1.1.0^{}'
+            $text = (Get-Content docs/RELEASE_STATUS.md -Raw).Replace('tag-object SHA `1111111111111111111111111111111111111111`', "tag-object SHA ``$tagObject``").Replace('resolves to immutable commit `1111111111111111111111111111111111111111`', "resolves to immutable commit ``$target``").Replace('Current `master` contains development after the published target. ', '')
+            Set-Content docs/RELEASE_STATUS.md $text
         } finally { Pop-Location }
         & $script:invokeFixtureValidation | Should -Be 0
     }
@@ -79,9 +81,11 @@ Current `master` contains development after the published target. Historical evi
         Push-Location $script:fixture
         try {
             git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'
-            git add .; git commit -qm baseline; git tag v1.1.0
+            git add .; git commit -qm baseline; git tag -a v1.1.0 -m release
+            $tagObject = git rev-parse v1.1.0
             $target = git rev-parse 'v1.1.0^{}'
-            (Get-Content docs/RELEASE_STATUS.md -Raw).Replace('1111111111111111111111111111111111111111', $target) | Set-Content docs/RELEASE_STATUS.md
+            $text = (Get-Content docs/RELEASE_STATUS.md -Raw).Replace('tag-object SHA `1111111111111111111111111111111111111111`', "tag-object SHA ``$tagObject``").Replace('resolves to immutable commit `1111111111111111111111111111111111111111`', "resolves to immutable commit ``$target``")
+            Set-Content docs/RELEASE_STATUS.md $text
             Add-Content README.md 'post tag'; git add .; git commit -qm later
             Set-Content CHANGELOG.md "# Changelog`n`n## [Unreleased]`n`nNo unreleased changes are currently recorded.`n`n## [1.1.0] - 2026-07-11"
         } finally { Pop-Location }
@@ -113,7 +117,7 @@ Current `master` contains development after the published target. Historical evi
     It 'fails when the recorded target differs from the local tag' {
         Push-Location $script:fixture
         try {
-            git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'; git add .; git commit -qm baseline; git tag v1.1.0
+            git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'; git add .; git commit -qm baseline; git tag -a v1.1.0 -m release
             $tagObject = git rev-parse v1.1.0
             $text = Get-Content docs/RELEASE_STATUS.md -Raw
             $text = $text.Replace('tag-object SHA `1111111111111111111111111111111111111111`', "tag-object SHA ``$tagObject``")
@@ -135,6 +139,17 @@ Current `master` contains development after the published target. Historical evi
         } finally { Pop-Location }
         & $script:invokeFixtureValidation | Should -Not -Be 0
         $script:output -join "`n" | Should -Match 'match local tag object'
+    }
+
+    It 'fails when the published tag is lightweight' {
+        Push-Location $script:fixture
+        try {
+            git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'; git add .; git commit -qm baseline; git tag v1.1.0
+            $commit = git rev-parse v1.1.0
+            (Get-Content docs/RELEASE_STATUS.md -Raw).Replace('1111111111111111111111111111111111111111', $commit) | Set-Content docs/RELEASE_STATUS.md
+        } finally { Pop-Location }
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match 'must be an annotated tag object'
     }
 
     It 'fails a published state with a missing local tag' {

@@ -74,6 +74,11 @@ if (Test-Path -LiteralPath $gitDirectory) {
         $failures.Add("Published tag '$tagName' does not exist locally.")
     }
     elseif ($targetMatch.Success) {
+        $tagType = (& git -C $root cat-file -t $tagName 2>$null).Trim()
+        if ($tagType -ne 'tag') {
+            $failures.Add("Published tag '$tagName' must be an annotated tag object; found '$tagType'.")
+        }
+
         $actualTagObject = (& git -C $root rev-parse $tagName 2>$null).Trim()
         if (-not $tagObjectMatch.Success) {
             $failures.Add('Release status does not identify the annotated tag object as a full SHA.')
