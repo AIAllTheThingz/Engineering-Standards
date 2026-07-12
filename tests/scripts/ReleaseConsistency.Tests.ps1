@@ -99,6 +99,14 @@ Current `master` contains development after the published target. Historical evi
         $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
     }
 
+    It 'rejects a prepared and unpublished state after its tag exists' {
+        Set-Content (Join-Path $script:fixture 'README.md') "# Repository`n`nThe prepared version is ``1.1.0`` and is unpublished. See [Release Status](docs/RELEASE_STATUS.md) and [Unreleased](CHANGELOG.md#unreleased)."
+        Set-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md') "# Release Status`n`nThe prepared version is ``1.1.0`` and is unpublished.`n`nTag state: Not created."
+        Push-Location $script:fixture
+        try { git init -q; git config user.email 'test@example.invalid'; git config user.name 'Test'; git add .; git commit -qm baseline; git tag -a v1.1.0 -m release } finally { Pop-Location }
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+    }
+
     It 'fails when Unreleased is missing' {
         (Get-Content (Join-Path $script:fixture 'CHANGELOG.md') -Raw).Replace('## [Unreleased]', '## Upcoming') | Set-Content (Join-Path $script:fixture 'CHANGELOG.md')
         & $script:invokeFixtureValidation | Should -Not -Be 0

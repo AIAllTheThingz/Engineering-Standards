@@ -88,6 +88,12 @@ if ($isPublished -and
     $failures.Add("README and release status must identify expected tag 'v$version'.")
 }
 $gitDirectory = Join-Path $root '.git'
+if ($isPrepared -and -not $SkipTagVerification -and (Test-Path -LiteralPath $gitDirectory)) {
+    & git -C $root rev-parse --verify --quiet "v$version^{}" *> $null
+    if ($LASTEXITCODE -eq 0) {
+        $failures.Add("Release status declares version '$version' prepared and unpublished, but tag 'v$version' already exists locally.")
+    }
+}
 if ($isPublished -and -not $SkipTagVerification -and (Test-Path -LiteralPath $gitDirectory)) {
     $tagName = "v$version"
     & git -C $root rev-parse --verify --quiet "$tagName^{}" *> $null
