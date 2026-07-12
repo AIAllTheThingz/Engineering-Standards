@@ -4,7 +4,26 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ## [Unreleased]
 
-No unreleased changes are currently recorded.
+### Added
+
+- Added the governed `enterprise-powershell` Codex skill and its delivery guidance.
+- Added the downstream governance canary guide and release gate for reusable-workflow changes.
+
+### Changed
+
+- Repaired reusable-workflow trust boundaries so downstream repositories execute immutable central tooling while treating caller content as untrusted data.
+- Rotated the trusted self-CI workflow pin to immutable commit `091841c94fba6039443a40b7c4a28e5b9a3af2d2` after the cross-repository repair.
+- Updated downstream workflow adoption, security, troubleshooting, and release guidance.
+
+### Fixed
+
+- Preserved specific, sanitized bootstrap failure evidence for version mismatches, missing files, and mandatory-control disablement attempts.
+
+### Migration Notes
+
+- `v1.1.0` remains the latest published release and does not contain these changes. Consumers needing that control set may use tag `v1.1.0` at `2704049d7e826975d956611b194214dd79ea3686`.
+- Consumers needing the canary-proven workflow repair should pin `.github/workflows/governance-ci-reusable.yml` to `091841c94fba6039443a40b7c4a28e5b9a3af2d2`.
+- See [Release Status](docs/RELEASE_STATUS.md) for the authoritative published-versus-unreleased boundary.
 
 ## [1.1.0] - 2026-06-30
 

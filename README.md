@@ -87,6 +87,7 @@ flowchart TD
 - [Maintainer Guide](docs/MAINTAINER_GUIDE.md)
 - [Versioning](docs/VERSIONING.md)
 - [Release Process](docs/RELEASE_PROCESS.md)
+- [Release Status](docs/RELEASE_STATUS.md)
 - [Branch Protection](docs/BRANCH_PROTECTION.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Templates](docs/TEMPLATES.md)
@@ -205,13 +206,15 @@ The repository now separates example types explicitly:
 
 The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Downstream CI SHOULD pin commit SHAs for maximum supply-chain integrity. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md), and release procedure is defined in [Release Process](docs/RELEASE_PROCESS.md).
 
-Current version: `1.1.0`.
+Current published version: `1.1.0`. Annotated tag `v1.1.0` resolves to immutable commit `2704049d7e826975d956611b194214dd79ea3686`. Current `master` contains [unreleased changes](CHANGELOG.md#unreleased) beyond that release.
+
+Consumers requiring the newer, canary-proven cross-repository workflow repair should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `091841c94fba6039443a40b7c4a28e5b9a3af2d2`; the repair is not part of `v1.1.0`. See [Release Status](docs/RELEASE_STATUS.md).
 
 ## Security Reporting And Contributions
 
 Security issues are handled through [SECURITY.md](SECURITY.md). Contributions must follow [CONTRIBUTING.md](CONTRIBUTING.md), include evidence, and avoid false completion claims.
 
-## Release Readiness Notes
+## Historical v1.1.0 Evidence Notes
 
 - Local checked-in evidence is stored in `evidence/local-completion-result.json`; GitHub-hosted completion evidence is stored in workflow artifacts.
 - `commitSha` and `validatedCommitSha` identify the repository commit that was validated. `evidenceCommitSha` identifies the commit containing a checked-in evidence file when that value is intentionally recorded. GitHub artifact evidence leaves `evidenceCommitSha` null because the artifact is not committed.
@@ -223,7 +226,7 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 - Forbidden-pattern scanning excludes generated evidence and build output by default. Use `-IncludeGeneratedEvidence` only for diagnostics.
 - Detailed Pester audit evidence is stored as sanitized JSON in `evidence/pester-details.json`; raw Pester XML is temporary and is not uploaded.
 - Final workflow enforcement occurs after final evidence validation and artifact upload, so controlled failures still produce downloadable evidence.
-- The latest independently verified success run is `28304098315` for protected `master` merge commit `2704049d7e826975d956611b194214dd79ea3686`.
+- The release-target success run is `28304098315` for protected `master` merge commit `2704049d7e826975d956611b194214dd79ea3686`; it does not validate current `master`.
 - The paired historical controlled-failure proof run is `28306149811`. That earlier workflow version injected a failed mandatory Markdown outcome after successful Markdown report generation. The repaired workflow instead records a dedicated `ControlledFailure` result after normal validation; both designs upload evidence before final enforcement.
 - The independently computed ZIP SHA-256 values are `8cb3dec5db93e1834c38b291ee4445f9c8c69f4954e3152a6c1f296da8d205dd` for success artifact `governance-evidence-28304098315` and `b50936c7c1575af9cce201a9a0e36a46dfc1ce30752482c21d1ca008ae5b0bd2` for controlled-failure artifact `governance-evidence-28306149811`.
 - The release target advanced to `2704049d7e826975d956611b194214dd79ea3686` because PR #5 merged executable evidence-validator semantics, shared governance-validation behavior, and regression tests into protected `master`.

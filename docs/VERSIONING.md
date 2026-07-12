@@ -1,9 +1,9 @@
 # Versioning
 
 | Status | Active |
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Owner role | Release Maintainers |
-| Last reviewed | 2026-06-19 |
+| Last reviewed | 2026-07-11 |
 
 ## Purpose
 
@@ -92,7 +92,7 @@ The changelog MUST agree with `VERSION`, release evidence, and the release tag. 
 
 ## Version File
 
-The root `VERSION` file contains the exact current version without a leading `v`. Release tags SHOULD add the `v` prefix. For example, `VERSION` contains `1.0.0` and the release tag is `v1.0.0`.
+The root `VERSION` file contains the latest published version without a leading `v`. Development after that release remains under `CHANGELOG.md` `[Unreleased]`; post-release commits do not by themselves change `VERSION`. Release tags SHOULD add the `v` prefix. For example, `VERSION` contains `1.1.0` and the release tag is `v1.1.0`.
 
 Changing `VERSION` requires a changelog update, release evidence refresh, and release maintainer review.
 

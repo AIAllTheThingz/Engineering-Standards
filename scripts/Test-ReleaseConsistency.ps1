@@ -1,0 +1,102 @@
+[CmdletBinding()]
+param(
+    [Parameter()]
+    [string]$Path = '.'
+)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+$root = (Resolve-Path -LiteralPath $Path).Path
+$failures = [System.Collections.Generic.List[string]]::new()
+
+function Get-RequiredText {
+    param([Parameter(Mandatory)][string]$RelativePath)
+    $fullPath = Join-Path $root $RelativePath
+    if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
+        $failures.Add("Required file '$RelativePath' is missing.")
+        return ''
+    }
+    return Get-Content -LiteralPath $fullPath -Raw
+}
+
+$version = (Get-RequiredText 'VERSION').Trim()
+$changelog = Get-RequiredText 'CHANGELOG.md'
+$readme = Get-RequiredText 'README.md'
+$status = Get-RequiredText 'docs/RELEASE_STATUS.md'
+
+if ($version -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$') {
+    $failures.Add("VERSION '$version' is not canonical semantic version syntax.")
+}
+
+$releaseDocument = "docs/releases/$version.md"
+if ($version -and -not (Test-Path -LiteralPath (Join-Path $root $releaseDocument) -PathType Leaf)) {
+    $failures.Add("Released-version document '$releaseDocument' is missing.")
+}
+
+if ($changelog -notmatch '(?m)^## \[Unreleased\]\s*$') {
+    $failures.Add("CHANGELOG.md is missing an [Unreleased] section.")
+}
+if ($version -and $changelog -notmatch "(?m)^## \[$([regex]::Escape($version))\](?:\s|$)") {
+    $failures.Add("CHANGELOG.md has no released section for VERSION '$version'.")
+}
+
+$fullShaPattern = '[0-9a-f]{40}'
+$targetMatch = [regex]::Match($status, ('resolves to immutable commit `{0}`' -f "($fullShaPattern)"))
+if (-not $targetMatch.Success) {
+    $failures.Add('Release status does not identify the published target as a full immutable commit SHA.')
+}
+
+if ($version) {
+    foreach ($record in @($readme, $status)) {
+        $colonPhrase = 'published version: `{0}`' -f $version
+        $sentencePhrase = 'published version is `{0}`' -f $version
+        if ($record -notmatch [regex]::Escape($colonPhrase) -and
+            $record -notmatch [regex]::Escape($sentencePhrase)) {
+            $failures.Add("A current release summary does not identify published version '$version'.")
+        }
+    }
+}
+
+if ($readme -notmatch 'docs/RELEASE_STATUS\.md' -or $readme -notmatch 'CHANGELOG\.md#unreleased') {
+    $failures.Add('README.md must link to release status and [Unreleased].')
+}
+if ($status -notmatch '(?i)current `master` contains development after the published target') {
+    $failures.Add('Release status does not distinguish current master from the published target.')
+}
+if ($status -notmatch '(?i)does not validate current `master`') {
+    $failures.Add('Release status does not bound historical evidence to its recorded commit.')
+}
+
+$gitDirectory = Join-Path $root '.git'
+if (Test-Path -LiteralPath $gitDirectory) {
+    $tagName = "v$version"
+    & git -C $root rev-parse --verify --quiet "$tagName^{}" *> $null
+    if ($LASTEXITCODE -ne 0) {
+        $failures.Add("Published tag '$tagName' does not exist locally.")
+    }
+    elseif ($targetMatch.Success) {
+        $actualTarget = (& git -C $root rev-parse "$tagName^{}" 2>$null).Trim()
+        if ($actualTarget -ne $targetMatch.Groups[1].Value) {
+            $failures.Add("Recorded tag target '$($targetMatch.Groups[1].Value)' does not match local tag target '$actualTarget'.")
+        }
+
+        $postTagCount = [int]((& git -C $root rev-list --count "$tagName^{}..HEAD" 2>$null).Trim())
+        if ($postTagCount -gt 0 -and $changelog -match '(?im)^No unreleased changes are currently recorded\.?\s*$') {
+            $failures.Add('Post-tag commits exist while CHANGELOG.md claims no unreleased changes.')
+        }
+    }
+}
+
+if ($status -match '(?im)^.*(?:tag|GitHub Release).*(?:pending|not published|not created).*$' -and
+    $status -notmatch '(?i)retains stale preparation-era statements') {
+    $failures.Add('Current published release status contains stale pending-publication wording.')
+}
+
+if ($failures.Count -gt 0) {
+    foreach ($failure in $failures) { Write-Error $failure }
+    exit 1
+}
+
+Write-Host "Release consistency validation passed for published version $version."
+exit 0

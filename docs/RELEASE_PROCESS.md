@@ -1,9 +1,9 @@
 # Release Process
 
 | Status | Active |
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Owner role | Release Maintainers |
-| Last reviewed | 2026-06-19 |
+| Last reviewed | 2026-07-11 |
 
 ## Purpose
 
@@ -28,6 +28,8 @@ For High or Critical governance changes, release approval SHOULD include at leas
 Define the release scope before updating `VERSION`. Identify changed controls, affected downstream repositories, schema changes, workflow changes, action pin changes, documentation changes, template changes, and migration actions.
 
 Do not mix unrelated breaking changes into an emergency release. Ship the minimum repair, then follow with a normal release.
+
+The root `VERSION` identifies the latest published release. Work merged after its immutable tag target MUST remain accurately summarized under `CHANGELOG.md` `[Unreleased]` until a later release is approved and published. A historical hosted run validates only its recorded commit, not a later `master` head.
 
 ## Pre-Release Checklist
 
