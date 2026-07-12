@@ -1,7 +1,10 @@
 [CmdletBinding()]
 param(
     [Parameter()]
-    [string]$Path = '.'
+    [string]$Path = '.',
+
+    [Parameter()]
+    [switch]$SkipTagVerification
 )
 
 Set-StrictMode -Version Latest
@@ -67,7 +70,7 @@ if ($status -notmatch '(?i)does not validate current `master`') {
 }
 
 $gitDirectory = Join-Path $root '.git'
-if (Test-Path -LiteralPath $gitDirectory) {
+if (-not $SkipTagVerification -and (Test-Path -LiteralPath $gitDirectory)) {
     $tagName = "v$version"
     & git -C $root rev-parse --verify --quiet "$tagName^{}" *> $null
     if ($LASTEXITCODE -ne 0) {

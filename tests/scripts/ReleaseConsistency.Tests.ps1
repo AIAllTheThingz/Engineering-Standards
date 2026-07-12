@@ -63,11 +63,16 @@ Current `master` contains development after the published target. Historical evi
     It 'validates the current repository release records' {
         $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
         & git -C $repositoryRoot rev-parse --verify --quiet 'v1.1.0^{}' *> $null
+        $arguments = @('-NoProfile', '-File', $script:validator, '-Path', $repositoryRoot)
         if ($LASTEXITCODE -ne 0) {
-            Set-ItResult -Skipped -Because 'the trusted checkout did not fetch release tags; direct full-history release validation remains required'
-            return
+            $arguments += '-SkipTagVerification'
         }
-        $output = @(& pwsh -NoProfile -File $script:validator -Path $repositoryRoot 2>&1)
+        $output = @(& pwsh @arguments 2>&1)
+        $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
+    }
+
+    It 'still validates repository-controlled records when tag verification is explicitly unavailable' {
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $script:fixture -SkipTagVerification 2>&1)
         $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
     }
 
