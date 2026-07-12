@@ -14,5 +14,13 @@ Describe 'JSON schema validation' {
                 (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/$name" -Raw | Test-Json -SchemaFile $schema) | Should -BeTrue -Because $name
             }
         }
+
+        It 'enforces required CODEOWNERS path structure directly in JSON Schema' {
+            $schema = Resolve-Path "$PSScriptRoot/../../schemas/governance-config.schema.json"
+            (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/governance-config-required-codeowner-paths.json" -Raw | Test-Json -SchemaFile $schema) | Should -BeTrue
+            foreach ($fixture in Get-ChildItem "$PSScriptRoot/../fixtures/invalid" -Filter 'governance-config-codeowner-*.json') {
+                (Get-Content -LiteralPath $fixture.FullName -Raw | Test-Json -SchemaFile $schema) | Should -BeFalse -Because $fixture.Name
+            }
+        }
     }
 }

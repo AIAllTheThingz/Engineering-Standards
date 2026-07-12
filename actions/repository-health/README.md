@@ -35,7 +35,7 @@ The action checks:
 - Documentation completeness.
 - Schema and fixture validation.
 - Presence of Pester tests.
-- Deterministic CODEOWNERS validation for user, organization/team, and conservative email-owner syntax; full-line and inline comments; placeholders; active default coverage; and explicit high-risk path coverage. With owner type `Unknown`, structurally valid user, team, and email forms are accepted without a live-eligibility claim. User-versus-organization compatibility is enforced only from explicit trusted input; identity existence and repository review access require separate GitHub API evidence.
+- Deterministic CODEOWNERS validation for user, organization/team, and conservative email-owner syntax; full-line and inline comments; placeholders; active default coverage; and repository-specific high-risk path coverage. Configure high-risk paths with `ownership.requiredCodeownerPaths` in `governance.config.json`. Each configured value must be a rooted literal CODEOWNERS path and must exist with exact casing. Values ending in `/` must be directories; other values must be files. Repository health evaluates every concrete file below an explicitly configured directory, without discovering outside that directory; an empty directory uses its configured base path. When the property is absent, repository health requires default `*` coverage but does not invent Engineering Standards paths for downstream repositories. Required-path ownership uses the last matching rule. The supported matching subset is `*`, rooted or unrooted literal file and directory rules, and simple `*` or `**` globs; a later decision-relevant unsupported pattern fails closed. With owner type `Unknown`, structurally valid user, team, and email forms are accepted without a live-eligibility claim. User-versus-organization compatibility is enforced only from explicit trusted input; identity existence and repository review access require separate GitHub API evidence.
 - Presence of action metadata and README files for local actions.
 
 ## Exit Codes
@@ -51,16 +51,18 @@ Evidence SHOULD include the command, exit code, JSON report, failed checks, warn
 
 The action reads repository files and runs repository-local validators from this standards package. It does not require secrets and does not perform network operations.
 
-## Example
+## Examples
+
+Downstream repository using the safe generic fallback (valid default `*` CODEOWNERS coverage, with no central-repository path assumptions):
 
 ```yaml
-- uses: AIAllTheThingz/Engineering-Standards/actions/repository-health@<commit-sha>
+- uses: AIAllTheThingz/Engineering-Standards/actions/repository-health@0123456789abcdef0123456789abcdef01234567
   with:
     path: .
     output-json: evidence/repository-health.json
 ```
 
-User-owned repository with verified owner metadata:
+This central user-owned governance repository, whose `governance.config.json` declares its mandatory high-risk paths, with verified owner metadata:
 
 ```yaml
 - uses: AIAllTheThingz/Engineering-Standards/actions/repository-health@0123456789abcdef0123456789abcdef01234567

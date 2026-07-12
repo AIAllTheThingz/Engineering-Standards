@@ -13,6 +13,43 @@ param([string]$Path, [string]$OutputJson, [switch]$Advisory, [string]$Repository
 @{ failed = 0 } | ConvertTo-Json | Set-Content -LiteralPath $OutputJson
 exit 0
 '@ | Set-Content -LiteralPath (Join-Path $script:actionHarnessRoot 'Invoke-RepositoryHealth.ps1')
+
+        function New-SyntheticRepositoryHealthFixture {
+            param(
+                [Parameter(Mandatory)][string]$Root,
+                [string[]]$RequiredCodeownerPaths,
+                [Parameter(Mandatory)][string]$Codeowners,
+                [ValidateSet('powershell', 'dotnet', 'governance')][string]$ProjectType = 'governance'
+            )
+
+            New-Item -ItemType Directory -Path $Root -Force | Out-Null
+            foreach ($directory in @('.github/workflows', 'docs', 'scripts', 'tests')) {
+                New-Item -ItemType Directory -Path (Join-Path $Root $directory) -Force | Out-Null
+            }
+            foreach ($file in @(
+                'README.md', 'LICENSE', 'SECURITY.md', 'CONTRIBUTING.md', 'AGENTS.md',
+                '.github/dependabot.yml', '.github/workflows/governance-ci.yml', '.github/pull_request_template.md',
+                'docs/BRANCH_PROTECTION.md', 'docs/ACTION_SECURITY.md', 'scripts/GovernanceValidation.psm1',
+                'scripts/Test-GitHubWorkflowArchitecture.ps1'
+            )) {
+                Set-Content -LiteralPath (Join-Path $Root $file) -Value 'fixture'
+            }
+            foreach ($validator in @('scripts/Test-DocumentationCompleteness.ps1', 'scripts/Test-YamlSyntax.ps1', 'scripts/Test-JsonSchemas.ps1')) {
+                Set-Content -LiteralPath (Join-Path $Root $validator) -Value 'exit 0'
+            }
+            Set-Content -LiteralPath (Join-Path $Root 'tests/Fixture.Tests.ps1') -Value "Describe 'fixture' { It 'passes' { `$true | Should -BeTrue } }"
+            Set-Content -LiteralPath (Join-Path $Root 'CODEOWNERS') -Value $Codeowners
+            $manifest = Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/project-manifest.json" -Raw | ConvertFrom-Json -AsHashtable
+            $manifest.projectType = $ProjectType
+            $manifest.projectName = "Synthetic $ProjectType Repository"
+            $manifest.repository = "example-org/synthetic-$ProjectType"
+            $manifest | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $Root 'project-manifest.json')
+            $config = Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/governance-config.json" -Raw | ConvertFrom-Json -AsHashtable
+            if ($PSBoundParameters.ContainsKey('RequiredCodeownerPaths')) {
+                $config.ownership = @{ requiredCodeownerPaths = @($RequiredCodeownerPaths) }
+            }
+            $config | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $Root 'governance.config.json')
+        }
     }
 
     AfterAll {
@@ -75,6 +112,137 @@ exit 0
             $scriptText | Should -Match 'rulePattern = \$finding\.Path'
             $scriptText | Should -Match 'identity = \$finding\.Identity'
             $scriptText | Should -Match '-Data \$findingData'
+        }
+
+        It 'enforces this repository explicit high-risk CODEOWNERS configuration' {
+            $config = Get-Content -LiteralPath "$PSScriptRoot/../../governance.config.json" -Raw | ConvertFrom-Json
+            @($config.ownership.requiredCodeownerPaths).Count | Should -BeGreaterThan 0
+            $reportRelativePath = '.tmp/repository-health-central-' + [guid]::NewGuid() + '.json'
+            $reportPath = Join-Path "$PSScriptRoot/../.." $reportRelativePath
+            try {
+                & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path "$PSScriptRoot/../.." -RepositoryOwnerType User -OutputJson $reportRelativePath | Out-Null
+                $LASTEXITCODE | Should -Be 0
+                $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+                $requiredPathFindings = @($report.results | Where-Object { $null -ne $_.data -and $_.data.requiredPath })
+                $expectedEvaluationPaths = [System.Collections.Generic.List[string]]::new()
+                foreach ($configuredPath in $config.ownership.requiredCodeownerPaths) {
+                    $fullPath = Join-Path "$PSScriptRoot/../.." $configuredPath.TrimStart('/').TrimEnd('/')
+                    if (Test-Path -LiteralPath $fullPath -PathType Container) {
+                        $files = @(Get-ChildItem -LiteralPath $fullPath -Recurse -File -Force)
+                        if ($files.Count -eq 0) { $expectedEvaluationPaths.Add($configuredPath) }
+                        foreach ($file in $files) {
+                            $relative = [System.IO.Path]::GetRelativePath((Resolve-Path "$PSScriptRoot/../..").Path, $file.FullName).Replace([char]'\', [char]'/')
+                            $expectedEvaluationPaths.Add("/$relative")
+                        }
+                    }
+                    else { $expectedEvaluationPaths.Add($configuredPath) }
+                }
+                $expectedEvaluationPaths = @($expectedEvaluationPaths | Sort-Object -Unique)
+                $requiredPathFindings.Count | Should -Be $expectedEvaluationPaths.Count
+                @($requiredPathFindings | Where-Object status -ne 'Passed').Count | Should -Be 0
+                @($requiredPathFindings.data.requiredPath | Sort-Object -Unique) | Should -Be $expectedEvaluationPaths
+            }
+            finally {
+                if (Test-Path -LiteralPath $reportPath) { Remove-Item -LiteralPath $reportPath -Force }
+            }
+        }
+
+        It 'does not require central governance paths in a downstream PowerShell repository' {
+            $root = Join-Path $script:actionHarnessRoot 'downstream-powershell'
+            New-SyntheticRepositoryHealthFixture -Root $root -ProjectType powershell -Codeowners '* @downstream-owner'
+            Test-Path -LiteralPath (Join-Path $root 'governance') | Should -BeFalse
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $root | Out-Null
+            $LASTEXITCODE | Should -Be 0
+        }
+
+        It 'does not require central skill paths in a downstream .NET repository' {
+            $root = Join-Path $script:actionHarnessRoot 'downstream-dotnet'
+            New-SyntheticRepositoryHealthFixture -Root $root -ProjectType dotnet -Codeowners '* @downstream-owner'
+            Test-Path -LiteralPath (Join-Path $root '.agents/skills') | Should -BeFalse
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $root | Out-Null
+            $LASTEXITCODE | Should -Be 0
+        }
+
+        It 'requires default CODEOWNERS coverage when downstream ownership configuration is omitted' {
+            $root = Join-Path $script:actionHarnessRoot 'downstream-missing-default'
+            New-SyntheticRepositoryHealthFixture -Root $root -ProjectType powershell -Codeowners '/scripts/ @script-owner'
+            $output = & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $root 2>&1
+            $LASTEXITCODE | Should -Be 1
+            $output | Out-String | Should -Match "CODEOWNERS must include default '\*' coverage"
+        }
+
+        It 'passes configured existing paths with effective ownership and reports the selected rule' {
+            $root = Join-Path $script:actionHarnessRoot 'downstream-configured'
+            New-SyntheticRepositoryHealthFixture -Root $root -RequiredCodeownerPaths @('/src/') -Codeowners "* @downstream-owner`n/src/ @downstream-owner"
+            New-Item -ItemType Directory -Path (Join-Path $root 'src') -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $root 'src/app.ps1') -Value 'Write-Output fixture'
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $root -OutputJson 'health.json' | Out-Null
+            $LASTEXITCODE | Should -Be 0
+            $report = Get-Content -LiteralPath (Join-Path $root 'health.json') -Raw | ConvertFrom-Json
+            $finding = @($report.results | Where-Object { $null -ne $_.data -and $_.data.requiredPath -eq '/src/app.ps1' })[-1]
+            $finding.status | Should -Be 'Passed'
+            $finding.data.effectivePattern | Should -Be '/src/'
+            @($finding.data.effectiveOwners) | Should -Be @('@downstream-owner')
+            $finding.data.ruleIndex | Should -Be 2
+            $finding.data.lineNumber | Should -Be 2
+        }
+
+        It 'fails a concrete file under a configured directory when a later exact rule removes ownership' {
+            $root = Join-Path $script:actionHarnessRoot 'downstream-directory-file-override'
+            New-SyntheticRepositoryHealthFixture -Root $root -RequiredCodeownerPaths @('/scripts/') -Codeowners "* @downstream-owner`n/scripts/ @script-owner`n/scripts/build.ps1"
+            Set-Content -LiteralPath (Join-Path $root 'scripts/build.ps1') -Value 'Write-Output fixture'
+            $output = & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $root 2>&1
+            $LASTEXITCODE | Should -Be 1
+            $output | Out-String | Should -Match "required path '/scripts/build.ps1' has no owners"
+        }
+
+        It 'fails closed when a later unsupported embedded double-star pattern could match a concrete file' {
+            $root = Join-Path $script:actionHarnessRoot 'downstream-directory-unsupported-override'
+            New-SyntheticRepositoryHealthFixture -Root $root -RequiredCodeownerPaths @('/scripts/') -Codeowners "* @downstream-owner`n/scripts/ @script-owner`n/scripts/a*ab**cd"
+            Set-Content -LiteralPath (Join-Path $root 'scripts/axabZZcd') -Value 'fixture'
+            $output = & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $root 2>&1
+            $LASTEXITCODE | Should -Be 1
+            $output | Out-String | Should -Match "Unsupported CODEOWNERS pattern '/scripts/a\*ab\*\*cd' could affect required path '/scripts/axabZZcd'"
+        }
+
+        It 'fails configured existing paths when a later ownerless rule removes ownership' {
+            $root = Join-Path $script:actionHarnessRoot 'downstream-ownerless-override'
+            New-SyntheticRepositoryHealthFixture -Root $root -RequiredCodeownerPaths @('/src/') -Codeowners "* @downstream-owner`n/src/ @source-owner`n/src/"
+            New-Item -ItemType Directory -Path (Join-Path $root 'src') -Force | Out-Null
+            $output = & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $root 2>&1
+            $LASTEXITCODE | Should -Be 1
+            $output | Out-String | Should -Match "Effective CODEOWNERS rule '/src/' for required path '/src/' has no owners"
+        }
+
+        It 'fails when a configured required CODEOWNERS path does not exist' {
+            $root = Join-Path $script:actionHarnessRoot 'downstream-missing-path'
+            New-SyntheticRepositoryHealthFixture -Root $root -RequiredCodeownerPaths @('/governance/') -Codeowners "* @downstream-owner`n/governance/ @downstream-owner"
+            $output = & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $root 2>&1
+            $LASTEXITCODE | Should -Be 1
+            $output | Out-String | Should -Match "Configured required CODEOWNERS path '/governance/' does not exist"
+        }
+
+        It 'enforces configured trailing-slash path kinds' {
+            $directoryRoot = Join-Path $script:actionHarnessRoot 'downstream-directory-kind'
+            New-SyntheticRepositoryHealthFixture -Root $directoryRoot -RequiredCodeownerPaths @('/scripts') -Codeowners '* @downstream-owner'
+            $directoryOutput = & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $directoryRoot 2>&1
+            $LASTEXITCODE | Should -Be 1
+            $directoryOutput | Out-String | Should -Match "does not end with '/' but is a directory"
+
+            $fileRoot = Join-Path $script:actionHarnessRoot 'downstream-file-kind'
+            New-SyntheticRepositoryHealthFixture -Root $fileRoot -RequiredCodeownerPaths @('/SECURITY.md/') -Codeowners '* @downstream-owner'
+            $fileOutput = & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $fileRoot 2>&1
+            $LASTEXITCODE | Should -Be 1
+            $fileOutput | Out-String | Should -Match "ends with '/' but is not a directory"
+        }
+
+        It 'rejects configured repository path casing that differs from GitHub case-sensitive paths' {
+            $root = Join-Path $script:actionHarnessRoot 'downstream-path-case'
+            New-SyntheticRepositoryHealthFixture -Root $root -RequiredCodeownerPaths @('/SRC/') -Codeowners "* @downstream-owner`n/SRC/ @source-owner"
+            New-Item -ItemType Directory -Path (Join-Path $root 'src') -Force | Out-Null
+            $output = & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $root 2>&1
+            $LASTEXITCODE | Should -Be 1
+            $output | Out-String | Should -Match "does not (exist|match repository path casing)"
         }
 
         It 'behaviorally forwards action inputs and preserves outputs through the argument array' {

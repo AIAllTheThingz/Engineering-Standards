@@ -203,4 +203,32 @@ Describe 'GovernanceValidation module' {
             @($results | Where-Object { $_.message -match 'production approval' }).Count | Should -Be 1
         }
     }
+
+    Context 'governance configuration ownership semantics' {
+        It 'accepts an omitted ownership configuration for backward compatibility' {
+            $results = Test-GovernanceJsonDocument -Path "$PSScriptRoot/../fixtures/valid/governance-config.json" -Kind 'governance-config'
+            @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
+        }
+
+        It 'accepts unique rooted literal required CODEOWNERS paths' {
+            $results = Test-GovernanceJsonDocument -Path "$PSScriptRoot/../fixtures/valid/governance-config-required-codeowner-paths.json" -Kind 'governance-config'
+            @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
+        }
+
+        It 'treats case-distinct required CODEOWNERS paths as unique' {
+            $document = Get-Content "$PSScriptRoot/../fixtures/valid/governance-config-required-codeowner-paths.json" -Raw | ConvertFrom-Json -AsHashtable
+            $document.ownership.requiredCodeownerPaths = @('/src/', '/SRC/')
+            $path = Join-Path $script:tempRoot 'case-distinct-governance-config.json'
+            $document | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path
+            $results = Test-GovernanceJsonDocument -Path $path -Kind 'governance-config'
+            @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
+        }
+
+        It 'rejects unsafe, duplicate, empty, wildcard, and placeholder required CODEOWNERS paths' {
+            foreach ($fixture in Get-ChildItem "$PSScriptRoot/../fixtures/invalid" -Filter 'governance-config-codeowner-*.json') {
+                $results = Test-GovernanceJsonDocument -Path $fixture.FullName -Kind 'governance-config'
+                @($results | Where-Object status -eq 'Failed').Count | Should -BeGreaterThan 0 -Because $fixture.Name
+            }
+        }
+    }
 }

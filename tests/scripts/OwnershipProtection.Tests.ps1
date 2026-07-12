@@ -49,7 +49,7 @@ Describe 'CODEOWNERS structural validation' {
 
     It 'rejects missing protected-path coverage' {
         $content = (New-CodeownersFixture) -replace '(?m)^/schemas/.*\r?\n?', ''
-        @(Test-CodeownersContent -Content $content | Where-Object Path -eq '/schemas/').Count | Should -Be 1
+        @(Test-CodeownersContent -Content $content -RequiredPaths $script:requiredPaths | Where-Object Path -eq '/schemas/').Count | Should -Be 1
     }
 
     Context 'owner tokens and comments' {
@@ -91,9 +91,9 @@ Describe 'CODEOWNERS structural validation' {
             @($result | Where-Object Message -match 'eligible').Count | Should -Be 0
         }
 
-        It 'rejects missing malformed unsupported and placeholder owners with the correct path' {
+        It 'rejects malformed unsupported and placeholder owners with the correct path' {
             $invalidRules = @(
-                '/missing/', '/comment-only/ # missing owner', '/bad-user/ @bad/user/name',
+                '/bad-user/ @bad/user/name',
                 '/bad-email1/ docs@', '/bad-email2/ @example.com', '/bad-email3/ docs@example',
                 '/bad-email4/ docs@@example.com', '/random/ @octocat random-token # comment',
                 '/bad-email5/ .docs@example.com', '/bad-email6/ docs..ops@example.com',
@@ -106,6 +106,11 @@ Describe 'CODEOWNERS structural validation' {
                 $result = Test-CodeownersRule $rule
                 @($result | Where-Object { $_.Status -eq 'Failed' -and $_.Path -eq $path }).Count | Should -BeGreaterThan 0 -Because $rule
             }
+        }
+
+        It 'allows an ownerless rule when it does not remove required ownership' {
+            $result = Test-CodeownersRule '/generated/'
+            @($result | Where-Object Status -eq 'Failed').Count | Should -Be 0
         }
 
         It 'does not interpret inline comment text as an owner' {
@@ -123,6 +128,226 @@ Describe 'CODEOWNERS structural validation' {
         It 'rejects team owners only when explicit owner type is User' {
             @(Test-CodeownersRule '/team/ @ContosoOrg/maintainers' User | Where-Object Message -match 'incompatible').Count | Should -Be 1
             @(Test-CodeownersRule '/team/ @ContosoOrg/maintainers' Organization | Where-Object Status -eq 'Failed').Count | Should -Be 0
+        }
+    }
+
+    Context 'last matching rule precedence' {
+        It 'fails fallback validation when a later universal rule removes default ownership' {
+            foreach ($universalPattern in @('/**', '**/', '/**/', '**/*', '/**/*')) {
+                $finding = @(Test-CodeownersContent -Content "* @root-owner`n$universalPattern" | Where-Object RequiredPath -eq '*')[-1]
+                $finding.Status | Should -Be 'Failed' -Because $universalPattern
+                $finding.EffectivePattern | Should -Be $universalPattern
+                $finding.EffectiveOwners.Count | Should -Be 0
+                $finding.RuleIndex | Should -Be 2
+                $finding.Reason | Should -Match 'universal CODEOWNERS rule'
+            }
+        }
+
+        It 'fails fallback validation for malformed or incompatible universal owners' {
+            $malformed = @(Test-CodeownersContent -Content "* @root-owner`n/** bad-owner" | Where-Object RequiredPath -eq '*')[-1]
+            $malformed.Status | Should -Be 'Failed'
+            $malformed.EffectiveOwners | Should -Be @('bad-owner')
+
+            $incompatible = @(Test-CodeownersContent -Content "* @root-owner`n/** @ContosoOrg/team" -RepositoryOwnerType User | Where-Object RequiredPath -eq '*')[-1]
+            $incompatible.Status | Should -Be 'Failed'
+            $incompatible.OwnerType | Should -Be 'User'
+            $incompatible.EffectivePattern | Should -Be '/**'
+        }
+
+        It 'uses a valid later universal rule for generic fallback ownership' {
+            $finding = @(Test-CodeownersContent -Content "* @root-owner`n/** security@example.com" | Where-Object RequiredPath -eq '*')[-1]
+            $finding.Status | Should -Be 'Passed'
+            $finding.EffectivePattern | Should -Be '/**'
+            $finding.EffectiveOwners | Should -Be @('security@example.com')
+        }
+
+        It 'fails generic fallback closed for a later potentially universal unsupported pattern' {
+            foreach ($rule in @('***', '*** bad-owner')) {
+                $finding = @(Test-CodeownersContent -Content "* @root-owner`n$rule" | Where-Object RequiredPath -eq '*')[-1]
+                $finding.Status | Should -Be 'Failed' -Because $rule
+                $finding.EffectivePattern | Should -Be '***'
+                $finding.RuleIndex | Should -Be 2
+                $finding.Reason | Should -Match 'could replace generic fallback ownership'
+            }
+        }
+
+        It 'uses an exact required path when no later rule matches' {
+            $result = Test-CodeownersContent -Content "* @root-owner`n/scripts/ @script-owner" -RequiredPaths '/scripts/'
+            $finding = @($result | Where-Object RequiredPath -eq '/scripts/')[-1]
+            $finding.Status | Should -Be 'Passed'
+            $finding.EffectivePattern | Should -Be '/scripts/'
+            $finding.EffectiveOwners | Should -Be @('@script-owner')
+            $finding.RuleIndex | Should -Be 2
+            $finding.LineNumber | Should -Be 2
+            $finding.RepositoryOwnerType | Should -Be 'Unknown'
+            $finding.Path | Should -Be '/scripts/'
+            $finding.Identity | Should -Be '@script-owner'
+        }
+
+        It 'uses a later exact override after the broad default' {
+            $result = Test-CodeownersContent -Content "* @root-owner`n/scripts/ @script-owner" -RequiredPaths '/scripts/'
+            @($result | Where-Object RequiredPath -eq '/scripts/')[-1].EffectiveOwners | Should -Be @('@script-owner')
+        }
+
+        It 'uses a later broad override after an exact rule' {
+            $result = Test-CodeownersContent -Content "* @root-owner`n/scripts/ @script-owner`n/** @broad-owner" -RequiredPaths '/scripts/'
+            $finding = @($result | Where-Object RequiredPath -eq '/scripts/')[-1]
+            $finding.Status | Should -Be 'Passed'
+            $finding.EffectivePattern | Should -Be '/**'
+            $finding.EffectiveOwners | Should -Be @('@broad-owner')
+            $finding.RuleIndex | Should -Be 3
+        }
+
+        It 'fails when a later ownerless rule removes required ownership' {
+            $result = Test-CodeownersContent -Content "* @root-owner`n/scripts/ @script-owner`n/scripts/" -RequiredPaths '/scripts/'
+            $finding = @($result | Where-Object RequiredPath -eq '/scripts/')[-1]
+            $finding.Status | Should -Be 'Failed'
+            $finding.Reason | Should -Match 'has no owners'
+            $finding.EffectiveOwners.Count | Should -Be 0
+            $finding.LineNumber | Should -Be 3
+        }
+
+        It 'fails when a later rule replaces a valid user with a malformed owner' {
+            $result = Test-CodeownersContent -Content "* @root-owner`n/scripts/ @script-owner`n/scripts/ bad-owner" -RequiredPaths '/scripts/'
+            $finding = @($result | Where-Object RequiredPath -eq '/scripts/')[-1]
+            $finding.Status | Should -Be 'Failed'
+            $finding.Reason | Should -Match 'invalid or incompatible'
+            $finding.EffectiveOwners | Should -Be @('bad-owner')
+        }
+
+        It 'fails when a later team rule is effective for a user-owned repository' {
+            $result = Test-CodeownersContent -Content "* @root-owner`n/scripts/ @script-owner`n/scripts/ @ContosoOrg/team" -RepositoryOwnerType User -RequiredPaths '/scripts/'
+            $finding = @($result | Where-Object RequiredPath -eq '/scripts/')[-1]
+            $finding.Status | Should -Be 'Failed'
+            $finding.Reason | Should -Match 'invalid or incompatible'
+            $finding.OwnerType | Should -Be 'User'
+        }
+
+        It 'selects only the final matching rule and ignores later nonmatching rules' {
+            $content = "* @root-owner`n/scripts/ @first`n/scripts/* @second`n/docs/ @docs-owner"
+            $finding = @(Test-CodeownersContent -Content $content -RequiredPaths '/scripts/' | Where-Object RequiredPath -eq '/scripts/')[-1]
+            $finding.Status | Should -Be 'Passed'
+            $finding.EffectivePattern | Should -Be '/scripts/*'
+            $finding.EffectiveOwners | Should -Be @('@second')
+        }
+
+        It 'applies directory ownership below the directory without matching similar path names' {
+            $content = "* @root-owner`n/scripts/tools.ps1 @exact`n/scripts/ @directory-owner`n/scripts-old/ @other-owner"
+            $finding = @(Test-CodeownersContent -Content $content -RequiredPaths '/scripts/tools.ps1' | Where-Object RequiredPath -eq '/scripts/tools.ps1')[-1]
+            $finding.Status | Should -Be 'Passed'
+            $finding.EffectivePattern | Should -Be '/scripts/'
+            $finding.EffectiveOwners | Should -Be @('@directory-owner')
+        }
+
+        It 'preserves inline comments and email owners during precedence evaluation' {
+            $content = "# full-line comment`n* @root-owner`n/docs/ @docs-owner`n/docs/ security@example.com # final contact"
+            $finding = @(Test-CodeownersContent -Content $content -RequiredPaths '/docs/' | Where-Object RequiredPath -eq '/docs/')[-1]
+            $finding.Status | Should -Be 'Passed'
+            $finding.EffectiveOwners | Should -Be @('security@example.com')
+            $finding.LineNumber | Should -Be 4
+        }
+
+        It 'fails clearly for a decision-relevant unsupported pattern' {
+            $content = "* @root-owner`n/scripts/ @script-owner`n/scripts/[ab]* @ambiguous-owner"
+            $finding = @(Test-CodeownersContent -Content $content -RequiredPaths '/scripts/' | Where-Object RequiredPath -eq '/scripts/')[-1]
+            $finding.Status | Should -Be 'Failed'
+            $finding.Reason | Should -Match 'Unsupported CODEOWNERS pattern'
+            $finding.EffectivePattern | Should -Be '/scripts/[ab]*'
+            $finding.RuleIndex | Should -Be 3
+        }
+
+        It 'does not let an unsupported pattern for another path block a required decision' {
+            $content = "* @root-owner`n/scripts/ @script-owner`n/docs/[ab]* @ambiguous-owner"
+            $finding = @(Test-CodeownersContent -Content $content -RequiredPaths '/scripts/' | Where-Object RequiredPath -eq '/scripts/')[-1]
+            $finding.Status | Should -Be 'Passed'
+            $finding.EffectivePattern | Should -Be '/scripts/'
+        }
+
+        It 'does not let an earlier unsupported candidate override a later supported match' {
+            $content = "* @root-owner`n/scripts/[ab]* @ambiguous-owner`n/scripts/ @script-owner"
+            $finding = @(Test-CodeownersContent -Content $content -RequiredPaths '/scripts/' | Where-Object RequiredPath -eq '/scripts/')[-1]
+            $finding.Status | Should -Be 'Passed'
+            $finding.EffectivePattern | Should -Be '/scripts/'
+            $finding.RuleIndex | Should -Be 3
+        }
+
+        It 'matches paths case-sensitively like GitHub' {
+            $content = "* @root-owner`n/Scripts/ @wrong-case-owner"
+            $finding = @(Test-CodeownersContent -Content $content -RequiredPaths '/scripts/' | Where-Object RequiredPath -eq '/scripts/')[-1]
+            $finding.Status | Should -Be 'Passed'
+            $finding.EffectivePattern | Should -Be '*'
+            @($finding.EffectiveOwners) | Should -Be @('@root-owner')
+        }
+
+        It 'fails closed for embedded double-star forms outside the supported subset' {
+            $content = "* @root-owner`n/scripts/ @script-owner`n/scripts/ab**cd @ambiguous-owner"
+            $finding = @(Test-CodeownersContent -Content $content -RequiredPaths '/scripts/' | Where-Object RequiredPath -eq '/scripts/')[-1]
+            $finding.Status | Should -Be 'Failed'
+            $finding.Message | Should -Match 'Unsupported CODEOWNERS pattern'
+            $finding.EffectivePattern | Should -Be '/scripts/ab**cd'
+        }
+
+        It 'uses the literal prefix of an embedded double-star to fail a concrete affected path closed' {
+            $content = "* @root-owner`n/scripts/ @script-owner`n/scripts/ab**cd @ambiguous-owner"
+            $finding = @(Test-CodeownersContent -Content $content -RequiredPaths '/scripts/abZZcd' | Where-Object RequiredPath -eq '/scripts/abZZcd')[-1]
+            $finding.Status | Should -Be 'Failed'
+            $finding.Message | Should -Match 'Unsupported CODEOWNERS pattern'
+            $finding.EffectivePattern | Should -Be '/scripts/ab**cd'
+            $finding.RuleIndex | Should -Be 3
+        }
+
+        It 'stops unsupported-pattern relevance at an earlier wildcard' {
+            $cases = @(
+                @{ Pattern = '/scripts/a*ab**cd'; RequiredPath = '/scripts/axabZZcd' },
+                @{ Pattern = '/scripts/*ab**cd'; RequiredPath = '/scripts/xxabYYcd' },
+                @{ Pattern = '/scripts/**/ab**cd'; RequiredPath = '/scripts/x/abYYcd' }
+            )
+            foreach ($case in $cases) {
+                $content = "* @root-owner`n/scripts/ @script-owner`n$($case.Pattern) @ambiguous-owner"
+                $finding = @(Test-CodeownersContent -Content $content -RequiredPaths $case.RequiredPath | Where-Object RequiredPath -eq $case.RequiredPath)[-1]
+                $finding.Status | Should -Be 'Failed' -Because $case.Pattern
+                $finding.Message | Should -Match 'Unsupported CODEOWNERS pattern'
+                $finding.EffectivePattern | Should -Be $case.Pattern
+                $finding.RuleIndex | Should -Be 3
+            }
+        }
+
+        It 'does not cross a path-segment boundary for unsupported relevance' {
+            $cases = @(
+                @{ Pattern = '/docs/[ab]'; RequiredPath = '/docs-old/file.md' },
+                @{ Pattern = '/scripts/*ab**cd'; RequiredPath = '/scripts-old/tool.ps1' }
+            )
+            foreach ($case in $cases) {
+                $content = "* @root-owner`n$($case.Pattern) @ambiguous-owner"
+                $finding = @(Test-CodeownersContent -Content $content -RequiredPaths $case.RequiredPath | Where-Object RequiredPath -eq $case.RequiredPath)[-1]
+                $finding.Status | Should -Be 'Passed' -Because $case.Pattern
+                $finding.EffectivePattern | Should -Be '*'
+            }
+        }
+
+        It 'retains mid-segment unsupported-prefix relevance' {
+            $content = "* @root-owner`n/scripts/a*ab**cd @ambiguous-owner"
+            $finding = @(Test-CodeownersContent -Content $content -RequiredPaths '/scripts/axabZZcd' | Where-Object RequiredPath -eq '/scripts/axabZZcd')[-1]
+            $finding.Status | Should -Be 'Failed'
+            $finding.EffectivePattern | Should -Be '/scripts/a*ab**cd'
+        }
+
+        It 'matches a complete globstar segment across zero directories' {
+            $content = "* @root-owner`n/foo/**/bar @bar-owner"
+            $finding = @(Test-CodeownersContent -Content $content -RequiredPaths '/foo/bar' | Where-Object RequiredPath -eq '/foo/bar')[-1]
+            $finding.Status | Should -Be 'Passed'
+            $finding.EffectivePattern | Should -Be '/foo/**/bar'
+            $finding.EffectiveOwners | Should -Be @('@bar-owner')
+        }
+
+        It 'matches a complete globstar segment across multiple directories' {
+            $content = "* @root-owner`n/foo/**/bar @bar-owner"
+            foreach ($requiredPath in @('/foo/x/bar', '/foo/x/y/bar')) {
+                $finding = @(Test-CodeownersContent -Content $content -RequiredPaths $requiredPath | Where-Object RequiredPath -eq $requiredPath)[-1]
+                $finding.Status | Should -Be 'Passed' -Because $requiredPath
+                $finding.EffectivePattern | Should -Be '/foo/**/bar'
+                $finding.EffectiveOwners | Should -Be @('@bar-owner')
+            }
         }
     }
 }

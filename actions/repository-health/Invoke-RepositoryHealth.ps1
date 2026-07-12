@@ -123,9 +123,86 @@ else {
 $codeowners = Join-Path $root 'CODEOWNERS'
 if (Test-Path -LiteralPath $codeowners) {
     $text = Get-Content -LiteralPath $codeowners -Raw
-    foreach ($finding in @(Test-CodeownersContent -Content $text -RepositoryOwnerType $RepositoryOwnerType)) {
+    $requiredCodeownerPaths = @()
+    $governanceConfigPath = Join-Path $root 'governance.config.json'
+    if (Test-Path -LiteralPath $governanceConfigPath -PathType Leaf) {
+        try {
+            $governanceConfig = Read-JsonFile -Path $governanceConfigPath
+            if ($governanceConfig.ContainsKey('ownership') -and
+                $governanceConfig.ownership -is [System.Collections.IDictionary] -and
+                $governanceConfig.ownership.Contains('requiredCodeownerPaths')) {
+                $requiredCodeownerPaths = @($governanceConfig.ownership.requiredCodeownerPaths)
+            }
+        }
+        catch {
+            # JSON parsing is reported above; do not invent required paths from an invalid config.
+        }
+    }
+    $requiredCodeownerEvaluationPaths = [System.Collections.Generic.List[string]]::new()
+    $seenCodeownerEvaluationPaths = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($requiredPath in $requiredCodeownerPaths) {
+        if ($requiredPath -isnot [string] -or $requiredPath -notmatch '^/(?!/)(?:\.[A-Za-z0-9_-]|[A-Za-z0-9_-])(?:[A-Za-z0-9._-]*[A-Za-z0-9_-])?(?:/(?:\.[A-Za-z0-9_-]|[A-Za-z0-9_-])(?:[A-Za-z0-9._-]*[A-Za-z0-9_-])?)*/?$') { continue }
+        $repositoryRelativePath = $requiredPath.TrimStart('/').TrimEnd('/')
+        try {
+            $requiredFullPath = Resolve-SafePath -Root $root -ChildPath $repositoryRelativePath -AllowMissingLeaf
+            if (-not (Test-Path -LiteralPath $requiredFullPath)) {
+                $results.Add((New-ValidationResult -Status Failed -Message "Configured required CODEOWNERS path '$requiredPath' does not exist in the repository." -Path 'governance.config.json'))
+            }
+            else {
+                $actualItem = Get-Item -LiteralPath $requiredFullPath -Force
+                $actualRelativePath = [System.IO.Path]::GetRelativePath($root, $actualItem.FullName).Replace([char]'\', [char]'/')
+                if (-not [string]::Equals($repositoryRelativePath, $actualRelativePath, [System.StringComparison]::Ordinal)) {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Configured required CODEOWNERS path '$requiredPath' does not match repository path casing '/$actualRelativePath'." -Path 'governance.config.json'))
+                }
+                $expectsDirectory = $requiredPath.EndsWith('/', [System.StringComparison]::Ordinal)
+                if ($expectsDirectory -and -not $actualItem.PSIsContainer) {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Configured required CODEOWNERS path '$requiredPath' ends with '/' but is not a directory." -Path 'governance.config.json'))
+                }
+                elseif (-not $expectsDirectory -and $actualItem.PSIsContainer) {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Configured required CODEOWNERS path '$requiredPath' does not end with '/' but is a directory." -Path 'governance.config.json'))
+                }
+                elseif ($actualItem.PSIsContainer) {
+                    $containedFiles = @()
+                    foreach ($containedItem in @(Get-ChildItem -LiteralPath $actualItem.FullName -Recurse -Force)) {
+                        if ($containedItem.LinkType -or ($containedItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+                            $containedRelativePath = [System.IO.Path]::GetRelativePath($root, $containedItem.FullName).Replace([char]'\', [char]'/')
+                            $results.Add((New-ValidationResult -Status Failed -Message "Configured required CODEOWNERS directory '$requiredPath' contains symbolic link or junction '/$containedRelativePath'." -Path 'governance.config.json'))
+                            continue
+                        }
+                        if (-not $containedItem.PSIsContainer) { $containedFiles += $containedItem }
+                    }
+                    foreach ($containedFile in $containedFiles) {
+                        $containedRelativePath = [System.IO.Path]::GetRelativePath($root, $containedFile.FullName).Replace([char]'\', [char]'/')
+                        Resolve-SafePath -Root $root -ChildPath $containedRelativePath | Out-Null
+                        $evaluationPath = "/$containedRelativePath"
+                        if ($seenCodeownerEvaluationPaths.Add($evaluationPath)) { $requiredCodeownerEvaluationPaths.Add($evaluationPath) }
+                    }
+                    if ($containedFiles.Count -eq 0 -and $seenCodeownerEvaluationPaths.Add($requiredPath)) {
+                        $requiredCodeownerEvaluationPaths.Add($requiredPath)
+                    }
+                }
+                elseif ($seenCodeownerEvaluationPaths.Add($requiredPath)) {
+                    $requiredCodeownerEvaluationPaths.Add($requiredPath)
+                }
+            }
+        }
+        catch {
+            $results.Add((New-ValidationResult -Status Failed -Message $_.Exception.Message -Path 'governance.config.json'))
+        }
+    }
+    foreach ($finding in @(Test-CodeownersContent -Content $text -RepositoryOwnerType $RepositoryOwnerType -RequiredPaths @($requiredCodeownerEvaluationPaths))) {
         $severity = if ($finding.Status -eq 'Passed') { 'info' } else { 'error' }
-        $findingData = [ordered]@{ rulePattern = $finding.Path; identity = $finding.Identity }
+        $findingData = [ordered]@{
+            rulePattern = $finding.Path
+            identity = $finding.Identity
+            requiredPath = $finding.RequiredPath
+            effectivePattern = $finding.EffectivePattern
+            effectiveOwners = @($finding.EffectiveOwners)
+            ruleIndex = $finding.RuleIndex
+            lineNumber = $finding.LineNumber
+            repositoryOwnerType = $finding.RepositoryOwnerType
+            reason = $finding.Reason
+        }
         $results.Add((New-ValidationResult -Status $finding.Status -Message $finding.Message -Path 'CODEOWNERS' -Severity $severity -Data $findingData))
     }
 }

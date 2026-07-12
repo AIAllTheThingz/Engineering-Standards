@@ -155,6 +155,10 @@ CODEOWNERS must route reviews to real owners. Placeholder teams, deleted teams, 
 
 Critical paths such as workflows, actions, schemas, governance documents, deployment configuration, database migrations, and security-sensitive code SHOULD have explicit owner coverage.
 
+Repositories declare mandatory literal coverage paths in `ownership.requiredCodeownerPaths` within `governance.config.json`. Each entry must be a unique repository-rooted file or directory path; wildcards, traversal, drive or UNC paths, whitespace, comments, and placeholders are rejected. If the property is omitted, repository health remains reusable and requires only a valid default `*` rule instead of assuming this governance repository's directory layout.
+
+Repository health evaluates required paths using CODEOWNERS last-match precedence. The final applicable supported rule must contain at least one structurally valid owner compatible with the explicitly supplied repository owner type. A later ownerless, malformed, placeholder, or incompatible override therefore fails even when an earlier rule was valid. Validation supports the documented safe subset used by this repository: `*`, rooted literal file or directory rules, and simple `*` or `**` globs. A decision-relevant pattern outside that subset fails closed and requires maintainer review rather than producing an optimistic ownership claim.
+
 ## Merge Methods
 
 Repositories SHOULD disable merge methods that undermine auditability. Squash merge is acceptable when pull request metadata and evidence remain available. Rebase merge is acceptable only when required checks and approvals remain attached to the pull request record.
