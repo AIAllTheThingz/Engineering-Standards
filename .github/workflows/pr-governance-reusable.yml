@@ -21,17 +21,17 @@ jobs:
       - name: Validate trusted workflow identity
         shell: pwsh
         env:
-          WORKFLOW_REF: ${{ github.workflow_ref }}
-          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          WORKFLOW_REPOSITORY: ${{ job.workflow_repository }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
         run: |
-          if ($env:WORKFLOW_REF -notmatch '^AIAllTheThingz/Engineering-Standards/' -or $env:WORKFLOW_SHA -notmatch '^[0-9a-f]{40}$') {
+          if ($env:WORKFLOW_REPOSITORY -ne 'AIAllTheThingz/Engineering-Standards' -or $env:WORKFLOW_SHA -notmatch '^[0-9a-f]{40}$') {
             throw 'Trusted workflow identity is unavailable or invalid.'
           }
       - name: Check out trusted validator only
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
-          repository: AIAllTheThingz/Engineering-Standards
-          ref: ${{ github.workflow_sha }}
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
           path: standards
           persist-credentials: false
       - name: Retrieve changed filenames as data

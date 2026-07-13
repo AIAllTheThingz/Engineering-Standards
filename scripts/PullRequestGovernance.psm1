@@ -92,12 +92,16 @@ function Test-PullRequestGovernanceRecord {
     if($notPerformed -match '(?im)^Status:\s*(Skipped|Success|N/A)\s*$' -or $testing -match '(?im)^Outcome:\s*(Skipped|Success|N/A)\s*$'){$findings.Add((New-PrFinding PRG012 Status))}
     $evidence=$content['Evidence']; if($evidence -notmatch '(?im)(Path:\s*[\w./-]+|Run(?: ID)?:\s*\d+|Artifact(?: ID)?:\s*[\w.-]+|Commit(?: SHA)?:\s*[0-9a-f]{7,40}|Review:\s*\S|Screenshot:\s*\S)'){$findings.Add((New-PrFinding PRG009 Evidence))}
     $rollback=$content['Rollback Plan']; if($selected -eq 'Documentation-only'){if($rollback -notmatch '(?i)(revert|restore).{10,}' -or $rollback -notmatch '(?i)(verify|validation)'){$findings.Add((New-PrFinding PRG010 'Rollback Plan'))}}else{$rollbackFields=@('Revert target','Preconditions','Execution steps','Verification','Irreversible effects','Authorized owner');if(@($rollbackFields|Where-Object{$rollback -notmatch "(?im)^$([regex]::Escape($_)):\s*\S"}).Count -gt 0){$findings.Add((New-PrFinding PRG010 'Rollback Plan'))}}
-    $exceptionText=$content['Governance Exceptions'].Trim(); if($exceptionText -ne 'None'){
+    $exceptionText=$content['Governance Exceptions'].Trim(); $validExceptionRules=@(); if($exceptionText -ne 'None'){
         $ids=@([regex]::Matches($exceptionText,'(?<![\p{L}\p{N}-])GOV-[0-9]{4}-[0-9]{3,}(?![\p{L}\p{N}-])')|ForEach-Object Value)
         $configured=@(); if($GovernanceConfig -and $GovernanceConfig.PSObject.Properties.Name -contains 'exceptions'){$configured=@($GovernanceConfig.exceptions|ForEach-Object{if($_ -is [string]){$_}elseif($_.PSObject.Properties.Name -contains 'id'){$_.id}})}
-        if($ids.Count -eq 0 -or @($ids|Where-Object{$_ -notin $configured}).Count -gt 0){$findings.Add((New-PrFinding PRG011 'Governance Exceptions'))}
+        $controlMap=@{'pull-request-change-type'='PRG003';'pull-request-risk'='PRG004';'pull-request-security-impact'='PRG005';'pull-request-data-impact'='PRG006';'pull-request-testing'='PRG007';'pull-request-tests-not-performed'='PRG008';'pull-request-evidence'='PRG009';'pull-request-rollback'='PRG010';'pull-request-security-contradiction'='PRG013';'pull-request-documentation-contradiction'='PRG014'}
+        $disabled=@();if($GovernanceConfig -and $GovernanceConfig.PSObject.Properties.Name -contains 'controls'){$disabled=@($GovernanceConfig.controls.mandatoryControlsDisabled)}
+        foreach($record in $disabled){if($record.exceptionReference -in $ids -and $record.exceptionReference -in $configured -and $controlMap.ContainsKey([string]$record.control)){$validExceptionRules+= $controlMap[[string]$record.control]}}
+        if($ids.Count -eq 0 -or @($ids|Where-Object{$_ -notin $configured}).Count -gt 0 -or $validExceptionRules.Count -eq 0){$findings.Add((New-PrFinding PRG011 'Governance Exceptions'))}
     }
     if($selected -eq 'Documentation-only' -and $categories.NonDocumentation.Count -gt 0){$findings.Add((New-PrFinding -RuleId PRG014 -Section 'Change Type' -Data ([ordered]@{categories=$categories.NonDocumentation})))}
+    foreach($rule in @($validExceptionRules|Sort-Object -Unique)){foreach($finding in @($findings|Where-Object ruleId -eq $rule)){$null=$findings.Remove($finding)}}
     if($Actor -match '(?i)(\[bot\]$|dependabot|automation)' -and $findings.Count -gt 0){$findings.Add((New-PrFinding PRG015 Automation))}
     [ordered]@{schemaVersion='1.0.0';status=$(if($findings.Count){if(@($findings|Where-Object status -eq Blocked).Count){'Blocked'}else{'Failed'}}else{'Passed'});repository=$Repository;pullRequestNumber=$PullRequestNumber;actor=$Actor;bodySha256=$bodyHash;findings=@($findings);changedPathCategories=@($categories.Security+$categories.NonDocumentation|Sort-Object -Unique)}
 }
