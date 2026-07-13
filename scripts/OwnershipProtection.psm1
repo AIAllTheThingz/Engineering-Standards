@@ -98,6 +98,51 @@ function Test-UnsupportedPatternCouldAffectPath {
     $prefixInfo = Get-UnsupportedCodeownersPrefixInfo -Pattern $Pattern
     $prefix = $prefixInfo.Prefix
     if (-not $prefix) { return $true }
+
+    # Slashless CODEOWNERS patterns apply to basenames at any depth. Preserve
+    # segment boundaries while approximating unsupported single-character and
+    # bracket expressions so only basenames the rule could select fail closed.
+    if (-not $Pattern.Contains('/')) {
+        $expression = [System.Text.StringBuilder]::new('^')
+        for ($index = 0; $index -lt $Pattern.Length; $index++) {
+            $wildcardHandled = $false
+            switch ($Pattern[$index]) {
+                '*' { [void]$expression.Append('[^/]*'); $wildcardHandled = $true; break }
+                '?' { [void]$expression.Append('[^/]'); $wildcardHandled = $true; break }
+                '[' {
+                    $closingBracket = $Pattern.IndexOf(']', $index + 1)
+                    if ($closingBracket -gt $index + 1) {
+                        $classContent = $Pattern.Substring($index + 1, $closingBracket - $index - 1)
+                        if ($classContent -match '^[A-Za-z0-9_-]+$') {
+                            $classExpression = "[$classContent]"
+                            try {
+                                [void][regex]::new("^$classExpression$")
+                                [void]$expression.Append($classExpression)
+                            }
+                            catch [System.ArgumentException] {
+                                [void]$expression.Append('[^/]')
+                            }
+                        }
+                        else {
+                            [void]$expression.Append('[^/]')
+                        }
+                        $index = $closingBracket
+                        $wildcardHandled = $true
+                    }
+                }
+            }
+            if ($wildcardHandled) { continue }
+            [void]$expression.Append([regex]::Escape([string]$Pattern[$index]))
+        }
+        [void]$expression.Append('$')
+        foreach ($segment in @($RequiredPath.Trim('/') -split '/')) {
+            if ([regex]::IsMatch($segment, $expression.ToString(), [System.Text.RegularExpressions.RegexOptions]::CultureInvariant)) {
+                return $true
+            }
+        }
+        return $false
+    }
+
     if (-not $prefix.StartsWith('/')) { $prefix = '/' + $prefix }
     if ($prefixInfo.TruncatedAtSegmentStart) {
         $candidateBoundary = $candidate.TrimEnd('/')

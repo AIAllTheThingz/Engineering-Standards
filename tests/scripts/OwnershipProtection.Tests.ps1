@@ -263,6 +263,59 @@ Describe 'CODEOWNERS structural validation' {
             $finding.EffectivePattern | Should -Be '/scripts/'
         }
 
+        It 'fails closed for slashless unsupported basename patterns at the root and nested depths' {
+            $cases = @(
+                @{ Pattern = 'foo?'; RequiredPath = '/foo1' },
+                @{ Pattern = 'foo?'; RequiredPath = '/nested/foo1' },
+                @{ Pattern = 'foo[0-9]'; RequiredPath = '/foo7' },
+                @{ Pattern = 'foo[0-9]'; RequiredPath = '/nested/foo7' }
+            )
+            foreach ($case in $cases) {
+                $content = "* @root-owner`n$($case.Pattern) @ambiguous-owner"
+                $finding = @(Test-CodeownersContent -Content $content -RequiredPaths $case.RequiredPath | Where-Object RequiredPath -eq $case.RequiredPath)[-1]
+                $finding.Status | Should -Be 'Failed' -Because "$($case.Pattern) can affect $($case.RequiredPath)"
+                $finding.Message | Should -Match 'Unsupported CODEOWNERS pattern'
+                $finding.EffectivePattern | Should -Be $case.Pattern
+                $finding.RuleIndex | Should -Be 2
+            }
+        }
+
+        It 'does not overapply slashless unsupported patterns to unrelated or similar basenames' {
+            $cases = @(
+                @{ Pattern = 'foo?'; RequiredPath = '/nested/bar1' },
+                @{ Pattern = 'foo?'; RequiredPath = '/nested/foobar' },
+                @{ Pattern = 'foo?'; RequiredPath = '/nested/foo12' },
+                @{ Pattern = 'foo[0-9]'; RequiredPath = '/nested/bar7' },
+                @{ Pattern = 'foo[0-9]'; RequiredPath = '/nested/foobar' },
+                @{ Pattern = 'foo[0-9]'; RequiredPath = '/nested/fooA' },
+                @{ Pattern = 'foo[0-9]'; RequiredPath = '/nested/foo12' }
+            )
+            foreach ($case in $cases) {
+                $content = "* @root-owner`n$($case.Pattern) @ambiguous-owner"
+                $finding = @(Test-CodeownersContent -Content $content -RequiredPaths $case.RequiredPath | Where-Object RequiredPath -eq $case.RequiredPath)[-1]
+                $finding.Status | Should -Be 'Passed' -Because "$($case.Pattern) cannot affect $($case.RequiredPath)"
+                $finding.EffectivePattern | Should -Be '*'
+                $finding.EffectiveOwners | Should -Be @('@root-owner')
+            }
+        }
+
+        It 'fails malformed slashless bracket ranges closed without throwing' {
+            foreach ($requiredPath in @('/foo7', '/nested/foo7', '/nested/fooA')) {
+                $content = "* @root-owner`nfoo[9-0] @ambiguous-owner"
+                { Test-CodeownersContent -Content $content -RequiredPaths $requiredPath } | Should -Not -Throw
+                $finding = @(Test-CodeownersContent -Content $content -RequiredPaths $requiredPath | Where-Object RequiredPath -eq $requiredPath)[-1]
+                $finding.Status | Should -Be 'Failed' -Because "an invalid class is conservatively one segment character for $requiredPath"
+                $finding.Message | Should -Match 'Unsupported CODEOWNERS pattern'
+                $finding.EffectivePattern | Should -Be 'foo[9-0]'
+                $finding.RuleIndex | Should -Be 2
+            }
+
+            $unrelatedPath = '/nested/bar7'
+            $finding = @(Test-CodeownersContent -Content "* @root-owner`nfoo[9-0] @ambiguous-owner" -RequiredPaths $unrelatedPath | Where-Object RequiredPath -eq $unrelatedPath)[-1]
+            $finding.Status | Should -Be 'Passed'
+            $finding.EffectivePattern | Should -Be '*'
+        }
+
         It 'does not let an earlier unsupported candidate override a later supported match' {
             $content = "* @root-owner`n/scripts/[ab]* @ambiguous-owner`n/scripts/ @script-owner"
             $finding = @(Test-CodeownersContent -Content $content -RequiredPaths '/scripts/' | Where-Object RequiredPath -eq '/scripts/')[-1]
