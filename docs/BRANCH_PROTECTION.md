@@ -3,7 +3,7 @@
 | Status | Active |
 | Version | 1.0.0 |
 | Owner role | Repository Administrators |
-| Last reviewed | 2026-06-27 |
+| Last reviewed | 2026-07-12 |
 
 ## Purpose
 
@@ -93,6 +93,16 @@ Verified configured state for `AIAllTheThingz/Engineering-Standards` from live A
 - Repository rulesets configured in parallel: none
 - Verification result: `Passed`
 
+## Issue 18 Pre-Change Inspection
+
+Live inspection at `2026-07-12T17:10:00Z` confirmed that `AIAllTheThingz/Engineering-Standards` is owned by the GitHub user `AIAllTheThingz`, not an organization. Direct collaborators eligible to review were `AIAllTheThingz` (admin), `mezuccolini` (write), and `megad00die` (write). One expired invitation was observed and excluded. The existing team-style CODEOWNERS entries all produced live `Unknown owner` parser errors.
+
+Classic protection on `master` remained the active branch mechanism: pull requests, one approval, both documented required checks, strict mode, stale-review dismissal, conversation resolution, administrator enforcement, force-push blocking, and deletion blocking were active. CODEOWNERS and last-push approval were not active. No repository rulesets existed.
+
+The Issue 18 design preserves classic branch protection and does not stack a branch ruleset over it. With two independent write collaborators available for an owner-authored change, the High-risk plan recommends two approvals. After the corrected CODEOWNERS reaches `master`, the settings phase enables two approvals, CODEOWNERS review, and last-push approval. A separate tag-only ruleset targets `v*`; its final ID and verified post-change state must be recorded after mutation. The sanitized pre-change record is [`../evidence/github-settings-issue-18-pre.json`](../evidence/github-settings-issue-18-pre.json).
+
+Repository health performs offline structural CODEOWNERS validation with owner type `Unknown` by default. It does not infer user or organization ownership from repository text, resolve identities, or prove repository access. Compatibility checks require explicit owner type from trusted live API evidence; reviewer eligibility requires separate collaborator and identity API reads.
+
 This verified state requires both immutable trusted-baseline validation and unprivileged candidate implementation validation before merge.
 
 ## Historical Applied Configuration Strategy
@@ -144,6 +154,10 @@ If a repository uses only one protected branch, protect that branch and document
 CODEOWNERS must route reviews to real owners. Placeholder teams, deleted teams, and inactive aliases create a false sense of control and MUST be corrected before enforcement.
 
 Critical paths such as workflows, actions, schemas, governance documents, deployment configuration, database migrations, and security-sensitive code SHOULD have explicit owner coverage.
+
+Repositories declare mandatory literal coverage paths in `ownership.requiredCodeownerPaths` within `governance.config.json`. Each entry must be a unique repository-rooted file or directory path; wildcards, traversal, drive or UNC paths, whitespace, comments, and placeholders are rejected. If the property is omitted, repository health remains reusable and requires only a valid default `*` rule instead of assuming this governance repository's directory layout.
+
+Repository health evaluates required paths using CODEOWNERS last-match precedence. The final applicable supported rule must contain at least one structurally valid owner compatible with the explicitly supplied repository owner type. A later ownerless, malformed, placeholder, or incompatible override therefore fails even when an earlier rule was valid. Validation supports the documented safe subset used by this repository: `*`, rooted literal file or directory rules, and simple `*` or `**` globs. A decision-relevant pattern outside that subset fails closed and requires maintainer review rather than producing an optimistic ownership claim.
 
 ## Merge Methods
 

@@ -1,18 +1,22 @@
-# Engineering Standards ownership map.
-* @AIAllTheThingz/engineering-standards-maintainers
+# Verified user owners for this user-owned repository. Revalidate access before enforcement changes.
+* @AIAllTheThingz @mezuccolini @megad00die
 
-/governance/ @AIAllTheThingz/governance-reviewers
-/agents/ @AIAllTheThingz/agent-standards-reviewers
-/schemas/ @AIAllTheThingz/schema-reviewers
-/actions/ @AIAllTheThingz/action-security-reviewers
-/workflows/ @AIAllTheThingz/ci-reviewers
-/.github/workflows/ @AIAllTheThingz/ci-reviewers
-/docs/ @AIAllTheThingz/governance-reviewers
-/templates/ @AIAllTheThingz/governance-reviewers
-/examples/ @AIAllTheThingz/engineering-standards-maintainers
-/scripts/ @AIAllTheThingz/schema-reviewers @AIAllTheThingz/action-security-reviewers
-/tests/ @AIAllTheThingz/schema-reviewers @AIAllTheThingz/action-security-reviewers
-/actions/forbidden-pattern-scan/ @AIAllTheThingz/security-reviewers
-/SECURITY.md @AIAllTheThingz/security-reviewers
-/CHANGELOG.md @AIAllTheThingz/engineering-standards-maintainers
-/VERSION @AIAllTheThingz/engineering-standards-maintainers
+/AGENTS.md @AIAllTheThingz @mezuccolini @megad00die
+/.agents/skills/ @AIAllTheThingz @mezuccolini @megad00die
+/agents/ @AIAllTheThingz @mezuccolini @megad00die
+/governance/ @AIAllTheThingz @mezuccolini @megad00die
+/schemas/ @AIAllTheThingz @mezuccolini @megad00die
+/actions/ @AIAllTheThingz @mezuccolini @megad00die
+/scripts/ @AIAllTheThingz @mezuccolini @megad00die
+/tests/ @AIAllTheThingz @mezuccolini @megad00die
+/.github/workflows/ @AIAllTheThingz @mezuccolini @megad00die
+/workflows/ @AIAllTheThingz @mezuccolini @megad00die
+/SECURITY.md @AIAllTheThingz @mezuccolini @megad00die
+/CODEOWNERS @AIAllTheThingz @mezuccolini @megad00die
+/project-manifest.json @AIAllTheThingz @mezuccolini @megad00die
+/governance.config.json @AIAllTheThingz @mezuccolini @megad00die
+/VERSION @AIAllTheThingz @mezuccolini @megad00die
+/CHANGELOG.md @AIAllTheThingz @mezuccolini @megad00die
+/docs/releases/ @AIAllTheThingz @mezuccolini @megad00die
+/docs/RELEASE_STATUS.md @AIAllTheThingz @mezuccolini @megad00die
+/docs/RELEASE_PROCESS.md @AIAllTheThingz @mezuccolini @megad00die

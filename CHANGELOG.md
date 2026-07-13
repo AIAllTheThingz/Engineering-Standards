@@ -8,9 +8,11 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 - Added the governed `enterprise-powershell` Codex skill and its delivery guidance.
 - Added the downstream governance canary guide and release gate for reusable-workflow changes.
+- Added deterministic CODEOWNERS validation, explicit live-identity result classification, lockout-safe protection planning, and ownership fixtures.
 
 ### Changed
 
+- Reconciled repository ownership declarations with three verified GitHub user reviewers and documented safe CODEOWNERS, last-push, branch, tag, bypass, and rollback enforcement.
 - Repaired reusable-workflow trust boundaries so downstream repositories execute immutable central tooling while treating caller content as untrusted data.
 - Rotated the trusted self-CI workflow pin to immutable commit `091841c94fba6039443a40b7c4a28e5b9a3af2d2` after the cross-repository repair.
 - Updated downstream workflow adoption, security, troubleshooting, and release guidance.

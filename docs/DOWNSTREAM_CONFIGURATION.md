@@ -34,7 +34,7 @@ The manifest is intentionally concise. It should identify the project clearly wi
 | `governanceVersion` | Yes | Adopted standards version. | Must identify the central standards version or SHA. |
 | `riskClassification` | Yes | Low, Moderate, High, or Critical. | Must reflect data, production, infrastructure, and security impact. |
 | `applicableStandards` | Yes | Central agent standard files. | Must include the base standard and relevant technology standards. |
-| `owners` | Yes | Accountable maintainers. | Must be real owners, not unowned aliases. |
+| `owners` | Yes | Accountable GitHub users, organization/teams, or email contacts. | Reserved exact placeholder identities and email local parts are rejected case-insensitively; legitimate names that merely contain those substrings remain valid. |
 | `evidence` | Yes | Evidence file paths. | Must match generated evidence artifacts. |
 | `exceptions` | No | Approved `GOV-*` exceptions. | Must be current, scoped, and unexpired. |
 | `workflowInterfaceVersion` | No | Workflow interface version expected by the repository. | Use when downstream automation binds to a specific reusable workflow contract. |
@@ -60,6 +60,7 @@ The governance config MUST NOT be used to remove mandatory controls silently. If
 | `schemaSupport` | No | Supported evidence schema versions and compatibility window. | Use to declare additive migration support explicitly. |
 | `workflowInterfaces` | No | Named workflow interfaces used by the repository. | Keep aligned with reusable workflow consumers. |
 | `branchProtectionCheckName` | No | Exact required GitHub check name. | Use the exact check string after it exists in GitHub. |
+| `ownership.requiredCodeownerPaths` | No | Rooted literal CODEOWNERS paths requiring effective ownership. | List only repository paths that exist and need explicit protection; omit the property to require generic default `*` coverage without central-repository path assumptions. |
 | `controls` | Yes | Control toggles. | Disabled mandatory controls require `GOV-*` exceptions. |
 | `exceptions` | No | Active governance exceptions. | Must match exception records and evidence. |
 
@@ -72,6 +73,10 @@ Do not introduce new enum values in downstream repositories. If a new value is n
 ## Path Rules
 
 Paths are repository-relative and MUST NOT escape the repository root. Absolute paths, traversal segments, and caller/standards workspace confusion are rejected. The caller checkout MUST contain no symbolic links, junctions, or other reparse points, including links whose targets remain inside the checkout. This deliberate fail-closed policy prevents workspace-boundary and validator-confusion attacks. Validators treat missing required files as failures. Paths should use forward slashes in JSON examples for consistency across operating systems.
+
+`ownership.requiredCodeownerPaths` uses rooted CODEOWNERS literals such as `/src/` or `/SECURITY.md`; the leading slash anchors the pattern at the repository root and is not an operating-system absolute path. Entries must be unique using exact case and nonempty. Drive paths, UNC paths, single-dot or trailing-dot segments, traversal, wildcards, comments, whitespace, and placeholder segments are rejected. A configured path that does not exist with exact casing fails repository health. Values ending in `/` must identify directories, while values without `/` must identify files. For a configured directory, repository health evaluates the effective owners of every concrete contained file and does not discover outside that explicitly configured directory; an empty directory falls back to its configured base path. Omitting `ownership` is backward compatible: the validator still requires a valid default `*` CODEOWNERS rule, but it does not assume that downstream repositories contain Engineering Standards directories.
+
+For every configured path, repository health evaluates rules in file order and validates the owners on the last matching rule. It supports `*`, rooted or unrooted literal file and directory rules, and simple `*` or `**` globs. If a later unsupported pattern could change the ownership decision, validation fails closed with the pattern and line number. This structural check does not prove that an identity exists or has write access; that requires trusted live GitHub evidence.
 
 Evidence paths should be stable. A changing path makes historical comparison and artifact review harder.
 
@@ -124,6 +129,13 @@ For complete repository validation, run:
 ```powershell
 pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Category JsonSchemas,Contract,RepositoryHealth,Evidence
 ```
+
+The aggregate validator uses `RepositoryOwnerType` value `Unknown` by default
+and does not infer ownership from the repository name. A trusted caller that
+has verified the live repository owner type may pass exactly `User` or
+`Organization`, for example `-RepositoryOwnerType User`. The value is forwarded
+to repository-health ownership checks; other values and case variants fail
+parameter validation.
 
 ## Evidence
 

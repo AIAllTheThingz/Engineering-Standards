@@ -22,6 +22,29 @@
     "ForbiddenPatterns",
     "RepositoryHealth"
   ],
+  "ownership": {
+    "requiredCodeownerPaths": [
+      "/AGENTS.md",
+      "/.agents/skills/",
+      "/agents/",
+      "/governance/",
+      "/schemas/",
+      "/actions/",
+      "/scripts/",
+      "/tests/",
+      "/.github/workflows/",
+      "/workflows/",
+      "/SECURITY.md",
+      "/CODEOWNERS",
+      "/project-manifest.json",
+      "/governance.config.json",
+      "/VERSION",
+      "/CHANGELOG.md",
+      "/docs/releases/",
+      "/docs/RELEASE_STATUS.md",
+      "/docs/RELEASE_PROCESS.md"
+    ]
+  },
   "additionalForbiddenPatterns": [],
   "reviewedAllowlist": [],
   "controls": {

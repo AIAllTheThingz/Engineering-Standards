@@ -215,7 +215,7 @@ $requiredCommands = @(
     'pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .',
     'pwsh -NoProfile -File actions/validate-contract/Invoke-ContractValidation.ps1 -Path .',
     'pwsh -NoProfile -File actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1 -Path . -OutputJson evidence/forbidden-patterns.json',
-    'pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path .',
+    'pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path . -RepositoryOwnerType User',
     'Invoke-Pester -Path tests -Output Detailed',
     'Invoke-ScriptAnalyzer -Path . -Recurse -Severity Error',
     'git status --short',
@@ -223,13 +223,43 @@ $requiredCommands = @(
     'git diff',
     'git ls-files'
 )
+
+$requiredCommandsSectionMatch = [regex]::Match(
+    $rootAgents,
+    '(?ms)^## Required Local Commands\s*\r?\n(?<body>.*?)(?=^##\s|\z)'
+)
+$requiredCommandLines = @()
+if ($requiredCommandsSectionMatch.Success) {
+    foreach ($block in [regex]::Matches($requiredCommandsSectionMatch.Groups['body'].Value, '(?ms)^```(?:powershell|bash)?\s*\r?\n(?<commands>.*?)^```\s*$')) {
+        $requiredCommandLines += @(
+            $block.Groups['commands'].Value -split '\r?\n' |
+                ForEach-Object { $_.Trim() } |
+                Where-Object { $_ }
+        )
+    }
+}
+else {
+    Add-Result Failed 'Required Local Commands section is present.' 'AGENTS.md'
+}
+
 foreach ($command in $requiredCommands) {
-    if ($rootAgents.Contains($command)) {
+    if ($requiredCommandLines -ccontains $command) {
         Add-Result Passed "Required repository validation command is present: $command" 'AGENTS.md'
     }
     else {
         Add-Result Failed "Required repository validation command is missing: $command" 'AGENTS.md'
     }
+}
+
+
+$repositoryHealthCommandPrefix = 'pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1'
+$repositoryHealthCommands = @($requiredCommandLines | Where-Object { $_.StartsWith($repositoryHealthCommandPrefix, [System.StringComparison]::Ordinal) })
+$expectedRepositoryHealthCommand = 'pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path . -RepositoryOwnerType User'
+if ($repositoryHealthCommands.Count -eq 1 -and $repositoryHealthCommands[0] -ceq $expectedRepositoryHealthCommand) {
+    Add-Result Passed 'Required repository-health command declares the verified User owner type exactly once.' 'AGENTS.md'
+}
+else {
+    Add-Result Failed 'Required repository-health command must declare exactly one -RepositoryOwnerType User argument with exact casing and no conflicting invocation.' 'AGENTS.md'
 }
 
 $placeholderPattern = '(?i)\b(TODO|TBD|REPLACE-ME|placeholder-only|lorem ipsum)\b'

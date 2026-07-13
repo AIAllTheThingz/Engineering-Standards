@@ -13,7 +13,7 @@ This file defines repository-specific instructions for `AIAllTheThingz/Engineeri
 | Risk classification | `High` |
 | Repository type | `governance` |
 | Data classification | `Internal` |
-| Maintainers | `@AIAllTheThingz/engineering-standards-maintainers` |
+| Maintainers | `@AIAllTheThingz`, `@mezuccolini`, `@megad00die` |
 
 Agents MUST treat this repository as security-sensitive because downstream repositories may rely on its policies, workflows, schemas, and agent instructions.
 
@@ -122,8 +122,10 @@ pwsh -NoProfile -File actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan
 ```
 
 ```powershell
-pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path .
+pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path . -RepositoryOwnerType User
 ```
+
+This repository is verified as user-owned. The explicit owner type prevents local validation from silently falling back to structural-only `Unknown` mode; downstream repositories MUST independently verify their owner type before copying `User`.
 
 ```powershell
 Invoke-Pester -Path tests -Output Detailed

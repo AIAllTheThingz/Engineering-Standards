@@ -4,12 +4,17 @@ inputs:
   path:
     description: path input for Repository Health.
     required: false
+    default: .
   output-json:
     description: output-json input for Repository Health.
     required: false
   advisory:
     description: advisory input for Repository Health.
     required: false
+  repository-owner-type:
+    description: Trusted repository metadata or verified GitHub API owner type. Unknown performs structural validation without asserting user-versus-organization compatibility; this does not prove an identity exists or can review.
+    required: false
+    default: Unknown
 outputs:
   report-path:
     description: report-path emitted by Repository Health.
@@ -21,21 +26,32 @@ runs:
     - name: Run Repository Health
       id: run
       shell: pwsh
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_OUTPUT_JSON: ${{ inputs.output-json }}
+        INPUT_ADVISORY: ${{ inputs.advisory }}
+        INPUT_REPOSITORY_OWNER_TYPE: ${{ inputs.repository-owner-type }}
+        REPOSITORY_HEALTH_ACTION_PATH: ${{ github.action_path }}
       run: |
         $ErrorActionPreference = 'Stop'
-        $argsList = @('-Path', '${{ inputs.path }}')
-        if ('${{ inputs.output-json }}') { $argsList += @('-OutputJson', '${{ inputs.output-json }}') }
-        if ('${{ inputs.advisory }}' -eq 'true') { $argsList += '-Advisory' }
-        $reportPath = '${{ inputs.output-json }}'
-        if (-not $reportPath) {
-          $reportPath = Join-Path $env:RUNNER_TEMP 'repository-health-report.json'
-          $argsList += @('-OutputJson', $reportPath)
+        $ownerType = $env:INPUT_REPOSITORY_OWNER_TYPE
+        if (@('Unknown', 'User', 'Organization') -cnotcontains $ownerType) {
+          throw "repository-owner-type must be exactly Unknown, User, or Organization; received '$ownerType'."
         }
-        & '${{ github.action_path }}/Invoke-RepositoryHealth.ps1' @argsList
+        $invokeParameters = @{ Path = $env:INPUT_PATH; RepositoryOwnerType = $ownerType }
+        if ($env:INPUT_OUTPUT_JSON) { $invokeParameters.OutputJson = $env:INPUT_OUTPUT_JSON }
+        if ($env:INPUT_ADVISORY -eq 'true') { $invokeParameters.Advisory = $true }
+        $reportPath = $env:INPUT_OUTPUT_JSON
+        if (-not $reportPath) {
+          $reportPath = '.tmp/repository-health-report.json'
+          $invokeParameters.OutputJson = $reportPath
+        }
+        & (Join-Path $env:REPOSITORY_HEALTH_ACTION_PATH 'Invoke-RepositoryHealth.ps1') @invokeParameters
         $exitCode = $LASTEXITCODE
         $failedCount = 0
-        if (Test-Path -LiteralPath $reportPath -PathType Leaf) {
-          $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+        $reportFile = Join-Path $env:INPUT_PATH $reportPath
+        if (Test-Path -LiteralPath $reportFile -PathType Leaf) {
+          $report = Get-Content -LiteralPath $reportFile -Raw | ConvertFrom-Json
           $failedCount = [int]$report.failed
         }
         "report-path=$reportPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectName": "User Owner Fixture",
+  "repository": "ExampleUser/example-project",
+  "description": "A valid project manifest fixture using a normal GitHub user owner handle.",
+  "projectType": "governance",
+  "technologies": ["governance"],
+  "governanceVersion": "1.1.0",
+  "riskClassification": "High",
+  "dataClassification": "Internal",
+  "owners": ["@octocat"],
+  "environments": [{"name": "local", "type": "development", "production": false}],
+  "applicableStandards": ["agents/AGENTS_Base.md"],
+  "requiredWorkflows": ["governance"],
+  "externalIntegrations": [],
+  "secretsProvider": "none-required-for-example",
+  "productionApprovalRequired": true,
+  "evidence": {"completionEvidencePath": "evidence/completion.json", "testEvidencePath": "evidence/tests.json"},
+  "exceptions": []
+}

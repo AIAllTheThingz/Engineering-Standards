@@ -109,7 +109,7 @@ jobs:
             Invoke-CandidateScript 'scripts/Test-MarkdownLinks.ps1' @('-Path',$root,'-OutputJson',(Join-Path $reportRoot 'markdown-links.json'))
             Invoke-CandidateScript 'scripts/Test-DocumentationCompleteness.ps1' @('-Path',$root,'-OutputJson',(Join-Path $reportRoot 'documentation-completeness.json'))
             Invoke-CandidateScript 'actions/validate-contract/Invoke-ContractValidation.ps1' @('-Path',$root,'-OutputJson',(Join-Path $reportRoot 'contract.json'))
-            Invoke-CandidateScript 'actions/repository-health/Invoke-RepositoryHealth.ps1' @('-Path',$root,'-OutputJson',(Join-Path $reportRoot 'repository-health.json'))
+            Invoke-CandidateScript 'actions/repository-health/Invoke-RepositoryHealth.ps1' @('-Path',$root,'-RepositoryOwnerType','User','-OutputJson',(Join-Path $reportRoot 'repository-health.json'))
             Invoke-CandidateScript 'actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1' @('-Path',$root,'-OutputJson',(Join-Path $reportRoot 'forbidden-patterns.json'))
             Invoke-CandidateScript 'scripts/Invoke-PesterSuite.ps1' @('-EvidenceRoot',(Join-Path $reportRoot 'pester'))
 

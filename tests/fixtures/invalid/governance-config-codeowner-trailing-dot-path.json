@@ -1,0 +1,6 @@
+{
+  "schemaVersion": "1.0.0", "manifestPath": "project-manifest.json", "evidencePath": "evidence",
+  "requiredDocumentationPaths": ["README.md"], "applicableAgentStandards": ["agents/AGENTS_Base.md"],
+  "validationCategories": ["Contract"], "ownership": { "requiredCodeownerPaths": ["/src./file.ps1"] },
+  "additionalForbiddenPatterns": [], "reviewedAllowlist": [], "controls": { "mandatoryControlsDisabled": [] }, "exceptions": []
+}

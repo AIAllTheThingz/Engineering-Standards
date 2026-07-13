@@ -150,9 +150,11 @@ Action changes SHOULD run:
 pwsh -NoProfile -File scripts/Test-MarkdownLinks.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .
 pwsh -NoProfile -File actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1 -Path .
-pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path .
+pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path . -RepositoryOwnerType User
 Invoke-Pester -Path tests/actions -Output Detailed
 ```
+
+The explicit `User` value is specific to this verified user-owned central repository. Downstream repositories must retain the safe `Unknown` default or supply an owner type verified from trusted metadata.
 
 Workflow syntax validation MUST run through `scripts/Test-YamlSyntax.ps1` with PyYAML pinned to a reviewed version in CI. Workflow semantic validation MUST run through `scripts/Test-GitHubWorkflowArchitecture.ps1` to detect recursion, invalid reusable paths, unsupported inputs, broad permissions, unpinned third-party actions, missing explicit caller identity, mutable standards identity, checkout collisions, caller override inputs, and direct downstream test/example execution.
 

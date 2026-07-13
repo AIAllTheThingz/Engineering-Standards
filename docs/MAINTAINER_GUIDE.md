@@ -3,7 +3,7 @@
 | Status | Active |
 | Version | 1.0.0 |
 | Owner role | Engineering Standards Maintainers |
-| Last reviewed | 2026-06-19 |
+| Last reviewed | 2026-07-12 |
 
 ## Purpose
 
@@ -21,6 +21,8 @@ Maintainers also own downstream communication. Breaking changes, new mandatory c
 
 Each major area SHOULD have a named steward: governance policy, schemas, PowerShell validation, GitHub Actions, templates, security review, examples, and releases. A single person can hold multiple steward roles, but no critical release should depend on undocumented ownership.
 
+This repository is user-owned. Its enforceable owners are the verified GitHub users `@AIAllTheThingz`, `@mezuccolini`, and `@megad00die`; organization-team syntax is not valid here. Re-query direct collaborator access and CODEOWNERS parser errors before changing review enforcement. A future transfer to an organization requires replacing user routing only after the destination teams exist, are visible, and have repository access.
+
 When a maintainer leaves or changes responsibilities, update CODEOWNERS, release notes contacts, and repository health expectations in the same maintenance cycle.
 
 ## Change Intake
@@ -34,6 +36,8 @@ Requests that weaken a mandatory control MUST be treated as exceptions or breaki
 Policy changes require review from a governance maintainer. Schema changes require valid and invalid fixtures. Validator changes require Pester tests. Workflow changes require action pin review, permission review, evidence review, and artifact behavior review.
 
 Security-sensitive changes require review against `docs/ACTION_SECURITY.md`. Changes that affect AI-generated code, secrets, dependency review, authentication, authorization, cryptography, infrastructure, database migrations, or destructive operations require heightened scrutiny.
+
+The protected `master` branch currently requires one approval, but the High-risk target is two while two independent reviewers remain available. CODEOWNERS and last-push enforcement are safe only while at least one eligible reviewer other than the author or last pusher remains available. Pending invitations, bots, comments, and the author reviewing their own pull request do not satisfy independent review. If reviewer availability cannot meet the risk target, administrators must select the strongest non-locking approval count, preserve checks, conversation resolution, stale-review dismissal, force-push blocking, deletion blocking, and administrator enforcement, and document the segregation-of-duties gap.
 
 ## Schema Maintenance
 
@@ -87,6 +91,8 @@ Release candidates should be tested from a clean checkout. If local tooling is u
 
 Emergency changes are allowed for security fixes, broken validation affecting many repositories, or incorrect standards that create production risk. Emergency changes still require evidence, reviewer sign-off after the fact when immediate review is impossible, and a follow-up issue for any skipped validation.
 
+Administrator bypass is not a routine merge path. An emergency bypass requires an approved or emergency `GOV-*` record, exact branch and commit scope, named operator and approver, skipped-control evidence, post-change validation, settings re-verification, and prompt restoration of normal enforcement.
+
 Emergency releases MUST identify affected versions, downstream action required, rollback guidance, and whether existing evidence should be considered stale.
 
 ## Drift Management
@@ -100,9 +106,13 @@ Common drift examples include a schema field that documentation does not describ
 Run the maintainer validation set before merging substantive changes:
 
 ```powershell
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
 pwsh -NoProfile -Command "Invoke-Pester -Path tests -Output Detailed"
 ```
+
+`User` is explicit because this repository is verified as user-owned. Generic
+downstream invocation retains the safe `Unknown` default; validation must not
+derive owner type from a repository-name string.
 
 If Pester is unavailable, record `NotRun` with the reason, tool version context, and compensating review.
 

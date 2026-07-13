@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-27T14:03:29.6554839Z",
+  "generatedAtUtc": "2026-07-13T01:41:07.6615651Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -7,856 +7,8 @@
   "patternFile": "actions/forbidden-pattern-scan/forbidden-patterns.json",
   "allowlistFile": null,
   "advisory": false,
-  "scannedFiles": 240,
+  "scannedFiles": 285,
   "skippedFiles": [
-    {
-      "path": ".tmp/agent-standards-debug.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/agent-standards-debug.txt",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/aggregate-smoke.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/failure-artifact-verification.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022-verification-rerun.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022-verification.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851-verification-rerun.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851-verification.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743-verification.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/git-ls-files.txt",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/pester-results.xml",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/success-artifact-verification.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/agent-standards.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/aggregate-governance.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/ci-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/contract.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/dependencies.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/documentation-completeness.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/environment.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/evidence-validation-final.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/evidence-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/examples.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/forbidden-patterns.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/json-schemas.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/latest-verified-run.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/local-completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/local-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/markdown-links.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/pester-details.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/pester-summary.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/powershell-parser.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/psscriptanalyzer.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/repository-health.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/workflow-architecture.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915176022/yaml-syntax.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/agent-standards.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/aggregate-governance.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/ci-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/contract.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/dependencies.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/documentation-completeness.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/environment.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/evidence-validation-final.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/evidence-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/examples.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/forbidden-patterns.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/json-schemas.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/latest-verified-run.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/local-completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/local-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/markdown-links.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/pester-details.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/pester-summary.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/powershell-parser.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/psscriptanalyzer.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/repository-health.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/workflow-architecture.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915324851/yaml-syntax.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/agent-standards.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/aggregate-governance.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/ci-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/contract.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/dependencies.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/documentation-completeness.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/environment.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/evidence-validation-final.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/evidence-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/examples.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/forbidden-patterns.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/json-schemas.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/latest-verified-run.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/local-completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/local-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/markdown-links.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/pester-details.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/pester-summary.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/powershell-parser.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/psscriptanalyzer.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/repository-health.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/workflow-architecture.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/gh-evidence-27915485743/yaml-syntax.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/agent-standards.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/aggregate-governance.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/ci-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/contract.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/dependencies.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/documentation-completeness.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/environment.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/evidence-validation-final.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/evidence-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/examples.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/forbidden-patterns.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/json-schemas.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/latest-verified-run.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/local-completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/local-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/markdown-links.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/pester-details.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/pester-summary.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/powershell-parser.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/psscriptanalyzer.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/repository-health.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/workflow-architecture.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27882026684/yaml-syntax.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/agent-standards.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/aggregate-governance.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/ci-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/contract.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/dependencies.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/documentation-completeness.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/environment.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/evidence-validation-final.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/evidence-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/examples.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/forbidden-patterns.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/json-schemas.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/latest-verified-run.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/local-completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/local-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/markdown-links.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/pester-details.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/pester-summary.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/powershell-parser.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/psscriptanalyzer.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/repository-health.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/workflow-architecture.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884064235/yaml-syntax.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/agent-standards.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/aggregate-governance.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/ci-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/contract.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/dependencies.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/documentation-completeness.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/environment.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/evidence-validation-final.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/evidence-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/examples.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/forbidden-patterns.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/json-schemas.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/latest-verified-run.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/local-completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/local-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/markdown-links.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/pester-details.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/pester-summary.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/powershell-parser.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/psscriptanalyzer.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/repository-health.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/workflow-architecture.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-run-27884847805/yaml-syntax.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact-verification.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/governance-evidence.zip",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/aggregate-governance.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/ci-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/contract.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/dependencies.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/documentation-completeness.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/environment.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/evidence-validation-final.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/evidence-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/examples.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/forbidden-patterns.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/json-schemas.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/local-completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/local-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/markdown-links.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/pester-details.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/pester-summary.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/powershell-parser.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/psscriptanalyzer.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/repository-health.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/workflow-architecture.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/failure-27864201100/artifact/yaml-syntax.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact-verification.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/governance-evidence.zip",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/aggregate-governance.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/ci-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/contract.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/dependencies.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/documentation-completeness.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/environment.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/evidence-validation-final.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/evidence-validation.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/examples.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/forbidden-patterns.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/json-schemas.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/local-completion-result.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/local-test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/markdown-links.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/pester-details.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/pester-summary.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/powershell-parser.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/psscriptanalyzer.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/repository-health.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/test-results.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/workflow-architecture.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": ".tmp/github-runs/success-27864137259/artifact/yaml-syntax.json",
-      "reason": "excluded-path"
-    },
     {
       "path": "evidence/agent-standards.json",
       "reason": "excluded-path"
@@ -891,7 +43,15 @@
     },
     {
       "path": "evidence/forbidden-patterns.json",
-      "reason": "scanner-output"
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/github-settings-issue-18-pre.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/governance-validation.json",
+      "reason": "excluded-path"
     },
     {
       "path": "evidence/json-schemas.json",
@@ -970,107 +130,7 @@
       "reason": "excluded-path"
     },
     {
-      "path": "examples/dotnet-project/src/bin/Release/net8.0/Example.deps.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/bin/Release/net8.0/Example.dll",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/bin/Release/net8.0/Example.pdb",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/Example.csproj.nuget.dgspec.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/Example.csproj.nuget.g.props",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/Example.csproj.nuget.g.targets",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/project.assets.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/project.nuget.cache",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/Release/net8.0/.NETCoreApp,Version=v8.0.AssemblyAttributes.cs",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.AssemblyInfo.cs",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.AssemblyInfoInputs.cache",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.assets.cache",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.csproj.CoreCompileInputs.cache",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.csproj.FileListAbsolute.txt",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.dll",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.GeneratedMSBuildEditorConfig.editorconfig",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.pdb",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/Release/net8.0/Example.sourcelink.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/Release/net8.0/ref/Example.dll",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/src/obj/Release/net8.0/refint/Example.dll",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Example.Service.Tests.csproj.nuget.dgspec.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Example.Service.Tests.csproj.nuget.g.props",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/Example.Service.Tests.csproj.nuget.g.targets",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/project.assets.json",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/dotnet-project/tests/obj/project.nuget.cache",
-      "reason": "excluded-path"
-    },
-    {
-      "path": "examples/web-project/dist/app.js",
+      "path": "evidence/releases/1.1.0-post-release-verification.json",
       "reason": "excluded-path"
     }
   ],
@@ -1106,7 +166,7 @@
       "patternId": "dangerous-powershell-expression",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 68,
+      "line": 80,
       "description": "Dynamic PowerShell execution.",
       "redactedMatch": "Invo...[redacted]...sion",
       "allowlisted": false
@@ -1115,7 +175,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 57,
+      "line": 69,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -1124,7 +184,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 57,
+      "line": 69,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -1133,7 +193,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 149,
+      "line": 163,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -1142,7 +202,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/RELEASE_PROCESS.md",
-      "line": 87,
+      "line": 92,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -1160,7 +220,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
-      "line": 255,
+      "line": 259,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -1169,12 +229,102 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
-      "line": 256,
+      "line": 260,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
+      "line": 358,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
+      "line": 359,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
+      "line": 545,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "dangerous-powershell-expression",
+      "severity": "warning",
+      "path": "tests/actions/RepositoryHealth.Tests.ps1",
+      "line": 96,
+      "description": "Dynamic PowerShell execution.",
+      "redactedMatch": "Invo...[redacted]...sion",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "tests/scripts/GitHubWorkflowArchitecture.Tests.ps1",
+      "line": 89,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "tests/scripts/GitHubWorkflowArchitecture.Tests.ps1",
+      "line": 92,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "tests/scripts/GitHubWorkflowArchitecture.Tests.ps1",
+      "line": 96,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "tests/scripts/GitHubWorkflowArchitecture.Tests.ps1",
+      "line": 99,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "tests/scripts/GitHubWorkflowArchitecture.Tests.ps1",
+      "line": 102,
+      "description": "pull_request_target requires review.",
+      "redactedMatch": "pull...[redacted]...rget",
+      "allowlisted": false
+    },
+    {
+      "patternId": "pull-request-target",
+      "severity": "warning",
+      "path": "tests/scripts/GitHubWorkflowArchitecture.Tests.ps1",
+      "line": 106,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
     }
   ],
   "failed": 0,
-  "warnings": 11
+  "warnings": 21
 }

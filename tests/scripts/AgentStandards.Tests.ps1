@@ -111,6 +111,48 @@ Describe 'Agent standards validation' {
             Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
         }
 
+        It 'fails when the repository-health owner type is omitted' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'AGENTS.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace(' -RepositoryOwnerType User', '')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails an incorrectly cased repository-health owner type' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'AGENTS.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('-RepositoryOwnerType User', '-RepositoryOwnerType user')
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails an invalid repository-health owner type' -ForEach @('Unknown', 'Organization') {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'AGENTS.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('-RepositoryOwnerType User', "-RepositoryOwnerType $_")
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails duplicate or conflicting repository-health owner type arguments' -ForEach @('User', 'Organization') {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'AGENTS.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace('-RepositoryOwnerType User', "-RepositoryOwnerType User -RepositoryOwnerType $_")
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'does not accept the command only in an unrelated section' {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'AGENTS.md'
+            $command = 'pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path . -RepositoryOwnerType User'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace($command, 'pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path .')
+            $text += "`n## Historical Note`n`n``````powershell`n$command`n```````n"
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
         It 'fails an unsafe PowerShell path-boundary example' {
             $script:tempRoot = New-AgentStandardsFixture
             $path = Join-Path $script:tempRoot 'agents/AGENTS_PowerShell.md'

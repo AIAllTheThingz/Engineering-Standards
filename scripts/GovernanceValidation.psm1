@@ -384,6 +384,34 @@ function Test-GovernanceJsonDocument {
         foreach ($docPath in @($json.requiredDocumentationPaths)) {
             foreach ($item in @(Test-RelativeRepositoryPath -Value $docPath -Name 'requiredDocumentationPaths item' -Path $Path -RequiredExtension '.md')) { $results.Add($item) }
         }
+        if ($json.ContainsKey('ownership')) {
+            $ownership = $json.ownership
+            if ($null -eq $ownership -or -not ($ownership -is [System.Collections.IDictionary]) -or -not $ownership.Contains('requiredCodeownerPaths')) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'ownership must contain requiredCodeownerPaths.' -Path $Path))
+            }
+            else {
+                foreach ($unknownOwnershipProperty in @($ownership.Keys | Where-Object { $_ -ne 'requiredCodeownerPaths' })) {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Unknown ownership property '$unknownOwnershipProperty'." -Path $Path))
+                }
+                $requiredCodeownerPaths = @($ownership.requiredCodeownerPaths)
+                if ($requiredCodeownerPaths.Count -lt 1) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'ownership.requiredCodeownerPaths must contain at least one path.' -Path $Path))
+                }
+                $seenRequiredCodeownerPaths = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+                foreach ($requiredPath in $requiredCodeownerPaths) {
+                    if ($requiredPath -is [string] -and -not $seenRequiredCodeownerPaths.Add($requiredPath)) {
+                        $results.Add((New-ValidationResult -Status Failed -Message "ownership.requiredCodeownerPaths contains duplicate value '$requiredPath'." -Path $Path))
+                    }
+                    $validLiteralPath = $requiredPath -is [string] -and
+                        $requiredPath -match '^/(?!/)(?:\.[A-Za-z0-9_-]|[A-Za-z0-9_-])(?:[A-Za-z0-9._-]*[A-Za-z0-9_-])?(?:/(?:\.[A-Za-z0-9_-]|[A-Za-z0-9_-])(?:[A-Za-z0-9._-]*[A-Za-z0-9_-])?)*/?$' -and
+                        $requiredPath -notmatch '(?i)(?:^|/)(?:placeholder|changeme|replace-me|todo)(?:/|$)' -and
+                        $requiredPath -notmatch '[*?\[\]#!\\\s:]'
+                    if (-not $validLiteralPath) {
+                        $results.Add((New-ValidationResult -Status Failed -Message "ownership.requiredCodeownerPaths value '$requiredPath' must be a rooted literal CODEOWNERS path without dot or trailing-dot segments, traversal, wildcards, placeholders, drive/UNC syntax, comments, or whitespace." -Path $Path))
+                    }
+                }
+            }
+        }
         foreach ($disabled in @($json.controls.mandatoryControlsDisabled)) {
             if (-not $disabled.exceptionReference -or $disabled.exceptionReference -notmatch '^GOV-[A-Z0-9-]+$') {
                 $results.Add((New-ValidationResult -Status Failed -Message "Mandatory control '$($disabled.control)' lacks a valid exception reference." -Path $Path))
@@ -417,8 +445,18 @@ function Test-GovernanceJsonDocument {
         foreach ($item in @(Test-UniqueValues -Items @($json.owners) -Name 'owners' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.applicableStandards) -Name 'applicableStandards' -Path $Path)) { $results.Add($item) }
         foreach ($owner in @($json.owners)) {
-            if ($owner -notmatch '^(@[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+|[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})$') {
-                $results.Add((New-ValidationResult -Status Failed -Message "Owner '$owner' must be a GitHub team handle or email address." -Path $Path))
+            $isEmailOwner = $owner -match '^[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+            if ($owner -notmatch '^(@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?(?:/[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?)?|[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})$') {
+                $results.Add((New-ValidationResult -Status Failed -Message "Owner '$owner' must be a GitHub user handle, organization/team handle, or email address." -Path $Path))
+            }
+            $isPlaceholderOwner = if ($isEmailOwner) {
+                ($owner -split '@', 2)[0] -match '(?i)^(?:placeholder|changeme|replace-me|todo)$'
+            }
+            else {
+                $owner -match '(?i)(?:^@|/)(?:placeholder|changeme|replace-me|todo)(?:/|$)'
+            }
+            if ($isPlaceholderOwner) {
+                $results.Add((New-ValidationResult -Status Failed -Message "Owner '$owner' is a placeholder and is not allowed." -Path $Path))
             }
         }
         foreach ($standard in @($json.applicableStandards)) {

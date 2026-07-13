@@ -3,7 +3,7 @@
 | Status | Active |
 | Version | 1.1.0 |
 | Owner role | Release Maintainers |
-| Last reviewed | 2026-07-11 |
+| Last reviewed | 2026-07-12 |
 
 ## Purpose
 
@@ -108,7 +108,9 @@ git tag -a v1.2.3 -m "Release v1.2.3"
 git push origin v1.2.3
 ```
 
-Tags SHOULD be protected. Do not rewrite release tags. If a tag is incorrect, publish a corrective patch release unless the security incident process explicitly authorizes a different action.
+Release tags matching `v*` MUST be protected by the repository tag ruleset when the platform supports it. The ruleset blocks tag deletion and non-fast-forward updates and permits bypass only through the narrow accountable repository-administrator path. Re-query the ruleset before each release; do not infer protection from this document. If the platform cannot enforce tag rules, capture the API limitation and require independent release approval, immutable target verification, tag/ref audit, and a corrective patch release rather than rewriting a tag.
+
+Do not rewrite release tags. If a tag is incorrect, publish a corrective patch release unless the security incident process explicitly authorizes a different action. Any emergency tag bypass requires a `GOV-*` record and post-action ref plus ruleset verification.
 
 If no tag exists yet, document that the release is prepared but unpublished. Do not imply publication from a draft note or a prepared changelog entry.
 

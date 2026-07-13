@@ -31,6 +31,10 @@ Immutable caller commit being validated.
 GitHub owner/name that supplied the reusable workflow.
 .PARAMETER StandardsWorkflowSha
 Immutable commit containing the reusable workflow and validators.
+.PARAMETER RepositoryOwnerType
+Trusted repository owner type used by ownership-aware validation. Accepted
+values are exactly Unknown, User, or Organization. The default is Unknown;
+callers must not infer this value from the repository name.
 .PARAMETER ControlledFailure
 Adds an intentional final failed check after normal validation so evidence can
 be generated and uploaded before enforcement fails.
@@ -54,6 +58,8 @@ param(
     [string]$CallerCommitSha,
     [string]$StandardsRepository = 'AIAllTheThingz/Engineering-Standards',
     [string]$StandardsWorkflowSha,
+    [ValidateScript({ @('Unknown', 'User', 'Organization') -ccontains $_ }, ErrorMessage = 'RepositoryOwnerType must be exactly Unknown, User, or Organization.')]
+    [string]$RepositoryOwnerType = 'Unknown',
     [switch]$ControlledFailure
 )
 
@@ -306,7 +312,7 @@ $toolMap = @{
     MarkdownLinks = @{ path='scripts/Test-MarkdownLinks.ps1'; args=@('-Path',$projectRoot) }
     DocumentationCompleteness = @{ path='scripts/Test-DocumentationCompleteness.ps1'; args=@('-Path',$projectRoot) }
     ForbiddenPatterns = @{ path='actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1'; args=@('-Path',$projectRoot) }
-    RepositoryHealth = @{ path='actions/repository-health/Invoke-RepositoryHealth.ps1'; args=@('-Path',$projectRoot) }
+    RepositoryHealth = @{ path='actions/repository-health/Invoke-RepositoryHealth.ps1'; args=@('-Path',$projectRoot,'-RepositoryOwnerType',$RepositoryOwnerType) }
     Evidence = @{ path='actions/validate-evidence/Invoke-EvidenceValidation.ps1'; args=@('-Path',$projectRoot,'-EvidencePath','evidence/local-completion-result.json') }
 }
 

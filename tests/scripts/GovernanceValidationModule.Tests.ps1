@@ -173,6 +173,37 @@ Describe 'GovernanceValidation module' {
     }
 
     Context 'aggregate governance evidence' {
+        It 'forwards the trusted repository owner type to repository-health behavior' {
+            $repoRoot = Resolve-Path "$PSScriptRoot/../.."
+            $callerRoot = Join-Path $script:tempRoot 'aggregate-owner-type-caller'
+            New-Item -ItemType Directory -Path $callerRoot -Force | Out-Null
+            Copy-Item -LiteralPath "$repoRoot/project-manifest.json" -Destination $callerRoot
+            $config = Get-Content -LiteralPath "$repoRoot/governance.config.json" -Raw | ConvertFrom-Json -AsHashtable
+            $config.ownership.requiredCodeownerPaths = @('/AGENTS.md')
+            $config.validationCategories = @('RepositoryHealth')
+            $config | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $callerRoot 'governance.config.json') -Encoding utf8
+            Set-Content -LiteralPath (Join-Path $callerRoot 'AGENTS.md') -Value '# Synthetic instructions' -Encoding utf8
+            Set-Content -LiteralPath (Join-Path $callerRoot 'CODEOWNERS') -Value "* @root-owner`n/AGENTS.md @ExampleOrg/maintainers" -Encoding utf8
+
+            $userEvidence = Join-Path $script:tempRoot 'aggregate-owner-type-user-evidence'
+            $userOutput = @(& pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $callerRoot -Category RepositoryHealth -RepositoryOwnerType User -EvidenceRoot $userEvidence 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $userOutput -join "`n" | Should -Match "incompatible with a User-owned repository"
+
+            $organizationEvidence = Join-Path $script:tempRoot 'aggregate-owner-type-organization-evidence'
+            $organizationOutput = @(& pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $callerRoot -Category RepositoryHealth -RepositoryOwnerType Organization -EvidenceRoot $organizationEvidence 2>&1)
+            $organizationOutput -join "`n" | Should -Not -Match "incompatible with a User-owned repository"
+        }
+
+        It 'rejects invalid and case-variant repository owner types at the aggregate entry point' {
+            $repoRoot = Resolve-Path "$PSScriptRoot/../.."
+            foreach ($ownerType in @('user', 'Enterprise', '')) {
+                $output = @(& pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $repoRoot -Category JsonSchemas -RepositoryOwnerType $ownerType 2>&1)
+                $LASTEXITCODE | Should -Not -Be 0
+                $output -join "`n" | Should -Match 'RepositoryOwnerType must be exactly Unknown, User, or Organization'
+            }
+        }
+
         It 'writes repository-relative validator script paths' {
             $repoRoot = Resolve-Path "$PSScriptRoot/../.."
             $outputPath = Join-Path $script:tempRoot 'aggregate-governance.json'
@@ -201,6 +232,54 @@ Describe 'GovernanceValidation module' {
             $manifest | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path
             $results = Test-GovernanceJsonDocument -Path $path -Kind 'project-manifest'
             @($results | Where-Object { $_.message -match 'production approval' }).Count | Should -Be 1
+        }
+
+        It 'rejects placeholder email local parts case-insensitively' {
+            foreach ($fixture in Get-ChildItem "$PSScriptRoot/../fixtures/invalid" -Filter 'project-manifest*placeholder-email*.json') {
+                $results = Test-GovernanceJsonDocument -Path $fixture.FullName -Kind 'project-manifest'
+                @($results | Where-Object { $_.status -eq 'Failed' -and $_.message -match 'placeholder' }).Count | Should -Be 1 -Because $fixture.Name
+            }
+        }
+
+        It 'accepts similar legitimate email local parts' {
+            $results = Test-GovernanceJsonDocument -Path "$PSScriptRoot/../fixtures/valid/project-manifest-similar-email-owner.json" -Kind 'project-manifest'
+            @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
+        }
+
+        It 'accepts a one-character GitHub user and rejects a bare at sign' {
+            $validResults = Test-GovernanceJsonDocument -Path "$PSScriptRoot/../fixtures/valid/project-manifest-one-character-user-owner.json" -Kind 'project-manifest'
+            @($validResults | Where-Object status -eq 'Failed').Count | Should -Be 0
+
+            $invalidResults = Test-GovernanceJsonDocument -Path "$PSScriptRoot/../fixtures/invalid/project-manifest-bare-user-owner.json" -Kind 'project-manifest'
+            @($invalidResults | Where-Object { $_.status -eq 'Failed' -and $_.message -match 'GitHub user handle' }).Count | Should -Be 1
+        }
+    }
+
+    Context 'governance configuration ownership semantics' {
+        It 'accepts an omitted ownership configuration for backward compatibility' {
+            $results = Test-GovernanceJsonDocument -Path "$PSScriptRoot/../fixtures/valid/governance-config.json" -Kind 'governance-config'
+            @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
+        }
+
+        It 'accepts unique rooted literal required CODEOWNERS paths' {
+            $results = Test-GovernanceJsonDocument -Path "$PSScriptRoot/../fixtures/valid/governance-config-required-codeowner-paths.json" -Kind 'governance-config'
+            @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
+        }
+
+        It 'treats case-distinct required CODEOWNERS paths as unique' {
+            $document = Get-Content "$PSScriptRoot/../fixtures/valid/governance-config-required-codeowner-paths.json" -Raw | ConvertFrom-Json -AsHashtable
+            $document.ownership.requiredCodeownerPaths = @('/src/', '/SRC/')
+            $path = Join-Path $script:tempRoot 'case-distinct-governance-config.json'
+            $document | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path
+            $results = Test-GovernanceJsonDocument -Path $path -Kind 'governance-config'
+            @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
+        }
+
+        It 'rejects unsafe, duplicate, empty, wildcard, and placeholder required CODEOWNERS paths' {
+            foreach ($fixture in Get-ChildItem "$PSScriptRoot/../fixtures/invalid" -Filter 'governance-config-codeowner-*.json') {
+                $results = Test-GovernanceJsonDocument -Path $fixture.FullName -Kind 'governance-config'
+                @($results | Where-Object status -eq 'Failed').Count | Should -BeGreaterThan 0 -Because $fixture.Name
+            }
         }
     }
 }
