@@ -6,6 +6,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
+- Added deterministic pull-request body governance validation, canonical templates and fixtures, and a least-privilege trusted reusable workflow for Issue #19.
 - Added the governed `enterprise-powershell` Codex skill and its delivery guidance.
 - Added the downstream governance canary guide and release gate for reusable-workflow changes.
 - Added deterministic CODEOWNERS validation, explicit live-identity result classification, lockout-safe protection planning, and ownership fixtures.

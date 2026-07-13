@@ -10,6 +10,8 @@
 
 ## Purpose
 
+Pull requests must use the exact headings and record syntax in [Pull Request Body Governance](docs/PR_BODY_GOVERNANCE.md). Select exactly one change type and use only `Passed`, `Failed`, `NotRun`, `Blocked`, or `NotApplicable` where a governance status is requested. Dependabot and internal automation follow the same rules. Editing a body retriggers the advisory check without a code commit; the exact rendered check name must be verified before branch-protection enforcement.
+
 This guide defines how contributors change the Engineering Standards repository safely. Contributions may alter governance obligations for downstream repositories, so documentation, validation, evidence, and release impact are part of the change, not afterthoughts.
 
 ## Before You Start

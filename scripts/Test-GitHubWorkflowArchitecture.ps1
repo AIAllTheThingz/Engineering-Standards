@@ -634,6 +634,35 @@ else {
     $results.Add((New-ValidationResult -Status Failed -Message 'Reusable governance workflow is missing.' -Path $reusable))
 }
 
+$prReusable = '.github/workflows/pr-governance-reusable.yml'
+$requiresPrGovernance = Test-Path -LiteralPath (Join-Path $root 'docs/PR_BODY_GOVERNANCE.md') -PathType Leaf
+if ($workflows.ContainsKey($prReusable)) {
+    $prWorkflow = $workflows[$prReusable]
+    $prText = Get-Content -LiteralPath (Join-Path $root $prReusable) -Raw
+    if (-not (Test-HasWorkflowCall -Workflow $prWorkflow)) { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance reusable workflow must declare workflow_call.' -Path $prReusable)) }
+    if ($prText -match 'pull_request_target|secrets\.|secrets:\s*inherit|contents:\s*write|pull-requests:\s*write|environment:') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance workflow requests a prohibited trigger, secret, environment, or write permission.' -Path $prReusable)) }
+    if ($prText -notmatch 'contents:\s*read' -or $prText -notmatch 'pull-requests:\s*read') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance workflow must declare exact read-only permissions.' -Path $prReusable)) }
+    if ($prText -notmatch 'job\.workflow_repository' -or $prText -notmatch 'job\.workflow_sha' -or $prText -notmatch 'persist-credentials:\s*false') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance workflow must check out only immutable trusted workflow content without credentials.' -Path $prReusable)) }
+    if ($prText -match 'github\.event\.pull_request\.head|github\.head_ref' -or $prText -match 'checkout[^\r\n]*PR') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance workflow must not check out PR-head content.' -Path $prReusable)) }
+    if ($prText -notmatch 'GITHUB_EVENT_PATH' -or $prText -notmatch 'Get-PullRequestChangedFiles\.ps1' -or $prText -notmatch 'if:\s*always\(\)' -or $prText -notmatch 'if-no-files-found:\s*error') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance workflow must use event-file input, paginated filename retrieval, and fail-closed artifact upload.' -Path $prReusable)) }
+    $thirdPartyUses = [regex]::Matches($prText, '(?m)^\s*uses:\s*(?!\./)([^\s]+)$')
+    foreach ($use in $thirdPartyUses) { if ($use.Groups[1].Value -notmatch '@[0-9a-fA-F]{40}$') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance workflow actions must use full immutable SHA pins.' -Path $prReusable)) } }
+}
+elseif ($requiresPrGovernance) { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance reusable workflow is missing.' -Path $prReusable)) }
+
+$prEntry = '.github/workflows/pr-governance.yml'
+if ($workflows.ContainsKey($prEntry)) {
+    $entry = $workflows[$prEntry]; $entryText = Get-Content -LiteralPath (Join-Path $root $prEntry) -Raw
+    if ([string]$entry.name -ne 'Pull Request Governance') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance entry workflow name is not stable.' -Path $prEntry)) }
+    $types = @($entry['on'].pull_request.types)
+    foreach ($requiredType in @('opened','edited','reopened','synchronize','ready_for_review')) { if ($requiredType -notin $types) { $results.Add((New-ValidationResult -Status Failed -Message "PR governance entry workflow is missing trigger '$requiredType'." -Path $prEntry)) } }
+    if ($entryText -match 'pull_request_target|secrets\.|environment:|contents:\s*write|pull-requests:\s*write') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance entry workflow requests a prohibited trigger, secret, environment, or permission.' -Path $prEntry)) }
+    $job = $entry.jobs.validate
+    if ([string]$job.name -ne 'Validate pull request governance record') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance job name is not stable.' -Path $prEntry)) }
+    if ([string]$job.uses -notmatch '^AIAllTheThingz/Engineering-Standards/\.github/workflows/pr-governance-reusable\.yml@[0-9a-f]{40}$') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance reusable call must use the central path and a full immutable SHA.' -Path $prEntry)) }
+}
+elseif ($requiresPrGovernance) { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance entry workflow is missing.' -Path $prEntry)) }
+
 if (-not @($results | Where-Object status -eq 'Failed')) {
     $results.Add((New-ValidationResult -Status Passed -Message 'GitHub workflow architecture validation passed.' -Path $root -Severity info -Data @{ callGraph = $callGraph }))
 }

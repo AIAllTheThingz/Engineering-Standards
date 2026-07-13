@@ -1,0 +1,4 @@
+[
+  "scripts/PullRequestGovernance.psm1",
+  ".github/workflows/pr-governance-reusable.yml"
+]

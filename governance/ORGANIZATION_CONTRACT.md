@@ -10,6 +10,8 @@
 
 ## Purpose
 
+Pull requests are governed records and MUST satisfy [Pull Request Body Governance](../docs/PR_BODY_GOVERNANCE.md). Machine validation rejects missing, placeholder, contradictory, noncanonical, or misleading risk, impact, testing, evidence, rollback, and exception records. Automation actors receive no bypass. An exception reference affects a mapped control only when it is active, configured, approved, and unexpired; validation does not grant approval.
+
 This contract defines the minimum engineering controls required for repositories that adopt the Engineering Standards repository. It is written as enforceable policy, not guidance. A consuming repository MAY add stricter local controls, but it MUST NOT weaken or bypass this contract without an approved exception under [EXCEPTION_PROCESS.md](EXCEPTION_PROCESS.md).
 
 The contract has three goals:
