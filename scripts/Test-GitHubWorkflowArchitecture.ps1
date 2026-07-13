@@ -649,6 +649,19 @@ if ($workflows.ContainsKey($prReusable)) {
 }
 else { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance reusable workflow is missing.' -Path $prReusable)) }
 
+$prEntry = '.github/workflows/pr-governance.yml'
+if ($workflows.ContainsKey($prEntry)) {
+    $entry = $workflows[$prEntry]; $entryText = Get-Content -LiteralPath (Join-Path $root $prEntry) -Raw
+    if ([string]$entry.name -ne 'Pull Request Governance') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance entry workflow name is not stable.' -Path $prEntry)) }
+    $types = @($entry['on'].pull_request.types)
+    foreach ($requiredType in @('opened','edited','reopened','synchronize','ready_for_review')) { if ($requiredType -notin $types) { $results.Add((New-ValidationResult -Status Failed -Message "PR governance entry workflow is missing trigger '$requiredType'." -Path $prEntry)) } }
+    if ($entryText -match 'pull_request_target|secrets\.|environment:|contents:\s*write|pull-requests:\s*write') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance entry workflow requests a prohibited trigger, secret, environment, or permission.' -Path $prEntry)) }
+    $job = $entry.jobs.validate
+    if ([string]$job.name -ne 'Validate pull request governance record') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance job name is not stable.' -Path $prEntry)) }
+    if ([string]$job.uses -notmatch '^AIAllTheThingz/Engineering-Standards/\.github/workflows/pr-governance-reusable\.yml@[0-9a-f]{40}$') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance reusable call must use the central path and a full immutable SHA.' -Path $prEntry)) }
+}
+else { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance entry workflow is missing.' -Path $prEntry)) }
+
 if (-not @($results | Where-Object status -eq 'Failed')) {
     $results.Add((New-ValidationResult -Status Passed -Message 'GitHub workflow architecture validation passed.' -Path $root -Severity info -Data @{ callGraph = $callGraph }))
 }
