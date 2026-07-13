@@ -46,12 +46,51 @@ function Add-RequiredFileResult {
     }
 }
 
+function Resolve-CodeownersCandidate {
+    param([Parameter(Mandatory)][string]$RelativePath)
+
+    $current = $root
+    $segments = $RelativePath.Split('/')
+    for ($segmentIndex = 0; $segmentIndex -lt $segments.Count; $segmentIndex++) {
+        $segment = $segments[$segmentIndex]
+        $entries = @(Get-ChildItem -LiteralPath $current -Force -ErrorAction SilentlyContinue)
+        $exactEntry = @($entries | Where-Object { [string]::Equals($_.Name, $segment, [System.StringComparison]::Ordinal) }) | Select-Object -First 1
+        if (-not $exactEntry) {
+            $caseVariant = @($entries | Where-Object { [string]::Equals($_.Name, $segment, [System.StringComparison]::OrdinalIgnoreCase) }) | Select-Object -First 1
+            if ($caseVariant) {
+                return [pscustomobject]@{
+                    State = 'Invalid'
+                    Message = "CODEOWNERS candidate '$RelativePath' does not match repository path casing; found '$($caseVariant.Name)' where '$segment' is required."
+                }
+            }
+            return [pscustomobject]@{ State = 'Missing' }
+        }
+        if ($segmentIndex -lt ($segments.Count - 1)) {
+            if (-not $exactEntry.PSIsContainer) {
+                return [pscustomobject]@{ State = 'Invalid'; Message = "CODEOWNERS candidate '$RelativePath' has a non-directory path segment '$segment'." }
+            }
+            if ($exactEntry.LinkType -or ($exactEntry.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+                return [pscustomobject]@{ State = 'Invalid'; Message = "CODEOWNERS candidate '$RelativePath' must not traverse a symbolic link, junction, or reparse point at '$segment'." }
+            }
+        }
+        $current = $exactEntry.FullName
+    }
+
+    $item = Get-Item -LiteralPath $current -Force
+    if ($item.PSIsContainer) {
+        return [pscustomobject]@{ State = 'Invalid'; Message = "CODEOWNERS candidate '$RelativePath' is not a regular file." }
+    }
+    if ($item.LinkType -or ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+        return [pscustomobject]@{ State = 'Invalid'; Message = "CODEOWNERS candidate '$RelativePath' must not be a symbolic link, junction, or reparse point." }
+    }
+    return [pscustomobject]@{ State = 'Valid'; FullName = $item.FullName }
+}
+
 $required = @(
     'README.md',
     'LICENSE',
     'SECURITY.md',
     'CONTRIBUTING.md',
-    'CODEOWNERS',
     'project-manifest.json',
     'governance.config.json',
     'AGENTS.md',
@@ -120,8 +159,22 @@ else {
     $results.Add((New-ValidationResult -Status Passed -Message "Pester test files found: $($testFiles.Count)." -Path 'tests' -Severity info))
 }
 
-$codeowners = Join-Path $root 'CODEOWNERS'
-if (Test-Path -LiteralPath $codeowners) {
+$codeownersRelativePath = $null
+$codeowners = $null
+foreach ($candidatePath in @('.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS')) {
+    $candidate = Resolve-CodeownersCandidate -RelativePath $candidatePath
+    if ($candidate.State -eq 'Invalid') {
+        $results.Add((New-ValidationResult -Status Failed -Message $candidate.Message -Path $candidatePath))
+        break
+    }
+    if ($candidate.State -eq 'Valid') {
+        $codeownersRelativePath = $candidatePath
+        $codeowners = $candidate.FullName
+        break
+    }
+}
+if ($codeownersRelativePath) {
+    $results.Add((New-ValidationResult -Status Passed -Message 'GitHub-selected CODEOWNERS file exists.' -Path $codeownersRelativePath -Severity info))
     $text = Get-Content -LiteralPath $codeowners -Raw
     $requiredCodeownerPaths = @()
     $governanceConfigPath = Join-Path $root 'governance.config.json'
@@ -203,8 +256,11 @@ if (Test-Path -LiteralPath $codeowners) {
             repositoryOwnerType = $finding.RepositoryOwnerType
             reason = $finding.Reason
         }
-        $results.Add((New-ValidationResult -Status $finding.Status -Message $finding.Message -Path 'CODEOWNERS' -Severity $severity -Data $findingData))
+        $results.Add((New-ValidationResult -Status $finding.Status -Message $finding.Message -Path $codeownersRelativePath -Severity $severity -Data $findingData))
     }
+}
+elseif (-not @($results | Where-Object { $_.status -eq 'Failed' -and $_.path -in @('.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS') })) {
+    $results.Add((New-ValidationResult -Status Failed -Message 'Required health file missing. GitHub looks for CODEOWNERS in .github/, the repository root, then docs/.' -Path 'CODEOWNERS'))
 }
 
 foreach ($actionDir in Get-ChildItem -LiteralPath (Join-Path $root 'actions') -Directory -ErrorAction SilentlyContinue) {

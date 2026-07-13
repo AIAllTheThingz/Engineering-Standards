@@ -171,6 +171,104 @@ exit 0
             $output | Out-String | Should -Match "CODEOWNERS must include default '\*' coverage"
         }
 
+        It 'selects each GitHub-supported CODEOWNERS location and identifies it in diagnostics' -ForEach @(
+            @{ Location = '.github/CODEOWNERS'; Fixture = 'codeowners-dot-github' }
+            @{ Location = 'CODEOWNERS'; Fixture = 'codeowners-root' }
+            @{ Location = 'docs/CODEOWNERS'; Fixture = 'codeowners-docs' }
+        ) {
+            $root = Join-Path $script:actionHarnessRoot $Fixture
+            New-SyntheticRepositoryHealthFixture -Root $root -Codeowners '* @downstream-owner'
+            if ($Location -ne 'CODEOWNERS') {
+                Move-Item -LiteralPath (Join-Path $root 'CODEOWNERS') -Destination (Join-Path $root $Location)
+            }
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $root -OutputJson 'health.json' | Out-Null
+            $LASTEXITCODE | Should -Be 0
+            $report = Get-Content -LiteralPath (Join-Path $root 'health.json') -Raw | ConvertFrom-Json
+            $selection = @($report.results | Where-Object message -eq 'GitHub-selected CODEOWNERS file exists.')
+            $selection.Count | Should -Be 1
+            $selection[0].path | Should -Be $Location
+            @($report.results | Where-Object { $_.data -and $_.data.rulePattern }).path | Should -Contain $Location
+        }
+
+        It 'selects the highest-priority CODEOWNERS file when multiple locations exist' {
+            $root = Join-Path $script:actionHarnessRoot 'codeowners-precedence'
+            New-SyntheticRepositoryHealthFixture -Root $root -Codeowners '* @root-owner'
+            Set-Content -LiteralPath (Join-Path $root 'docs/CODEOWNERS') -Value '* @docs-owner'
+            Set-Content -LiteralPath (Join-Path $root '.github/CODEOWNERS') -Value '* @github-owner'
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $root -OutputJson 'health.json' | Out-Null
+            $LASTEXITCODE | Should -Be 0
+            $report = Get-Content -LiteralPath (Join-Path $root 'health.json') -Raw | ConvertFrom-Json
+            @($report.results | Where-Object message -eq 'GitHub-selected CODEOWNERS file exists.')[0].path | Should -Be '.github/CODEOWNERS'
+            $ownerFinding = @($report.results | Where-Object { $_.data -and $_.data.identity })[0]
+            $ownerFinding.path | Should -Be '.github/CODEOWNERS'
+            $ownerFinding.data.identity | Should -Be '@github-owner'
+        }
+
+        It 'does not accept a valid root file when the selected higher-priority file is invalid' {
+            $root = Join-Path $script:actionHarnessRoot 'codeowners-invalid-precedence'
+            New-SyntheticRepositoryHealthFixture -Root $root -Codeowners '* @root-owner'
+            Set-Content -LiteralPath (Join-Path $root '.github/CODEOWNERS') -Value '* owner-without-prefix'
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $root -OutputJson 'health.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+            $report = Get-Content -LiteralPath (Join-Path $root 'health.json') -Raw | ConvertFrom-Json
+            @($report.results | Where-Object status -eq 'Failed').path | Should -Contain '.github/CODEOWNERS'
+            @($report.results | Where-Object { $_.data -and $_.data.identity -eq '@root-owner' }).Count | Should -Be 0
+        }
+
+        It 'does not accept a valid root file when the selected higher-priority file removes required ownership' {
+            $root = Join-Path $script:actionHarnessRoot 'codeowners-ownerless-precedence'
+            New-SyntheticRepositoryHealthFixture -Root $root -RequiredCodeownerPaths @('/scripts/') -Codeowners '* @root-owner'
+            Set-Content -LiteralPath (Join-Path $root '.github/CODEOWNERS') -Value "* @github-owner`n/scripts/"
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $root -OutputJson 'health.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+            $report = Get-Content -LiteralPath (Join-Path $root 'health.json') -Raw | ConvertFrom-Json
+            $failure = @($report.results | Where-Object { $_.status -eq 'Failed' -and $_.data.requiredPath })[0]
+            $failure.path | Should -Be '.github/CODEOWNERS'
+            $failure.message | Should -Match 'has no owners'
+        }
+
+        It 'rejects case-variant CODEOWNERS filenames without falling through' -ForEach @(
+            @{ Location = '.github/codeowners'; Fixture = 'codeowners-case-dot-github'; Expected = '.github/CODEOWNERS' }
+            @{ Location = 'codeowners'; Fixture = 'codeowners-case-root'; Expected = 'CODEOWNERS' }
+            @{ Location = 'docs/codeowners'; Fixture = 'codeowners-case-docs'; Expected = 'docs/CODEOWNERS' }
+        ) {
+            $root = Join-Path $script:actionHarnessRoot $Fixture
+            New-SyntheticRepositoryHealthFixture -Root $root -Codeowners '* @root-owner'
+            if ($Location -eq 'codeowners') {
+                Move-Item -LiteralPath (Join-Path $root 'CODEOWNERS') -Destination (Join-Path $root 'temporary-owner-file')
+                Move-Item -LiteralPath (Join-Path $root 'temporary-owner-file') -Destination (Join-Path $root $Location)
+            }
+            else {
+                Set-Content -LiteralPath (Join-Path $root $Location) -Value '* @case-variant-owner'
+                if ($Location -eq 'docs/codeowners') {
+                    Remove-Item -LiteralPath (Join-Path $root 'CODEOWNERS') -Force
+                }
+            }
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $root -OutputJson 'health.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+            $report = Get-Content -LiteralPath (Join-Path $root 'health.json') -Raw | ConvertFrom-Json
+            $failure = @($report.results | Where-Object { $_.status -eq 'Failed' -and $_.path -eq $Expected })[0]
+            $failure.message | Should -Match 'does not match repository path casing'
+        }
+
+        It 'rejects a higher-priority symbolic-link CODEOWNERS file without falling through' {
+            $root = Join-Path $script:actionHarnessRoot 'codeowners-symbolic-link'
+            New-SyntheticRepositoryHealthFixture -Root $root -Codeowners '* @root-owner'
+            try {
+                New-Item -ItemType SymbolicLink -Path (Join-Path $root '.github/CODEOWNERS') -Target (Join-Path $root 'CODEOWNERS') -ErrorAction Stop | Out-Null
+            }
+            catch {
+                Set-ItResult -Skipped -Because "Symbolic-link creation is unavailable: $($_.Exception.Message)"
+                return
+            }
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $root -OutputJson 'health.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+            $report = Get-Content -LiteralPath (Join-Path $root 'health.json') -Raw | ConvertFrom-Json
+            $failure = @($report.results | Where-Object { $_.status -eq 'Failed' -and $_.path -eq '.github/CODEOWNERS' })[0]
+            $failure.message | Should -Match 'must not be a symbolic link, junction, or reparse point'
+            @($report.results | Where-Object { $_.data -and $_.data.identity -eq '@root-owner' }).Count | Should -Be 0
+        }
+
         It 'passes configured existing paths with effective ownership and reports the selected rule' {
             $root = Join-Path $script:actionHarnessRoot 'downstream-configured'
             New-SyntheticRepositoryHealthFixture -Root $root -RequiredCodeownerPaths @('/src/') -Codeowners "* @downstream-owner`n/src/ @downstream-owner"
