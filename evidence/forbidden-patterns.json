@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-07-13T04:26:01.5782280Z",
+  "generatedAtUtc": "2026-07-13T12:37:44.2772416Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -9,6 +9,10 @@
   "advisory": false,
   "scannedFiles": 299,
   "skippedFiles": [
+    {
+      "path": ".tmp/candidate-job-86734396661.log",
+      "reason": "excluded-path"
+    },
     {
       "path": ".tmp/final-failure-29161515777-verification.json",
       "reason": "excluded-path"
@@ -34,6 +38,10 @@
       "reason": "excluded-path"
     },
     {
+      "path": ".tmp/issue-19-pr-body.md",
+      "reason": "excluded-path"
+    },
+    {
       "path": ".tmp/pin-rotation-pr-body.md",
       "reason": "excluded-path"
     },
@@ -51,6 +59,14 @@
     },
     {
       "path": ".tmp/pr30-artifact-verification.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/candidate-validation/pester/pester-details.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/candidate-validation/pester/pester-summary.json",
       "reason": "excluded-path"
     },
     {
@@ -583,6 +599,10 @@
     },
     {
       "path": ".tmp/issue16/Engineering-Standards-Canary/docs/CANARY_OPERATIONS.md",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/pr-run-artifact/pr-governance-result.json",
       "reason": "excluded-path"
     },
     {
