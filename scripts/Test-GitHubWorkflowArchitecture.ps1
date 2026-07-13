@@ -635,6 +635,7 @@ else {
 }
 
 $prReusable = '.github/workflows/pr-governance-reusable.yml'
+$requiresPrGovernance = Test-Path -LiteralPath (Join-Path $root 'docs/PR_BODY_GOVERNANCE.md') -PathType Leaf
 if ($workflows.ContainsKey($prReusable)) {
     $prWorkflow = $workflows[$prReusable]
     $prText = Get-Content -LiteralPath (Join-Path $root $prReusable) -Raw
@@ -647,7 +648,7 @@ if ($workflows.ContainsKey($prReusable)) {
     $thirdPartyUses = [regex]::Matches($prText, '(?m)^\s*uses:\s*(?!\./)([^\s]+)$')
     foreach ($use in $thirdPartyUses) { if ($use.Groups[1].Value -notmatch '@[0-9a-fA-F]{40}$') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance workflow actions must use full immutable SHA pins.' -Path $prReusable)) } }
 }
-else { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance reusable workflow is missing.' -Path $prReusable)) }
+elseif ($requiresPrGovernance) { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance reusable workflow is missing.' -Path $prReusable)) }
 
 $prEntry = '.github/workflows/pr-governance.yml'
 if ($workflows.ContainsKey($prEntry)) {
@@ -660,7 +661,7 @@ if ($workflows.ContainsKey($prEntry)) {
     if ([string]$job.name -ne 'Validate pull request governance record') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance job name is not stable.' -Path $prEntry)) }
     if ([string]$job.uses -notmatch '^AIAllTheThingz/Engineering-Standards/\.github/workflows/pr-governance-reusable\.yml@[0-9a-f]{40}$') { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance reusable call must use the central path and a full immutable SHA.' -Path $prEntry)) }
 }
-else { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance entry workflow is missing.' -Path $prEntry)) }
+elseif ($requiresPrGovernance) { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance entry workflow is missing.' -Path $prEntry)) }
 
 if (-not @($results | Where-Object status -eq 'Failed')) {
     $results.Add((New-ValidationResult -Status Passed -Message 'GitHub workflow architecture validation passed.' -Path $root -Severity info -Data @{ callGraph = $callGraph }))
