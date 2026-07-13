@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-07-12T23:50:30.6627473Z",
+  "generatedAtUtc": "2026-07-13T00:30:23.0292682Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -7,7 +7,7 @@
   "patternFile": "actions/forbidden-pattern-scan/forbidden-patterns.json",
   "allowlistFile": null,
   "advisory": false,
-  "scannedFiles": 283,
+  "scannedFiles": 285,
   "skippedFiles": [
     {
       "path": "evidence/agent-standards.json",
