@@ -111,7 +111,7 @@
       "type": "array",
       "items": {
         "type": "string",
-        "minLength": 3,
+        "minLength": 2,
         "pattern": "^(@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?(?:/[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?)?|[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,})$",
         "not": {
           "pattern": "^(?:@(?:(?:[Pp][Ll][Aa][Cc][Ee][Hh][Oo][Ll][Dd][Ee][Rr]|[Cc][Hh][Aa][Nn][Gg][Ee][Mm][Ee]|[Rr][Ee][Pp][Ll][Aa][Cc][Ee]-[Mm][Ee]|[Tt][Oo][Dd][Oo])(?:/|$)|[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/(?:[Pp][Ll][Aa][Cc][Ee][Hh][Oo][Ll][Dd][Ee][Rr]|[Cc][Hh][Aa][Nn][Gg][Ee][Mm][Ee]|[Rr][Ee][Pp][Ll][Aa][Cc][Ee]-[Mm][Ee]|[Tt][Oo][Dd][Oo])$)|(?:[Pp][Ll][Aa][Cc][Ee][Hh][Oo][Ll][Dd][Ee][Rr]|[Cc][Hh][Aa][Nn][Gg][Ee][Mm][Ee]|[Rr][Ee][Pp][Ll][Aa][Cc][Ee]-[Mm][Ee]|[Tt][Oo][Dd][Oo])@)"

@@ -10,9 +10,10 @@ Describe 'JSON schema validation' {
             foreach ($fixture in Get-ChildItem "$PSScriptRoot/../fixtures/invalid" -Filter 'project-manifest*placeholder*.json') {
                 (Get-Content -LiteralPath $fixture.FullName -Raw | Test-Json -SchemaFile $schema) | Should -BeFalse -Because $fixture.Name
             }
-            foreach ($name in @('project-manifest-user-owner.json', 'project-manifest.json', 'project-manifest-contact-owner.json', 'project-manifest-similar-email-owner.json', 'project-manifest-similar-user-owner.json', 'project-manifest-similar-team-owner.json')) {
+            foreach ($name in @('project-manifest-one-character-user-owner.json', 'project-manifest-user-owner.json', 'project-manifest.json', 'project-manifest-contact-owner.json', 'project-manifest-similar-email-owner.json', 'project-manifest-similar-user-owner.json', 'project-manifest-similar-team-owner.json')) {
                 (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/$name" -Raw | Test-Json -SchemaFile $schema) | Should -BeTrue -Because $name
             }
+            (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/invalid/project-manifest-bare-user-owner.json" -Raw | Test-Json -SchemaFile $schema) | Should -BeFalse
         }
 
         It 'enforces required CODEOWNERS path structure directly in JSON Schema' {

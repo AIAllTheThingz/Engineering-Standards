@@ -245,6 +245,14 @@ Describe 'GovernanceValidation module' {
             $results = Test-GovernanceJsonDocument -Path "$PSScriptRoot/../fixtures/valid/project-manifest-similar-email-owner.json" -Kind 'project-manifest'
             @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
         }
+
+        It 'accepts a one-character GitHub user and rejects a bare at sign' {
+            $validResults = Test-GovernanceJsonDocument -Path "$PSScriptRoot/../fixtures/valid/project-manifest-one-character-user-owner.json" -Kind 'project-manifest'
+            @($validResults | Where-Object status -eq 'Failed').Count | Should -Be 0
+
+            $invalidResults = Test-GovernanceJsonDocument -Path "$PSScriptRoot/../fixtures/invalid/project-manifest-bare-user-owner.json" -Kind 'project-manifest'
+            @($invalidResults | Where-Object { $_.status -eq 'Failed' -and $_.message -match 'GitHub user handle' }).Count | Should -Be 1
+        }
     }
 
     Context 'governance configuration ownership semantics' {
