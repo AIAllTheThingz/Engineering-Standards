@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-07-12T22:33:11.3389780Z",
+  "generatedAtUtc": "2026-07-12T23:50:30.6627473Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -43,7 +43,7 @@
     },
     {
       "path": "evidence/forbidden-patterns.json",
-      "reason": "scanner-output"
+      "reason": "excluded-path"
     },
     {
       "path": "evidence/github-settings-issue-18-pre.json",
@@ -193,7 +193,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 161,
+      "line": 163,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
