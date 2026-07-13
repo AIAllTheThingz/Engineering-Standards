@@ -7,6 +7,8 @@
 
 ## Purpose
 
+Issue #19 introduces the provisional advisory check `Pull Request Governance / Validate pull request governance record`. Do not make it required until a post-merge controlled pull request proves the historical PR #12 pattern fails, a body-only edit passes, and the exact rendered name is recorded. Preserve the existing Governance and Candidate implementation validation checks and every Issue #18 protection when enabling or rolling back this check.
+
 Branch protection converts governance policy into merge controls. This document defines the required protection model for repositories that adopt the engineering standards repository.
 
 Protection must apply to the branch that receives production, release, or authoritative governance changes. In this organization, examples support both `master` and `main` because repositories may use either branch name.

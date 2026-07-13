@@ -9,6 +9,8 @@
 
 ## Purpose
 
+The pull-request governance workflow treats event bodies and API filenames as inert file data. It uses `pull_request` with `contents: read` and `pull-requests: read`, receives no secrets or environment, checks out only the immutable workflow implementation, never checks out PR-head content, bounds pagination, and uploads only rule-level findings plus a body SHA-256.
+
 This guide defines security requirements for GitHub Actions, composite actions, reusable workflows, and repository-local validation scripts in this governance repository. Actions are part of the trust boundary: a weak workflow can bypass review, expose secrets, publish untrusted artifacts, or convert untrusted pull request content into executable commands.
 
 ## Applicability

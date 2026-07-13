@@ -1,49 +1,47 @@
 ## Summary
-
-Describe what changed and why it is needed.
-
+<!-- Explain what changed and why. Remove all instructional comments before submission. -->
 ## Change Type
-
+<!-- Select exactly one. -->
+- [ ] Documentation-only
 - [ ] Patch fix
 - [ ] Backward-compatible governance addition
 - [ ] Breaking governance change
 - [ ] Security fix
 - [ ] Emergency change
-
 ## Risk Classification
-
-State `Low`, `Moderate`, `High`, or `Critical`, and explain the classification.
-
+Risk: <!-- Low, Moderate, High, or Critical -->
+Rationale: <!-- Explain the classification. -->
 ## Security Impact
-
-Describe authentication, authorization, secrets, dependency, workflow, infrastructure, AI-generated code, or scanner impact. State `None` only when reviewed.
-
+Status: <!-- Reviewed or None; None requires explicit review and no security-sensitive changed paths. -->
+Details: <!-- Describe security impact. -->
 ## Data Impact
-
-Describe data classification, privacy impact, logging impact, retention impact, and whether production or customer data is affected.
-
+Classification: <!-- Highest applicable classification. -->
+Privacy: <!-- Impact or reviewed reason for none. -->
+Logging: <!-- Impact or reviewed reason for none. -->
+Retention: <!-- Impact or reviewed reason for none. -->
+Production or customer data: <!-- State whether affected and why. -->
 ## Testing Performed
-
-Include exact commands, working directory, exit codes, and important warnings.
-
+Command: <!-- Exact command or named validation. -->
+Working directory: <!-- Repository-relative working directory. -->
+Exit code: <!-- Numeric exit code or canonical outcome. -->
+Limitation: <!-- Important warning or limitation. -->
 ## Tests Not Performed
-
-Record `Skipped`, `NotRun`, `Blocked`, or `NotApplicable` with reasons and compensating review.
-
+Status: <!-- NotRun, Blocked, or NotApplicable. -->
+Reason: <!-- Explain omitted tests, or why none were omitted. -->
 ## Evidence
-
-Link completion evidence, workflow artifacts, manual review notes, screenshots, branch protection evidence, and artifact hashes when applicable.
-
+<!-- Add at least one concrete reference. -->
+- Path:
 ## Rollback Plan
-
-Describe how to revert the change, restore previous validation behavior, or recover affected downstream repositories.
-
+Revert target: <!-- Exact target. -->
+Preconditions: <!-- Required state checks. -->
+Execution steps: <!-- Recovery actions. -->
+Verification: <!-- Post-rollback checks. -->
+Irreversible effects: <!-- State None only after review. -->
+Authorized owner: <!-- Responsible role. -->
 ## Governance Exceptions
-
-List active `GOV-*` exceptions or state `None`.
-
+<!-- State None or active configured GOV-* identifiers. -->
+None
 ## Checklist
-
 - [ ] No secrets, tokens, private keys, customer data, or production-only endpoints were added.
 - [ ] Required documentation was updated.
 - [ ] Evidence matches actual validation results.

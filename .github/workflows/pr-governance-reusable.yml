@@ -1,0 +1,62 @@
+name: Pull Request Governance Reusable
+on:
+  workflow_call:
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  validate:
+    name: Validate pull request governance record
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Initialize fail-closed evidence
+        shell: pwsh
+        run: |
+          @{ schemaVersion = '1.0.0'; status = 'Blocked'; findings = @(@{ ruleId = 'PRG016'; status = 'Blocked'; message = 'PRG016: Pull-request metadata is missing, invalid, oversized, or incomplete; validation cannot pass.' }) } |
+            ConvertTo-Json -Depth 5 | Set-Content -LiteralPath pr-governance-result.json -Encoding utf8
+      - name: Validate trusted workflow identity
+        shell: pwsh
+        env:
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          if ($env:WORKFLOW_REF -notmatch '^AIAllTheThingz/Engineering-Standards/' -or $env:WORKFLOW_SHA -notmatch '^[0-9a-f]{40}$') {
+            throw 'Trusted workflow identity is unavailable or invalid.'
+          }
+      - name: Check out trusted validator only
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          repository: AIAllTheThingz/Engineering-Standards
+          ref: ${{ github.workflow_sha }}
+          path: standards
+          persist-credentials: false
+      - name: Retrieve changed filenames as data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: pwsh -NoProfile -File standards/scripts/Get-PullRequestChangedFiles.ps1 -EventPath $env:GITHUB_EVENT_PATH -OutputJson changed-files.json
+      - name: Validate pull request governance record
+        shell: pwsh
+        run: pwsh -NoProfile -File standards/scripts/Test-PullRequestGovernance.ps1 -EventPath $env:GITHUB_EVENT_PATH -ChangedFilesPath changed-files.json -GovernanceConfigPath standards/governance.config.json -OutputJson pr-governance-result.json
+      - name: Write job summary
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path -LiteralPath pr-governance-result.json) {
+            $result = Get-Content -LiteralPath pr-governance-result.json -Raw | ConvertFrom-Json
+            "## Pull Request Governance`n`nStatus: **$($result.status)**`n`nFindings: $(@($result.findings).Count)" >> $env:GITHUB_STEP_SUMMARY
+          } else {
+            "## Pull Request Governance`n`nStatus: **Blocked**" >> $env:GITHUB_STEP_SUMMARY
+          }
+      - name: Upload sanitized governance evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pr-governance-${{ github.run_id }}
+          path: pr-governance-result.json
+          if-no-files-found: error
+          retention-days: 30

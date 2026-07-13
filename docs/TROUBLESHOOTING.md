@@ -148,6 +148,8 @@ If the GitHub API returns `404 Branch not protected`, treat that as the observed
 
 ## Template Issues
 
+For pull-request governance failures, use the reported `PRG001`-`PRG016` identifiers and [Pull Request Body Governance](PR_BODY_GOVERNANCE.md). Edit the existing body to replace placeholders, select one change type, add exact statuses and evidence, or resolve path contradictions. A `Blocked` PRG016 result means metadata or changed-file retrieval was incomplete and cannot pass.
+
 Templates may contain placeholders inside `templates/`, but generated repository files must replace them. If documentation completeness fails after copying a template, fill in repository-specific details instead of suppressing the validator.
 
 Issue and pull request templates should request sanitized evidence. Do not ask users to paste secrets, production tokens, private keys, or customer data.
