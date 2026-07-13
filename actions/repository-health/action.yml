@@ -43,14 +43,15 @@ runs:
         if ($env:INPUT_ADVISORY -eq 'true') { $invokeParameters.Advisory = $true }
         $reportPath = $env:INPUT_OUTPUT_JSON
         if (-not $reportPath) {
-          $reportPath = Join-Path $env:RUNNER_TEMP 'repository-health-report.json'
+          $reportPath = '.tmp/repository-health-report.json'
           $invokeParameters.OutputJson = $reportPath
         }
         & (Join-Path $env:REPOSITORY_HEALTH_ACTION_PATH 'Invoke-RepositoryHealth.ps1') @invokeParameters
         $exitCode = $LASTEXITCODE
         $failedCount = 0
-        if (Test-Path -LiteralPath $reportPath -PathType Leaf) {
-          $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+        $reportFile = Join-Path $env:INPUT_PATH $reportPath
+        if (Test-Path -LiteralPath $reportFile -PathType Leaf) {
+          $report = Get-Content -LiteralPath $reportFile -Raw | ConvertFrom-Json
           $failedCount = [int]$report.failed
         }
         "report-path=$reportPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append

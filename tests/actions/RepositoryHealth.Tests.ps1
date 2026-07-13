@@ -10,7 +10,9 @@ Describe 'Repository health' {
 param([string]$Path, [string]$OutputJson, [switch]$Advisory, [string]$RepositoryOwnerType)
 [ordered]@{ Path=$Path; OutputJson=$OutputJson; Advisory=[bool]$Advisory; RepositoryOwnerType=$RepositoryOwnerType } |
     ConvertTo-Json | Set-Content -LiteralPath $env:CAPTURE_PATH
-@{ failed = 0 } | ConvertTo-Json | Set-Content -LiteralPath $OutputJson
+$resolvedOutput = if ([System.IO.Path]::IsPathRooted($OutputJson)) { $OutputJson } else { Join-Path (Resolve-Path -LiteralPath $Path).Path $OutputJson }
+New-Item -ItemType Directory -Path (Split-Path -Parent $resolvedOutput) -Force | Out-Null
+@{ failed = 2 } | ConvertTo-Json | Set-Content -LiteralPath $resolvedOutput
 exit 0
 '@ | Set-Content -LiteralPath (Join-Path $script:actionHarnessRoot 'Invoke-RepositoryHealth.ps1')
 
@@ -345,12 +347,14 @@ exit 0
 
         It 'behaviorally forwards action inputs and preserves outputs through the argument array' {
             foreach ($ownerType in @('Unknown', 'User', 'Organization')) {
+                $repositoryRoot = Join-Path $script:actionHarnessRoot "explicit-output-repository-$ownerType"
                 $capture = Join-Path $script:actionHarnessRoot "capture-$ownerType.json"
-                $report = Join-Path $script:actionHarnessRoot "report-$ownerType.json"
+                $report = "reports/report-$ownerType.json"
                 $githubOutput = Join-Path $script:actionHarnessRoot "output-$ownerType.txt"
+                New-Item -ItemType Directory -Path $repositoryRoot -Force | Out-Null
                 $prior = @($env:INPUT_PATH, $env:INPUT_OUTPUT_JSON, $env:INPUT_ADVISORY, $env:INPUT_REPOSITORY_OWNER_TYPE, $env:REPOSITORY_HEALTH_ACTION_PATH, $env:CAPTURE_PATH, $env:GITHUB_OUTPUT, $env:RUNNER_TEMP)
                 try {
-                    $env:INPUT_PATH = '.'
+                    $env:INPUT_PATH = $repositoryRoot
                     $env:INPUT_OUTPUT_JSON = $report
                     $env:INPUT_ADVISORY = 'true'
                     $env:INPUT_REPOSITORY_OWNER_TYPE = $ownerType
@@ -361,15 +365,66 @@ exit 0
                     & pwsh -NoProfile -File (Join-Path $script:actionHarnessRoot 'action-run.ps1')
                     $LASTEXITCODE | Should -Be 0 -Because $ownerType
                     $actual = Get-Content -LiteralPath $capture -Raw | ConvertFrom-Json
-                    $actual.Path | Should -Be '.'
+                    $actual.Path | Should -Be $repositoryRoot
                     $actual.OutputJson | Should -Be $report
                     $actual.Advisory | Should -BeTrue
                     $actual.RepositoryOwnerType | Should -Be $ownerType
-                    Get-Content -LiteralPath $githubOutput -Raw | Should -Match 'failed-count=0'
+                    Get-Content -LiteralPath $githubOutput -Raw | Should -Match 'failed-count=2'
                 }
                 finally {
                     $env:INPUT_PATH, $env:INPUT_OUTPUT_JSON, $env:INPUT_ADVISORY, $env:INPUT_REPOSITORY_OWNER_TYPE, $env:REPOSITORY_HEALTH_ACTION_PATH, $env:CAPTURE_PATH, $env:GITHUB_OUTPUT, $env:RUNNER_TEMP = $prior
                 }
+            }
+        }
+
+        It 'writes and emits a repository-relative report when output-json is omitted' {
+            $repositoryRoot = Join-Path $script:actionHarnessRoot 'default-output-repository'
+            $capture = Join-Path $script:actionHarnessRoot 'default-output-capture.json'
+            $githubOutput = Join-Path $script:actionHarnessRoot 'default-output.txt'
+            New-Item -ItemType Directory -Path $repositoryRoot -Force | Out-Null
+            $prior = @($env:INPUT_PATH, $env:INPUT_OUTPUT_JSON, $env:INPUT_ADVISORY, $env:INPUT_REPOSITORY_OWNER_TYPE, $env:REPOSITORY_HEALTH_ACTION_PATH, $env:CAPTURE_PATH, $env:GITHUB_OUTPUT, $env:RUNNER_TEMP)
+            try {
+                $env:INPUT_PATH = $repositoryRoot
+                $env:INPUT_OUTPUT_JSON = ''
+                $env:INPUT_ADVISORY = 'false'
+                $env:INPUT_REPOSITORY_OWNER_TYPE = 'Unknown'
+                $env:REPOSITORY_HEALTH_ACTION_PATH = $script:actionHarnessRoot
+                $env:CAPTURE_PATH = $capture
+                $env:GITHUB_OUTPUT = $githubOutput
+                $env:RUNNER_TEMP = Join-Path $script:actionHarnessRoot 'outside-repository'
+
+                & pwsh -NoProfile -File (Join-Path $script:actionHarnessRoot 'action-run.ps1')
+
+                $LASTEXITCODE | Should -Be 0
+                $actual = Get-Content -LiteralPath $capture -Raw | ConvertFrom-Json
+                $actual.OutputJson | Should -Be '.tmp/repository-health-report.json'
+                Test-Path -LiteralPath (Join-Path $repositoryRoot '.tmp/repository-health-report.json') -PathType Leaf | Should -BeTrue
+                Test-Path -LiteralPath (Join-Path $env:RUNNER_TEMP 'repository-health-report.json') | Should -BeFalse
+                Get-Content -LiteralPath $githubOutput -Raw | Should -Match '(?m)^report-path=\.tmp/repository-health-report\.json\r?$'
+                Get-Content -LiteralPath $githubOutput -Raw | Should -Match '(?m)^failed-count=2\r?$'
+            }
+            finally {
+                $env:INPUT_PATH, $env:INPUT_OUTPUT_JSON, $env:INPUT_ADVISORY, $env:INPUT_REPOSITORY_OWNER_TYPE, $env:REPOSITORY_HEALTH_ACTION_PATH, $env:CAPTURE_PATH, $env:GITHUB_OUTPUT, $env:RUNNER_TEMP = $prior
+            }
+        }
+
+        It 'continues to reject absolute and traversal output-json paths' {
+            $repositoryRoot = (Resolve-Path "$PSScriptRoot/../..").Path
+            $absoluteOutput = Join-Path $script:actionHarnessRoot 'absolute-output.json'
+            $traversalOutput = '../repository-health-traversal-output.json'
+            $traversalTarget = [System.IO.Path]::GetFullPath((Join-Path $repositoryRoot $traversalOutput))
+            try {
+                & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $repositoryRoot -RepositoryOwnerType User -OutputJson $absoluteOutput 2>$null
+                $LASTEXITCODE | Should -Not -Be 0
+                Test-Path -LiteralPath $absoluteOutput | Should -BeFalse
+
+                & pwsh -NoProfile -File "$PSScriptRoot/../../actions/repository-health/Invoke-RepositoryHealth.ps1" -Path $repositoryRoot -RepositoryOwnerType User -OutputJson $traversalOutput 2>$null
+                $LASTEXITCODE | Should -Not -Be 0
+                Test-Path -LiteralPath $traversalTarget | Should -BeFalse
+            }
+            finally {
+                if (Test-Path -LiteralPath $absoluteOutput) { Remove-Item -LiteralPath $absoluteOutput -Force }
+                if (Test-Path -LiteralPath $traversalTarget) { Remove-Item -LiteralPath $traversalTarget -Force }
             }
         }
 

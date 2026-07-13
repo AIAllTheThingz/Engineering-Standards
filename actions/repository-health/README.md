@@ -15,13 +15,13 @@ This action validates that a repository has the minimum governance structure nee
 ## Inputs
 
 - `path`: repository root. Defaults to `.`.
-- `output-json`: optional repository-relative JSON report path.
+- `output-json`: optional repository-relative JSON report path. When omitted, the action writes `.tmp/repository-health-report.json` beneath `path`; `.tmp/` is ignored by the standard repository configuration so the default does not create tracked evidence.
 - `advisory`: when `true`, records findings but returns success.
 - `repository-owner-type`: optional trusted owner type with exact accepted values `Unknown`, `User`, or `Organization`. It defaults to `Unknown`, so offline validation never infers live GitHub ownership from a repository name. Supply `User` or `Organization` only from trusted repository metadata or verified GitHub API evidence. This compatibility input does not prove that an owner identity exists or has repository review access.
 
 ## Outputs
 
-- `report-path`: JSON report path when configured.
+- `report-path`: repository-relative JSON report path. Defaults to `.tmp/repository-health-report.json` when `output-json` is omitted.
 - `failed-count`: intended count of blocking findings. The JSON report is authoritative.
 
 ## Checks
