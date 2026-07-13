@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "Passed",
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "pullRequestNumber": 999,
+  "actor": "test-user",
+  "bodySha256": "853499e8ca3ad7b85063af53999089b50d39d39e177fec939c889bb740903fce",
+  "findings": [],
+  "changedPathCategories": [
+    "executable-or-build",
+    "operational-script",
+    "workflow",
+    "workflow-or-action"
+  ]
+}
