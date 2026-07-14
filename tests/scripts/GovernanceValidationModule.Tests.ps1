@@ -247,6 +247,57 @@ Describe 'GovernanceValidation module' {
             }
         }
 
+        It 'rejects scalar values for every required 1.2.0 <Kind> collection field <Field>' -ForEach @(
+            @{ Kind='project-manifest'; Fixture='project-manifest-1.2.0-user.json'; Field='technologies' },
+            @{ Kind='project-manifest'; Fixture='project-manifest-1.2.0-user.json'; Field='owners' },
+            @{ Kind='project-manifest'; Fixture='project-manifest-1.2.0-user.json'; Field='environments' },
+            @{ Kind='project-manifest'; Fixture='project-manifest-1.2.0-user.json'; Field='applicableStandards' },
+            @{ Kind='project-manifest'; Fixture='project-manifest-1.2.0-user.json'; Field='requiredWorkflows' },
+            @{ Kind='project-manifest'; Fixture='project-manifest-1.2.0-user.json'; Field='externalIntegrations' },
+            @{ Kind='project-manifest'; Fixture='project-manifest-1.2.0-user.json'; Field='exceptions' },
+            @{ Kind='governance-config'; Fixture='governance-config-1.2.0.json'; Field='requiredDocumentationPaths' },
+            @{ Kind='governance-config'; Fixture='governance-config-1.2.0.json'; Field='applicableAgentStandards' },
+            @{ Kind='governance-config'; Fixture='governance-config-1.2.0.json'; Field='validationCategories' },
+            @{ Kind='governance-config'; Fixture='governance-config-1.2.0.json'; Field='additionalForbiddenPatterns' },
+            @{ Kind='governance-config'; Fixture='governance-config-1.2.0.json'; Field='reviewedAllowlist' },
+            @{ Kind='governance-config'; Fixture='governance-config-1.2.0.json'; Field='exceptions' }
+        ) {
+            $document = Get-Content "$PSScriptRoot/../fixtures/valid/$Fixture" -Raw | ConvertFrom-Json -AsHashtable
+            $document[$Field] = 'scalar-value'
+            $path = Join-Path $script:tempRoot "$Kind-scalar-$Field.json"
+            $document | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $path
+
+            $results = Test-GovernanceJsonDocument -Path $path -Kind $Kind
+            @($results | Where-Object { $_.message -eq "$Field must be declared as an array." }) | Should -HaveCount 1
+        }
+
+        It 'rejects empty values for every nonempty 1.2.0 <Kind> collection field <Field>' -ForEach @(
+            @{ Kind='project-manifest'; Fixture='project-manifest-1.2.0-user.json'; Field='technologies' },
+            @{ Kind='project-manifest'; Fixture='project-manifest-1.2.0-user.json'; Field='owners' },
+            @{ Kind='project-manifest'; Fixture='project-manifest-1.2.0-user.json'; Field='applicableStandards' },
+            @{ Kind='governance-config'; Fixture='governance-config-1.2.0.json'; Field='requiredDocumentationPaths' },
+            @{ Kind='governance-config'; Fixture='governance-config-1.2.0.json'; Field='applicableAgentStandards' },
+            @{ Kind='governance-config'; Fixture='governance-config-1.2.0.json'; Field='validationCategories' }
+        ) {
+            $document = Get-Content "$PSScriptRoot/../fixtures/valid/$Fixture" -Raw | ConvertFrom-Json -AsHashtable
+            $document[$Field] = @()
+            $path = Join-Path $script:tempRoot "$Kind-empty-$Field.json"
+            $document | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $path
+
+            $results = Test-GovernanceJsonDocument -Path $path -Kind $Kind
+            @($results | Where-Object { $_.message -eq "$Field must be declared as a nonempty array." }) | Should -HaveCount 1
+        }
+
+        It 'rejects a scalar mandatory-controls collection in a 1.2.0 governance config' {
+            $document = Get-Content "$PSScriptRoot/../fixtures/valid/governance-config-1.2.0.json" -Raw | ConvertFrom-Json -AsHashtable
+            $document.controls.mandatoryControlsDisabled = 'scalar-value'
+            $path = Join-Path $script:tempRoot 'governance-config-scalar-mandatory-controls.json'
+            $document | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $path
+
+            $results = Test-GovernanceJsonDocument -Path $path -Kind 'governance-config'
+            @($results | Where-Object { $_.message -eq 'controls.mandatoryControlsDisabled must be declared as an array.' }) | Should -HaveCount 1
+        }
+
         It 'rejects schema 1.2.0 for completion, test evidence, and artifact kinds' {
             foreach ($case in @(
                 @{ Kind = 'completion-result'; Fixture = 'completion-result-1.1.0.json' },

@@ -414,6 +414,51 @@ function Test-GovernanceJsonDocument {
     if (-not $hasSupportedSchemaVersion) {
         $results.Add((New-ValidationResult -Status Failed -Message "Unsupported schemaVersion '$($json.schemaVersion)' for governance document kind '$Kind'. Supported versions: $($supportedSchemaVersions -join ', ')." -Path $Path))
     }
+    if ($json.schemaVersion -ceq '1.2.0' -and $Kind -in @('project-manifest', 'governance-config')) {
+        $collectionRules = if ($Kind -ceq 'project-manifest') {
+            @(
+                @{ Name='technologies'; Minimum=1 },
+                @{ Name='owners'; Minimum=1 },
+                @{ Name='environments'; Minimum=0 },
+                @{ Name='applicableStandards'; Minimum=1 },
+                @{ Name='requiredWorkflows'; Minimum=0 },
+                @{ Name='externalIntegrations'; Minimum=0 },
+                @{ Name='exceptions'; Minimum=0 }
+            )
+        }
+        else {
+            @(
+                @{ Name='requiredDocumentationPaths'; Minimum=1 },
+                @{ Name='applicableAgentStandards'; Minimum=1 },
+                @{ Name='validationCategories'; Minimum=1 },
+                @{ Name='additionalForbiddenPatterns'; Minimum=0 },
+                @{ Name='reviewedAllowlist'; Minimum=0 },
+                @{ Name='exceptions'; Minimum=0 }
+            )
+        }
+        foreach ($rule in $collectionRules) {
+            $collectionValue = $json[$rule.Name]
+            $isArray = $collectionValue -is [System.Collections.IList] -and $collectionValue -isnot [string]
+            if (-not $isArray) {
+                $results.Add((New-ValidationResult -Status Failed -Message "$($rule.Name) must be declared as an array." -Path $Path))
+            }
+            elseif ($collectionValue.Count -lt $rule.Minimum) {
+                $results.Add((New-ValidationResult -Status Failed -Message "$($rule.Name) must be declared as a nonempty array." -Path $Path))
+            }
+        }
+        if ($Kind -ceq 'governance-config') {
+            $controlsValue = $json['controls']
+            if ($controlsValue -isnot [System.Collections.IDictionary]) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'controls must be declared as an object.' -Path $Path))
+            }
+            else {
+                $disabledControlsValue = Get-JsonMemberValue -InputObject $controlsValue -Name 'mandatoryControlsDisabled'
+                if ($disabledControlsValue -is [string] -or $disabledControlsValue -isnot [System.Collections.IList]) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'controls.mandatoryControlsDisabled must be declared as an array.' -Path $Path))
+                }
+            }
+        }
+    }
     if ($json.ContainsKey('status') -and $statuses -notcontains $json.status) {
         $results.Add((New-ValidationResult -Status Failed -Message "Unknown status '$($json.status)'." -Path $Path))
     }
