@@ -927,6 +927,27 @@ Describe 'Governance contract semantic validation' {
         }
     }
 
+    It 'does not impose the standards schema namespace on a downstream governance repository' {
+        $temp = Join-Path ([System.IO.Path]::GetTempPath()) ('downstream-schema-namespace-' + [guid]::NewGuid())
+        try {
+            New-Item -ItemType Directory -Path (Join-Path $temp 'schemas') -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $temp 'AGENTS.md') -Value (Get-Content -Raw (Join-Path $script:root 'AGENTS.md'))
+            Set-Content -LiteralPath (Join-Path $temp 'schemas/product.schema.json') -Value '{"$id":"https://schemas.example/product"}'
+            $manifest = Copy-ContractObject $script:manifest
+            $config = Copy-ContractObject $script:config
+            $manifest.repository = 'ExampleOrg/Governance-Product'
+            $config.workflowProfile = 'downstream'
+            $config.validationCategories = @('Contract')
+            $config.requiredCheckNames = @('Product Governance / Governance validation')
+            $config.workflowInterface.requiredCheckNames = @('Product Governance / Governance validation')
+            $results = Invoke-Semantics $manifest $config -ExpectedRepository 'ExampleOrg/Governance-Product' -Profile 'downstream' -Check '' -Root $temp
+            ($results.message -join "`n") | Should -Not -Match '(?m)^GCS013\s'
+        }
+        finally {
+            if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Recurse -Force }
+        }
+    }
+
     It 'rejects named semantic compatibility fixtures' {
         $fixtureRoot = Join-Path $script:root 'tests/fixtures/contract-semantics/invalid'
         foreach ($fixturePath in Get-ChildItem -LiteralPath $fixtureRoot -Filter '*.json' | Sort-Object Name) {

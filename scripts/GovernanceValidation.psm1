@@ -1612,7 +1612,11 @@ function Test-GovernanceContractSemantics {
         }
     }
 
-    if ($Manifest.projectType -ceq 'governance') {
+    $isTrustedStandardsMaintainer = $workflowProfile -ceq 'standards-maintainer' -and
+        -not [string]::IsNullOrWhiteSpace($ExpectedRepository) -and
+        -not [string]::IsNullOrWhiteSpace($ExpectedStandardsRepository) -and
+        [string]::Equals($ExpectedRepository, $ExpectedStandardsRepository, [System.StringComparison]::OrdinalIgnoreCase)
+    if ($Manifest.projectType -ceq 'governance' -and $isTrustedStandardsMaintainer) {
         foreach ($schemaFile in @(Get-ChildItem -LiteralPath (Join-Path $Root 'schemas') -Filter '*.schema.json' -File -ErrorAction SilentlyContinue)) {
             $schema = Read-JsonFile -Path $schemaFile.FullName
             if (-not $schema.Contains('$id') -or $schema['$id'] -cnotmatch '^urn:aiallthethingz:engineering-standards:schema:[a-z0-9-]+$') { Add-Finding 'GCS013' "Schema '$($schemaFile.Name)' does not use the controlled namespace." $schemaFile.FullName }
