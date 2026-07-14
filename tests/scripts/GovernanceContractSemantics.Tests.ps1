@@ -209,6 +209,17 @@ Describe 'Governance contract semantic validation' {
         ($results.message -join "`n") | Should -Match 'GCS009.*Hosted evidence declaration conflicts' -Because $Name
     }
 
+    It 'rejects schema-invalid local evidence paths during Contract-only validation' -ForEach @(
+        'C:\\evidence.json', '\\server\\share.json', '/etc/evidence.json',
+        'evidence/../completion-result.json', 'evidence/completion-result.JSON', 'evidence/completion-result.txt'
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.evidence.local.completion = $_
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS009.*schema-valid repository-relative JSON path'
+    }
+
     It 'accepts exactly the supported workflow input and output sets' {
         $manifest = Copy-ContractObject $script:manifest
         $config = Copy-ContractObject $script:config
@@ -770,6 +781,28 @@ Describe 'Governance contract semantic validation' {
         $results = Invoke-Semantics $manifest $config
         ($results.message -join "`n") | Should -Match 'GCS010.*malformed'
         ($results.message -join "`n") | Should -Match 'GCS011.*lacks an applicable active exception'
+    }
+
+    It 'rejects schema-invalid exception field types and unsupported fields' -ForEach @(
+        @{ Name='numeric scope'; Mutate={ param($e) $e.scope=1234567890 } },
+        @{ Name='numeric owner'; Mutate={ param($e) $e.owner=123 } },
+        @{ Name='numeric approver'; Mutate={ param($e) $e.approver=123 } },
+        @{ Name='numeric affected control'; Mutate={ param($e) $e.affectedControl=1234567890 } },
+        @{ Name='numeric evidence reference'; Mutate={ param($e) $e.evidenceReference=123 } },
+        @{ Name='scalar compensating controls'; Mutate={ param($e) $e.compensatingControls='Synthetic compensating validation' } },
+        @{ Name='non-string compensating control'; Mutate={ param($e) $e.compensatingControls=@(1234567890) } },
+        @{ Name='duplicate compensating controls'; Mutate={ param($e) $e.compensatingControls=@('Synthetic compensating validation','Synthetic compensating validation') } },
+        @{ Name='unsupported field'; Mutate={ param($e) $e.unexpected='not allowed' } }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $exception = New-TestException
+        & $Mutate $exception
+        $config.exceptions = @($exception)
+        $config.controls.mandatoryControlsDisabled = @(@{control='SyntheticControl';exceptionReference='GOV-2026-ACTIVE'})
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS010.*malformed' -Because $Name
+        ($results.message -join "`n") | Should -Match 'GCS011.*lacks an applicable active exception' -Because $Name
     }
 
     It 'rejects malformed, legacy, and cross-document duplicate version 1.2.0 exceptions' -ForEach @(

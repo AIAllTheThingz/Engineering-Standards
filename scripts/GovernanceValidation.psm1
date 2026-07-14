@@ -309,10 +309,15 @@ function Test-RelativeRepositoryPath {
         $results.Add((New-ValidationResult -Status Failed -Message "$Name must not be empty." -Path $Path))
         return @($results)
     }
-    if ([System.IO.Path]::IsPathRooted($Value) -or $Value -match '(^|[\\/])\.\.([\\/]|$)') {
+    if (
+        [System.IO.Path]::IsPathRooted($Value) -or
+        $Value -cmatch '^[A-Za-z]:' -or
+        $Value -cmatch '^[\\/]' -or
+        $Value.Contains('..')
+    ) {
         $results.Add((New-ValidationResult -Status Failed -Message "$Name must be a relative path that does not traverse outside the repository." -Path $Path))
     }
-    if ($RequiredExtension -and -not $Value.EndsWith($RequiredExtension, [StringComparison]::OrdinalIgnoreCase)) {
+    if ($RequiredExtension -and -not $Value.EndsWith($RequiredExtension, [StringComparison]::Ordinal)) {
         $results.Add((New-ValidationResult -Status Failed -Message "$Name must end with '$RequiredExtension'." -Path $Path))
     }
     @($results)
@@ -1345,7 +1350,21 @@ function Test-GovernanceContractSemantics {
 
     if ($Manifest.schemaVersion -ceq '1.2.0') {
         if ($Manifest.evidence.hosted.workspace -cne 'evidence' -or $Manifest.evidence.hosted.completion -cne 'completion-result.json' -or $Manifest.evidence.hosted.tests -cne 'ci-test-results.json' -or $Manifest.evidence.hosted.artifactNamePattern -cne 'governance-evidence-${run_id}') { Add-Finding 'GCS009' 'Hosted evidence declaration conflicts with reusable workflow outputs.' }
-        foreach ($localPath in @($Manifest.evidence.local.completion, $Manifest.evidence.local.tests)) { try { Resolve-SafePath -Root $Root -ChildPath $localPath -AllowMissingLeaf | Out-Null } catch { Add-Finding 'GCS009' $_.Exception.Message } }
+        foreach ($localPath in @($Manifest.evidence.local.completion, $Manifest.evidence.local.tests)) {
+            if (
+                $localPath -isnot [string] -or
+                [string]::IsNullOrWhiteSpace([string]$localPath) -or
+                [System.IO.Path]::IsPathRooted([string]$localPath) -or
+                [string]$localPath -cmatch '^[A-Za-z]:' -or
+                [string]$localPath -cmatch '^[\\/]' -or
+                ([string]$localPath).Contains('..') -or
+                -not ([string]$localPath).EndsWith('.json', [System.StringComparison]::Ordinal)
+            ) {
+                Add-Finding 'GCS009' "Local evidence path '$localPath' must be a schema-valid repository-relative JSON path."
+                continue
+            }
+            try { Resolve-SafePath -Root $Root -ChildPath ([string]$localPath) -AllowMissingLeaf | Out-Null } catch { Add-Finding 'GCS009' $_.Exception.Message }
+        }
     }
 
     $exceptionById = @{}
@@ -1367,7 +1386,9 @@ function Test-GovernanceContractSemantics {
         $identifier = if ($exception.Contains('identifier')) { [string]$exception.identifier } else { '<missing>' }
         $malformed = $missingFields.Count -gt 0
         if ($missingFields.Count -gt 0) { Add-Finding 'GCS010' "Exception '$identifier' is missing required fields: $($missingFields -join ', ')." }
-        if ($identifier -cnotmatch '^GOV-[A-Z0-9-]+$') { Add-Finding 'GCS010' "Exception identifier '$identifier' is malformed."; $malformed = $true }
+        $unexpectedFields = @($exception.Keys | Where-Object { $requiredExceptionFields -cnotcontains [string]$_ })
+        if ($unexpectedFields.Count -gt 0) { Add-Finding 'GCS010' "Exception '$identifier' contains unsupported fields: $($unexpectedFields -join ', ')."; $malformed = $true }
+        if (-not $exception.Contains('identifier') -or $exception.identifier -isnot [string] -or $identifier -cnotmatch '^GOV-[A-Z0-9-]+$') { Add-Finding 'GCS010' "Exception identifier '$identifier' is malformed."; $malformed = $true }
         if ($identifier -ne '<missing>') {
             if ($exceptionById.ContainsKey($identifier)) { Add-Finding 'GCS010' "Duplicate exception identifier '$identifier'."; continue }
             $exceptionById[$identifier] = $exception
@@ -1376,10 +1397,12 @@ function Test-GovernanceContractSemantics {
         $lengthRules = @{ scope=@(10,500); owner=@(2,254); approver=@(2,254); affectedControl=@(3,160); remediationPlan=@(20,1000) }
         foreach ($field in $lengthRules.Keys) {
             $value = if ($exception.Contains($field)) { [string]$exception[$field] } else { '' }
-            if ($value.Length -lt $lengthRules[$field][0] -or $value.Length -gt $lengthRules[$field][1]) { $malformed = $true }
+            if (-not $exception.Contains($field) -or $exception[$field] -isnot [string] -or $value.Length -lt $lengthRules[$field][0] -or $value.Length -gt $lengthRules[$field][1]) { $malformed = $true }
         }
         $evidenceReference = if ($exception.Contains('evidenceReference')) { [string]$exception.evidenceReference } else { '' }
         if (
+            -not $exception.Contains('evidenceReference') -or
+            $exception.evidenceReference -isnot [string] -or
             [string]::IsNullOrWhiteSpace($evidenceReference) -or
             [System.IO.Path]::IsPathRooted($evidenceReference) -or
             $evidenceReference -cmatch '^[A-Za-z]:' -or
@@ -1387,18 +1410,28 @@ function Test-GovernanceContractSemantics {
             $evidenceReference.Contains('..')
         ) { $malformed = $true }
         $compensatingControls = @()
-        if ($exception.Contains('compensatingControls')) { $compensatingControls = @($exception.compensatingControls) }
-        if ($compensatingControls.Count -eq 0 -or @($compensatingControls | Where-Object { ([string]$_).Length -lt 10 }).Count -gt 0 -or @(Compare-Object $compensatingControls ($compensatingControls | Select-Object -Unique)).Count -gt 0) { $malformed = $true }
+        $compensatingControlsValue = if ($exception.Contains('compensatingControls')) { $exception.compensatingControls } else { $null }
+        $compensatingControlsIsArray = $compensatingControlsValue -is [System.Collections.IList] -and $compensatingControlsValue -isnot [string]
+        if ($compensatingControlsIsArray) { $compensatingControls = @($compensatingControlsValue) }
+        $seenCompensatingControls = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+        if (
+            -not $compensatingControlsIsArray -or
+            $compensatingControls.Count -eq 0 -or
+            @($compensatingControls | Where-Object { $_ -isnot [string] -or ([string]$_).Length -lt 10 }).Count -gt 0
+        ) { $malformed = $true }
+        foreach ($control in $compensatingControls) {
+            if ($control -is [string] -and -not $seenCompensatingControls.Add([string]$control)) { $malformed = $true }
+        }
         if ($malformed) { Add-Finding 'GCS010' "Exception '$identifier' is malformed." }
 
         $approvalDate = [datetime]::MinValue
         $expiration = [datetime]::MinValue
         $dateStyles = [System.Globalization.DateTimeStyles]::AssumeUniversal
-        $approvalDateValid = $exception.Contains('approvalDate') -and [datetime]::TryParseExact([string]$exception.approvalDate, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture, $dateStyles, [ref]$approvalDate)
-        $expirationValid = $exception.Contains('expiration') -and [datetime]::TryParseExact([string]$exception.expiration, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture, $dateStyles, [ref]$expiration)
+        $approvalDateValid = $exception.Contains('approvalDate') -and $exception.approvalDate -is [string] -and [datetime]::TryParseExact([string]$exception.approvalDate, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture, $dateStyles, [ref]$approvalDate)
+        $expirationValid = $exception.Contains('expiration') -and $exception.expiration -is [string] -and [datetime]::TryParseExact([string]$exception.expiration, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture, $dateStyles, [ref]$expiration)
         $validationDate = $ValidationDateUtc.ToUniversalTime().Date
         $status = if ($exception.Contains('status')) { [string]$exception.status } else { $null }
-        if (@('Approved', 'Rejected', 'Revoked', 'Expired') -cnotcontains $status) { Add-Finding 'GCS010' "Exception '$identifier' status '$status' is unsupported or noncanonical."; $malformed = $true }
+        if (-not $exception.Contains('status') -or $exception.status -isnot [string] -or @('Approved', 'Rejected', 'Revoked', 'Expired') -cnotcontains $status) { Add-Finding 'GCS010' "Exception '$identifier' status '$status' is unsupported or noncanonical."; $malformed = $true }
         $active = -not $malformed -and $status -ceq 'Approved' -and $approvalDateValid -and $expirationValid -and $approvalDate.Date -le $validationDate -and $expiration.Date -ge $validationDate -and $expiration.Date -ge $approvalDate.Date
         if (-not $active) { Add-Finding 'GCS010' "Exception '$identifier' is not an active, approved, and unexpired record." }
         elseif ($identifier -ne '<missing>') { [void]$activeExceptionIds.Add($identifier) }
