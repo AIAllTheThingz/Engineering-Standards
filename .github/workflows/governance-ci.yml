@@ -25,7 +25,7 @@ jobs:
     name: Governance
     # Self-CI uses the frozen, reviewed Issue #21 implementation commit so
     # pull-request changes cannot redefine the validator checkout labeled trusted.
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@ff32376d102bba047f8ca07b852f79262fd13fc4
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@d276f73886d0c83f099911aeb09cf924673bd8aa
     with:
       project-path: .
       governance-version: 1.1.0
@@ -35,4 +35,4 @@ jobs:
     name: Candidate implementation validation
     # Keep the trusted baseline and candidate harness on the same frozen reviewed
     # commit, as required by the repository workflow-architecture contract.
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-candidate.yml@ff32376d102bba047f8ca07b852f79262fd13fc4
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-candidate.yml@d276f73886d0c83f099911aeb09cf924673bd8aa
