@@ -359,6 +359,7 @@
       "then": {
         "required": ["governanceCommitSha", "workflowInterfaceVersion", "repositoryOwnerType", "standardsConsumption"],
         "properties": {
+          "workflowInterfaceVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$" },
           "owners": { "items": { "$ref": "#/$defs/structuredOwner" } },
           "evidence": { "$ref": "#/$defs/structuredEvidence" },
           "exceptions": { "items": { "$ref": "#/$defs/exceptionRecord" } }

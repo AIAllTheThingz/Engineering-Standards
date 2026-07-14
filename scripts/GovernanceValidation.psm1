@@ -1306,7 +1306,7 @@ function Test-GovernanceContractSemantics {
             if ($manifestStandards -cnotcontains $requiredStandard) { Add-Finding 'GCS005' "Governance and GitHub Actions repositories require '$requiredStandard'." }
         }
     }
-    if (@(Compare-Object $manifestStandards $configStandards).Count -gt 0) { Add-Finding 'GCS006' 'Manifest and governance configuration applicable standards disagree.' }
+    if (@(Compare-Object $manifestStandards $configStandards -CaseSensitive).Count -gt 0) { Add-Finding 'GCS006' 'Manifest and governance configuration applicable standards disagree.' }
     $agentsPath = Join-Path $Root 'AGENTS.md'
     if (Test-Path -LiteralPath $agentsPath -PathType Leaf) {
         $agentsText = Get-Content -Raw -LiteralPath $agentsPath

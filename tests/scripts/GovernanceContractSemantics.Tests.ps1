@@ -826,6 +826,14 @@ Describe 'Governance contract semantic validation' {
         ($results.message -join "`n") | Should -Match 'GCS011.*lacks an applicable active exception'
     }
 
+    It 'compares canonical applicable standards paths case-sensitively' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.applicableStandards[0] = 'agents/AGENTS_base.md'
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS006.*applicable standards disagree'
+    }
+
     It 'reports stable finding IDs for cross-document contradictions' -ForEach @(
         @{ Id='GCS001'; Mutate={ param($m,$c) $m.repository='Other/repository' } },
         @{ Id='GCS002'; Mutate={ param($m,$c) $m.governanceCommitSha=('a' * 40) } },

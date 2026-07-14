@@ -33,6 +33,13 @@ Describe 'JSON schema validation' {
             (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/governance-config-1.2.0.json" -Raw | Test-Json -SchemaFile $configSchema) | Should -BeTrue
         }
 
+        It 'rejects a null workflow interface version for a 1.2.0 manifest' {
+            $schema = Resolve-Path "$PSScriptRoot/../../schemas/project-manifest.schema.json"
+            $manifest = Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/project-manifest-1.2.0-user.json" -Raw | ConvertFrom-Json
+            $manifest.workflowInterfaceVersion = $null
+            ($manifest | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeFalse
+        }
+
         It 'uses only the controlled schema identifier namespace' {
             foreach ($schemaFile in Get-ChildItem "$PSScriptRoot/../../schemas" -Filter '*.schema.json') {
                 $schema = Get-Content -LiteralPath $schemaFile.FullName -Raw | ConvertFrom-Json
