@@ -137,6 +137,18 @@ Describe 'Governance contract semantic validation' {
         ($results.message -join "`n") | Should -Match 'GCS003.*repositoryOwnerType.*unsupported or noncanonical'
     }
 
+    It 'rejects mixed manifest and configuration schema versions when either opts into 1.2.0' -ForEach @(
+        @{ ManifestVersion='1.2.0'; ConfigVersion='1.1.0' },
+        @{ ManifestVersion='1.1.0'; ConfigVersion='1.2.0' }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.schemaVersion = $ManifestVersion
+        $config.schemaVersion = $ConfigVersion
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS002.*schema versions must both be 1\.2\.0'
+    }
+
     It 'rejects a valid GitHub team owner for a user-owned repository' {
         $manifest = Copy-ContractObject $script:manifest
         $config = Copy-ContractObject $script:config

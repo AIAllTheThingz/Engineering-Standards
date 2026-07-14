@@ -1095,6 +1095,10 @@ function Test-GovernanceContractSemantics {
             Add-Finding 'GCS002' 'governanceCommitSha must contain exactly 40 hexadecimal characters.'
         }
     }
+    $usesSchemaVersion12 = $Manifest.schemaVersion -ceq '1.2.0' -or $Config.schemaVersion -ceq '1.2.0'
+    if ($usesSchemaVersion12 -and $Manifest.schemaVersion -cne $Config.schemaVersion) {
+        Add-Finding 'GCS002' 'Manifest and governance configuration schema versions must both be 1.2.0 when either document opts into schema version 1.2.0.'
+    }
     if ($Manifest.Contains('governanceVersion') -and $Config.Contains('governanceVersion') -and $Manifest.governanceVersion -cne $Config.governanceVersion) {
         Add-Finding 'GCS002' 'Manifest and governance configuration governance versions disagree.'
     }
