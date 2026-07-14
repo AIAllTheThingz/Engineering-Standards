@@ -33,7 +33,8 @@ try {
             $resolvedOutput = Resolve-BoundedChildPath -Root $outputRoot -ChildPath $relativeOutput -AllowMissingLeaf
         }
         else {
-            $resolvedOutput = Resolve-BoundedChildPath -Root $root -ChildPath $OutputJson -AllowMissingLeaf
+            $relativeOutput = if ([System.IO.Path]::IsPathRooted($OutputJson)) { [System.IO.Path]::GetRelativePath($root, [System.IO.Path]::GetFullPath($OutputJson)) } else { $OutputJson }
+            $resolvedOutput = Resolve-BoundedChildPath -Root $root -ChildPath $relativeOutput -AllowMissingLeaf
         }
         $parent = Split-Path -Parent $resolvedOutput
         if ($parent) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }

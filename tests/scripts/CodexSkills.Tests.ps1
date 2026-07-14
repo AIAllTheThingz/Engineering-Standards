@@ -83,7 +83,15 @@ Describe 'Codex skill validation' {
         New-Item -ItemType Directory -Path $root -Force | Out-Null
         Set-AggregateFixtureIdentity $root
         $evidence = Join-Path $root '.tmp/evidence'
-        & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-GovernanceValidation.ps1') -Path $root -Category CodexSkills -EvidenceRoot $evidence
+        $githubActions = $env:GITHUB_ACTIONS
+        try {
+            Remove-Item Env:GITHUB_ACTIONS -ErrorAction SilentlyContinue
+            & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-GovernanceValidation.ps1') -Path $root -Category CodexSkills -EvidenceRoot $evidence
+        }
+        finally {
+            if ($null -eq $githubActions) { Remove-Item Env:GITHUB_ACTIONS -ErrorAction SilentlyContinue }
+            else { $env:GITHUB_ACTIONS = $githubActions }
+        }
         $LASTEXITCODE | Should -Be 1
         $aggregate = Get-Content -LiteralPath (Join-Path $evidence 'governance-validation.json') -Raw | ConvertFrom-Json
         ($aggregate.results | Where-Object name -eq 'CodexSkills').status | Should -Be 'Failed'
@@ -95,6 +103,14 @@ Describe 'Codex skill validation' {
         & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1') -Path $root -OutputJson '../escaped.json' 2>$null
         $LASTEXITCODE | Should -Not -Be 0
         Test-Path -LiteralPath $outside | Should -BeFalse
+    }
+
+    It 'accepts a candidate absolute output path only when it remains inside the repository root' {
+        $root = New-TestRepository -Name absolute-output-inside
+        $output = Join-Path $root '.tmp/candidate-validation/codex-skills.json'
+        & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1') -Path $root -OutputJson $output
+        $LASTEXITCODE | Should -Be 0
+        Test-Path -LiteralPath $output -PathType Leaf | Should -BeTrue
     }
 
     It 'accepts minimal metadata, valid openai metadata, safe references, scripts, lifecycle, and explicit-only policy without executing scripts' {
@@ -344,8 +360,9 @@ Read AGENTS.md, agents/AGENTS_Base.md, governance/RISK_CLASSIFICATION.md, govern
         $outside = Join-Path $TestDrive 'outside'
         New-Item -ItemType Directory -Path $outside -Force | Out-Null
         $link = Join-Path $root '.agents/skills/linked-skill'
-        try { New-Item -ItemType Junction -Path $link -Target $outside -ErrorAction Stop | Out-Null }
-        catch { Set-ItResult -Skipped -Because "Junction creation unavailable: $($_.Exception.Message)"; return }
+        $linkType = if ($IsWindows) { 'Junction' } else { 'SymbolicLink' }
+        try { New-Item -ItemType $linkType -Path $link -Target $outside -ErrorAction Stop | Out-Null }
+        catch { Set-ItResult -Skipped -Because "Directory-link creation unavailable: $($_.Exception.Message)"; return }
         @((Invoke-TestValidation $root).results | Where-Object { $_.ruleId -eq 'SKL001' -and $_.status -in @('Failed','Blocked') }).Count | Should -BeGreaterThan 0
     }
 
@@ -356,11 +373,12 @@ Read AGENTS.md, agents/AGENTS_Base.md, governance/RISK_CLASSIFICATION.md, govern
         '{}' | Set-Content -LiteralPath (Join-Path $outside 'outside.json')
         $assetRoot = Join-Path $root '.agents/skills/sample-skill/assets'
         New-Item -ItemType Directory -Path $assetRoot -Force | Out-Null
+        $linkType = if ($IsWindows) { 'Junction' } else { 'SymbolicLink' }
         try {
-            New-Item -ItemType Junction -Path (Join-Path $assetRoot 'linked') -Target $outside -ErrorAction Stop | Out-Null
-            New-Item -ItemType Junction -Path (Join-Path $root 'tests/fixtures/codex-skills/prompt-behavior/linked') -Target $outside -ErrorAction Stop | Out-Null
+            New-Item -ItemType $linkType -Path (Join-Path $assetRoot 'linked') -Target $outside -ErrorAction Stop | Out-Null
+            New-Item -ItemType $linkType -Path (Join-Path $root 'tests/fixtures/codex-skills/prompt-behavior/linked') -Target $outside -ErrorAction Stop | Out-Null
         }
-        catch { Set-ItResult -Skipped -Because "Junction creation unavailable: $($_.Exception.Message)"; return }
+        catch { Set-ItResult -Skipped -Because "Directory-link creation unavailable: $($_.Exception.Message)"; return }
         $report = Invoke-TestValidation $root
         @($report.results | Where-Object { $_.ruleId -eq 'SKL019' -and $_.status -eq 'Failed' }).Count | Should -BeGreaterThan 0
         @($report.promptBehaviorResults | Where-Object { $_.ruleId -eq 'SKL019' -and $_.status -eq 'Failed' }).Count | Should -BeGreaterThan 0
