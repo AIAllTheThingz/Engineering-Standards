@@ -20,7 +20,8 @@
     "MarkdownLinks",
     "DocumentationCompleteness",
     "ForbiddenPatterns",
-    "RepositoryHealth"
+    "RepositoryHealth",
+    "CodexSkills"
   ],
   "ownership": {
     "requiredCodeownerPaths": [

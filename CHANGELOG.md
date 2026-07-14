@@ -6,6 +6,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
+- Added bounded deterministic Codex skill validation, safe metadata/reference parsing, prompt-behavior corpus structure, aggregate/candidate CI integration, and honest model-evaluation `NotRun` reporting for Issue #20.
 - Added deterministic pull-request body governance validation, canonical templates and fixtures, and a least-privilege trusted reusable workflow for Issue #19.
 - Added the governed `enterprise-powershell` Codex skill and its delivery guidance.
 - Added the downstream governance canary guide and release gate for reusable-workflow changes.

@@ -56,6 +56,7 @@ Agents MUST use extra caution for:
 
 - Governance policies.
 - Agent standards.
+- Repository Codex skills and prompt-behavior fixtures.
 - Schemas and fixtures.
 - GitHub Actions.
 - Composite actions.
@@ -99,6 +100,10 @@ pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .
 
 ```powershell
 pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path . -DefaultBranch master
+```
+
+```powershell
+pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/codex-skills-validation.json
 ```
 
 ```powershell

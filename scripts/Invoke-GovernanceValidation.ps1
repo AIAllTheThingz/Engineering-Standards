@@ -51,7 +51,7 @@ param(
     [string]$ProjectPath = '.',
     [string]$EvidenceRoot,
     [string]$OutputJson,
-    [ValidateSet('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')]
+    [ValidateSet('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')]
     [string[]]$Category,
     [string]$ExpectedGovernanceVersion,
     [string]$CallerRepository,
@@ -291,7 +291,7 @@ foreach ($item in $requestedCategories) {
 }
 if ($isMaintainerProfile) {
     if (-not $Category) {
-        foreach ($item in @('JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','PowerShellParser','Pester','PSScriptAnalyzer','Examples')) {
+        foreach ($item in @('JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','PowerShellParser','Pester','PSScriptAnalyzer','Examples')) {
             if ($item -notin $selected) { $selected.Add($item) }
         }
     }
@@ -313,6 +313,7 @@ $toolMap = @{
     DocumentationCompleteness = @{ path='scripts/Test-DocumentationCompleteness.ps1'; args=@('-Path',$projectRoot) }
     ForbiddenPatterns = @{ path='actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1'; args=@('-Path',$projectRoot) }
     RepositoryHealth = @{ path='actions/repository-health/Invoke-RepositoryHealth.ps1'; args=@('-Path',$projectRoot,'-RepositoryOwnerType',$RepositoryOwnerType) }
+    CodexSkills = @{ path='scripts/Test-CodexSkills.ps1'; args=@('-Path',$projectRoot,'-OutputJson',(Join-Path $evidenceFull 'codex-skills.json'),'-AllowedOutputRoot',$evidenceFull) }
     Evidence = @{ path='actions/validate-evidence/Invoke-EvidenceValidation.ps1'; args=@('-Path',$projectRoot,'-EvidencePath','evidence/local-completion-result.json') }
 }
 
@@ -320,6 +321,25 @@ foreach ($name in @($selected)) {
     if ($toolMap.ContainsKey($name)) {
         $definition = $toolMap[$name]
         Invoke-TrustedValidation -Name $name -ScriptPath (Join-Path $standardsRoot $definition.path) -Arguments $definition.args
+        if ($name -eq 'CodexSkills') {
+            $codexReportPath = Join-Path $evidenceFull 'codex-skills.json'
+            if (Test-Path -LiteralPath $codexReportPath -PathType Leaf) {
+                $codexReport = Get-Content -LiteralPath $codexReportPath -Raw | ConvertFrom-Json
+                if (@($codexReport.skillsDiscovered).Count -eq 0 -and @($codexReport.results | Where-Object status -eq 'NotApplicable').Count -gt 0) {
+                    $lastResult = $script:results[$script:results.Count - 1]
+                    if (@($requestedCategories) -contains 'CodexSkills') {
+                        $lastResult.status = 'Failed'
+                        $lastResult.exitCode = 1
+                        $lastResult.summary = 'CodexSkills was explicitly required, but no governed skill root exists.'
+                        $lastResult.failureReason = $lastResult.summary
+                    }
+                    else {
+                        $lastResult.status = 'NotApplicable'
+                        $lastResult.summary = 'No governed Codex skill root exists; optional skill validation is not applicable.'
+                    }
+                }
+            }
+        }
         continue
     }
     switch ($name) {

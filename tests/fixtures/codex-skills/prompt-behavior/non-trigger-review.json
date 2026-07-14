@@ -1,0 +1,1 @@
+{"caseId":"ep-review","skillName":"enterprise-powershell","category":"non-trigger-review","prompt":"Review this existing PowerShell diff and report findings only.","expectedSelection":"NotSelected","expectedSafetyOutcome":"SafeGuidance","deterministicAssertions":["known-category"],"modelEvaluationRequired":true,"rationale":"Review-only work is out of scope."}

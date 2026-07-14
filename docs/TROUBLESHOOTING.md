@@ -61,6 +61,12 @@ Evidence validation fails when completion evidence is missing required fields, r
 
 Regenerate completion evidence after validation runs. Never edit evidence to claim a run occurred when it did not.
 
+## Codex Skill Validation Failures
+
+Run `pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/codex-skills-validation.json` and use the stable `SKL001` through `SKL019` rule ID. Fix the bounded structural defect; do not execute a skill script to prove it is safe.
+
+Safe YAML parsing failures require Python and the reviewed PyYAML dependency. Reference failures require a real in-bound file beneath the skill or approved authority path. Prompt-corpus structural success may coexist with `modelEvaluationStatus: NotRun`; this is honest and must not be changed to `Passed` without an approved controlled model evaluation. Candidate CI output must remain beneath `.tmp/candidate-validation`, with read-only permissions and no secrets.
+
 ## Forbidden Pattern Findings
 
 Forbidden-pattern findings may indicate exposed secrets, unsafe shell behavior, risky workflow triggers, or documented examples of dangerous constructs. Treat blocking findings as security issues until proven otherwise.

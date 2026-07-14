@@ -128,6 +128,8 @@ Composite actions MUST keep `action.yml`, README, implementation script, and tes
 
 Security scanner actions MUST redact findings, support narrow allowlists, and report limitations. Repository health actions MUST validate structure without treating existence as complete proof of readiness.
 
+Codex skill validation MUST treat Markdown, YAML, JSON, paths, references, scripts, and prompt text as untrusted data. It must use bounded safe parsing, reject link/reparse escapes, avoid raw prompt logging, and never execute skill scripts, declared tools, dependencies, or live model calls. The existing forbidden-pattern scanner remains the repository-wide secret control.
+
 Allowlist entries require owner, reason, and expiration. Expired entries are ignored. Warnings require review; they are not automatic approval.
 
 ## Review Checklist
@@ -153,6 +155,7 @@ pwsh -NoProfile -File scripts/Test-MarkdownLinks.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .
 pwsh -NoProfile -File actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1 -Path .
 pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path . -RepositoryOwnerType User
+pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/codex-skills-validation.json
 Invoke-Pester -Path tests/actions -Output Detailed
 ```
 

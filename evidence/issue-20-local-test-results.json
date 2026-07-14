@@ -1,0 +1,35 @@
+[
+  {
+    "schemaVersion": "1.1.0",
+    "name": "GitHub-hosted workflow execution",
+    "category": "workflow",
+    "status": "NotRun",
+    "requiredValidation": true,
+    "evidenceSource": "Automated",
+    "command": "Governance CI",
+    "workingDirectory": ".",
+    "startedAtUtc": "2026-07-14T00:13:36.9337166Z",
+    "completedAtUtc": "2026-07-14T00:13:36.9337166Z",
+    "durationSeconds": 0.0,
+    "runtime": "Local Windows / pwsh 7.6.3",
+    "toolVersion": "7.6.3",
+    "environment": "Local",
+    "exitCode": 3,
+    "summary": "GitHub-hosted execution of the corrected final head was not run in the local evidence context.",
+    "warnings": [],
+    "failureReason": "The initial hosted cycle failed and the corrected final head had not yet run when this local evidence was generated.",
+    "blockedReason": null,
+    "notApplicableRationale": null,
+    "manualProcedure": null,
+    "executionMode": {
+      "dryRun": false,
+      "whatIf": false,
+      "planOnly": false,
+      "applied": false
+    },
+    "details": {
+      "hostedRunId": null,
+      "artifactVerified": false
+    }
+  }
+]

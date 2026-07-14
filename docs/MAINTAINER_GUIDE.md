@@ -53,6 +53,8 @@ Validators MUST fail closed for malformed required inputs and write structured o
 
 When updating validators, run Pester and the aggregate governance validation. Tests must cover positive cases, negative cases, and any edge case that caused a bug or regression.
 
+Codex skill changes require `scripts/Test-CodexSkills.ps1`, prompt-corpus structural validation, safe metadata/reference review, and human trigger-quality review. Deterministic CI must not execute skill scripts or relabel unevaluated model behavior as passed.
+
 ## Workflow Maintenance
 
 Reusable workflows MUST use least-privilege permissions, pinned third-party actions, explicit checkout behavior, deterministic job names, clear artifact retention, and evidence generation on failure using `if: always()` where appropriate.
@@ -106,7 +108,7 @@ Common drift examples include a schema field that documentation does not describ
 Run the maintainer validation set before merging substantive changes:
 
 ```powershell
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,CodexSkills,Evidence,Examples
 pwsh -NoProfile -Command "Invoke-Pester -Path tests -Output Detailed"
 ```
 

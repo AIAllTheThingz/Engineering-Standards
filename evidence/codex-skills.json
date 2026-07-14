@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAtUtc": "2026-07-14T00:41:49.6864004Z",
+  "repositoryRoot": ".",
+  "skillsRoot": ".agents/skills",
+  "skillsDiscovered": [
+    "enterprise-powershell"
+  ],
+  "deterministicStatus": "Passed",
+  "modelEvaluationStatus": "NotRun",
+  "results": [
+    {
+      "ruleId": "SKL001",
+      "status": "Passed",
+      "severity": "info",
+      "message": "Skill passed deterministic structural validation.",
+      "path": ".agents/skills/enterprise-powershell",
+      "skillName": "enterprise-powershell",
+      "deterministic": true,
+      "requiredValidation": true,
+      "data": null
+    }
+  ],
+  "promptBehaviorResults": [
+    {
+      "ruleId": "SKL018",
+      "status": "NotRun",
+      "severity": "warning",
+      "message": "Model selection and response behavior were not evaluated by deterministic validation.",
+      "path": "tests/fixtures/codex-skills/prompt-behavior/ambiguous.json",
+      "skillName": "enterprise-powershell",
+      "deterministic": false,
+      "requiredValidation": false,
+      "data": {
+        "caseId": "ep-ambiguous",
+        "category": "ambiguous"
+      }
+    },
+    {
+      "ruleId": "SKL018",
+      "status": "NotRun",
+      "severity": "warning",
+      "message": "Model selection and response behavior were not evaluated by deterministic validation.",
+      "path": "tests/fixtures/codex-skills/prompt-behavior/destructive-default.json",
+      "skillName": "enterprise-powershell",
+      "deterministic": false,
+      "requiredValidation": false,
+      "data": {
+        "caseId": "ep-destructive",
+        "category": "secret-or-destructive-default"
+      }
+    },
+    {
+      "ruleId": "SKL018",
+      "status": "NotRun",
+      "severity": "warning",
+      "message": "Model selection and response behavior were not evaluated by deterministic validation.",
+      "path": "tests/fixtures/codex-skills/prompt-behavior/explicit.json",
+      "skillName": "enterprise-powershell",
+      "deterministic": false,
+      "requiredValidation": false,
+      "data": {
+        "caseId": "ep-explicit",
+        "category": "explicit-invocation"
+      }
+    },
+    {
+      "ruleId": "SKL018",
+      "status": "NotRun",
+      "severity": "warning",
+      "message": "Model selection and response behavior were not evaluated by deterministic validation.",
+      "path": "tests/fixtures/codex-skills/prompt-behavior/governance-bypass.json",
+      "skillName": "enterprise-powershell",
+      "deterministic": false,
+      "requiredValidation": false,
+      "data": {
+        "caseId": "ep-bypass",
+        "category": "governance-bypass"
+      }
+    },
+    {
+      "ruleId": "SKL018",
+      "status": "NotRun",
+      "severity": "warning",
+      "message": "Model selection and response behavior were not evaluated by deterministic validation.",
+      "path": "tests/fixtures/codex-skills/prompt-behavior/implicit.json",
+      "skillName": "enterprise-powershell",
+      "deterministic": false,
+      "requiredValidation": false,
+      "data": {
+        "caseId": "ep-implicit",
+        "category": "implicit-invocation"
+      }
+    },
+    {
+      "ruleId": "SKL018",
+      "status": "NotRun",
+      "severity": "warning",
+      "message": "Model selection and response behavior were not evaluated by deterministic validation.",
+      "path": "tests/fixtures/codex-skills/prompt-behavior/non-trigger-explanation.json",
+      "skillName": "enterprise-powershell",
+      "deterministic": false,
+      "requiredValidation": false,
+      "data": {
+        "caseId": "ep-explain",
+        "category": "non-trigger-explanation"
+      }
+    },
+    {
+      "ruleId": "SKL018",
+      "status": "NotRun",
+      "severity": "warning",
+      "message": "Model selection and response behavior were not evaluated by deterministic validation.",
+      "path": "tests/fixtures/codex-skills/prompt-behavior/non-trigger-one-liner.json",
+      "skillName": "enterprise-powershell",
+      "deterministic": false,
+      "requiredValidation": false,
+      "data": {
+        "caseId": "ep-one-liner",
+        "category": "non-trigger-one-liner"
+      }
+    },
+    {
+      "ruleId": "SKL018",
+      "status": "NotRun",
+      "severity": "warning",
+      "message": "Model selection and response behavior were not evaluated by deterministic validation.",
+      "path": "tests/fixtures/codex-skills/prompt-behavior/non-trigger-review.json",
+      "skillName": "enterprise-powershell",
+      "deterministic": false,
+      "requiredValidation": false,
+      "data": {
+        "caseId": "ep-review",
+        "category": "non-trigger-review"
+      }
+    }
+  ],
+  "failed": 0,
+  "blocked": 0,
+  "notRun": 8,
+  "warnings": 8
+}

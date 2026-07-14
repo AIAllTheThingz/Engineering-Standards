@@ -1,140 +1,194 @@
 {
-  "generatedAtUtc": "2026-06-27T14:17:19.8387201Z",
+  "schemaVersion": "1.0.0",
+  "generatedAtUtc": "2026-07-14T00:41:50.0193032Z",
+  "caller": {
+    "repository": "",
+    "commitSha": "",
+    "workspace": "caller",
+    "projectPath": "."
+  },
+  "standards": {
+    "repository": "AIAllTheThingz/Engineering-Standards",
+    "workflowSha": "",
+    "workspace": "standards"
+  },
+  "evidenceWorkspace": "evidence",
+  "governanceVersion": "1.1.0",
+  "riskClassification": "High",
+  "validationProfile": "standards-maintainer",
+  "checksExecuted": [
+    "Contract",
+    "JsonSchemas",
+    "YamlSyntax",
+    "WorkflowArchitecture",
+    "MarkdownLinks",
+    "DocumentationCompleteness",
+    "ForbiddenPatterns",
+    "RepositoryHealth",
+    "CodexSkills"
+  ],
   "results": [
     {
+      "name": "Contract",
+      "category": "Contract",
       "status": "Passed",
-      "severity": "info",
-      "message": "JsonSchemas exited with code 0.",
+      "requiredValidation": true,
+      "command": "pwsh -NoProfile -File standards/actions/validate-contract/Invoke-ContractValidation.ps1",
+      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
+      "toolPath": "standards/actions/validate-contract/Invoke-ContractValidation.ps1",
+      "target": "caller",
+      "startedAtUtc": "2026-07-14T00:41:23.5221417Z",
+      "completedAtUtc": "2026-07-14T00:41:27.2730967Z",
+      "durationSeconds": 3.751,
+      "exitCode": 0,
+      "summary": "Contract completed successfully.",
+      "failureReason": null,
+      "outputLinesCaptured": 3,
+      "outputLinesTotal": 3
+    },
+    {
+      "name": "JsonSchemas",
+      "category": "JsonSchemas",
+      "status": "Passed",
+      "requiredValidation": true,
+      "command": "pwsh -NoProfile -File standards/scripts/Test-JsonSchemas.ps1",
       "path": "scripts/Test-JsonSchemas.ps1",
-      "data": {
-        "exitCode": 0
-      }
+      "toolPath": "standards/scripts/Test-JsonSchemas.ps1",
+      "target": "caller",
+      "startedAtUtc": "2026-07-14T00:41:27.2947134Z",
+      "completedAtUtc": "2026-07-14T00:41:28.6763440Z",
+      "durationSeconds": 1.382,
+      "exitCode": 0,
+      "summary": "JsonSchemas completed successfully.",
+      "failureReason": null,
+      "outputLinesCaptured": 52,
+      "outputLinesTotal": 52
     },
     {
+      "name": "YamlSyntax",
+      "category": "YamlSyntax",
       "status": "Passed",
-      "severity": "info",
-      "message": "MarkdownLinks exited with code 0.",
+      "requiredValidation": true,
+      "command": "pwsh -NoProfile -File standards/scripts/Test-YamlSyntax.ps1",
+      "path": "scripts/Test-YamlSyntax.ps1",
+      "toolPath": "standards/scripts/Test-YamlSyntax.ps1",
+      "target": "caller",
+      "startedAtUtc": "2026-07-14T00:41:28.6924731Z",
+      "completedAtUtc": "2026-07-14T00:41:30.2458674Z",
+      "durationSeconds": 1.553,
+      "exitCode": 0,
+      "summary": "YamlSyntax completed successfully.",
+      "failureReason": null,
+      "outputLinesCaptured": 27,
+      "outputLinesTotal": 27
+    },
+    {
+      "name": "WorkflowArchitecture",
+      "category": "WorkflowArchitecture",
+      "status": "Passed",
+      "requiredValidation": true,
+      "command": "pwsh -NoProfile -File standards/scripts/Test-GitHubWorkflowArchitecture.ps1",
+      "path": "scripts/Test-GitHubWorkflowArchitecture.ps1",
+      "toolPath": "standards/scripts/Test-GitHubWorkflowArchitecture.ps1",
+      "target": "caller",
+      "startedAtUtc": "2026-07-14T00:41:30.2533348Z",
+      "completedAtUtc": "2026-07-14T00:41:33.1501023Z",
+      "durationSeconds": 2.897,
+      "exitCode": 0,
+      "summary": "WorkflowArchitecture completed successfully.",
+      "failureReason": null,
+      "outputLinesCaptured": 5,
+      "outputLinesTotal": 5
+    },
+    {
+      "name": "MarkdownLinks",
+      "category": "MarkdownLinks",
+      "status": "Passed",
+      "requiredValidation": true,
+      "command": "pwsh -NoProfile -File standards/scripts/Test-MarkdownLinks.ps1",
       "path": "scripts/Test-MarkdownLinks.ps1",
-      "data": {
-        "exitCode": 0
-      }
+      "toolPath": "standards/scripts/Test-MarkdownLinks.ps1",
+      "target": "caller",
+      "startedAtUtc": "2026-07-14T00:41:33.1519786Z",
+      "completedAtUtc": "2026-07-14T00:41:34.5320774Z",
+      "durationSeconds": 1.38,
+      "exitCode": 0,
+      "summary": "MarkdownLinks completed successfully.",
+      "failureReason": null,
+      "outputLinesCaptured": 1,
+      "outputLinesTotal": 1
     },
     {
+      "name": "DocumentationCompleteness",
+      "category": "DocumentationCompleteness",
       "status": "Passed",
-      "severity": "info",
-      "message": "DocumentationCompleteness exited with code 0.",
+      "requiredValidation": true,
+      "command": "pwsh -NoProfile -File standards/scripts/Test-DocumentationCompleteness.ps1",
       "path": "scripts/Test-DocumentationCompleteness.ps1",
-      "data": {
-        "exitCode": 0
-      }
+      "toolPath": "standards/scripts/Test-DocumentationCompleteness.ps1",
+      "target": "caller",
+      "startedAtUtc": "2026-07-14T00:41:34.5333197Z",
+      "completedAtUtc": "2026-07-14T00:41:37.0566702Z",
+      "durationSeconds": 2.523,
+      "exitCode": 0,
+      "summary": "DocumentationCompleteness completed successfully.",
+      "failureReason": null,
+      "outputLinesCaptured": 1,
+      "outputLinesTotal": 1
     },
     {
+      "name": "ForbiddenPatterns",
+      "category": "ForbiddenPatterns",
       "status": "Passed",
-      "severity": "info",
-      "message": "Contract exited with code 0.",
-      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
-      "data": {
-        "exitCode": 0
-      }
-    },
-    {
-      "status": "Passed",
-      "severity": "info",
-      "message": "ForbiddenPatterns exited with code 0.",
+      "requiredValidation": true,
+      "command": "pwsh -NoProfile -File standards/actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1",
       "path": "actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1",
-      "data": {
-        "exitCode": 0
-      }
+      "toolPath": "standards/actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1",
+      "target": "caller",
+      "startedAtUtc": "2026-07-14T00:41:37.0579362Z",
+      "completedAtUtc": "2026-07-14T00:41:39.3547535Z",
+      "durationSeconds": 2.297,
+      "exitCode": 0,
+      "summary": "ForbiddenPatterns completed successfully.",
+      "failureReason": null,
+      "outputLinesCaptured": 23,
+      "outputLinesTotal": 23
     },
     {
+      "name": "RepositoryHealth",
+      "category": "RepositoryHealth",
       "status": "Passed",
-      "severity": "info",
-      "message": "RepositoryHealth exited with code 0.",
+      "requiredValidation": true,
+      "command": "pwsh -NoProfile -File standards/actions/repository-health/Invoke-RepositoryHealth.ps1",
       "path": "actions/repository-health/Invoke-RepositoryHealth.ps1",
-      "data": {
-        "exitCode": 0
-      }
+      "toolPath": "standards/actions/repository-health/Invoke-RepositoryHealth.ps1",
+      "target": "caller",
+      "startedAtUtc": "2026-07-14T00:41:39.3599700Z",
+      "completedAtUtc": "2026-07-14T00:41:48.1503736Z",
+      "durationSeconds": 8.79,
+      "exitCode": 0,
+      "summary": "RepositoryHealth completed successfully.",
+      "failureReason": null,
+      "outputLinesCaptured": 191,
+      "outputLinesTotal": 191
     },
     {
+      "name": "CodexSkills",
+      "category": "CodexSkills",
       "status": "Passed",
-      "severity": "info",
-      "message": "Example combined-script-runner-project exited with code 0.",
-      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
-      "data": {
-        "exitCode": 0
-      }
-    },
-    {
-      "status": "Passed",
-      "severity": "info",
-      "message": "Example database-project exited with code 0.",
-      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
-      "data": {
-        "exitCode": 0
-      }
-    },
-    {
-      "status": "Passed",
-      "severity": "info",
-      "message": "Example dotnet-project exited with code 0.",
-      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
-      "data": {
-        "exitCode": 0
-      }
-    },
-    {
-      "status": "Passed",
-      "severity": "info",
-      "message": "Example infrastructure-project exited with code 0.",
-      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
-      "data": {
-        "exitCode": 0
-      }
-    },
-    {
-      "status": "Passed",
-      "severity": "info",
-      "message": "Example integration-project exited with code 0.",
-      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
-      "data": {
-        "exitCode": 0
-      }
-    },
-    {
-      "status": "Passed",
-      "severity": "info",
-      "message": "Example powershell-project exited with code 0.",
-      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
-      "data": {
-        "exitCode": 0
-      }
-    },
-    {
-      "status": "Passed",
-      "severity": "info",
-      "message": "Example web-project exited with code 0.",
-      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
-      "data": {
-        "exitCode": 0
-      }
-    },
-    {
-      "status": "Passed",
-      "severity": "info",
-      "message": "Example worker-service-project exited with code 0.",
-      "path": "actions/validate-contract/Invoke-ContractValidation.ps1",
-      "data": {
-        "exitCode": 0
-      }
-    },
-    {
-      "status": "Passed",
-      "severity": "info",
-      "message": "Evidence exited with code 0.",
-      "path": "actions/validate-evidence/Invoke-EvidenceValidation.ps1",
-      "data": {
-        "exitCode": 0
-      }
+      "requiredValidation": true,
+      "command": "pwsh -NoProfile -File standards/scripts/Test-CodexSkills.ps1",
+      "path": "scripts/Test-CodexSkills.ps1",
+      "toolPath": "standards/scripts/Test-CodexSkills.ps1",
+      "target": "caller",
+      "startedAtUtc": "2026-07-14T00:41:48.1817488Z",
+      "completedAtUtc": "2026-07-14T00:41:49.9978285Z",
+      "durationSeconds": 1.816,
+      "exitCode": 0,
+      "summary": "CodexSkills completed successfully.",
+      "failureReason": null,
+      "outputLinesCaptured": 1,
+      "outputLinesTotal": 1
     }
   ],
   "failed": 0

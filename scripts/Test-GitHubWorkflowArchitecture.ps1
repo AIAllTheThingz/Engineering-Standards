@@ -465,11 +465,22 @@ if ($isStandardsRepository) {
                     'scripts/Test-AgentStandards.ps1','scripts/Test-YamlSyntax.ps1','scripts/Test-GitHubWorkflowArchitecture.ps1',
                     'scripts/Test-JsonSchemas.ps1','scripts/Test-MarkdownLinks.ps1','scripts/Test-DocumentationCompleteness.ps1',
                     'actions/validate-contract/Invoke-ContractValidation.ps1','actions/repository-health/Invoke-RepositoryHealth.ps1',
-                    'actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1','scripts/Invoke-PesterSuite.ps1','scripts/Test-Examples.ps1'
+                    'actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1','scripts/Test-CodexSkills.ps1','scripts/Invoke-PesterSuite.ps1','scripts/Test-Examples.ps1'
                 )) {
                     if ($candidateScriptPaths -notcontains $requiredScript) {
                         $results.Add((New-ValidationResult -Status Failed -Message "Candidate harness is missing required candidate script invocation '$requiredScript'." -Path $candidateWorkflowPath))
                     }
+                }
+                $codexSkillCommands = @(
+                    $candidateCommands |
+                        Where-Object {
+                            $_.GetCommandName() -eq 'Invoke-CandidateScript' -and
+                            $_.CommandElements.Count -gt 1 -and
+                            [string]$_.CommandElements[1].Value -eq 'scripts/Test-CodexSkills.ps1'
+                        }
+                )
+                if ($codexSkillCommands.Count -ne 1 -or $codexSkillCommands[0].Extent.Text -notmatch "Join-Path\s+\`$reportRoot\s+'codex-skills\.json'") {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Candidate Codex skill validation must write beneath .tmp/candidate-validation through reportRoot.' -Path $candidateWorkflowPath))
                 }
                 $gitDiffCommand = @($candidateCommands | Where-Object { $_.GetCommandName() -eq 'git' -and ($_.CommandElements.Extent.Text -join ' ') -match '\bdiff\b.*--check' })
                 if ($gitDiffCommand.Count -eq 0) { $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness is missing an executable git diff --check command.' -Path $candidateWorkflowPath)) }

@@ -154,7 +154,7 @@ if ($AggregateReportPath) {
     $categoryMap = @{
         Contract='workflow'; JsonSchemas='schema'; YamlSyntax='schema'; WorkflowArchitecture='workflow'
         MarkdownLinks='documentation'; DocumentationCompleteness='documentation'; ForbiddenPatterns='security'
-        RepositoryHealth='workflow'; PowerShellParser='lint'; Pester='unit'; PSScriptAnalyzer='lint'
+        RepositoryHealth='workflow'; CodexSkills='security'; PowerShellParser='lint'; Pester='unit'; PSScriptAnalyzer='lint'
         Examples='integration'; ControlledFailure='workflow'; BootstrapValidation='workflow'
     }
     foreach ($result in @($aggregate.results)) {
