@@ -452,7 +452,10 @@ function Test-GovernanceJsonDocument {
                 $results.Add((New-ValidationResult -Status Failed -Message 'controls must be declared as an object.' -Path $Path))
             }
             else {
-                $disabledControlsValue = Get-JsonMemberValue -InputObject $controlsValue -Name 'mandatoryControlsDisabled'
+                [object]$disabledControlsValue = $null
+                if ($controlsValue.Contains('mandatoryControlsDisabled')) {
+                    $disabledControlsValue = $controlsValue['mandatoryControlsDisabled']
+                }
                 if ($disabledControlsValue -is [string] -or $disabledControlsValue -isnot [System.Collections.IList]) {
                     $results.Add((New-ValidationResult -Status Failed -Message 'controls.mandatoryControlsDisabled must be declared as an array.' -Path $Path))
                 }
