@@ -351,15 +351,20 @@ Describe 'Governance contract semantic validation' {
         ($results.message -join "`n") | Should -Match "GCS008.*$_"
     }
 
-    It 'rejects an empty downstream validation category declaration' {
+    It 'rejects missing, scalar, object, and empty downstream validation category declarations' -ForEach @(
+        @{ Name='missing'; Mutate={ param($c) $c.Remove('validationCategories') } },
+        @{ Name='scalar'; Mutate={ param($c) $c.validationCategories='Contract' } },
+        @{ Name='object'; Mutate={ param($c) $c.validationCategories=@{ category='Contract' } } },
+        @{ Name='empty'; Mutate={ param($c) $c.validationCategories=@() } }
+    ) {
         $manifest = Copy-ContractObject $script:manifest
         $config = Copy-ContractObject $script:config
         $config.workflowProfile = 'downstream'
-        $config.validationCategories = @()
+        & $Mutate $config
         $results = Invoke-Semantics $manifest $config -Profile 'downstream' -Check ''
 
         ($results.message -join "`n") |
-            Should -Match "(?m)^GCS008 Downstream profile validationCategories declaration must be nonempty and include mandatory category 'Contract'\.$"
+            Should -Match '(?m)^GCS008 validationCategories must be declared as a nonempty array\.$' -Because $Name
     }
 
     It 'rejects a downstream optional-only declaration that omits Contract' {

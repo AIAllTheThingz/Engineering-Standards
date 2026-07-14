@@ -1333,17 +1333,25 @@ function Test-GovernanceContractSemantics {
 
     $supportedCategories = @('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')
     $maintainerOnlyCategories = @('JsonSchemas','YamlSyntax','WorkflowArchitecture','RepositoryHealth','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')
-    $declaredCategories = @($Config.validationCategories)
+    [object]$validationCategoriesValue = $null
+    if ($Config.Contains('validationCategories')) { $validationCategoriesValue = $Config['validationCategories'] }
+    $validationCategoriesIsArray = $validationCategoriesValue -is [System.Collections.IList] -and $validationCategoriesValue -isnot [string]
+    if ($Config.schemaVersion -ceq '1.2.0') {
+        $declaredCategories = if ($validationCategoriesIsArray) { @($validationCategoriesValue) } else { @() }
+        if (-not $validationCategoriesIsArray -or $declaredCategories.Count -eq 0) {
+            Add-Finding 'GCS008' 'validationCategories must be declared as a nonempty array.'
+        }
+    }
+    else {
+        $declaredCategories = @($validationCategoriesValue)
+    }
     foreach ($category in $declaredCategories) { if ($category -cnotin $supportedCategories) { Add-Finding 'GCS008' "Unsupported validation category '$category'." } }
     if ($workflowProfile -ceq 'standards-maintainer') {
         foreach ($category in $supportedCategories) { if ($declaredCategories -cnotcontains $category) { Add-Finding 'GCS008' "Maintainer profile omits executed category '$category'." } }
     }
     elseif ($workflowProfile -ceq 'downstream') {
         if ($Config.schemaVersion -ceq '1.2.0') {
-            if ($declaredCategories.Count -eq 0) {
-                Add-Finding 'GCS008' "Downstream profile validationCategories declaration must be nonempty and include mandatory category 'Contract'."
-            }
-            elseif ($declaredCategories -cnotcontains 'Contract') {
+            if ($validationCategoriesIsArray -and $declaredCategories.Count -gt 0 -and $declaredCategories -cnotcontains 'Contract') {
                 Add-Finding 'GCS008' "Downstream profile validationCategories declaration must include mandatory category 'Contract'."
             }
         }
