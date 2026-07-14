@@ -1,7 +1,7 @@
 BeforeAll {
     $script:root = (Resolve-Path "$PSScriptRoot/../..").Path
     $script:examplesRoot = Join-Path $script:root 'examples'
-    $script:expectedImplementationSha = 'd1535ea026fbc10eb3c0abb21c7c0ea8c0139f4c'
+    $script:expectedImplementationSha = '917ea1bc17214b25d9d56b816b4388d6bee1e87a'
 
     function Get-WorkflowGovernanceBinding {
         <#
@@ -149,10 +149,10 @@ Describe 'Example governance version and trusted implementation consistency' {
             ManifestVersion = '1.1.0'
             ConfigVersion = '1.1.0'
             WorkflowVersion = '1.0.0'
-            ManifestSha = 'd1535ea026fbc10eb3c0abb21c7c0ea8c0139f4c'
-            ConfigSha = 'd1535ea026fbc10eb3c0abb21c7c0ea8c0139f4c'
-            SourceSha = 'd1535ea026fbc10eb3c0abb21c7c0ea8c0139f4c'
-            WorkflowSha = 'd1535ea026fbc10eb3c0abb21c7c0ea8c0139f4c'
+            ManifestSha = '917ea1bc17214b25d9d56b816b4388d6bee1e87a'
+            ConfigSha = '917ea1bc17214b25d9d56b816b4388d6bee1e87a'
+            SourceSha = '917ea1bc17214b25d9d56b816b4388d6bee1e87a'
+            WorkflowSha = '917ea1bc17214b25d9d56b816b4388d6bee1e87a'
             Pattern = '^Workflow governance-version'
         },
         @{
@@ -160,9 +160,9 @@ Describe 'Example governance version and trusted implementation consistency' {
             ManifestVersion = '1.1.0'
             ConfigVersion = '1.1.0'
             WorkflowVersion = '1.1.0'
-            ManifestSha = 'd1535ea026fbc10eb3c0abb21c7c0ea8c0139f4c'
-            ConfigSha = 'd1535ea026fbc10eb3c0abb21c7c0ea8c0139f4c'
-            SourceSha = 'd1535ea026fbc10eb3c0abb21c7c0ea8c0139f4c'
+            ManifestSha = '917ea1bc17214b25d9d56b816b4388d6bee1e87a'
+            ConfigSha = '917ea1bc17214b25d9d56b816b4388d6bee1e87a'
+            SourceSha = '917ea1bc17214b25d9d56b816b4388d6bee1e87a'
             WorkflowSha = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
             Pattern = '^Workflow reusable reference SHA'
         },
@@ -171,10 +171,10 @@ Describe 'Example governance version and trusted implementation consistency' {
             ManifestVersion = '1.1.0'
             ConfigVersion = '1.1.0'
             WorkflowVersion = '1.1.0'
-            ManifestSha = 'd1535ea026fbc10eb3c0abb21c7c0ea8c0139f4c'
+            ManifestSha = '917ea1bc17214b25d9d56b816b4388d6bee1e87a'
             ConfigSha = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
-            SourceSha = 'd1535ea026fbc10eb3c0abb21c7c0ea8c0139f4c'
-            WorkflowSha = 'd1535ea026fbc10eb3c0abb21c7c0ea8c0139f4c'
+            SourceSha = '917ea1bc17214b25d9d56b816b4388d6bee1e87a'
+            WorkflowSha = '917ea1bc17214b25d9d56b816b4388d6bee1e87a'
             Pattern = '^Config governanceCommitSha'
         }
     ) {
