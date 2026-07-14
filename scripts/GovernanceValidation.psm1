@@ -98,7 +98,7 @@ function Test-StructuredOwnerIdentifier {
             return $ownerIdentifier -cmatch '^@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$'
         }
         'email-contact' {
-            return $ownerIdentifier -cmatch '^[^@\s]+@[^@\s]+\.[^@\s]+$'
+            return $ownerIdentifier -cmatch '^[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
         }
         default {
             return $false
@@ -1379,7 +1379,13 @@ function Test-GovernanceContractSemantics {
             if ($value.Length -lt $lengthRules[$field][0] -or $value.Length -gt $lengthRules[$field][1]) { $malformed = $true }
         }
         $evidenceReference = if ($exception.Contains('evidenceReference')) { [string]$exception.evidenceReference } else { '' }
-        if ([string]::IsNullOrWhiteSpace($evidenceReference) -or [System.IO.Path]::IsPathRooted($evidenceReference) -or $evidenceReference.Contains('..')) { $malformed = $true }
+        if (
+            [string]::IsNullOrWhiteSpace($evidenceReference) -or
+            [System.IO.Path]::IsPathRooted($evidenceReference) -or
+            $evidenceReference -cmatch '^[A-Za-z]:' -or
+            $evidenceReference -cmatch '^[\\/]' -or
+            $evidenceReference.Contains('..')
+        ) { $malformed = $true }
         $compensatingControls = @()
         if ($exception.Contains('compensatingControls')) { $compensatingControls = @($exception.compensatingControls) }
         if ($compensatingControls.Count -eq 0 -or @($compensatingControls | Where-Object { ([string]$_).Length -lt 10 }).Count -gt 0 -or @(Compare-Object $compensatingControls ($compensatingControls | Select-Object -Unique)).Count -gt 0) { $malformed = $true }

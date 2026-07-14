@@ -99,6 +99,32 @@ Describe 'Governance contract semantic validation' {
         @($results | Where-Object { $_.message -match 'GCS003' }) | Should -HaveCount 0
     }
 
+    It 'rejects schema-invalid structured email contacts during Contract-only validation' -ForEach @(
+        'a@b.c', 'ops!@example.com', 'ops@example.1', 'ops@example'
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.owners = @(
+            (New-TestOwner -Type 'github-user' -Identifier '@AIAllTheThingz'),
+            (New-TestOwner -Type 'email-contact' -Identifier $_)
+        )
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS003.*malformed.*email-contact'
+    }
+
+    It 'accepts structured email contacts that match the project-manifest schema' -ForEach @(
+        'governance@example.com', 'governance.ops+alerts@example.co.uk'
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.owners = @(
+            (New-TestOwner -Type 'github-user' -Identifier '@AIAllTheThingz'),
+            (New-TestOwner -Type 'email-contact' -Identifier $_)
+        )
+        $results = Invoke-Semantics $manifest $config
+        @($results | Where-Object { $_.message -match 'GCS003' }) | Should -HaveCount 0
+    }
+
     It 'rejects noncanonical repository owner type casing' -ForEach @(
         @{ Declared='user'; Trusted='User'; OwnerType='github-user'; Identifier='@AIAllTheThingz' },
         @{ Declared='organization'; Trusted='Organization'; OwnerType='github-team'; Identifier='@example-org/platform' }
@@ -730,6 +756,20 @@ Describe 'Governance contract semantic validation' {
         $manifest.exceptions = @(New-TestException -Status 'approved')
         $results = Invoke-Semantics $manifest $config
         ($results.message -join "`n") | Should -Match 'GCS010.*status.*unsupported or noncanonical'
+    }
+
+    It 'rejects platform-independent rooted exception evidence paths' -ForEach @(
+        'C:\\waiver.md', '\\server\\share', '/etc/waiver.md'
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $exception = New-TestException
+        $exception.evidenceReference = $_
+        $config.exceptions = @($exception)
+        $config.controls.mandatoryControlsDisabled = @(@{control='SyntheticControl';exceptionReference='GOV-2026-ACTIVE'})
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS010.*malformed'
+        ($results.message -join "`n") | Should -Match 'GCS011.*lacks an applicable active exception'
     }
 
     It 'rejects malformed, legacy, and cross-document duplicate version 1.2.0 exceptions' -ForEach @(
