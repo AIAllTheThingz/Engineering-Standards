@@ -21,6 +21,14 @@ BeforeAll {
             evidenceReference = 'evidence/exception.json'
         }
     }
+    function New-TestOwner([string]$Type, [string]$Identifier) {
+        @{
+            type = $Type
+            identifier = $Identifier
+            responsibility = 'Owns the synthetic governance contract tests.'
+            escalation = 'SECURITY.md'
+        }
+    }
     function Invoke-Semantics([hashtable]$Manifest, [hashtable]$Config, [string]$ExpectedRepository = 'AIAllTheThingz/Engineering-Standards', [string]$ExpectedStandardsRepository = 'AIAllTheThingz/Engineering-Standards', [string]$OwnerType = 'User', [string]$ExpectedSha = 'e2c0f9c1e839e92603c929d676a69412e7591983', [string]$Interface = '1.0.0', [string]$Profile = 'standards-maintainer', [string]$Check = 'Governance / Governance validation', [string]$Root = $script:root) {
         @(Test-GovernanceContractSemantics -Root $Root -Manifest $Manifest -Config $Config -ExpectedRepository $ExpectedRepository -ExpectedStandardsRepository $ExpectedStandardsRepository -RepositoryOwnerType $OwnerType -ExpectedGovernanceCommitSha $ExpectedSha -ExpectedWorkflowInterfaceVersion $Interface -ExpectedWorkflowProfile $Profile -ExpectedRequiredCheckName $Check -ValidationDateUtc ([datetime]'2026-07-14T00:00:00Z'))
     }
@@ -31,6 +39,92 @@ Describe 'Governance contract semantic validation' {
         $results = Invoke-Semantics (Copy-ContractObject $script:manifest) (Copy-ContractObject $script:config)
         @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
         $script:config.validationCategories | Should -Contain 'PowerShellParser'
+    }
+
+    It 'rejects malformed GitHub user identifiers without counting them as enforceable owners' -ForEach @(
+        'not-a-handle', 'user', '@', '@-user', '@user-', '@user/team', '@user name'
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.owners = @(New-TestOwner -Type 'github-user' -Identifier $_)
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS003.*malformed.*github-user'
+        ($results.message -join "`n") | Should -Match 'GCS003.*At least one GitHub user or team owner is required'
+    }
+
+    It 'rejects malformed GitHub team identifiers without counting them as enforceable owners' -ForEach @(
+        '@organization', 'organization/team', '@organization/', '@organization/-team', '@organization/team-', '@organization/team name'
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.repositoryOwnerType = 'Organization'
+        $manifest.owners = @(New-TestOwner -Type 'github-team' -Identifier $_)
+        $results = Invoke-Semantics $manifest $config -OwnerType 'Organization'
+        ($results.message -join "`n") | Should -Match 'GCS003.*malformed.*github-team'
+        ($results.message -join "`n") | Should -Match 'GCS003.*At least one GitHub user or team owner is required'
+    }
+
+    It 'rejects unknown structured owner types without counting them as enforceable owners' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.owners = @(New-TestOwner -Type 'github-organization' -Identifier '@example-org')
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS003.*unsupported owner type'
+        ($results.message -join "`n") | Should -Match 'GCS003.*At least one GitHub user or team owner is required'
+    }
+
+    It 'accepts valid structured GitHub owner identifiers' -ForEach @(
+        @{ Type='github-user'; Identifier='@a'; RepositoryOwnerType='User' },
+        @{ Type='github-user'; Identifier='@AIAllTheThingz'; RepositoryOwnerType='User' },
+        @{ Type='github-user'; Identifier='@user-name'; RepositoryOwnerType='User' },
+        @{ Type='github-team'; Identifier='@example-org/platform'; RepositoryOwnerType='Organization' },
+        @{ Type='github-team'; Identifier='@example-org/security-review'; RepositoryOwnerType='Organization' }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.repositoryOwnerType = $RepositoryOwnerType
+        $manifest.owners = @(New-TestOwner -Type $Type -Identifier $Identifier)
+        $results = Invoke-Semantics $manifest $config -OwnerType $RepositoryOwnerType
+        @($results | Where-Object { $_.message -match 'GCS003' }) | Should -HaveCount 0
+    }
+
+    It 'rejects a valid GitHub team owner for a user-owned repository' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.repositoryOwnerType = 'User'
+        $manifest.owners = @(New-TestOwner -Type 'github-team' -Identifier '@example-org/platform')
+        $results = Invoke-Semantics $manifest $config -OwnerType 'User'
+        ($results.message -join "`n") | Should -Match 'GCS003.*team ownership is invalid for a user-owned repository'
+    }
+
+    It 'rejects workflow interface input and output mismatches without schema validation' -ForEach @(
+        @{ Name='missing controlled-failure-test'; Mutate={ param($i) $i.inputs=@('project-path','governance-version','artifact-retention-days') } },
+        @{ Name='renamed input'; Mutate={ param($i) $i.inputs=@('project-root','governance-version','artifact-retention-days','controlled-failure-test') } },
+        @{ Name='extra input'; Mutate={ param($i) $i.inputs=@($i.inputs)+@('unexpected-input') } },
+        @{ Name='duplicate input'; Mutate={ param($i) $i.inputs=@($i.inputs)+@('project-path') } },
+        @{ Name='wrong-case input'; Mutate={ param($i) $i.inputs[0]='Project-Path' } },
+        @{ Name='empty input'; Mutate={ param($i) $i.inputs[0]='' } },
+        @{ Name='missing artifact-name'; Mutate={ param($i) $i.outputs=@('evidence-path') } },
+        @{ Name='renamed output'; Mutate={ param($i) $i.outputs=@('evidence-path','artifact-id') } },
+        @{ Name='extra output'; Mutate={ param($i) $i.outputs=@($i.outputs)+@('unexpected-output') } },
+        @{ Name='duplicate output'; Mutate={ param($i) $i.outputs=@($i.outputs)+@('artifact-name') } },
+        @{ Name='wrong-case output'; Mutate={ param($i) $i.outputs[0]='Evidence-Path' } },
+        @{ Name='empty output'; Mutate={ param($i) $i.outputs[0]='' } }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        & $Mutate $config.workflowInterface
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS007.*do not exactly match' -Because $Name
+    }
+
+    It 'accepts exactly the supported workflow input and output sets' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.workflowInterface.inputs = @('controlled-failure-test','project-path','artifact-retention-days','governance-version')
+        $config.workflowInterface.outputs = @('artifact-name','evidence-path')
+        $results = Invoke-Semantics $manifest $config
+        @($results | Where-Object { $_.message -match 'GCS007' }) | Should -HaveCount 0
     }
 
     It 'rejects every maintainer-only category for the downstream profile' -ForEach @(

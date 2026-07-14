@@ -165,7 +165,7 @@ pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/code
 Invoke-Pester -Path tests/actions -Output Detailed
 ```
 
-The explicit `User` value is specific to this verified user-owned central repository. Downstream repositories must retain the safe `Unknown` default or supply an owner type verified from trusted metadata.
+The explicit `User` value is specific to this verified user-owned central repository. The hosted reusable workflow supplies `User` or `Organization` from trusted GitHub event metadata for schema `1.2.0` and fails closed when that value is unavailable or unsupported. Legacy `1.0.0` and `1.1.0` contracts may retain `Unknown` for compatibility. Repository content must not supply or override the trusted value.
 
 Workflow syntax validation MUST run through `scripts/Test-YamlSyntax.ps1` with PyYAML pinned to a reviewed version in CI. Workflow semantic validation MUST run through `scripts/Test-GitHubWorkflowArchitecture.ps1` to detect recursion, invalid reusable paths, unsupported inputs, broad permissions, unpinned third-party actions, missing explicit caller identity, mutable standards identity, checkout collisions, caller override inputs, and direct downstream test/example execution.
 

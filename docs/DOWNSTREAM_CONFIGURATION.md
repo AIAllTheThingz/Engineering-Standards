@@ -153,11 +153,14 @@ pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Category 
 ```
 
 The aggregate validator uses `RepositoryOwnerType` value `Unknown` by default
-and does not infer ownership from the repository name. A trusted caller that
-has verified the live repository owner type may pass exactly `User` or
-`Organization`, for example `-RepositoryOwnerType User`. The value is forwarded
-to repository-health ownership checks; other values and case variants fail
-parameter validation.
+and does not infer ownership from the repository name. Schema `1.2.0` requires
+the hosted reusable workflow to supply exactly `User` or `Organization` from
+trusted `github.event.repository.owner.type` metadata and fails closed when that
+metadata is absent or unsupported. Legacy `1.0.0` and `1.1.0` contracts may
+retain `Unknown` for backward compatibility. A trusted local caller may pass a
+verified value explicitly, for example `-RepositoryOwnerType User`. The value
+is forwarded to Contract and repository-health validation; other values and
+case variants fail parameter validation.
 
 ## Evidence
 

@@ -49,6 +49,32 @@ function script:New-DownstreamFixture {
     $root
 }
 
+function script:New-StructuredDownstreamFixture {
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [ValidateSet('User','Organization')][string]$DeclaredOwnerType = 'User'
+    )
+
+    $root = New-DownstreamFixture -Name $Name
+    $manifest = Get-Content -LiteralPath (Join-Path $script:repoRoot 'examples/integration-project/project-manifest.json') -Raw | ConvertFrom-Json -AsHashtable
+    $config = Get-Content -LiteralPath (Join-Path $script:repoRoot 'examples/integration-project/governance.config.json') -Raw | ConvertFrom-Json -AsHashtable
+    $manifest.repository = 'ExampleOrg/downstream-fixture'
+    $manifest.projectName = 'Structured Downstream Fixture'
+    $manifest.governanceCommitSha = $script:standardsSha
+    $manifest.repositoryOwnerType = $DeclaredOwnerType
+    $manifest.standardsConsumption.sourceCommitSha = $script:standardsSha
+    $manifest.owners = if ($DeclaredOwnerType -eq 'Organization') {
+        @([ordered]@{ type='github-team'; identifier='@ExampleOrg/maintainers'; responsibility='Owns governance review.'; escalation='SECURITY.md' })
+    }
+    else {
+        @([ordered]@{ type='github-user'; identifier='@ExampleOrg'; responsibility='Owns governance review.'; escalation='SECURITY.md' })
+    }
+    $config.governanceCommitSha = $script:standardsSha
+    $manifest | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $root 'project-manifest.json') -Encoding utf8
+    $config | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $root 'governance.config.json') -Encoding utf8
+    $root
+}
+
 function script:Invoke-DownstreamValidation {
     param(
         [Parameter(Mandatory)][string]$CallerRoot,
@@ -56,12 +82,13 @@ function script:Invoke-DownstreamValidation {
         [string]$EvidenceRoot=(Join-Path $script:tempRoot ("evidence-" + [guid]::NewGuid())),
         [string]$StandardsRepository='AIAllTheThingz/Engineering-Standards',
         [string]$StandardsSha=$script:standardsSha,
+        [string]$RepositoryOwnerType='Unknown',
         [switch]$ControlledFailure
     )
     $prior = $env:GITHUB_ACTIONS
     $env:GITHUB_ACTIONS = 'true'
     try {
-        $output = @(& pwsh -NoProfile -File $script:validator -Path $CallerRoot -ProjectPath $ProjectPath -EvidenceRoot $EvidenceRoot -ExpectedGovernanceVersion '1.1.0' -CallerRepository 'ExampleOrg/downstream-fixture' -CallerCommitSha $script:callerSha -StandardsRepository $StandardsRepository -StandardsWorkflowSha $StandardsSha -ControlledFailure:$ControlledFailure 2>&1)
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $CallerRoot -ProjectPath $ProjectPath -EvidenceRoot $EvidenceRoot -ExpectedGovernanceVersion '1.1.0' -CallerRepository 'ExampleOrg/downstream-fixture' -CallerCommitSha $script:callerSha -StandardsRepository $StandardsRepository -StandardsWorkflowSha $StandardsSha -RepositoryOwnerType $RepositoryOwnerType -ControlledFailure:$ControlledFailure 2>&1)
         $joinedOutput = $output -join [Environment]::NewLine
         $joinedOutput = [regex]::Replace($joinedOutput, '\x1B\[[0-9;?]*[ -/]*[@-~]', '')
         $joinedOutput = [regex]::Replace($joinedOutput, '\s+', ' ')
@@ -73,6 +100,39 @@ function script:Invoke-DownstreamValidation {
 }
 
 Describe 'Reusable governance workflow trust boundaries' {
+    It 'accepts trusted User owner type for schema version 1.2.0' {
+        $caller = New-StructuredDownstreamFixture -Name 'structured-user-owner'
+        $result = Invoke-DownstreamValidation -CallerRoot $caller -RepositoryOwnerType User
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+    }
+
+    It 'accepts trusted Organization owner type for schema version 1.2.0' {
+        $caller = New-StructuredDownstreamFixture -Name 'structured-organization-owner' -DeclaredOwnerType Organization
+        $result = Invoke-DownstreamValidation -CallerRoot $caller -RepositoryOwnerType Organization
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+    }
+
+    It 'fails closed when trusted owner type is absent for schema version 1.2.0' {
+        $caller = New-StructuredDownstreamFixture -Name 'structured-owner-unknown'
+        $result = Invoke-DownstreamValidation -CallerRoot $caller
+        $result.ExitCode | Should -Not -Be 0
+        $result.Output | Should -Match 'Trusted repository owner type is required for schema version 1.2.0'
+    }
+
+    It 'rejects an unsupported trusted repository owner type' {
+        $caller = New-StructuredDownstreamFixture -Name 'structured-owner-unsupported'
+        $result = Invoke-DownstreamValidation -CallerRoot $caller -RepositoryOwnerType Enterprise
+        $result.ExitCode | Should -Not -Be 0
+        $result.Output | Should -Match 'RepositoryOwnerType must be exactly Unknown, User, or Organization'
+    }
+
+    It 'passes trusted repository owner type through aggregate validation to Contract' {
+        $caller = New-StructuredDownstreamFixture -Name 'structured-owner-manifest-override'
+        $result = Invoke-DownstreamValidation -CallerRoot $caller -RepositoryOwnerType Organization
+        $result.ExitCode | Should -Not -Be 0
+        $result.Output | Should -Match 'GCS003|GCS004'
+    }
+
     It 'validates a downstream caller without central scripts tests or examples' {
         $caller = New-DownstreamFixture -Name 'valid-downstream'
         $result = Invoke-DownstreamValidation -CallerRoot $caller

@@ -34,7 +34,8 @@ Immutable commit containing the reusable workflow and validators.
 .PARAMETER RepositoryOwnerType
 Trusted repository owner type used by ownership-aware validation. Accepted
 values are exactly Unknown, User, or Organization. The default is Unknown;
-callers must not infer this value from the repository name.
+callers must not infer this value from the repository name. Schema version
+1.2.0 requires a trusted User or Organization value and fails closed otherwise.
 .PARAMETER ControlledFailure
 Adds an intentional final failed check after normal validation so evidence can
 be generated and uploaded before enforcement fails.
@@ -264,6 +265,9 @@ Assert-NoNestedLinks -Root $callerRoot
 
 $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable
 $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json -AsHashtable
+if ($manifest.Contains('schemaVersion') -and $manifest.schemaVersion -eq '1.2.0' -and $RepositoryOwnerType -eq 'Unknown') {
+    throw 'Trusted repository owner type is required for schema version 1.2.0.'
+}
 if ($ExpectedGovernanceVersion -and $manifest.governanceVersion -ne $ExpectedGovernanceVersion) {
     throw "Governance version mismatch: workflow expects '$ExpectedGovernanceVersion' but manifest declares '$($manifest.governanceVersion)'."
 }

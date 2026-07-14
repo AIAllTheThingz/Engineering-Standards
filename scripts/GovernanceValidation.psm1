@@ -71,6 +71,54 @@ function Get-JsonMemberValue {
     return $null
 }
 
+function Test-StructuredOwnerIdentifier {
+    [CmdletBinding()]
+    param(
+        [AllowNull()][object]$Type,
+        [AllowNull()][object]$Identifier
+    )
+
+    $ownerType = [string]$Type
+    $ownerIdentifier = [string]$Identifier
+    switch -CaseSensitive ($ownerType) {
+        'github-user' {
+            return $ownerIdentifier -cmatch '^@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$'
+        }
+        'github-team' {
+            return $ownerIdentifier -cmatch '^@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$'
+        }
+        'email-contact' {
+            return $ownerIdentifier -cmatch '^[^@\s]+@[^@\s]+\.[^@\s]+$'
+        }
+        default {
+            return $false
+        }
+    }
+}
+
+function Test-ExactStringSet {
+    [CmdletBinding()]
+    param(
+        [AllowNull()][object[]]$Actual,
+        [Parameter(Mandatory)][string[]]$Expected
+    )
+
+    $actualValues = @($Actual)
+    if ($actualValues.Count -ne $Expected.Count) { return $false }
+
+    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($value in $actualValues) {
+        if ($value -isnot [string] -or [string]::IsNullOrWhiteSpace([string]$value) -or -not $seen.Add([string]$value)) {
+            return $false
+        }
+    }
+
+    foreach ($requiredValue in $Expected) {
+        if (-not $seen.Contains($requiredValue)) { return $false }
+    }
+    return $true
+}
+
 function Write-ValidationReport {
     <#
     .SYNOPSIS
@@ -470,6 +518,15 @@ function Test-GovernanceJsonDocument {
                 if ($owner -isnot [System.Collections.IDictionary]) {
                     $results.Add((New-ValidationResult -Status Failed -Message 'Version 1.2.0 owners must be structured records.' -Path $Path))
                     continue
+                }
+                $ownerType = [string](Get-JsonMemberValue -InputObject $owner -Name 'type')
+                $ownerIdentifier = [string](Get-JsonMemberValue -InputObject $owner -Name 'identifier')
+                $supportedOwnerTypes = @('github-user', 'github-team', 'email-contact')
+                if ($supportedOwnerTypes -cnotcontains $ownerType) {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Owner '$ownerIdentifier' uses unsupported owner type '$ownerType'." -Path $Path))
+                }
+                elseif (-not (Test-StructuredOwnerIdentifier -Type $ownerType -Identifier $ownerIdentifier)) {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Owner '$ownerIdentifier' is malformed for owner type '$ownerType'." -Path $Path))
                 }
                 if ([string]::IsNullOrWhiteSpace([string]$owner.responsibility) -or ([string]$owner.responsibility).Length -lt 20) {
                     $results.Add((New-ValidationResult -Status Failed -Message "Owner '$($owner.identifier)' lacks substantive responsibility." -Path $Path))
@@ -957,15 +1014,28 @@ function Test-GovernanceContractSemantics {
         $seenOwners = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
         $enforceableOwners = 0
         foreach ($owner in @($Manifest.owners)) {
-            $identifier = [string]$owner.identifier
+            if ($owner -isnot [System.Collections.IDictionary]) {
+                Add-Finding 'GCS003' 'Version 1.2.0 owners must be structured records.'
+                continue
+            }
+            $ownerType = [string](Get-JsonMemberValue -InputObject $owner -Name 'type')
+            $identifier = [string](Get-JsonMemberValue -InputObject $owner -Name 'identifier')
+            $supportedOwnerTypes = @('github-user', 'github-team', 'email-contact')
             if (-not $seenOwners.Add($identifier)) { Add-Finding 'GCS003' "Duplicate owner identifier '$identifier'." }
             if ($identifier -match '(?i)(?:placeholder|changeme|replace-me|todo)') { Add-Finding 'GCS003' "Owner '$identifier' is a placeholder." }
-            if ($owner.type -eq 'github-user') { $enforceableOwners++ }
-            if ($owner.type -eq 'github-team') {
+            $validIdentifier = $false
+            if ($supportedOwnerTypes -cnotcontains $ownerType) {
+                Add-Finding 'GCS003' "Owner '$identifier' uses unsupported owner type '$ownerType'."
+            }
+            else {
+                $validIdentifier = Test-StructuredOwnerIdentifier -Type $ownerType -Identifier $identifier
+                if (-not $validIdentifier) { Add-Finding 'GCS003' "Owner '$identifier' is malformed for owner type '$ownerType'." }
+            }
+            if ($validIdentifier -and $ownerType -eq 'github-user') { $enforceableOwners++ }
+            if ($validIdentifier -and $ownerType -eq 'github-team') {
                 $enforceableOwners++
                 if ($Manifest.repositoryOwnerType -ne 'Organization' -or $RepositoryOwnerType -eq 'User') { Add-Finding 'GCS003' 'GitHub team ownership is invalid for a user-owned repository.' }
             }
-            if ($owner.type -eq 'email-contact' -and $identifier -notmatch '^[^@\s]+@[^@\s]+\.[^@\s]+$') { Add-Finding 'GCS003' "Email owner '$identifier' is malformed." }
             if ([string]::IsNullOrWhiteSpace([string]$owner.responsibility) -or ([string]$owner.responsibility).Length -lt 20) { Add-Finding 'GCS003' "Owner '$identifier' lacks substantive responsibility." }
             if ([string]::IsNullOrWhiteSpace([string]$owner.escalation)) { Add-Finding 'GCS003' "Owner '$identifier' lacks escalation." }
         }
@@ -1022,6 +1092,10 @@ function Test-GovernanceContractSemantics {
     if ($Config.schemaVersion -eq '1.2.0') {
         $interface = $Config.workflowInterface
         if ($interface.path -ne '.github/workflows/governance-ci-reusable.yml' -or $interface.jobId -ne 'governance' -or $interface.jobName -ne 'Governance validation' -or $interface.artifactNamePattern -ne 'governance-evidence-${run_id}') { Add-Finding 'GCS007' 'Workflow interface declaration conflicts with the supported interface.' }
+        $requiredInputs = @('project-path', 'governance-version', 'artifact-retention-days', 'controlled-failure-test')
+        $requiredOutputs = @('evidence-path', 'artifact-name')
+        if (-not (Test-ExactStringSet -Actual @($interface.inputs) -Expected $requiredInputs)) { Add-Finding 'GCS007' 'Workflow interface inputs do not exactly match the supported interface.' }
+        if (-not (Test-ExactStringSet -Actual @($interface.outputs) -Expected $requiredOutputs)) { Add-Finding 'GCS007' 'Workflow interface outputs do not exactly match the supported interface.' }
     }
 
     $supportedCategories = @('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')

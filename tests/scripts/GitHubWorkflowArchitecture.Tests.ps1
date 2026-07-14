@@ -62,6 +62,57 @@ Describe 'GitHub workflow architecture validation' {
         $output -join "`n" | Should -Match 'fetch full history'
     }
 
+    It 'requires repository owner type from trusted GitHub event context' {
+        $root = New-CurrentWorkflowFixture -Name 'untrusted-owner-type-source'
+        $path = Join-Path $root '.github/workflows/governance-ci-reusable.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace('${{ github.event.repository.owner.type }}', '${{ inputs.repository-owner-type }}')
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'trusted github.event.repository.owner.type context'
+    }
+
+    It 'requires case-sensitive normalization of supported repository owner types' {
+        $root = New-CurrentWorkflowFixture -Name 'owner-type-case-insensitive-normalization'
+        $path = Join-Path $root '.github/workflows/governance-ci-reusable.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace('switch -CaseSensitive ($env:CALLER_REPOSITORY_OWNER_TYPE)', 'switch ($env:CALLER_REPOSITORY_OWNER_TYPE)')
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'normalize only exact User or Organization'
+    }
+
+    It 'requires propagation of normalized repository owner type to aggregate validation' {
+        $root = New-CurrentWorkflowFixture -Name 'missing-owner-type-propagation'
+        $path = Join-Path $root '.github/workflows/governance-ci-reusable.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("            -RepositoryOwnerType `$env:CALLER_REPOSITORY_OWNER_TYPE ```n", '')
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'pass the normalized trusted repository owner type'
+    }
+
+    It 'rejects a caller-controlled repository owner type input' {
+        $root = New-CurrentWorkflowFixture -Name 'caller-owner-type-input'
+        $path = Join-Path $root '.github/workflows/governance-ci-reusable.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $content = $content.Replace("      project-path:`n", "      repository-owner-type:`n        type: string`n        required: false`n        default: Unknown`n      project-path:`n")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must not be able to supply or override the trusted repository owner type'
+    }
+
+    It 'preserves exact read-only reusable workflow permissions' {
+        $root = New-CurrentWorkflowFixture -Name 'reusable-owner-type-write-permission'
+        $path = Join-Path $root '.github/workflows/governance-ci-reusable.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("permissions:`n  contents: read", "permissions:`n  contents: write")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'permissions must be exactly contents: read'
+    }
+
     It 'rejects a missing candidate implementation validation call' {
         $root = New-CurrentWorkflowFixture -Name 'missing-candidate-call'
         $path = Join-Path $root '.github/workflows/governance-ci.yml'

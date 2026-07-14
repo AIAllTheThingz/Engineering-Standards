@@ -211,7 +211,7 @@ Describe 'GovernanceValidation module' {
             $priorGitHubActions = $env:GITHUB_ACTIONS
             try {
                 $env:GITHUB_ACTIONS = $null
-                & pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $repoRoot -Category JsonSchemas -OutputJson $outputPath
+                & pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $repoRoot -Category JsonSchemas -RepositoryOwnerType User -OutputJson $outputPath
             }
             finally {
                 $env:GITHUB_ACTIONS = $priorGitHubActions
@@ -252,6 +252,26 @@ Describe 'GovernanceValidation module' {
 
             $invalidResults = Test-GovernanceJsonDocument -Path "$PSScriptRoot/../fixtures/invalid/project-manifest-bare-user-owner.json" -Kind 'project-manifest'
             @($invalidResults | Where-Object { $_.status -eq 'Failed' -and $_.message -match 'GitHub user handle' }).Count | Should -Be 1
+        }
+
+        It 'applies structured owner type and identifier validation without JSON Schema execution' {
+            $manifest = Get-Content "$PSScriptRoot/../../project-manifest.json" -Raw | ConvertFrom-Json -AsHashtable
+            $manifest.owners = @(@{
+                type = 'github-organization'
+                identifier = '@example-org'
+                responsibility = 'Owns the synthetic governance contract tests.'
+                escalation = 'SECURITY.md'
+            })
+            $path = Join-Path $script:tempRoot 'invalid-structured-owner.json'
+            $manifest | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $path
+            $results = Test-GovernanceJsonDocument -Path $path -Kind 'project-manifest'
+            @($results | Where-Object { $_.status -eq 'Failed' -and $_.message -match 'unsupported owner type' }) | Should -HaveCount 1
+
+            $manifest.owners[0].type = 'github-user'
+            $manifest.owners[0].identifier = '@user-'
+            $manifest | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $path
+            $results = Test-GovernanceJsonDocument -Path $path -Kind 'project-manifest'
+            @($results | Where-Object { $_.status -eq 'Failed' -and $_.message -match 'malformed.*github-user' }) | Should -HaveCount 1
         }
     }
 

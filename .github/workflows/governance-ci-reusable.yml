@@ -73,6 +73,7 @@ jobs:
           STANDARDS_WORKFLOW_SHA: ${{ job.workflow_sha }}
           CALLER_REPOSITORY: ${{ github.repository }}
           CALLER_COMMIT_SHA: ${{ github.sha }}
+          CALLER_REPOSITORY_OWNER_TYPE: ${{ github.event.repository.owner.type }}
           CALLER_REF_NAME: ${{ github.ref_name }}
           GOVERNANCE_VERSION: ${{ inputs.governance-version }}
           STANDARDS_WORKFLOW_REF: ${{ job.workflow_ref }}
@@ -92,6 +93,12 @@ jobs:
           }
           $retention = [int]$env:RETENTION_DAYS
           if ($retention -lt 1 -or $retention -gt 90) { throw 'artifact-retention-days must be between 1 and 90.' }
+          $repositoryOwnerType = switch -CaseSensitive ($env:CALLER_REPOSITORY_OWNER_TYPE) {
+            'User' { 'User'; break }
+            'Organization' { 'Organization'; break }
+            default { 'Unknown' }
+          }
+          "repository-owner-type=$repositoryOwnerType" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           "artifact-retention-days=$retention" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Record environment information
@@ -103,6 +110,7 @@ jobs:
           STANDARDS_WORKFLOW_SHA: ${{ job.workflow_sha }}
           STANDARDS_WORKFLOW_REF: ${{ job.workflow_ref }}
           CALLER_REPOSITORY: ${{ github.repository }}
+          CALLER_REPOSITORY_OWNER_TYPE: ${{ steps.inputs.outputs.repository-owner-type }}
           CALLER_COMMIT_SHA: ${{ github.sha }}
           CALLER_REF: ${{ github.ref }}
           CALLER_REF_NAME: ${{ github.ref_name }}
@@ -116,6 +124,7 @@ jobs:
           New-Item -ItemType Directory -Path evidence -Force | Out-Null
           [ordered]@{
             callerRepository = $env:CALLER_REPOSITORY
+            callerRepositoryOwnerType = $env:CALLER_REPOSITORY_OWNER_TYPE
             callerCommitSha = $env:CALLER_COMMIT_SHA
             callerRef = $env:CALLER_REF
             callerRefName = $env:CALLER_REF_NAME
@@ -185,6 +194,7 @@ jobs:
           STANDARDS_REPOSITORY: ${{ job.workflow_repository }}
           STANDARDS_WORKFLOW_SHA: ${{ job.workflow_sha }}
           CALLER_REPOSITORY: ${{ github.repository }}
+          CALLER_REPOSITORY_OWNER_TYPE: ${{ steps.inputs.outputs.repository-owner-type }}
           CALLER_COMMIT_SHA: ${{ github.sha }}
           GOVERNANCE_VERSION: ${{ inputs.governance-version }}
           PROJECT_PATH: ${{ inputs.project-path }}
@@ -196,6 +206,7 @@ jobs:
             -EvidenceRoot ./evidence `
             -ExpectedGovernanceVersion $env:GOVERNANCE_VERSION `
             -CallerRepository $env:CALLER_REPOSITORY `
+            -RepositoryOwnerType $env:CALLER_REPOSITORY_OWNER_TYPE `
             -CallerCommitSha $env:CALLER_COMMIT_SHA `
             -StandardsRepository $env:STANDARDS_REPOSITORY `
             -StandardsWorkflowSha $env:STANDARDS_WORKFLOW_SHA `
