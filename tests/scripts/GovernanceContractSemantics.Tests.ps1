@@ -259,6 +259,25 @@ Describe 'Governance contract semantic validation' {
             Should -Match "(?m)^GCS008 Downstream profile validationCategories declaration must include mandatory category 'Contract'\.$"
     }
 
+    It 'rejects noncanonical downstream validation category casing' -ForEach @(
+        @{ Categories=@('contract'); Noncanonical='contract'; RequiresContract=$true },
+        @{ Categories=@('Contract', 'markdownlinks'); Noncanonical='markdownlinks'; RequiresContract=$false }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.workflowProfile = 'downstream'
+        $config.validationCategories = @($Categories)
+        $results = Invoke-Semantics $manifest $config -Profile 'downstream' -Check ''
+        $messages = $results.message -join "`n"
+
+        $messages |
+            Should -Match "(?m)^GCS008 Unsupported validation category '$Noncanonical'\.$"
+        if ($RequiresContract) {
+            $messages |
+                Should -Match "(?m)^GCS008 Downstream profile validationCategories declaration must include mandatory category 'Contract'\.$"
+        }
+    }
+
     It 'accepts a downstream declaration that includes Contract' -ForEach @(
         @{ Categories = @('Contract') },
         @{ Categories = @('Contract', 'MarkdownLinks') }
