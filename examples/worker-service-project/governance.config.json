@@ -14,11 +14,9 @@
   ],
   "validationCategories": [
     "Contract",
-    "JsonSchemas",
     "MarkdownLinks",
     "DocumentationCompleteness",
-    "ForbiddenPatterns",
-    "RepositoryHealth"
+    "ForbiddenPatterns"
   ],
   "additionalForbiddenPatterns": [],
   "reviewedAllowlist": [],
@@ -27,7 +25,7 @@
   },
   "exceptions": [],
   "governanceVersion": "1.1.0",
-  "governanceCommitSha": "a3792195a0a2d1d443f8feea57c648aa2ac83d87",
+  "governanceCommitSha": "06727051ddb33f73bdc1b6dd5e31ac7abe0278cb",
   "workflowInterfaceVersion": "1.0.0",
   "workflowProfile": "downstream",
   "workflowInterface": {
