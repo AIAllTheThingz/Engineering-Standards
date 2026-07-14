@@ -99,6 +99,18 @@ Describe 'Governance contract semantic validation' {
         @($results | Where-Object { $_.message -match 'GCS003' }) | Should -HaveCount 0
     }
 
+    It 'rejects noncanonical repository owner type casing' -ForEach @(
+        @{ Declared='user'; Trusted='User'; OwnerType='github-user'; Identifier='@AIAllTheThingz' },
+        @{ Declared='organization'; Trusted='Organization'; OwnerType='github-team'; Identifier='@example-org/platform' }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.repositoryOwnerType = $Declared
+        $manifest.owners = @(New-TestOwner -Type $OwnerType -Identifier $Identifier)
+        $results = Invoke-Semantics $manifest $config -OwnerType $Trusted
+        ($results.message -join "`n") | Should -Match 'GCS003.*repositoryOwnerType.*unsupported or noncanonical'
+    }
+
     It 'rejects a valid GitHub team owner for a user-owned repository' {
         $manifest = Copy-ContractObject $script:manifest
         $config = Copy-ContractObject $script:config
@@ -127,6 +139,48 @@ Describe 'Governance contract semantic validation' {
         & $Mutate $config.workflowInterface
         $results = Invoke-Semantics $manifest $config
         ($results.message -join "`n") | Should -Match 'GCS007.*do not exactly match' -Because $Name
+    }
+
+    It 'rejects noncanonical workflow profile casing' -ForEach @('Downstream', 'Standards-Maintainer') {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.workflowProfile = $_
+        $results = Invoke-Semantics $manifest $config -Profile 'downstream' -Check ''
+        ($results.message -join "`n") | Should -Match 'GCS007.*Workflow profile.*unsupported or noncanonical'
+    }
+
+    It 'rejects noncanonical workflow interface constants' -ForEach @(
+        @{ Name='path'; Mutate={ param($i) $i.path='.github/workflows/Governance-ci-reusable.yml' } },
+        @{ Name='job id'; Mutate={ param($i) $i.jobId='Governance' } },
+        @{ Name='job name'; Mutate={ param($i) $i.jobName='governance validation' } },
+        @{ Name='artifact pattern'; Mutate={ param($i) $i.artifactNamePattern='Governance-evidence-${run_id}' } }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        & $Mutate $config.workflowInterface
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS007.*Workflow interface declaration conflicts' -Because $Name
+    }
+
+    It 'rejects noncanonical project type casing' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.projectType = 'Governance'
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS005.*Project type.*unsupported or noncanonical'
+    }
+
+    It 'rejects noncanonical hosted-evidence constants' -ForEach @(
+        @{ Name='workspace'; Mutate={ param($h) $h.workspace='Evidence' } },
+        @{ Name='completion'; Mutate={ param($h) $h.completion='Completion-result.json' } },
+        @{ Name='tests'; Mutate={ param($h) $h.tests='CI-test-results.json' } },
+        @{ Name='artifact pattern'; Mutate={ param($h) $h.artifactNamePattern='Governance-evidence-${run_id}' } }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        & $Mutate $manifest.evidence.hosted
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS009.*Hosted evidence declaration conflicts' -Because $Name
     }
 
     It 'accepts exactly the supported workflow input and output sets' {
@@ -668,6 +722,14 @@ Describe 'Governance contract semantic validation' {
         $manifest.exceptions = @(New-TestException -Status $Status -ApprovalDate $Approval -Expiration $Expiration)
         $results = Invoke-Semantics $manifest $config
         ($results.message -join "`n") | Should -Match 'GCS010.*not an active' -Because $Name
+    }
+
+    It 'rejects noncanonical exception status casing' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.exceptions = @(New-TestException -Status 'approved')
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS010.*status.*unsupported or noncanonical'
     }
 
     It 'rejects malformed, legacy, and cross-document duplicate version 1.2.0 exceptions' -ForEach @(

@@ -1090,7 +1090,7 @@ function Test-GovernanceContractSemantics {
             Add-Finding 'GCS002' 'governanceCommitSha must contain exactly 40 hexadecimal characters.'
         }
     }
-    if ($Manifest.Contains('governanceVersion') -and $Config.Contains('governanceVersion') -and $Manifest.governanceVersion -ne $Config.governanceVersion) {
+    if ($Manifest.Contains('governanceVersion') -and $Config.Contains('governanceVersion') -and $Manifest.governanceVersion -cne $Config.governanceVersion) {
         Add-Finding 'GCS002' 'Manifest and governance configuration governance versions disagree.'
     }
     if ($Manifest.Contains('governanceCommitSha') -and $Config.Contains('governanceCommitSha') -and $Manifest.governanceCommitSha -ne $Config.governanceCommitSha) {
@@ -1100,7 +1100,11 @@ function Test-GovernanceContractSemantics {
         Add-Finding 'GCS002' 'Declared governance commit SHA does not match the trusted workflow standards SHA.'
     }
 
-    if ($Manifest.schemaVersion -eq '1.2.0') {
+    if ($Manifest.schemaVersion -ceq '1.2.0') {
+        $manifestRepositoryOwnerType = [string](Get-JsonMemberValue -InputObject $Manifest -Name 'repositoryOwnerType')
+        if (@('User', 'Organization') -cnotcontains $manifestRepositoryOwnerType) {
+            Add-Finding 'GCS003' "Manifest repositoryOwnerType '$manifestRepositoryOwnerType' is unsupported or noncanonical."
+        }
         $seenOwners = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
         $enforceableOwners = 0
         foreach ($owner in @($Manifest.owners)) {
@@ -1121,16 +1125,16 @@ function Test-GovernanceContractSemantics {
                 $validIdentifier = Test-StructuredOwnerIdentifier -Type $ownerType -Identifier $identifier
                 if (-not $validIdentifier) { Add-Finding 'GCS003' "Owner '$identifier' is malformed for owner type '$ownerType'." }
             }
-            if ($validIdentifier -and $ownerType -eq 'github-user') { $enforceableOwners++ }
-            if ($validIdentifier -and $ownerType -eq 'github-team') {
+            if ($validIdentifier -and $ownerType -ceq 'github-user') { $enforceableOwners++ }
+            if ($validIdentifier -and $ownerType -ceq 'github-team') {
                 $enforceableOwners++
-                if ($Manifest.repositoryOwnerType -ne 'Organization' -or $RepositoryOwnerType -eq 'User') { Add-Finding 'GCS003' 'GitHub team ownership is invalid for a user-owned repository.' }
+                if ($manifestRepositoryOwnerType -cne 'Organization' -or $RepositoryOwnerType -ceq 'User') { Add-Finding 'GCS003' 'GitHub team ownership is invalid for a user-owned repository.' }
             }
             if ([string]::IsNullOrWhiteSpace([string]$owner.responsibility) -or ([string]$owner.responsibility).Length -lt 20) { Add-Finding 'GCS003' "Owner '$identifier' lacks substantive responsibility." }
             if ([string]::IsNullOrWhiteSpace([string]$owner.escalation)) { Add-Finding 'GCS003' "Owner '$identifier' lacks escalation." }
         }
         if ($enforceableOwners -lt 1) { Add-Finding 'GCS003' 'At least one GitHub user or team owner is required.' }
-        if ($RepositoryOwnerType -ne 'Unknown' -and $Manifest.repositoryOwnerType -ne $RepositoryOwnerType) { Add-Finding 'GCS003' 'Manifest repository owner type disagrees with trusted owner type.' }
+        if ($RepositoryOwnerType -cne 'Unknown' -and $manifestRepositoryOwnerType -cne $RepositoryOwnerType) { Add-Finding 'GCS003' 'Manifest repository owner type disagrees with trusted owner type.' }
     }
 
     $manifestStandards = @()
@@ -1281,33 +1285,37 @@ function Test-GovernanceContractSemantics {
         powershell='agents/AGENTS_PowerShell.md'; dotnet='agents/AGENTS_DotNet.md'; web='agents/AGENTS_WebFrontend.md'; database='agents/AGENTS_Database.md';
         'worker-service'='agents/AGENTS_WorkerService.md'; integration='agents/AGENTS_Integration.md'; infrastructure='agents/AGENTS_Infrastructure.md'
     }
-    if ($Manifest.schemaVersion -ne '1.2.0') {
+    if ($Manifest.schemaVersion -cne '1.2.0') {
         $manifestStandards = @($Manifest.applicableStandards)
         $configStandards = @($Config.applicableAgentStandards)
     }
-    if ($manifestStandards -notcontains 'agents/AGENTS_Base.md') { Add-Finding 'GCS005' 'The base agent standard is required.' }
-    foreach ($technology in @($Manifest.technologies)) {
-        if ($technologyStandards.ContainsKey([string]$technology) -and $manifestStandards -notcontains $technologyStandards[[string]$technology]) { Add-Finding 'GCS005' "Technology '$technology' requires '$($technologyStandards[[string]$technology])'." }
+    if ($Manifest.schemaVersion -ceq '1.2.0' -and @('powershell','dotnet','web','database','worker-service','integration','infrastructure','governance','mixed') -cnotcontains [string]$Manifest.projectType) {
+        Add-Finding 'GCS005' "Project type '$($Manifest.projectType)' is unsupported or noncanonical."
     }
-    if ($Manifest.projectType -eq 'governance') {
+    if ($manifestStandards -cnotcontains 'agents/AGENTS_Base.md') { Add-Finding 'GCS005' 'The base agent standard is required.' }
+    foreach ($technology in @($Manifest.technologies)) {
+        if ($technologyStandards.ContainsKey([string]$technology) -and $manifestStandards -cnotcontains $technologyStandards[[string]$technology]) { Add-Finding 'GCS005' "Technology '$technology' requires '$($technologyStandards[[string]$technology])'." }
+    }
+    if ($Manifest.projectType -ceq 'governance') {
         foreach ($requiredStandard in @('agents/AGENTS_PowerShell.md','agents/AGENTS_Integration.md','agents/AGENTS_Infrastructure.md')) {
-            if ($manifestStandards -notcontains $requiredStandard) { Add-Finding 'GCS005' "Governance and GitHub Actions repositories require '$requiredStandard'." }
+            if ($manifestStandards -cnotcontains $requiredStandard) { Add-Finding 'GCS005' "Governance and GitHub Actions repositories require '$requiredStandard'." }
         }
     }
     if (@(Compare-Object $manifestStandards $configStandards).Count -gt 0) { Add-Finding 'GCS006' 'Manifest and governance configuration applicable standards disagree.' }
     $agentsPath = Join-Path $Root 'AGENTS.md'
     if (Test-Path -LiteralPath $agentsPath -PathType Leaf) {
         $agentsText = Get-Content -Raw -LiteralPath $agentsPath
-        foreach ($standard in $manifestStandards) { if ($agentsText -notmatch [regex]::Escape($standard)) { Add-Finding 'GCS006' "Root AGENTS.md does not declare '$standard'." $agentsPath } }
+        foreach ($standard in $manifestStandards) { if ($agentsText -cnotmatch [regex]::Escape($standard)) { Add-Finding 'GCS006' "Root AGENTS.md does not declare '$standard'." $agentsPath } }
     }
 
-    if ($Manifest.Contains('workflowInterfaceVersion') -and $Config.Contains('workflowInterfaceVersion') -and $Manifest.workflowInterfaceVersion -ne $Config.workflowInterfaceVersion) { Add-Finding 'GCS007' 'Manifest and configuration workflow interface versions disagree.' }
-    if ($ExpectedWorkflowInterfaceVersion -and $Manifest.schemaVersion -eq '1.2.0' -and $Manifest.workflowInterfaceVersion -ne $ExpectedWorkflowInterfaceVersion) { Add-Finding 'GCS007' 'Workflow interface version does not match trusted context.' }
+    if ($Manifest.Contains('workflowInterfaceVersion') -and $Config.Contains('workflowInterfaceVersion') -and $Manifest.workflowInterfaceVersion -cne $Config.workflowInterfaceVersion) { Add-Finding 'GCS007' 'Manifest and configuration workflow interface versions disagree.' }
+    if ($ExpectedWorkflowInterfaceVersion -and $Manifest.schemaVersion -ceq '1.2.0' -and $Manifest.workflowInterfaceVersion -cne $ExpectedWorkflowInterfaceVersion) { Add-Finding 'GCS007' 'Workflow interface version does not match trusted context.' }
     $workflowProfile = if ($Config.Contains('workflowProfile')) { [string]$Config.workflowProfile } else { $null }
-    if ($ExpectedWorkflowProfile -and $Config.schemaVersion -eq '1.2.0' -and $workflowProfile -ne $ExpectedWorkflowProfile) { Add-Finding 'GCS007' 'Workflow profile does not match trusted context.' }
-    if ($Config.schemaVersion -eq '1.2.0') {
+    if ($Config.schemaVersion -ceq '1.2.0' -and @('downstream', 'standards-maintainer') -cnotcontains $workflowProfile) { Add-Finding 'GCS007' "Workflow profile '$workflowProfile' is unsupported or noncanonical." }
+    if ($ExpectedWorkflowProfile -and $Config.schemaVersion -ceq '1.2.0' -and $workflowProfile -cne $ExpectedWorkflowProfile) { Add-Finding 'GCS007' 'Workflow profile does not match trusted context.' }
+    if ($Config.schemaVersion -ceq '1.2.0') {
         $interface = $Config.workflowInterface
-        if ($interface.path -ne '.github/workflows/governance-ci-reusable.yml' -or $interface.jobId -ne 'governance' -or $interface.jobName -ne 'Governance validation' -or $interface.artifactNamePattern -ne 'governance-evidence-${run_id}') { Add-Finding 'GCS007' 'Workflow interface declaration conflicts with the supported interface.' }
+        if ($interface.path -cne '.github/workflows/governance-ci-reusable.yml' -or $interface.jobId -cne 'governance' -or $interface.jobName -cne 'Governance validation' -or $interface.artifactNamePattern -cne 'governance-evidence-${run_id}') { Add-Finding 'GCS007' 'Workflow interface declaration conflicts with the supported interface.' }
         $requiredInputs = @('project-path', 'governance-version', 'artifact-retention-days', 'controlled-failure-test')
         $requiredOutputs = @('evidence-path', 'artifact-name')
         if (-not (Test-ExactStringSet -Actual @($interface.inputs) -Expected $requiredInputs)) { Add-Finding 'GCS007' 'Workflow interface inputs do not exactly match the supported interface.' }
@@ -1318,11 +1326,11 @@ function Test-GovernanceContractSemantics {
     $maintainerOnlyCategories = @('JsonSchemas','YamlSyntax','WorkflowArchitecture','RepositoryHealth','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')
     $declaredCategories = @($Config.validationCategories)
     foreach ($category in $declaredCategories) { if ($category -cnotin $supportedCategories) { Add-Finding 'GCS008' "Unsupported validation category '$category'." } }
-    if ($workflowProfile -eq 'standards-maintainer') {
+    if ($workflowProfile -ceq 'standards-maintainer') {
         foreach ($category in $supportedCategories) { if ($declaredCategories -cnotcontains $category) { Add-Finding 'GCS008' "Maintainer profile omits executed category '$category'." } }
     }
-    elseif ($workflowProfile -eq 'downstream') {
-        if ($Config.schemaVersion -eq '1.2.0') {
+    elseif ($workflowProfile -ceq 'downstream') {
+        if ($Config.schemaVersion -ceq '1.2.0') {
             if ($declaredCategories.Count -eq 0) {
                 Add-Finding 'GCS008' "Downstream profile validationCategories declaration must be nonempty and include mandatory category 'Contract'."
             }
@@ -1335,8 +1343,8 @@ function Test-GovernanceContractSemantics {
         }
     }
 
-    if ($Manifest.schemaVersion -eq '1.2.0') {
-        if ($Manifest.evidence.hosted.workspace -ne 'evidence' -or $Manifest.evidence.hosted.completion -ne 'completion-result.json' -or $Manifest.evidence.hosted.tests -ne 'ci-test-results.json' -or $Manifest.evidence.hosted.artifactNamePattern -ne 'governance-evidence-${run_id}') { Add-Finding 'GCS009' 'Hosted evidence declaration conflicts with reusable workflow outputs.' }
+    if ($Manifest.schemaVersion -ceq '1.2.0') {
+        if ($Manifest.evidence.hosted.workspace -cne 'evidence' -or $Manifest.evidence.hosted.completion -cne 'completion-result.json' -or $Manifest.evidence.hosted.tests -cne 'ci-test-results.json' -or $Manifest.evidence.hosted.artifactNamePattern -cne 'governance-evidence-${run_id}') { Add-Finding 'GCS009' 'Hosted evidence declaration conflicts with reusable workflow outputs.' }
         foreach ($localPath in @($Manifest.evidence.local.completion, $Manifest.evidence.local.tests)) { try { Resolve-SafePath -Root $Root -ChildPath $localPath -AllowMissingLeaf | Out-Null } catch { Add-Finding 'GCS009' $_.Exception.Message } }
     }
 
@@ -1359,7 +1367,7 @@ function Test-GovernanceContractSemantics {
         $identifier = if ($exception.Contains('identifier')) { [string]$exception.identifier } else { '<missing>' }
         $malformed = $missingFields.Count -gt 0
         if ($missingFields.Count -gt 0) { Add-Finding 'GCS010' "Exception '$identifier' is missing required fields: $($missingFields -join ', ')." }
-        if ($identifier -notmatch '^GOV-[A-Z0-9-]+$') { Add-Finding 'GCS010' "Exception identifier '$identifier' is malformed."; $malformed = $true }
+        if ($identifier -cnotmatch '^GOV-[A-Z0-9-]+$') { Add-Finding 'GCS010' "Exception identifier '$identifier' is malformed."; $malformed = $true }
         if ($identifier -ne '<missing>') {
             if ($exceptionById.ContainsKey($identifier)) { Add-Finding 'GCS010' "Duplicate exception identifier '$identifier'."; continue }
             $exceptionById[$identifier] = $exception
@@ -1384,12 +1392,13 @@ function Test-GovernanceContractSemantics {
         $expirationValid = $exception.Contains('expiration') -and [datetime]::TryParseExact([string]$exception.expiration, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture, $dateStyles, [ref]$expiration)
         $validationDate = $ValidationDateUtc.ToUniversalTime().Date
         $status = if ($exception.Contains('status')) { [string]$exception.status } else { $null }
-        $active = -not $malformed -and $status -eq 'Approved' -and $approvalDateValid -and $expirationValid -and $approvalDate.Date -le $validationDate -and $expiration.Date -ge $validationDate -and $expiration.Date -ge $approvalDate.Date
+        if (@('Approved', 'Rejected', 'Revoked', 'Expired') -cnotcontains $status) { Add-Finding 'GCS010' "Exception '$identifier' status '$status' is unsupported or noncanonical."; $malformed = $true }
+        $active = -not $malformed -and $status -ceq 'Approved' -and $approvalDateValid -and $expirationValid -and $approvalDate.Date -le $validationDate -and $expiration.Date -ge $validationDate -and $expiration.Date -ge $approvalDate.Date
         if (-not $active) { Add-Finding 'GCS010' "Exception '$identifier' is not an active, approved, and unexpired record." }
         elseif ($identifier -ne '<missing>') { [void]$activeExceptionIds.Add($identifier) }
     }
     foreach ($disabled in @($Config.controls.mandatoryControlsDisabled)) {
-        if (-not $exceptionById.ContainsKey($disabled.exceptionReference) -or -not $activeExceptionIds.Contains([string]$disabled.exceptionReference) -or $exceptionById[$disabled.exceptionReference].affectedControl -ne $disabled.control) { Add-Finding 'GCS011' "Disabled control '$($disabled.control)' lacks an applicable active exception." }
+        if (-not $exceptionById.ContainsKey($disabled.exceptionReference) -or -not $activeExceptionIds.Contains([string]$disabled.exceptionReference) -or $exceptionById[$disabled.exceptionReference].affectedControl -cne $disabled.control) { Add-Finding 'GCS011' "Disabled control '$($disabled.control)' lacks an applicable active exception." }
     }
 
     if ($Config.schemaVersion -eq '1.2.0') {
@@ -1418,7 +1427,7 @@ function Test-GovernanceContractSemantics {
         if ($ExpectedRequiredCheckName -and $requiredCheckNames -cnotcontains $ExpectedRequiredCheckName) { Add-Finding 'GCS012' "Required check '$ExpectedRequiredCheckName' is absent from the workflow contract." }
         if ($requiredCheckArraysValid -and -not (Test-ExactStringSet -Actual $requiredCheckNames -Expected ([string[]]$interfaceRequiredCheckNames))) { Add-Finding 'GCS012' 'Branch-protection and workflow-interface required check names must agree exactly as a case-sensitive set using ordinal comparison.' }
 
-        if ($workflowProfile -eq 'standards-maintainer' -and $Config.workflowInterfaceVersion -eq '1.0.0') {
+        if ($workflowProfile -ceq 'standards-maintainer' -and $Config.workflowInterfaceVersion -ceq '1.0.0') {
             foreach ($canonicalCheckName in @(Get-CanonicalMaintainerRequiredCheckNames)) {
                 if ($requiredCheckNames -cnotcontains $canonicalCheckName) { Add-Finding 'GCS012' "Maintainer branch-protection checks omit canonical check '$canonicalCheckName'." }
                 if ($interfaceRequiredCheckNames -cnotcontains $canonicalCheckName) { Add-Finding 'GCS012' "Maintainer workflow-interface checks omit canonical check '$canonicalCheckName'." }
@@ -1426,10 +1435,10 @@ function Test-GovernanceContractSemantics {
         }
     }
 
-    if ($Manifest.projectType -eq 'governance') {
+    if ($Manifest.projectType -ceq 'governance') {
         foreach ($schemaFile in @(Get-ChildItem -LiteralPath (Join-Path $Root 'schemas') -Filter '*.schema.json' -File -ErrorAction SilentlyContinue)) {
             $schema = Read-JsonFile -Path $schemaFile.FullName
-            if (-not $schema.Contains('$id') -or $schema['$id'] -notmatch '^urn:aiallthethingz:engineering-standards:schema:[a-z0-9-]+$') { Add-Finding 'GCS013' "Schema '$($schemaFile.Name)' does not use the controlled namespace." $schemaFile.FullName }
+            if (-not $schema.Contains('$id') -or $schema['$id'] -cnotmatch '^urn:aiallthethingz:engineering-standards:schema:[a-z0-9-]+$') { Add-Finding 'GCS013' "Schema '$($schemaFile.Name)' does not use the controlled namespace." $schemaFile.FullName }
         }
     }
 
