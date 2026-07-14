@@ -52,6 +52,43 @@ Describe 'Governance contract semantic validation' {
         }
     }
 
+    It 'rejects named semantic compatibility fixtures' {
+        $fixtureRoot = Join-Path $script:root 'tests/fixtures/contract-semantics/invalid'
+        foreach ($fixturePath in Get-ChildItem -LiteralPath $fixtureRoot -Filter '*.json' | Sort-Object Name) {
+            $fixture = Read-JsonFile -Path $fixturePath.FullName
+            $manifest = Copy-ContractObject $script:manifest
+            $config = Copy-ContractObject $script:config
+            switch ($fixture.mutation) {
+                'mismatched-standards' {
+                    $config.applicableAgentStandards = @('agents/AGENTS_Base.md')
+                }
+                'expired-exception' {
+                    $config.exceptions = @(@{
+                        identifier = 'GOV-2026-EXPIRED'
+                        status = 'Approved'
+                        scope = 'Synthetic expired exception fixture'
+                        owner = '@owner'
+                        approver = '@approver'
+                        approvalDate = '2026-01-01'
+                        expiration = '2026-07-01'
+                        affectedControl = 'SyntheticControl'
+                        compensatingControls = @('Synthetic compensating validation')
+                        remediationPlan = 'Remove the synthetic exception after remediation.'
+                        evidenceReference = 'evidence/exception.json'
+                    })
+                }
+                'hosted-evidence-path-mismatch' {
+                    $manifest.evidence.hosted.artifactNamePattern = 'wrong-${run_id}'
+                }
+                default {
+                    throw "Unknown semantic fixture mutation '$($fixture.mutation)' in $($fixturePath.Name)."
+                }
+            }
+            $results = Invoke-Semantics $manifest $config
+            ($results.message -join "`n") | Should -Match $fixture.expectedFinding -Because $fixture.name
+        }
+    }
+
     It 'accepts legacy 1.0.0 and 1.1.0 manifests' {
         foreach ($fixture in @('tests/fixtures/valid/project-manifest.json','tests/fixtures/compatibility/project-manifest-1.1.0.json')) {
             $results = Test-GovernanceJsonDocument -Path (Join-Path $script:root $fixture) -Kind project-manifest

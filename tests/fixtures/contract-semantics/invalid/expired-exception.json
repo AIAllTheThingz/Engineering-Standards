@@ -1,0 +1,5 @@
+{
+  "name": "Expired approved exception",
+  "expectedFinding": "GCS010",
+  "mutation": "expired-exception"
+}
