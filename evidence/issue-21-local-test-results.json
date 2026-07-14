@@ -9,18 +9,17 @@
     "command": "Issue #21 required local validation commands excluding the aggregate Pester suite and hosted checks",
     "workingDirectory": ".",
     "startedAtUtc": "2026-07-14T02:00:00Z",
-    "completedAtUtc": "2026-07-14T04:15:40.3019760Z",
-    "durationSeconds": 8140.302,
+    "completedAtUtc": "2026-07-14T02:22:51.7648406Z",
+    "durationSeconds": 1371.765,
     "runtime": "Local Windows / pwsh",
     "toolVersion": "PowerShell 7.6.3; Pester 5.8.0; PSScriptAnalyzer 1.25.0",
     "environment": "Local Windows",
     "exitCode": 0,
-    "summary": "Schema, semantic contract, full and focused Pester, agent standards, YAML, workflow architecture, deterministic Codex skill, Markdown, documentation, repository health, forbidden-pattern, ScriptAnalyzer, examples, and parser validation completed successfully.",
+    "summary": "Schema, semantic contract, focused Pester, agent standards, YAML, workflow architecture, deterministic Codex skill, Markdown, documentation, repository health, forbidden-pattern, ScriptAnalyzer, examples, and parser validation completed successfully.",
     "warnings": [
       "Forbidden-pattern scanning reported documented warning-only examples.",
       "Codex model-behavior evaluation contained eight NotRun expectations and is recorded separately.",
-      "The aggregate runner's evidence gate remains unavailable until GitHub-hosted workflow evidence exists.",
-      "Example validation passed after verified generated .NET and web build output was cleaned between runs."
+      "Example validation required removal of stale excluded .NET build output before its successful rerun."
     ],
     "failureReason": null,
     "blockedReason": null,
@@ -34,13 +33,13 @@
     },
     "details": {
       "startingMasterSha": "733e7b072009e013ed98308b22f17e9e99cdf49c",
-        "frozenImplementationSha": "ca1a02497766c442715b1a32661faeb3b8776bd4",
-        "workflowPinSha": "ca1a02497766c442715b1a32661faeb3b8776bd4",
-        "validatedHeadSha": "e171336ea204f6288ad88c92fffdc7517176e385",
+      "frozenImplementationSha": "94e975ec30440eada07250cd46d2252cec10d227",
+      "workflowPinSha": "94e975ec30440eada07250cd46d2252cec10d227",
+      "validatedHeadSha": "315e1492eb1046da74d68d04b35330849ad97791",
       "supportedSchemaVersions": ["1.0.0", "1.1.0", "1.2.0"],
       "newSchemaVersion": "1.2.0",
       "focusedPester": {
-          "passed": 38,
+        "passed": 24,
         "failed": 0,
         "skipped": 0,
         "notRun": 0
@@ -56,7 +55,7 @@
       "workflowArchitecture": "Passed",
       "contract": "Passed",
       "examples": "Passed",
-        "correctionBatchesUsed": 2,
+      "correctionBatchesUsed": 1,
       "exceptions": []
     }
   },
@@ -64,23 +63,21 @@
     "schemaVersion": "1.1.0",
     "name": "Full repository Pester suite",
     "category": "unit",
-    "status": "Passed",
+    "status": "NotRun",
     "requiredValidation": true,
     "evidenceSource": "Automated",
-    "command": "pwsh -NoProfile -File scripts/Invoke-PesterSuite.ps1 -EvidenceRoot .tmp/issue-21/pester-final",
+    "command": "pwsh -NoProfile -File scripts/Invoke-PesterSuite.ps1 -EvidenceRoot .tmp/issue-21/pester",
     "workingDirectory": ".",
-    "startedAtUtc": "2026-07-14T03:44:59.3230742Z",
-    "completedAtUtc": "2026-07-14T03:56:28.1010742Z",
-    "durationSeconds": 688.778,
+    "startedAtUtc": "2026-07-14T02:09:53Z",
+    "completedAtUtc": "2026-07-14T02:19:53Z",
+    "durationSeconds": 600,
     "runtime": "Local Windows / pwsh",
     "toolVersion": "Pester 5.8.0",
     "environment": "Local Windows",
-    "exitCode": 0,
-    "summary": "The full repository Pester suite completed successfully with 469 passed, 0 failed, 5 skipped, and 0 NotRun tests.",
-    "warnings": [
-      "Five symbolic-link tests were skipped because this Windows session lacks symbolic-link creation privileges."
-    ],
-    "failureReason": null,
+    "exitCode": null,
+    "summary": "The aggregate suite started but did not complete or write the required Pester summary, so no full-suite totals are claimed.",
+    "warnings": [],
+    "failureReason": "The Pester process remained active without producing a final result and was stopped after the bounded validation attempt.",
     "blockedReason": null,
     "notApplicableRationale": null,
     "manualProcedure": null,
@@ -91,14 +88,12 @@
       "applied": false
     },
     "details": {
-      "discoveryObserved": 474,
-      "passed": 469,
-      "failed": 0,
-      "skipped": 5,
-      "notRun": 0,
-      "outputProduced": true,
-      "aggregateRerunPassed": true,
-      "aggregateRerunDurationSeconds": 694.871
+      "discoveryObserved": 472,
+      "passed": null,
+      "failed": null,
+      "skipped": null,
+      "notRun": null,
+      "outputProduced": false
     }
   },
   {
