@@ -41,6 +41,8 @@ Official Codex documentation:
 - <https://developers.openai.com/codex/concepts/customization>
 - <https://developers.openai.com/codex/use-cases/reusable-codex-skills>
 
+Repository validation is defined in [Codex Skill Validation](CODEX_SKILL_VALIDATION.md). It deliberately applies stricter governed-tree rules than general Codex discovery and separates deterministic structure from model behavior evaluation.
+
 ## Current Skill
 
 The first active skill is [`enterprise-powershell`](../.agents/skills/enterprise-powershell/SKILL.md).
@@ -153,6 +155,14 @@ Review:
 - Final output quality against representative prompts.
 
 Validation results must distinguish `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable`.
+
+Run deterministic validation with:
+
+```powershell
+pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/codex-skills-validation.json
+```
+
+A passing structural report does not prove implicit selection, over-trigger avoidance, or safe response quality. Those expectations remain `NotRun` unless an approved controlled evaluator actually ran.
 
 ### 4. Review
 

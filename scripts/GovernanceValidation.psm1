@@ -381,6 +381,12 @@ function Test-GovernanceJsonDocument {
         foreach ($item in @(Test-UniqueValues -Items @($json.requiredDocumentationPaths) -Name 'requiredDocumentationPaths' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.applicableAgentStandards) -Name 'applicableAgentStandards' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.validationCategories) -Name 'validationCategories' -Path $Path)) { $results.Add($item) }
+        $supportedValidationCategories = @('Contract','JsonSchemas','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','WorkflowArchitecture')
+        foreach ($category in @($json.validationCategories)) {
+            if ($category -notin $supportedValidationCategories) {
+                $results.Add((New-ValidationResult -Status Failed -Message "validationCategories contains unsupported value '$category'." -Path $Path))
+            }
+        }
         foreach ($docPath in @($json.requiredDocumentationPaths)) {
             foreach ($item in @(Test-RelativeRepositoryPath -Value $docPath -Name 'requiredDocumentationPaths item' -Path $Path -RequiredExtension '.md')) { $results.Add($item) }
         }

@@ -62,6 +62,7 @@ flowchart TD
 
 - `governance/`: organization contract, evidence, risk, exceptions, and AI-generated-code policy.
 - `agents/`: base and technology-specific AI-agent standards.
+- `.agents/skills/`: governed repository-scoped Codex skills treated as code-adjacent supply-chain inputs.
 - `schemas/`: strongly typed JSON Schema contracts.
 - `actions/`: composite GitHub Actions implemented with PowerShell 7.
 - `.github/workflows/`: executable repository workflows and reusable workflows.
@@ -84,6 +85,7 @@ flowchart TD
 - [Downstream Configuration](docs/DOWNSTREAM_CONFIGURATION.md)
 - [Downstream Governance Canary](docs/DOWNSTREAM_CANARY.md)
 - [Action Security](docs/ACTION_SECURITY.md)
+- [Codex Skill Validation](docs/CODEX_SKILL_VALIDATION.md)
 - [Maintainer Guide](docs/MAINTAINER_GUIDE.md)
 - [Versioning](docs/VERSIONING.md)
 - [Release Process](docs/RELEASE_PROCESS.md)
@@ -179,6 +181,7 @@ pwsh -NoProfile -File scripts/Test-MarkdownLinks.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path .
+pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/codex-skills-validation.json
 pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path .
 Invoke-Pester -Path tests -Output Detailed
 ```

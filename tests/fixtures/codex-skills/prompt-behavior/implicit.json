@@ -1,0 +1,1 @@
+{"caseId":"ep-implicit","skillName":"enterprise-powershell","category":"implicit-invocation","prompt":"Build a production-grade PowerShell module with configuration, tests, and evidence.","expectedSelection":"Selected","expectedSafetyOutcome":"Proceed","deterministicAssertions":["known-skill"],"modelEvaluationRequired":true,"rationale":"Represents intended implicit selection."}

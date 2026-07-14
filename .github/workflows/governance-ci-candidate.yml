@@ -111,6 +111,7 @@ jobs:
             Invoke-CandidateScript 'actions/validate-contract/Invoke-ContractValidation.ps1' @('-Path',$root,'-OutputJson',(Join-Path $reportRoot 'contract.json'))
             Invoke-CandidateScript 'actions/repository-health/Invoke-RepositoryHealth.ps1' @('-Path',$root,'-RepositoryOwnerType','User','-OutputJson',(Join-Path $reportRoot 'repository-health.json'))
             Invoke-CandidateScript 'actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1' @('-Path',$root,'-OutputJson',(Join-Path $reportRoot 'forbidden-patterns.json'))
+            Invoke-CandidateScript 'scripts/Test-CodexSkills.ps1' @('-Path',$root,'-OutputJson',(Join-Path $reportRoot 'codex-skills.json'))
             Invoke-CandidateScript 'scripts/Invoke-PesterSuite.ps1' @('-EvidenceRoot',(Join-Path $reportRoot 'pester'))
 
             $analyzerFindings = @(Invoke-ScriptAnalyzer -Path $root -Recurse -Severity Error)
