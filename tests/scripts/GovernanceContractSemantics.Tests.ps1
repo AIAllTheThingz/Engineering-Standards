@@ -708,6 +708,26 @@ Describe 'Governance contract semantic validation' {
             -ExpectedWorkflowProfile 'downstream' `
             -ValidationDateUtc ([datetime]'2026-07-14T00:00:00Z'))
 
-        @($results | Where-Object id -In @('GCS002', 'GCS007')) | Should -HaveCount 0
+        ($results.message -join "`n") |
+            Should -Not -Match '(?m)^GCS(?:002|007)\s'
+    }
+
+    It 'detects an anchored legacy finding identifier in validation messages' {
+        $manifest = Read-JsonFile -Path (Join-Path $script:root 'tests/fixtures/valid/project-manifest.json')
+        $config = Read-JsonFile -Path (Join-Path $script:root 'tests/fixtures/valid/governance-config.json')
+        $manifest.governanceCommitSha = ('a' * 40)
+        $config.governanceCommitSha = ('b' * 40)
+        $results = @(Test-GovernanceContractSemantics `
+            -Root $script:root `
+            -Manifest $manifest `
+            -Config $config `
+            -ExpectedRepository 'example-org/fixture' `
+            -ExpectedGovernanceCommitSha ('a' * 40) `
+            -ExpectedWorkflowInterfaceVersion '1.0.0' `
+            -ExpectedWorkflowProfile 'downstream' `
+            -ValidationDateUtc ([datetime]'2026-07-14T00:00:00Z'))
+
+        ($results.message -join "`n") |
+            Should -Match '(?m)^GCS(?:002|007)\s'
     }
 }
