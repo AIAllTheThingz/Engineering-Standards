@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   governance:
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@d276f73886d0c83f099911aeb09cf924673bd8aa
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@f378c4b64d3d79d96cd2874d543696dd52e6283d
     with:
       project-path: .
       governance-version: 1.1.0
