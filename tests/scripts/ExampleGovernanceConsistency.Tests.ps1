@@ -21,8 +21,10 @@ BeforeAll {
         $content = Get-Content -LiteralPath $Path -Raw
         $usesPattern = '(?m)^\s*uses:\s*AIAllTheThingz/Engineering-Standards/\.github/workflows/governance-ci-reusable\.yml@(?<sha>[0-9a-f]{40})\s*$'
         $versionPattern = '(?m)^\s*governance-version:\s*(?<version>[0-9]+\.[0-9]+\.[0-9]+)\s*$'
+        $callerJobNamePattern = '(?m)^\s{4}name:\s*(?<name>Governance)\s*$'
         $usesMatches = [regex]::Matches($content, $usesPattern)
         $versionMatches = [regex]::Matches($content, $versionPattern)
+        $callerJobNameMatches = [regex]::Matches($content, $callerJobNamePattern)
 
         if ($usesMatches.Count -ne 1) {
             throw "Example workflow '$Path' must contain exactly one immutable reusable-workflow reference using a full lowercase 40-character SHA."
@@ -30,10 +32,14 @@ BeforeAll {
         if ($versionMatches.Count -ne 1) {
             throw "Example workflow '$Path' must contain exactly one semantic governance-version input."
         }
+        if ($callerJobNameMatches.Count -ne 1) {
+            throw "Example workflow '$Path' must set the governance caller job display name to canonical value 'Governance'."
+        }
 
         [pscustomobject]@{
             Sha = $usesMatches[0].Groups['sha'].Value
             GovernanceVersion = $versionMatches[0].Groups['version'].Value
+            CallerJobName = $callerJobNameMatches[0].Groups['name'].Value
         }
     }
 
@@ -103,6 +109,10 @@ BeforeAll {
         }
         if ($Workflow.Sha -ne $ExpectedSha) {
             $findings.Add("Workflow reusable reference SHA '$($Workflow.Sha)' does not match expected implementation SHA '$ExpectedSha'.")
+        }
+        $expectedCheckName = "$($Workflow.CallerJobName) / $($Config.workflowInterface.jobName)"
+        if ($Config.requiredCheckNames -cnotcontains $expectedCheckName -or $Config.workflowInterface.requiredCheckNames -cnotcontains $expectedCheckName) {
+            $findings.Add("Workflow caller/called job names compose check '$expectedCheckName', which is absent from the config required check names.")
         }
 
         @($findings)
@@ -186,10 +196,13 @@ Describe 'Example governance version and trusted implementation consistency' {
         $config = @{
             governanceVersion = $ConfigVersion
             governanceCommitSha = $ConfigSha
+            workflowInterface = @{ jobName='Governance validation'; requiredCheckNames=@('Governance / Governance validation') }
+            requiredCheckNames = @('Governance / Governance validation')
         }
         $workflow = [pscustomobject]@{
             GovernanceVersion = $WorkflowVersion
             Sha = $WorkflowSha
+            CallerJobName = 'Governance'
         }
 
         $findings = @(
@@ -203,6 +216,7 @@ Describe 'Example governance version and trusted implementation consistency' {
         @'
 jobs:
   governance:
+    name: Governance
     uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<pinned-commit-sha>
     with:
       governance-version: 1.1.0
@@ -210,6 +224,21 @@ jobs:
 
         { Get-WorkflowGovernanceBinding -Path $workflowPath } |
             Should -Throw '*must contain exactly one immutable reusable-workflow reference*'
+    }
+
+    It 'rejects a noncanonical caller job display name' {
+        $workflowPath = Join-Path $TestDrive 'caller-name.yml'
+        @'
+jobs:
+  governance:
+    name: governance
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@917ea1bc17214b25d9d56b816b4388d6bee1e87a
+    with:
+      governance-version: 1.1.0
+'@ | Set-Content -LiteralPath $workflowPath -Encoding utf8
+
+        { Get-WorkflowGovernanceBinding -Path $workflowPath } |
+            Should -Throw "*caller job display name*'Governance'*"
     }
 
     It 'fails closed when an example workflow is missing' {
