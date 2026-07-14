@@ -1384,14 +1384,15 @@ function Test-GovernanceContractSemantics {
     [object]$validationCategoriesValue = $null
     if ($Config.Contains('validationCategories')) { $validationCategoriesValue = $Config['validationCategories'] }
     $validationCategoriesIsArray = $validationCategoriesValue -is [System.Collections.IList] -and $validationCategoriesValue -isnot [string]
+    [object[]]$declaredCategories = @()
     if ($Config.schemaVersion -ceq '1.2.0') {
-        $declaredCategories = if ($validationCategoriesIsArray) { @($validationCategoriesValue) } else { @() }
+        if ($validationCategoriesIsArray) { $declaredCategories = [object[]]$validationCategoriesValue }
         if (-not $validationCategoriesIsArray -or $declaredCategories.Count -eq 0) {
             Add-Finding 'GCS008' 'validationCategories must be declared as a nonempty array.'
         }
     }
     else {
-        $declaredCategories = @($validationCategoriesValue)
+        $declaredCategories = [object[]]@($validationCategoriesValue)
     }
     foreach ($category in $declaredCategories) { if ($category -cnotin $supportedCategories) { Add-Finding 'GCS008' "Unsupported validation category '$category'." } }
     if ($workflowProfile -ceq 'standards-maintainer') {
