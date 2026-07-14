@@ -241,6 +241,176 @@ Describe 'Governance contract semantic validation' {
         ($results.message -join "`n") | Should -Match "GCS004.*$Pattern" -Because $Name
     }
 
+    It 'enforces the central-reference standards-consumption field contract without schema validation' -ForEach @(
+        @{ Name='missing source repository'; Mutate={ param($s) $s.Remove('sourceRepository') }; Pattern='sourceRepository.*required' },
+        @{ Name='blank source repository'; Mutate={ param($s) $s.sourceRepository=' ' }; Pattern='sourceRepository.*owner/repository' },
+        @{ Name='malformed source repository'; Mutate={ param($s) $s.sourceRepository='owner/repository/extra' }; Pattern='sourceRepository.*owner/repository' },
+        @{ Name='missing source commit'; Mutate={ param($s) $s.Remove('sourceCommitSha') }; Pattern='sourceCommitSha.*40 hexadecimal' },
+        @{ Name='short source commit'; Mutate={ param($s) $s.sourceCommitSha='abc123' }; Pattern='sourceCommitSha.*40 hexadecimal' },
+        @{ Name='forbidden local path'; Mutate={ param($s) $s.localPath='agents' }; Pattern='central-reference.*localPath' },
+        @{ Name='unknown field'; Mutate={ param($s) $s.unexpected='value' }; Pattern='unsupported field.*unexpected' }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.standardsConsumption = @{
+            mode = 'central-reference'
+            sourceRepository = 'AIAllTheThingz/Engineering-Standards'
+            sourceCommitSha = 'a680052fb2a3cbbc9a8fa5dffa646153954d5e4f'
+        }
+        & $Mutate $manifest.standardsConsumption
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match "GCS004.*$Pattern" -Because $Name
+    }
+
+    It 'accepts a complete central-reference standards-consumption contract' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.standardsConsumption = @{
+            mode = 'central-reference'
+            sourceRepository = 'AIAllTheThingz/Engineering-Standards'
+            sourceCommitSha = 'a680052fb2a3cbbc9a8fa5dffa646153954d5e4f'
+        }
+        $results = Invoke-Semantics $manifest $config
+        @($results | Where-Object { $_.message -match 'GCS004' }) | Should -HaveCount 0
+    }
+
+    It 'accepts complete vendored source identity without binding it to trusted checkout identity' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.standardsConsumption = @{
+            mode = 'vendored'
+            sourceRepository = 'ExampleOrg/Vendored-Standards'
+            sourceCommitSha = ('b' * 40)
+            localPath = 'agents'
+        }
+        $results = Invoke-Semantics $manifest $config
+        @($results | Where-Object { $_.message -match 'GCS004' }) | Should -HaveCount 0
+    }
+
+    It 'enforces the vendored standards-consumption field and bounded-path contract without schema validation' -ForEach @(
+        @{ Name='missing repository'; Mutate={ param($s) $s.Remove('sourceRepository') }; Pattern='sourceRepository.*required' },
+        @{ Name='malformed repository'; Mutate={ param($s) $s.sourceRepository='/repository' }; Pattern='sourceRepository.*owner/repository' },
+        @{ Name='missing commit'; Mutate={ param($s) $s.Remove('sourceCommitSha') }; Pattern='sourceCommitSha.*40 hexadecimal' },
+        @{ Name='missing local path'; Mutate={ param($s) $s.Remove('localPath') }; Pattern='localPath.*required' },
+        @{ Name='rooted local path'; Mutate={ param($s) $s.localPath=(Resolve-Path $script:root).Path }; Pattern='repository-relative' },
+        @{ Name='traversal local path'; Mutate={ param($s) $s.localPath='../outside' }; Pattern='repository-relative' },
+        @{ Name='missing local source'; Mutate={ param($s) $s.localPath='does-not-exist' }; Pattern='does not exist' }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.standardsConsumption = @{
+            mode = 'vendored'
+            sourceRepository = 'ExampleOrg/Vendored-Standards'
+            sourceCommitSha = ('b' * 40)
+            localPath = 'agents'
+        }
+        & $Mutate $manifest.standardsConsumption
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match "GCS004.*$Pattern" -Because $Name
+    }
+
+    It 'enforces the local standards-consumption field and bounded-path contract without schema validation' -ForEach @(
+        @{ Name='missing local path'; Mutate={ param($s) $s.Remove('localPath') }; Pattern='localPath.*required' },
+        @{ Name='blank local path'; Mutate={ param($s) $s.localPath=' ' }; Pattern='localPath.*required' },
+        @{ Name='source repository forbidden'; Mutate={ param($s) $s.sourceRepository='ExampleOrg/Standards' }; Pattern='local.*sourceRepository' },
+        @{ Name='source commit forbidden'; Mutate={ param($s) $s.sourceCommitSha=('b' * 40) }; Pattern='local.*sourceCommitSha' },
+        @{ Name='traversal local path'; Mutate={ param($s) $s.localPath='agents/../../outside' }; Pattern='repository-relative' },
+        @{ Name='missing local source'; Mutate={ param($s) $s.localPath='does-not-exist' }; Pattern='does not exist' }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.standardsConsumption = @{ mode='local'; localPath='agents' }
+        & $Mutate $manifest.standardsConsumption
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match "GCS004.*$Pattern" -Because $Name
+    }
+
+    It 'rejects a missing or unknown standards-consumption mode without schema validation' -ForEach @(
+        @{ Name='missing'; Mutate={ param($s) $s.Remove('mode') } },
+        @{ Name='blank'; Mutate={ param($s) $s.mode=' ' } },
+        @{ Name='unknown'; Mutate={ param($s) $s.mode='remote' } }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        & $Mutate $manifest.standardsConsumption
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS004.*mode.*unsupported' -Because $Name
+    }
+
+    It 'rejects a missing standards-consumption object without schema validation' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.Remove('standardsConsumption')
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS004.*standardsConsumption.*object'
+    }
+
+    It 'rejects a local standards path that traverses a reparse point without schema validation' {
+        $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('governance-standards-reparse-' + [guid]::NewGuid())
+        $physicalPath = Join-Path $tempRoot 'physical-standards'
+        $linkPath = Join-Path $tempRoot 'linked-standards'
+        try {
+            New-Item -ItemType Directory -Path $physicalPath -Force | Out-Null
+            if ($IsWindows) {
+                New-Item -ItemType Junction -Path $linkPath -Target $physicalPath | Out-Null
+            }
+            else {
+                New-Item -ItemType SymbolicLink -Path $linkPath -Target $physicalPath | Out-Null
+            }
+            $manifest = Copy-ContractObject $script:manifest
+            $config = Copy-ContractObject $script:config
+            $manifest.standardsConsumption = @{ mode='local'; localPath='linked-standards' }
+            $results = Invoke-Semantics $manifest $config -Root $tempRoot
+            ($results.message -join "`n") | Should -Match 'GCS004.*symbolic link or junction'
+        }
+        finally {
+            if (Test-Path -LiteralPath $linkPath) { Remove-Item -LiteralPath $linkPath -Force }
+            if (Test-Path -LiteralPath $tempRoot) { Remove-Item -LiteralPath $tempRoot -Recurse -Force }
+        }
+    }
+
+    It 'rejects invalid downstream required-check arrays without schema validation' -ForEach @(
+        @{ Name='both empty'; Required=@(); Interface=@(); Pattern='nonempty array' },
+        @{ Name='branch-protection empty'; Required=@(); Interface=@('Valid check'); Pattern='Config.requiredCheckNames.*nonempty array' },
+        @{ Name='workflow-interface empty'; Required=@('Valid check'); Interface=@(); Pattern='Config.workflowInterface.requiredCheckNames.*nonempty array' },
+        @{ Name='null member'; Required=@($null, 'Valid check'); Interface=@($null, 'Valid check'); Pattern='non-null string' },
+        @{ Name='non-string member'; Required=@(42, 'Valid check'); Interface=@(42, 'Valid check'); Pattern='non-null string' },
+        @{ Name='whitespace member'; Required=@('   ', 'Valid check'); Interface=@('   ', 'Valid check'); Pattern='must not be blank' },
+        @{ Name='too short'; Required=@('ab'); Interface=@('ab'); Pattern='between 3 and 160' },
+        @{ Name='too long'; Required=@(('x' * 161)); Interface=@(('x' * 161)); Pattern='between 3 and 160' },
+        @{ Name='duplicate'; Required=@('Valid check', 'Valid check'); Interface=@('Valid check', 'Valid check'); Pattern='must be unique' },
+        @{ Name='case mismatch'; Required=@('Valid Check'); Interface=@('valid Check'); Pattern='case-sensitive set' },
+        @{ Name='value mismatch'; Required=@('Valid check'); Interface=@('Different check'); Pattern='case-sensitive set' }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.workflowProfile = 'downstream'
+        $config.validationCategories = @('Contract', 'MarkdownLinks', 'DocumentationCompleteness', 'ForbiddenPatterns', 'CodexSkills')
+        if ($null -eq $Required) { $config.requiredCheckNames = @() }
+        else { $config.requiredCheckNames = @($Required) }
+        if ($null -eq $Interface) { $config.workflowInterface.requiredCheckNames = @() }
+        else { $config.workflowInterface.requiredCheckNames = @($Interface) }
+        $results = Invoke-Semantics $manifest $config -Profile 'downstream' -Check ''
+        ($results.message -join "`n") | Should -Match "GCS012.*$Pattern" -Because $Name
+    }
+
+    It 'rejects missing or scalar downstream required-check arrays without schema validation' -ForEach @(
+        @{ Name='missing branch-protection array'; Mutate={ param($c) $c.Remove('requiredCheckNames') } },
+        @{ Name='missing interface array'; Mutate={ param($c) $c.workflowInterface.Remove('requiredCheckNames') } },
+        @{ Name='scalar branch-protection value'; Mutate={ param($c) $c.requiredCheckNames='Valid check' } },
+        @{ Name='scalar interface value'; Mutate={ param($c) $c.workflowInterface.requiredCheckNames='Valid check' } }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.workflowProfile = 'downstream'
+        $config.validationCategories = @('Contract', 'MarkdownLinks', 'DocumentationCompleteness', 'ForbiddenPatterns', 'CodexSkills')
+        $config.requiredCheckNames = @('Valid check')
+        $config.workflowInterface.requiredCheckNames = @('Valid check')
+        & $Mutate $config
+        $results = Invoke-Semantics $manifest $config -Profile 'downstream' -Check ''
+        ($results.message -join "`n") | Should -Match 'GCS012.*nonempty array' -Because $Name
+    }
+
     It 'evaluates active manifest exceptions when authorizing a disabled configuration control' {
         $manifest = Copy-ContractObject $script:manifest
         $config = Copy-ContractObject $script:config

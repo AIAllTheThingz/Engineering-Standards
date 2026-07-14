@@ -1,5 +1,15 @@
 Set-StrictMode -Version Latest
 
+$script:GovernanceSchemaVersionsByKind = [ordered]@{
+    'completion-result'     = @('1.0.0', '1.1.0')
+    'test-evidence'         = @('1.0.0', '1.1.0')
+    'artifact-record'       = @('1.0.0', '1.1.0')
+    'project-manifest'      = @('1.0.0', '1.1.0', '1.2.0')
+    'governance-config'     = @('1.0.0', '1.1.0', '1.2.0')
+    'verified-run'          = @('1.0.0')
+    'standards-consistency' = @('1.0.0')
+}
+
 function New-ValidationResult {
     <#
     .SYNOPSIS
@@ -118,6 +128,47 @@ function Test-ExactStringSet {
         if ([string]::IsNullOrWhiteSpace($requiredValue) -or -not $expectedValues.Add($requiredValue) -or -not $seen.Contains($requiredValue)) { return $false }
     }
     return $true
+}
+
+function Get-RequiredCheckNameContractIssues {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][System.Collections.IDictionary]$Wrapper,
+        [Parameter(Mandatory)][string]$Name
+    )
+
+    [object]$Value = $null
+    if ($Wrapper.Contains('Value') -and -not [object]::ReferenceEquals($null, $Wrapper['Value'])) {
+        $Value = $Wrapper['Value']
+    }
+    if ($null -eq $Value -or $Value -is [string] -or $Value -isnot [System.Collections.IList]) {
+        return @("$Name must be a nonempty array.")
+    }
+
+    if ($Value.Count -eq 0) {
+        return @("$Name must be a nonempty array.")
+    }
+
+    $issues = [System.Collections.Generic.List[string]]::new()
+    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    for ($index = 0; $index -lt $Value.Count; $index++) {
+        $valueItem = $Value[$index]
+        if ($null -eq $valueItem -or $valueItem -isnot [string]) {
+            $issues.Add("$Name members must be non-null strings.")
+            continue
+        }
+        if ([string]::IsNullOrWhiteSpace($valueItem)) {
+            $issues.Add("$Name members must not be blank.")
+            continue
+        }
+        if ($valueItem.Length -lt 3 -or $valueItem.Length -gt 160) {
+            $issues.Add("$Name members must be between 3 and 160 characters.")
+        }
+        if (-not $seen.Add($valueItem)) {
+            $issues.Add("$Name members must be unique using ordinal, case-sensitive comparison.")
+        }
+    }
+    $issues.ToArray()
 }
 
 function Get-CanonicalMaintainerRequiredCheckNames {
@@ -328,8 +379,12 @@ function Test-GovernanceJsonDocument {
     }
     if ($results.Count -gt 0) { return @($results) }
 
-    if (@('1.0.0','1.1.0','1.2.0') -notcontains $json.schemaVersion) {
-        $results.Add((New-ValidationResult -Status Failed -Message "Unsupported schemaVersion '$($json.schemaVersion)'." -Path $Path))
+    $supportedSchemaVersions = @($script:GovernanceSchemaVersionsByKind[$Kind])
+    $hasSupportedSchemaVersion = @($supportedSchemaVersions | Where-Object {
+        [string]::Equals([string]$_, [string]$json.schemaVersion, [System.StringComparison]::Ordinal)
+    }).Count -eq 1
+    if (-not $hasSupportedSchemaVersion) {
+        $results.Add((New-ValidationResult -Status Failed -Message "Unsupported schemaVersion '$($json.schemaVersion)' for governance document kind '$Kind'. Supported versions: $($supportedSchemaVersions -join ', ')." -Path $Path))
     }
     if ($json.ContainsKey('status') -and $statuses -notcontains $json.status) {
         $results.Add((New-ValidationResult -Status Failed -Message "Unknown status '$($json.status)'." -Path $Path))
@@ -1055,24 +1110,79 @@ function Test-GovernanceContractSemantics {
         if ($RepositoryOwnerType -ne 'Unknown' -and $Manifest.repositoryOwnerType -ne $RepositoryOwnerType) { Add-Finding 'GCS003' 'Manifest repository owner type disagrees with trusted owner type.' }
     }
 
-    $mode = if ($Manifest.Contains('standardsConsumption')) { [string]$Manifest.standardsConsumption.mode } else { $null }
-    if ($Manifest.schemaVersion -eq '1.2.0' -and $mode -notin @('central-reference','vendored','local')) { Add-Finding 'GCS004' 'Standards consumption mode is unsupported.' }
-    $sourceRepository = if ($Manifest.Contains('standardsConsumption')) { [string](Get-JsonMemberValue -InputObject $Manifest.standardsConsumption -Name 'sourceRepository') } else { $null }
-    $sourceCommitSha = if ($Manifest.Contains('standardsConsumption')) { Get-JsonMemberValue -InputObject $Manifest.standardsConsumption -Name 'sourceCommitSha' } else { $null }
-    if ($mode -in @('central-reference','vendored') -and $sourceCommitSha -notmatch '^[A-Fa-f0-9]{40}$') { Add-Finding 'GCS004' 'Immutable standards source SHA is required for central-reference and vendored modes.' }
-    if ($Manifest.schemaVersion -eq '1.2.0' -and $mode -eq 'central-reference') {
-        if ($ExpectedStandardsRepository -and -not [string]::Equals($sourceRepository, $ExpectedStandardsRepository, [System.StringComparison]::OrdinalIgnoreCase)) {
-            Add-Finding 'GCS004' "Central standards source repository '$sourceRepository' does not match trusted standards repository '$ExpectedStandardsRepository'."
+    if ($Manifest.schemaVersion -eq '1.2.0') {
+        $standardsConsumption = Get-JsonMemberValue -InputObject $Manifest -Name 'standardsConsumption'
+        if ($standardsConsumption -isnot [System.Collections.IDictionary]) {
+            Add-Finding 'GCS004' 'standardsConsumption must be an object with an explicit supported mode.'
         }
-        if ($ExpectedGovernanceCommitSha -and $sourceCommitSha -ne $ExpectedGovernanceCommitSha) {
-            Add-Finding 'GCS004' 'Central standards source commit SHA does not match the trusted workflow standards SHA.'
+        else {
+            $allowedFields = @('mode', 'sourceRepository', 'sourceCommitSha', 'localPath')
+            foreach ($fieldName in @($standardsConsumption.Keys)) {
+                if ($allowedFields -cnotcontains [string]$fieldName) {
+                    Add-Finding 'GCS004' "standardsConsumption contains unsupported field '$fieldName'."
+                }
+            }
+
+            $modeValue = Get-JsonMemberValue -InputObject $standardsConsumption -Name 'mode'
+            $mode = if ($modeValue -is [string]) { [string]$modeValue } else { $null }
+            $supportedMode = $mode -cin @('central-reference', 'vendored', 'local')
+            if (-not $supportedMode) {
+                Add-Finding 'GCS004' 'Standards consumption mode is missing or unsupported.'
+            }
+            else {
+                $hasSourceRepository = Test-JsonMember -InputObject $standardsConsumption -Name 'sourceRepository'
+                $hasSourceCommitSha = Test-JsonMember -InputObject $standardsConsumption -Name 'sourceCommitSha'
+                $hasLocalPath = Test-JsonMember -InputObject $standardsConsumption -Name 'localPath'
+                $sourceRepositoryValue = Get-JsonMemberValue -InputObject $standardsConsumption -Name 'sourceRepository'
+                $sourceCommitShaValue = Get-JsonMemberValue -InputObject $standardsConsumption -Name 'sourceCommitSha'
+                $localPathValue = Get-JsonMemberValue -InputObject $standardsConsumption -Name 'localPath'
+                $sourceRepository = if ($sourceRepositoryValue -is [string]) { [string]$sourceRepositoryValue } else { $null }
+                $sourceCommitSha = if ($sourceCommitShaValue -is [string]) { [string]$sourceCommitShaValue } else { $null }
+
+                if ($mode -cin @('central-reference', 'vendored')) {
+                    if (-not $hasSourceRepository) {
+                        Add-Finding 'GCS004' "standardsConsumption.sourceRepository is required for $mode mode."
+                    }
+                    elseif ($null -eq $sourceRepository -or $sourceRepository -cnotmatch '^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/[A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}[A-Za-z0-9])?$') {
+                        Add-Finding 'GCS004' 'standardsConsumption.sourceRepository must use valid owner/repository syntax.'
+                    }
+                    if (-not $hasSourceCommitSha -or $null -eq $sourceCommitSha -or $sourceCommitSha -cnotmatch '^[A-Fa-f0-9]{40}$') {
+                        Add-Finding 'GCS004' "standardsConsumption.sourceCommitSha must contain exactly 40 hexadecimal characters for $mode mode."
+                    }
+                }
+
+                if ($mode -ceq 'central-reference') {
+                    if ($hasLocalPath) {
+                        Add-Finding 'GCS004' 'central-reference standards consumption forbids localPath.'
+                    }
+                    if ($ExpectedStandardsRepository -and -not [string]::Equals($sourceRepository, $ExpectedStandardsRepository, [System.StringComparison]::OrdinalIgnoreCase)) {
+                        Add-Finding 'GCS004' "Central standards source repository '$sourceRepository' does not match trusted standards repository '$ExpectedStandardsRepository'."
+                    }
+                    if ($ExpectedGovernanceCommitSha -and $sourceCommitSha -ne $ExpectedGovernanceCommitSha) {
+                        Add-Finding 'GCS004' 'Central standards source commit SHA does not match the trusted workflow standards SHA.'
+                    }
+                    if ($Manifest.Contains('governanceCommitSha') -and $sourceCommitSha -ne $Manifest.governanceCommitSha) {
+                        Add-Finding 'GCS004' 'Central standards source commit SHA disagrees with the declared governance commit SHA.'
+                    }
+                }
+                elseif ($mode -ceq 'local') {
+                    if ($hasSourceRepository) { Add-Finding 'GCS004' 'local standards consumption forbids sourceRepository.' }
+                    if ($hasSourceCommitSha) { Add-Finding 'GCS004' 'local standards consumption forbids sourceCommitSha.' }
+                }
+
+                if ($mode -cin @('vendored', 'local')) {
+                    if (-not $hasLocalPath -or $localPathValue -isnot [string] -or [string]::IsNullOrWhiteSpace([string]$localPathValue)) {
+                        Add-Finding 'GCS004' "standardsConsumption.localPath is required for $mode mode."
+                    }
+                    elseif ([System.IO.Path]::IsPathRooted([string]$localPathValue) -or [string]$localPathValue -match '(^|[\\/])\.\.([\\/]|$)' -or [string]$localPathValue -match '[\x00-\x1F\x7F]') {
+                        Add-Finding 'GCS004' "standardsConsumption.localPath must be a safe repository-relative path for $mode mode."
+                    }
+                    else {
+                        try { Resolve-SafePath -Root $Root -ChildPath ([string]$localPathValue) | Out-Null } catch { Add-Finding 'GCS004' $_.Exception.Message }
+                    }
+                }
+            }
         }
-        if ($Manifest.Contains('governanceCommitSha') -and $sourceCommitSha -ne $Manifest.governanceCommitSha) {
-            Add-Finding 'GCS004' 'Central standards source commit SHA disagrees with the declared governance commit SHA.'
-        }
-    }
-    if ($mode -in @('vendored','local')) {
-        try { Resolve-SafePath -Root $Root -ChildPath $Manifest.standardsConsumption.localPath | Out-Null } catch { Add-Finding 'GCS004' $_.Exception.Message }
     }
 
     $technologyStandards = @{
@@ -1180,10 +1290,30 @@ function Test-GovernanceContractSemantics {
     }
 
     if ($Config.schemaVersion -eq '1.2.0') {
-        $requiredCheckNames = @($Config.requiredCheckNames)
-        $interfaceRequiredCheckNames = @($Config.workflowInterface.requiredCheckNames)
+        [object]$requiredCheckNamesValue = $null
+        if ($Config.Contains('requiredCheckNames')) { $requiredCheckNamesValue = $Config['requiredCheckNames'] }
+        $workflowInterfaceObject = Get-JsonMemberValue -InputObject $Config -Name 'workflowInterface'
+        [object]$interfaceRequiredCheckNamesValue = $null
+        if ($workflowInterfaceObject -is [System.Collections.IDictionary] -and $workflowInterfaceObject.Contains('requiredCheckNames')) {
+            $interfaceRequiredCheckNamesValue = $workflowInterfaceObject['requiredCheckNames']
+        }
+        $requiredCheckIssues = @(Get-RequiredCheckNameContractIssues -Wrapper @{ Value = $requiredCheckNamesValue } -Name 'Config.requiredCheckNames')
+        $interfaceRequiredCheckIssues = @(Get-RequiredCheckNameContractIssues -Wrapper @{ Value = $interfaceRequiredCheckNamesValue } -Name 'Config.workflowInterface.requiredCheckNames')
+        foreach ($issue in @($requiredCheckIssues + $interfaceRequiredCheckIssues)) { Add-Finding 'GCS012' $issue }
+
+        $requiredCheckNameList = [System.Collections.ArrayList]::new()
+        if ($requiredCheckNamesValue -is [System.Collections.IList]) {
+            for ($index = 0; $index -lt $requiredCheckNamesValue.Count; $index++) { [void]$requiredCheckNameList.Add($requiredCheckNamesValue[$index]) }
+        }
+        $interfaceRequiredCheckNameList = [System.Collections.ArrayList]::new()
+        if ($interfaceRequiredCheckNamesValue -is [System.Collections.IList]) {
+            for ($index = 0; $index -lt $interfaceRequiredCheckNamesValue.Count; $index++) { [void]$interfaceRequiredCheckNameList.Add($interfaceRequiredCheckNamesValue[$index]) }
+        }
+        [object[]]$requiredCheckNames = $requiredCheckNameList.ToArray()
+        [object[]]$interfaceRequiredCheckNames = $interfaceRequiredCheckNameList.ToArray()
+        $requiredCheckArraysValid = $requiredCheckIssues.Count -eq 0 -and $interfaceRequiredCheckIssues.Count -eq 0
         if ($ExpectedRequiredCheckName -and $requiredCheckNames -cnotcontains $ExpectedRequiredCheckName) { Add-Finding 'GCS012' "Required check '$ExpectedRequiredCheckName' is absent from the workflow contract." }
-        if (-not (Test-ExactStringSet -Actual $requiredCheckNames -Expected ([string[]]$interfaceRequiredCheckNames))) { Add-Finding 'GCS012' 'Branch-protection and workflow-interface required check names must be unique and agree exactly as a case-sensitive set.' }
+        if ($requiredCheckArraysValid -and -not (Test-ExactStringSet -Actual $requiredCheckNames -Expected ([string[]]$interfaceRequiredCheckNames))) { Add-Finding 'GCS012' 'Branch-protection and workflow-interface required check names must agree exactly as a case-sensitive set using ordinal comparison.' }
 
         if ($workflowProfile -eq 'standards-maintainer' -and $Config.workflowInterfaceVersion -eq '1.0.0') {
             foreach ($canonicalCheckName in @(Get-CanonicalMaintainerRequiredCheckNames)) {

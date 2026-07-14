@@ -39,5 +39,29 @@ Describe 'JSON schema validation' {
                 $schema.'$id' | Should -Match '^urn:aiallthethingz:engineering-standards:schema:[a-z0-9-]+$' -Because $schemaFile.Name
             }
         }
+
+        It 'declares the exact supported schema versions for each governance document kind' {
+            $expectedVersions = [ordered]@{
+                'completion-result' = @('1.0.0', '1.1.0')
+                'test-evidence' = @('1.0.0', '1.1.0')
+                'artifact-record' = @('1.0.0', '1.1.0')
+                'project-manifest' = @('1.0.0', '1.1.0', '1.2.0')
+                'governance-config' = @('1.0.0', '1.1.0', '1.2.0')
+                'verified-run' = @('1.0.0')
+                'standards-consistency' = @('1.0.0')
+            }
+
+            foreach ($kind in $expectedVersions.Keys) {
+                $schema = Get-Content "$PSScriptRoot/../../schemas/$kind.schema.json" -Raw | ConvertFrom-Json
+                $declaration = $schema.properties.schemaVersion
+                if ($declaration.PSObject.Properties.Name -contains 'enum') {
+                    @($declaration.enum) | Should -BeExactly $expectedVersions[$kind] -Because "$kind schemaVersion enum is part of the validation contract"
+                }
+                else {
+                    $declaration.pattern | Should -BeExactly '^1\.0\.0$' -Because "$kind must use an exact anchored schemaVersion pattern"
+                    $expectedVersions[$kind] | Should -BeExactly @('1.0.0')
+                }
+            }
+        }
     }
 }

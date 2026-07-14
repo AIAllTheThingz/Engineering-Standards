@@ -170,6 +170,114 @@ Describe 'GovernanceValidation module' {
             $results = Test-GovernanceJsonDocument -Path $path -Kind 'completion-result'
             @($results | Where-Object status -eq 'Failed').Count | Should -BeGreaterThan 0
         }
+
+        It 'rejects completion schema 1.2.0 through the evidence validation entry point' {
+            $repoRoot = Resolve-Path "$PSScriptRoot/../.."
+            $evidenceRoot = Join-Path $script:tempRoot 'unsupported-completion-version'
+            New-Item -ItemType Directory -Path $evidenceRoot -Force | Out-Null
+            $doc = Get-Content "$PSScriptRoot/../fixtures/valid/completion-result-1.1.0.json" -Raw | ConvertFrom-Json -AsHashtable
+            $doc.schemaVersion = '1.2.0'
+            $doc | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'completion-result.json')
+
+            $output = @(& pwsh -NoProfile -File "$repoRoot/actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $evidenceRoot -EvidencePath 'completion-result.json' 2>&1)
+            $LASTEXITCODE | Should -Be 1
+            $output -join "`n" | Should -Match "Unsupported schemaVersion '1\.2\.0' for governance document kind 'completion-result'"
+        }
+    }
+
+    Context 'document-specific schema versions' {
+        BeforeAll {
+            $script:documentVersionCases = @(
+                @{ Kind = 'completion-result'; Fixtures = @{ '1.0.0' = 'tests/fixtures/valid/completion-result.json'; '1.1.0' = 'tests/fixtures/valid/completion-result-1.1.0.json' } },
+                @{ Kind = 'test-evidence'; Fixtures = @{ '1.0.0' = 'tests/fixtures/valid/test-evidence.json'; '1.1.0' = 'tests/fixtures/valid/test-evidence-1.1.0.json' } },
+                @{ Kind = 'artifact-record'; Fixtures = @{ '1.0.0' = 'tests/fixtures/valid/artifact-record.json'; '1.1.0' = 'tests/fixtures/valid/artifact-record.json' } },
+                @{ Kind = 'project-manifest'; Fixtures = @{ '1.0.0' = 'tests/fixtures/valid/project-manifest.json'; '1.1.0' = 'tests/fixtures/compatibility/project-manifest-1.1.0.json'; '1.2.0' = 'tests/fixtures/valid/project-manifest-1.2.0-user.json' } },
+                @{ Kind = 'governance-config'; Fixtures = @{ '1.0.0' = 'tests/fixtures/valid/governance-config.json'; '1.1.0' = 'tests/fixtures/valid/governance-config.json'; '1.2.0' = 'tests/fixtures/valid/governance-config-1.2.0.json' } },
+                @{ Kind = 'verified-run'; Fixtures = @{ '1.0.0' = 'tests/fixtures/valid/verified-run.json' } },
+                @{ Kind = 'standards-consistency'; Fixtures = @{ '1.0.0' = 'governance/standards-consistency.json' } }
+            )
+        }
+
+        It 'accepts every schema-declared version in the module mapping' {
+            $repoRoot = Resolve-Path "$PSScriptRoot/../.."
+            foreach ($case in $script:documentVersionCases) {
+                foreach ($version in $case.Fixtures.Keys) {
+                    $doc = Get-Content (Join-Path $repoRoot $case.Fixtures[$version]) -Raw | ConvertFrom-Json -AsHashtable
+                    $doc.schemaVersion = $version
+                    $path = Join-Path $script:tempRoot "$($case.Kind)-declared-$version.json"
+                    $doc | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $path
+                    $results = Test-GovernanceJsonDocument -Path $path -Kind $case.Kind
+                    @($results | Where-Object { $_.message -match '^Unsupported schemaVersion' }).Count | Should -Be 0 -Because "$($case.Kind) schemaVersion $version is declared by its schema"
+                }
+            }
+        }
+
+        It 'matches the exact version declarations in every governance schema' {
+            $repoRoot = Resolve-Path "$PSScriptRoot/../.."
+            InModuleScope GovernanceValidation -Parameters @{ Cases = $script:documentVersionCases; Root = $repoRoot } {
+                param($Cases, $Root)
+                foreach ($case in $Cases) {
+                    $schema = Get-Content (Join-Path $Root "schemas/$($case.Kind).schema.json") -Raw | ConvertFrom-Json
+                    $declaration = $schema.properties.schemaVersion
+                    $declaredVersions = if ($declaration.PSObject.Properties.Name -contains 'enum') {
+                        @($declaration.enum)
+                    }
+                    elseif ($declaration.PSObject.Properties.Name -contains 'const') {
+                        @($declaration.const)
+                    }
+                    elseif (($declaration.PSObject.Properties.Name -contains 'pattern') -and $declaration.pattern -match '^\^([0-9]+)\\\.([0-9]+)\\\.([0-9]+)\$$') {
+                        @("$($Matches[1]).$($Matches[2]).$($Matches[3])")
+                    }
+                    else {
+                        throw "schemaVersion for '$($case.Kind)' is not an enum, const, or exact anchored semantic version pattern."
+                    }
+
+                    @($script:GovernanceSchemaVersionsByKind[$case.Kind]) | Should -BeExactly $declaredVersions -Because "$($case.Kind) must have one authoritative schema version contract"
+                }
+            }
+        }
+
+        It 'accepts schema 1.2.0 for the manifest and configuration kinds' {
+            foreach ($case in @(
+                @{ Kind = 'project-manifest'; Fixture = 'project-manifest-1.2.0-user.json' },
+                @{ Kind = 'governance-config'; Fixture = 'governance-config-1.2.0.json' }
+            )) {
+                $results = Test-GovernanceJsonDocument -Path "$PSScriptRoot/../fixtures/valid/$($case.Fixture)" -Kind $case.Kind
+                @($results | Where-Object { $_.message -match '^Unsupported schemaVersion' }).Count | Should -Be 0
+            }
+        }
+
+        It 'rejects schema 1.2.0 for completion, test evidence, and artifact kinds' {
+            foreach ($case in @(
+                @{ Kind = 'completion-result'; Fixture = 'completion-result-1.1.0.json' },
+                @{ Kind = 'test-evidence'; Fixture = 'test-evidence-1.1.0.json' },
+                @{ Kind = 'artifact-record'; Fixture = 'artifact-record.json' }
+            )) {
+                $doc = Get-Content "$PSScriptRoot/../fixtures/valid/$($case.Fixture)" -Raw | ConvertFrom-Json -AsHashtable
+                $doc.schemaVersion = '1.2.0'
+                $path = Join-Path $script:tempRoot "$($case.Kind)-unsupported-1.2.0.json"
+                $doc | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $path
+                $results = Test-GovernanceJsonDocument -Path $path -Kind $case.Kind
+                @($results | Where-Object { $_.message -eq "Unsupported schemaVersion '1.2.0' for governance document kind '$($case.Kind)'. Supported versions: 1.0.0, 1.1.0." }).Count | Should -Be 1
+            }
+        }
+
+        It 'rejects unsupported versions for exact-version document kinds' {
+            $repoRoot = Resolve-Path "$PSScriptRoot/../.."
+            foreach ($case in @(
+                @{ Kind = 'verified-run'; Fixture = 'tests/fixtures/valid/verified-run.json' },
+                @{ Kind = 'standards-consistency'; Fixture = 'governance/standards-consistency.json' }
+            )) {
+                foreach ($version in @('1.1.0', '1.0.0-rc', 'v1.0.0')) {
+                    $doc = Get-Content (Join-Path $repoRoot $case.Fixture) -Raw | ConvertFrom-Json -AsHashtable
+                    $doc.schemaVersion = $version
+                    $path = Join-Path $script:tempRoot "$($case.Kind)-unsupported-$($version.Replace('.', '-')).json"
+                    $doc | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $path
+                    $results = Test-GovernanceJsonDocument -Path $path -Kind $case.Kind
+                    @($results | Where-Object { $_.message -match '^Unsupported schemaVersion' }).Count | Should -Be 1 -Because "$($case.Kind) supports exactly schemaVersion 1.0.0"
+                }
+            }
+        }
     }
 
     Context 'aggregate governance evidence' {
