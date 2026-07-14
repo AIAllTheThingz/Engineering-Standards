@@ -49,6 +49,19 @@ Describe 'GitHub workflow architecture validation' {
         $LASTEXITCODE | Should -Be 0
     }
 
+    It 'requires caller history for evidence commit verification' {
+        $root = New-CurrentWorkflowFixture -Name 'shallow-caller-checkout'
+        $path = Join-Path $root '.github/workflows/governance-ci-reusable.yml'
+        $content = Get-Content -LiteralPath $path -Raw
+        $content = $content.Replace('fetch-depth: 0', 'fetch-depth: 1')
+        Set-FixtureFile -Root $root -RelativePath '.github/workflows/governance-ci-reusable.yml' -Content $content
+
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'fetch full history'
+    }
+
     It 'rejects a missing candidate implementation validation call' {
         $root = New-CurrentWorkflowFixture -Name 'missing-candidate-call'
         $path = Join-Path $root '.github/workflows/governance-ci.yml'

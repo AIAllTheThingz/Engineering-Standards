@@ -584,6 +584,9 @@ if ($workflows.ContainsKey($reusable)) {
         elseif ($callerCheckout[0].with.repository -ne '${{ github.repository }}' -or $callerCheckout[0].with.ref -ne '${{ github.sha }}' -or $callerCheckout[0].with.path -ne 'caller') {
             $results.Add((New-ValidationResult -Status Failed -Message 'Caller checkout must explicitly use github.repository, github.sha, and the caller workspace.' -Path $reusable))
         }
+        if ($callerCheckout.Count -eq 1 -and [string]$callerCheckout[0].with['fetch-depth'] -ne '0') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Caller checkout must fetch full history so evidence validatedCommitSha objects can be verified.' -Path $reusable))
+        }
         if ($standardsCheckout.Count -ne 1 -or $standardsCheckout[0].uses -notmatch '^actions/checkout@[a-fA-F0-9]{40}$') {
             $results.Add((New-ValidationResult -Status Failed -Message 'Reusable workflow must contain one SHA-pinned trusted standards checkout.' -Path $reusable))
         }

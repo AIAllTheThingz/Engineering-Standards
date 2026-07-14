@@ -51,7 +51,8 @@ jobs:
           ref: ${{ github.sha }}
           path: caller
           persist-credentials: false
-          fetch-depth: 1
+          # Evidence commit semantics require historical validatedCommitSha objects.
+          fetch-depth: 0
 
       - name: Checkout trusted standards
         # job.workflow_* identifies the immutable repository and commit defining this reusable job.
