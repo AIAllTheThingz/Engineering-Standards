@@ -1,0 +1,135 @@
+[
+  {
+    "schemaVersion": "1.1.0",
+    "name": "Issue 21 focused local validation",
+    "category": "other",
+    "status": "Passed",
+    "requiredValidation": true,
+    "evidenceSource": "Automated",
+    "command": "Issue #21 required local validation commands excluding the aggregate Pester suite and hosted checks",
+    "workingDirectory": ".",
+    "startedAtUtc": "2026-07-14T02:00:00Z",
+    "completedAtUtc": "2026-07-14T02:22:51.7648406Z",
+    "durationSeconds": 1371.765,
+    "runtime": "Local Windows / pwsh",
+    "toolVersion": "PowerShell 7.6.3; Pester 5.8.0; PSScriptAnalyzer 1.25.0",
+    "environment": "Local Windows",
+    "exitCode": 0,
+    "summary": "Schema, semantic contract, focused Pester, agent standards, YAML, workflow architecture, deterministic Codex skill, Markdown, documentation, repository health, forbidden-pattern, ScriptAnalyzer, examples, and parser validation completed successfully.",
+    "warnings": [
+      "Forbidden-pattern scanning reported documented warning-only examples.",
+      "Codex model-behavior evaluation contained eight NotRun expectations and is recorded separately.",
+      "Example validation required removal of stale excluded .NET build output before its successful rerun."
+    ],
+    "failureReason": null,
+    "blockedReason": null,
+    "notApplicableRationale": null,
+    "manualProcedure": null,
+    "executionMode": {
+      "dryRun": false,
+      "whatIf": false,
+      "planOnly": false,
+      "applied": false
+    },
+    "details": {
+      "startingMasterSha": "733e7b072009e013ed98308b22f17e9e99cdf49c",
+      "frozenImplementationSha": "94e975ec30440eada07250cd46d2252cec10d227",
+      "workflowPinSha": "94e975ec30440eada07250cd46d2252cec10d227",
+      "validatedHeadSha": "315e1492eb1046da74d68d04b35330849ad97791",
+      "supportedSchemaVersions": ["1.0.0", "1.1.0", "1.2.0"],
+      "newSchemaVersion": "1.2.0",
+      "focusedPester": {
+        "passed": 24,
+        "failed": 0,
+        "skipped": 0,
+        "notRun": 0
+      },
+      "parser": {
+        "files": 5,
+        "errors": 0
+      },
+      "scriptAnalyzer": {
+        "severity": "Error",
+        "findings": 0
+      },
+      "workflowArchitecture": "Passed",
+      "contract": "Passed",
+      "examples": "Passed",
+      "correctionBatchesUsed": 1,
+      "exceptions": []
+    }
+  },
+  {
+    "schemaVersion": "1.1.0",
+    "name": "Full repository Pester suite",
+    "category": "unit",
+    "status": "NotRun",
+    "requiredValidation": true,
+    "evidenceSource": "Automated",
+    "command": "pwsh -NoProfile -File scripts/Invoke-PesterSuite.ps1 -EvidenceRoot .tmp/issue-21/pester",
+    "workingDirectory": ".",
+    "startedAtUtc": "2026-07-14T02:09:53Z",
+    "completedAtUtc": "2026-07-14T02:19:53Z",
+    "durationSeconds": 600,
+    "runtime": "Local Windows / pwsh",
+    "toolVersion": "Pester 5.8.0",
+    "environment": "Local Windows",
+    "exitCode": null,
+    "summary": "The aggregate suite started but did not complete or write the required Pester summary, so no full-suite totals are claimed.",
+    "warnings": [],
+    "failureReason": "The Pester process remained active without producing a final result and was stopped after the bounded validation attempt.",
+    "blockedReason": null,
+    "notApplicableRationale": null,
+    "manualProcedure": null,
+    "executionMode": {
+      "dryRun": false,
+      "whatIf": false,
+      "planOnly": false,
+      "applied": false
+    },
+    "details": {
+      "discoveryObserved": 472,
+      "passed": null,
+      "failed": null,
+      "skipped": null,
+      "notRun": null,
+      "outputProduced": false
+    }
+  },
+  {
+    "schemaVersion": "1.1.0",
+    "name": "Issue 21 GitHub hosted validation",
+    "category": "workflow",
+    "status": "NotRun",
+    "requiredValidation": true,
+    "evidenceSource": "GitHubArtifact",
+    "command": "GitHub pull request checks",
+    "workingDirectory": ".",
+    "startedAtUtc": "2026-07-14T02:22:51.7648406Z",
+    "completedAtUtc": "2026-07-14T02:22:51.7648406Z",
+    "durationSeconds": 0,
+    "runtime": "GitHub Actions",
+    "toolVersion": "NotRun",
+    "environment": "GitHub Actions",
+    "exitCode": null,
+    "summary": "GitHub-hosted pull request checks and artifact verification have not run in this local evidence context.",
+    "warnings": [],
+    "failureReason": "No pull request or GitHub-hosted run existed when this local evidence was generated.",
+    "blockedReason": null,
+    "notApplicableRationale": null,
+    "manualProcedure": null,
+    "executionMode": {
+      "dryRun": false,
+      "whatIf": false,
+      "planOnly": false,
+      "applied": false
+    },
+    "details": {
+      "runIds": [],
+      "artifactIds": [],
+      "artifactDigests": [],
+      "independentlyVerified": false,
+      "reviewerStatus": "NotRun"
+    }
+  }
+]

@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-07-14T00:13:10.8592923Z",
+  "generatedAtUtc": "2026-07-14T02:27:08.8953537Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -7,7 +7,7 @@
   "patternFile": "actions/forbidden-pattern-scan/forbidden-patterns.json",
   "allowlistFile": null,
   "advisory": false,
-  "scannedFiles": 313,
+  "scannedFiles": 327,
   "skippedFiles": [
     {
       "path": ".tmp/candidate-job-86734396661.log",
@@ -23,6 +23,10 @@
     },
     {
       "path": ".tmp/documentation-completeness.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/evidence-validation-issue20.json",
       "reason": "excluded-path"
     },
     {
@@ -55,6 +59,82 @@
     },
     {
       "path": ".tmp/issue-19-pr-body.md",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-20-evidence-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-20-json-schemas.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-20-pr-body.md",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue21-codex.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue21-contract-pin.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue21-contract.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue21-docs.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue21-forbidden.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue21-health.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue21-json-schemas-final.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue21-json-schemas.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue21-links.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue21-schema-initial.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue21-schema.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue21-workflow-pin.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue21-workflow.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue21-yaml-pin.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue21-yaml.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/json-after-evidence.json",
       "reason": "excluded-path"
     },
     {
@@ -122,11 +202,23 @@
       "reason": "excluded-path"
     },
     {
+      "path": ".tmp/candidate-validation/codex-skills.json",
+      "reason": "excluded-path"
+    },
+    {
       "path": ".tmp/candidate-validation/pester/pester-details.json",
       "reason": "excluded-path"
     },
     {
       "path": ".tmp/candidate-validation/pester/pester-summary.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/candidate-validation/pester-correction-final/pester-details.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/candidate-validation/pester-correction-final/pester-summary.json",
       "reason": "excluded-path"
     },
     {
@@ -171,6 +263,54 @@
     },
     {
       "path": ".tmp/final-failure-29161515777/pester-summary.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/final-hosted-artifacts/governance-verification.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/final-hosted-artifacts/governance/ci-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/final-hosted-artifacts/governance/codex-skills.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/final-hosted-artifacts/governance/completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/final-hosted-artifacts/governance/dependencies.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/final-hosted-artifacts/governance/environment.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/final-hosted-artifacts/governance/evidence-validation-final.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/final-hosted-artifacts/governance/evidence-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/final-hosted-artifacts/governance/governance-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/final-hosted-artifacts/governance/pester-details.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/final-hosted-artifacts/governance/pester-summary.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/final-hosted-artifacts/pr-governance/pr-governance-result.json",
       "reason": "excluded-path"
     },
     {
@@ -231,6 +371,98 @@
     },
     {
       "path": ".tmp/final-success-29161389215/pester-summary.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/initial-hosted-artifact/ci-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/initial-hosted-artifact/codex-skills.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/initial-hosted-artifact/completion-result.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/initial-hosted-artifact/dependencies.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/initial-hosted-artifact/environment.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/initial-hosted-artifact/evidence-validation-final.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/initial-hosted-artifact/evidence-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/initial-hosted-artifact/governance-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/initial-hosted-artifact/pester-details.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/initial-hosted-artifact/pester-summary.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-21/codex-skills.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-21/contract-pin.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-21/contract.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-21/documentation-completeness.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-21/evidence-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-21/json-schemas-correction.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-21/json-schemas.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-21/markdown-links.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-21/repository-health.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-21/workflow-architecture.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-21/workflow-pin.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-21/yaml-syntax.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/issue-21/governance-validation/codex-skills.json",
       "reason": "excluded-path"
     },
     {
@@ -1134,6 +1366,10 @@
       "reason": "excluded-path"
     },
     {
+      "path": "evidence/codex-skills.json",
+      "reason": "excluded-path"
+    },
+    {
       "path": "evidence/contract.json",
       "reason": "excluded-path"
     },
@@ -1167,6 +1403,14 @@
     },
     {
       "path": "evidence/governance-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/issue-20-local-test-results.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": "evidence/issue-21-local-test-results.json",
       "reason": "excluded-path"
     },
     {
@@ -1286,7 +1530,7 @@
       "patternId": "dangerous-powershell-expression",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 82,
+      "line": 88,
       "description": "Dynamic PowerShell execution.",
       "redactedMatch": "Invo...[redacted]...sion",
       "allowlisted": false
@@ -1295,7 +1539,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 71,
+      "line": 77,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -1304,7 +1548,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 71,
+      "line": 77,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
@@ -1313,7 +1557,7 @@
       "patternId": "pull-request-target",
       "severity": "warning",
       "path": "docs/ACTION_SECURITY.md",
-      "line": 168,
+      "line": 174,
       "description": "pull_request_target requires review.",
       "redactedMatch": "pull...[redacted]...rget",
       "allowlisted": false
