@@ -309,14 +309,14 @@
     "tests": {
       "type": "array",
       "items": {
-        "$ref": "test-evidence.schema.json"
+        "$ref": "urn:aiallthethingz:engineering-standards:schema:test-evidence"
       },
       "minItems": 1
     },
     "artifacts": {
       "type": "array",
       "items": {
-        "$ref": "artifact-record.schema.json"
+        "$ref": "urn:aiallthethingz:engineering-standards:schema:artifact-record"
       }
     },
     "warnings": {

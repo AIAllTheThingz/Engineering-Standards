@@ -208,6 +208,21 @@ Describe 'Governance contract semantic validation' {
         ($results.message -join "`n") | Should -Match 'GCS005.*Project type.*unsupported or noncanonical'
     }
 
+    It 'rejects invalid schema 1.2.0 technology collection shapes without schema validation' -ForEach @(
+        @{ Name='missing'; Mutate={ param($m) $m.Remove('technologies') }; Pattern='nonempty array' },
+        @{ Name='scalar'; Mutate={ param($m) $m.technologies='powershell' }; Pattern='nonempty array' },
+        @{ Name='empty'; Mutate={ param($m) $m.technologies=@() }; Pattern='nonempty array' },
+        @{ Name='non-string'; Mutate={ param($m) $m.technologies=@(42) }; Pattern='members must be strings' },
+        @{ Name='too short'; Mutate={ param($m) $m.technologies=@('x') }; Pattern='at least two characters' },
+        @{ Name='duplicate'; Mutate={ param($m) $m.technologies=@('powershell','powershell') }; Pattern='duplicate member' }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        & $Mutate $manifest
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match "GCS005.*$Pattern" -Because $Name
+    }
+
     It 'rejects noncanonical hosted-evidence constants' -ForEach @(
         @{ Name='workspace'; Mutate={ param($h) $h.workspace='Evidence' } },
         @{ Name='completion'; Mutate={ param($h) $h.completion='Completion-result.json' } },
@@ -852,6 +867,21 @@ Describe 'Governance contract semantic validation' {
         $config.controls.mandatoryControlsDisabled = @(@{control='SyntheticControl';exceptionReference='GOV-2026-ACTIVE'})
         $results = Invoke-Semantics $manifest $config
         ($results.message -join "`n") | Should -Match 'GCS011.*lacks an applicable active exception'
+    }
+
+    It 'rejects malformed and noncanonical disabled-control exception references' -ForEach @(
+        @{ Name='lowercase reference'; Reference='gov-2026-active'; Extra=$false },
+        @{ Name='non-string reference'; Reference=42; Extra=$false },
+        @{ Name='unsupported field'; Reference='GOV-2026-ACTIVE'; Extra=$true }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.exceptions = @(New-TestException)
+        $disabled = @{control='SyntheticControl';exceptionReference=$Reference}
+        if ($Extra) { $disabled.unexpected='not allowed' }
+        $config.controls.mandatoryControlsDisabled = @($disabled)
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS011.*malformed or noncanonical exception reference' -Because $Name
     }
 
     It 'compares canonical applicable standards paths case-sensitively' {

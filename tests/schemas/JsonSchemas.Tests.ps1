@@ -47,6 +47,12 @@ Describe 'JSON schema validation' {
             }
         }
 
+        It 'uses controlled sibling schema identifiers for completion evidence references' {
+            $schema = Get-Content -LiteralPath "$PSScriptRoot/../../schemas/completion-result.schema.json" -Raw | ConvertFrom-Json
+            $schema.properties.tests.items.'$ref' | Should -BeExactly 'urn:aiallthethingz:engineering-standards:schema:test-evidence'
+            $schema.properties.artifacts.items.'$ref' | Should -BeExactly 'urn:aiallthethingz:engineering-standards:schema:artifact-record'
+        }
+
         It 'declares the exact supported schema versions for each governance document kind' {
             $expectedVersions = [ordered]@{
                 'completion-result' = @('1.0.0', '1.1.0')

@@ -1351,7 +1351,35 @@ function Test-GovernanceContractSemantics {
         Add-Finding 'GCS005' "Project type '$($Manifest.projectType)' is unsupported or noncanonical."
     }
     if ($manifestStandards -cnotcontains 'agents/AGENTS_Base.md') { Add-Finding 'GCS005' 'The base agent standard is required.' }
-    foreach ($technology in @($Manifest.technologies)) {
+    [object]$technologiesValue = $null
+    if ($Manifest.Contains('technologies')) { $technologiesValue = $Manifest['technologies'] }
+    $technologiesIsArray = $technologiesValue -is [System.Collections.IList] -and $technologiesValue -isnot [string]
+    [object[]]$technologies = @()
+    if ($Manifest.schemaVersion -ceq '1.2.0') {
+        if (-not $technologiesIsArray -or $technologiesValue.Count -eq 0) {
+            Add-Finding 'GCS005' 'Manifest technologies must be declared as a nonempty array.'
+        }
+        else {
+            $validTechnologies = [System.Collections.ArrayList]::new()
+            $seenTechnologies = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+            foreach ($technologyValue in $technologiesValue) {
+                if ($technologyValue -isnot [string] -or ([string]$technologyValue).Length -lt 2) {
+                    Add-Finding 'GCS005' 'Manifest technologies members must be strings containing at least two characters.'
+                    continue
+                }
+                if (-not $seenTechnologies.Add([string]$technologyValue)) {
+                    Add-Finding 'GCS005' "Manifest technologies contains duplicate member '$technologyValue' using ordinal comparison."
+                    continue
+                }
+                [void]$validTechnologies.Add($technologyValue)
+            }
+            $technologies = $validTechnologies.ToArray()
+        }
+    }
+    else {
+        $technologies = [object[]]@($technologiesValue)
+    }
+    foreach ($technology in $technologies) {
         if ($technologyStandards.ContainsKey([string]$technology) -and $manifestStandards -cnotcontains $technologyStandards[[string]$technology]) { Add-Finding 'GCS005' "Technology '$technology' requires '$($technologyStandards[[string]$technology])'." }
     }
     if ($Manifest.projectType -ceq 'governance') {
@@ -1429,8 +1457,8 @@ function Test-GovernanceContractSemantics {
         }
     }
 
-    $exceptionById = @{}
-    $activeExceptionIds = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    $exceptionById = [System.Collections.Generic.Dictionary[string,object]]::new([System.StringComparer]::Ordinal)
+    $activeExceptionIds = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
     $exceptionRecords = @($Manifest.exceptions) + @($Config.exceptions)
     $requiresStructuredExceptions = $Manifest.schemaVersion -eq '1.2.0' -or $Config.schemaVersion -eq '1.2.0'
     $requiredExceptionFields = @('identifier','status','scope','owner','approver','approvalDate','expiration','affectedControl','compensatingControls','remediationPlan','evidenceReference')
@@ -1499,8 +1527,42 @@ function Test-GovernanceContractSemantics {
         if (-not $active) { Add-Finding 'GCS010' "Exception '$identifier' is not an active, approved, and unexpired record." }
         elseif ($identifier -ne '<missing>') { [void]$activeExceptionIds.Add($identifier) }
     }
-    foreach ($disabled in @($Config.controls.mandatoryControlsDisabled)) {
-        if (-not $exceptionById.ContainsKey($disabled.exceptionReference) -or -not $activeExceptionIds.Contains([string]$disabled.exceptionReference) -or $exceptionById[$disabled.exceptionReference].affectedControl -cne $disabled.control) { Add-Finding 'GCS011' "Disabled control '$($disabled.control)' lacks an applicable active exception." }
+    [object]$disabledControlsValue = $null
+    $controlsObject = Get-JsonMemberValue -InputObject $Config -Name 'controls'
+    if ($controlsObject -is [System.Collections.IDictionary] -and $controlsObject.Contains('mandatoryControlsDisabled')) {
+        $disabledControlsValue = $controlsObject['mandatoryControlsDisabled']
+    }
+    $disabledControlsIsArray = $disabledControlsValue -is [System.Collections.IList] -and $disabledControlsValue -isnot [string]
+    [object[]]$disabledControls = @()
+    if ($Config.schemaVersion -ceq '1.2.0') {
+        if (-not $disabledControlsIsArray) {
+            Add-Finding 'GCS011' 'controls.mandatoryControlsDisabled must be declared as an array.'
+        }
+        else {
+            $disabledControls = [object[]]$disabledControlsValue
+        }
+    }
+    else {
+        $disabledControls = [object[]]@($disabledControlsValue)
+    }
+    foreach ($disabled in $disabledControls) {
+        if ($Config.schemaVersion -ceq '1.2.0') {
+            if ($disabled -isnot [System.Collections.IDictionary]) {
+                Add-Finding 'GCS011' 'Disabled mandatory control entries must be structured objects.'
+                continue
+            }
+            $unexpectedDisabledFields = @($disabled.Keys | Where-Object { @('control','exceptionReference') -cnotcontains [string]$_ })
+            $controlName = if ($disabled.Contains('control')) { [string]$disabled.control } else { '<missing>' }
+            $exceptionReference = if ($disabled.Contains('exceptionReference')) { [string]$disabled.exceptionReference } else { '<missing>' }
+            $disabledMalformed = $unexpectedDisabledFields.Count -gt 0 -or
+                -not $disabled.Contains('control') -or $disabled.control -isnot [string] -or $controlName.Length -lt 3 -or
+                -not $disabled.Contains('exceptionReference') -or $disabled.exceptionReference -isnot [string] -or $exceptionReference -cnotmatch '^GOV-[A-Z0-9-]+$'
+            if ($disabledMalformed) {
+                Add-Finding 'GCS011' "Disabled mandatory control '$controlName' has a malformed or noncanonical exception reference '$exceptionReference'."
+                continue
+            }
+        }
+        if (-not $exceptionById.ContainsKey([string]$disabled.exceptionReference) -or -not $activeExceptionIds.Contains([string]$disabled.exceptionReference) -or $exceptionById[[string]$disabled.exceptionReference].affectedControl -cne $disabled.control) { Add-Finding 'GCS011' "Disabled control '$($disabled.control)' lacks an applicable active exception." }
     }
 
     if ($Config.schemaVersion -eq '1.2.0') {
