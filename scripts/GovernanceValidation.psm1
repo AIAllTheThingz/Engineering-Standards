@@ -268,6 +268,29 @@ function Resolve-SafePath {
     $candidateFull
 }
 
+function Test-ExactRepositoryPathCasing {
+    <#
+    .SYNOPSIS
+    Confirms that every declared path segment matches the filesystem entry exactly.
+    .DESCRIPTION
+    Prevents case-insensitive filesystems from silently resolving a declaration
+    to a differently cased standards path than the manifest recorded.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Root,
+        [Parameter(Mandatory)][string]$ChildPath
+    )
+
+    $current = (Resolve-Path -LiteralPath $Root).Path
+    foreach ($segment in @($ChildPath -split '[\\/]' | Where-Object { $_ -and $_ -ne '.' })) {
+        $exact = @(Get-ChildItem -LiteralPath $current -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ceq $segment })
+        if ($exact.Count -ne 1) { return $false }
+        $current = $exact[0].FullName
+    }
+    return $true
+}
+
 function Test-RelativeRepositoryPath {
     <#
     .SYNOPSIS
@@ -1110,7 +1133,47 @@ function Test-GovernanceContractSemantics {
         if ($RepositoryOwnerType -ne 'Unknown' -and $Manifest.repositoryOwnerType -ne $RepositoryOwnerType) { Add-Finding 'GCS003' 'Manifest repository owner type disagrees with trusted owner type.' }
     }
 
+    $manifestStandards = @()
+    $configStandards = @()
     if ($Manifest.schemaVersion -eq '1.2.0') {
+        $standardCollections = @(
+            @{ Label='Manifest applicableStandards'; Document=$Manifest; Member='applicableStandards'; Target='manifest' },
+            @{ Label='Governance configuration applicableAgentStandards'; Document=$Config; Member='applicableAgentStandards'; Target='config' }
+        )
+        foreach ($collection in $standardCollections) {
+            $value = Get-JsonMemberValue -InputObject $collection.Document -Name $collection.Member
+            $validValues = [System.Collections.Generic.List[string]]::new()
+            if ($null -eq $value -or $value -is [string] -or $value -isnot [System.Collections.IList] -or $value.Count -eq 0) {
+                Add-Finding 'GCS004' "$($collection.Label) must be a nonempty array of standards paths."
+            }
+            else {
+                $seenStandards = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+                for ($standardIndex = 0; $standardIndex -lt $value.Count; $standardIndex++) {
+                    $standardValue = $value[$standardIndex]
+                    if ($null -eq $standardValue -or $standardValue -isnot [string]) {
+                        Add-Finding 'GCS004' "$($collection.Label) entries must be non-null strings."
+                        continue
+                    }
+                    $standard = [string]$standardValue
+                    if ([string]::IsNullOrWhiteSpace($standard)) {
+                        Add-Finding 'GCS004' "$($collection.Label) entries must not be blank."
+                        continue
+                    }
+                    if ($standard -match '[\x00-\x1F\x7F]' -or [System.IO.Path]::IsPathRooted($standard) -or $standard -match '(^|[\\/])\.\.([\\/]|$)' -or $standard -cnotmatch '^agents/AGENTS_[A-Za-z]+\.md$') {
+                        Add-Finding 'GCS004' "$($collection.Label) entry '$standard' is not a canonical safe standards path."
+                        continue
+                    }
+                    if (-not $seenStandards.Add($standard)) {
+                        Add-Finding 'GCS004' "$($collection.Label) contains duplicate entry '$standard'."
+                        continue
+                    }
+                    $validValues.Add($standard)
+                }
+            }
+            if ($collection.Target -eq 'manifest') { $manifestStandards = @($validValues) }
+            else { $configStandards = @($validValues) }
+        }
+
         $standardsConsumption = Get-JsonMemberValue -InputObject $Manifest -Name 'standardsConsumption'
         if ($standardsConsumption -isnot [System.Collections.IDictionary]) {
             Add-Finding 'GCS004' 'standardsConsumption must be an object with an explicit supported mode.'
@@ -1178,7 +1241,36 @@ function Test-GovernanceContractSemantics {
                         Add-Finding 'GCS004' "standardsConsumption.localPath must be a safe repository-relative path for $mode mode."
                     }
                     else {
-                        try { Resolve-SafePath -Root $Root -ChildPath ([string]$localPathValue) | Out-Null } catch { Add-Finding 'GCS004' $_.Exception.Message }
+                        try {
+                            $authorityRoot = Resolve-SafePath -Root $Root -ChildPath ([string]$localPathValue)
+                            $authorityItem = Get-Item -LiteralPath $authorityRoot -Force -ErrorAction Stop
+                            if (-not $authorityItem.PSIsContainer) {
+                                Add-Finding 'GCS004' "The $mode authoritative standards root must be an existing physical directory."
+                            }
+                            else {
+                                foreach ($standard in $manifestStandards) {
+                                    try {
+                                        $standardTarget = Resolve-SafePath -Root $Root -ChildPath $standard
+                                        $relativeToAuthority = [System.IO.Path]::GetRelativePath($authorityRoot, $standardTarget)
+                                        if ([System.IO.Path]::IsPathRooted($relativeToAuthority) -or $relativeToAuthority -eq '..' -or $relativeToAuthority.StartsWith(('..' + [System.IO.Path]::DirectorySeparatorChar), [System.StringComparison]::Ordinal) -or $relativeToAuthority.StartsWith(('..' + [System.IO.Path]::AltDirectorySeparatorChar), [System.StringComparison]::Ordinal)) {
+                                            Add-Finding 'GCS004' "Applicable standard '$standard' is outside the $mode authoritative standards root."
+                                            continue
+                                        }
+                                        if (-not (Test-ExactRepositoryPathCasing -Root $Root -ChildPath $standard)) {
+                                            Add-Finding 'GCS004' "Applicable standard '$standard' does not match the authoritative filesystem path exactly."
+                                            continue
+                                        }
+                                        if (-not (Test-Path -LiteralPath $standardTarget -PathType Leaf)) {
+                                            Add-Finding 'GCS004' "Applicable standard '$standard' must exist as a regular file beneath the $mode authoritative standards root."
+                                        }
+                                    }
+                                    catch {
+                                        Add-Finding 'GCS004' "Applicable standard '$standard' must exist as a regular file beneath the $mode authoritative standards root. $($_.Exception.Message)"
+                                    }
+                                }
+                            }
+                        }
+                        catch { Add-Finding 'GCS004' $_.Exception.Message }
                     }
                 }
             }
@@ -1189,8 +1281,10 @@ function Test-GovernanceContractSemantics {
         powershell='agents/AGENTS_PowerShell.md'; dotnet='agents/AGENTS_DotNet.md'; web='agents/AGENTS_WebFrontend.md'; database='agents/AGENTS_Database.md';
         'worker-service'='agents/AGENTS_WorkerService.md'; integration='agents/AGENTS_Integration.md'; infrastructure='agents/AGENTS_Infrastructure.md'
     }
-    $manifestStandards = @($Manifest.applicableStandards)
-    $configStandards = @($Config.applicableAgentStandards)
+    if ($Manifest.schemaVersion -ne '1.2.0') {
+        $manifestStandards = @($Manifest.applicableStandards)
+        $configStandards = @($Config.applicableAgentStandards)
+    }
     if ($manifestStandards -notcontains 'agents/AGENTS_Base.md') { Add-Finding 'GCS005' 'The base agent standard is required.' }
     foreach ($technology in @($Manifest.technologies)) {
         if ($technologyStandards.ContainsKey([string]$technology) -and $manifestStandards -notcontains $technologyStandards[[string]$technology]) { Add-Finding 'GCS005' "Technology '$technology' requires '$($technologyStandards[[string]$technology])'." }

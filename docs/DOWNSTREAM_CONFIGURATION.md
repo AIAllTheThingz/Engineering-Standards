@@ -98,6 +98,13 @@ source fields plus `localPath` and requires drift review. `local` makes the
 bounded `localPath` authoritative and omits central source fields. Missing
 sources fail closed; validators never silently switch modes.
 
+In `vendored` and `local` modes, `localPath` names an authoritative subtree of
+the caller repository. Every caller-root-relative `applicableStandards` entry
+must resolve beneath that subtree as a physical regular file. Empty or partial
+trees, directories presented as standards, traversal, links, junctions, and
+reparse points fail closed. A matching file in the trusted central checkout is
+not a fallback for missing local or vendored content.
+
 ## Workflow Configuration
 
 Downstream repositories call `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<full-commit-sha>`. Supported inputs are:

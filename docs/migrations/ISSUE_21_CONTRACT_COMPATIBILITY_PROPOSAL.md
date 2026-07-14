@@ -136,6 +136,12 @@ Version `1.2.0` requires a `standardsConsumption` object:
 | `vendored` | `sourceRepository`, full `sourceCommitSha`, and repository-relative `localPath` are required; local files are authoritative for the run and drift from the recorded source fails validation. |
 | `local` | repository-relative `localPath` is required; the current repository is authoritative; source repository/SHA are omitted; missing files fail closed. |
 
+For `vendored` and `local`, `localPath` identifies the authoritative subtree in
+the caller repository. Each `applicableStandards` value remains caller-root-relative
+(for example, `agents/AGENTS_Base.md`) and must resolve as a regular file beneath
+that subtree. An empty or partial subtree fails closed; files in the trusted central
+checkout never satisfy a missing local or vendored declaration.
+
 All modes require the base standard. Technology mappings are centralized:
 PowerShell, .NET, Web Frontend, Database, Worker Service, Integration, and
 Infrastructure map to their corresponding agent standards. `governance` and

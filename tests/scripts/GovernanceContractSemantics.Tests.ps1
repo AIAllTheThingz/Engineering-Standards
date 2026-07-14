@@ -32,6 +32,17 @@ BeforeAll {
     function Invoke-Semantics([hashtable]$Manifest, [hashtable]$Config, [string]$ExpectedRepository = 'AIAllTheThingz/Engineering-Standards', [string]$ExpectedStandardsRepository = 'AIAllTheThingz/Engineering-Standards', [string]$OwnerType = 'User', [string]$ExpectedSha = 'ed78186720124a5b0c3f0a668af1f48c8571ebeb', [string]$Interface = '1.0.0', [string]$Profile = 'standards-maintainer', [string]$Check = 'Governance / Governance validation', [string]$Root = $script:root) {
         @(Test-GovernanceContractSemantics -Root $Root -Manifest $Manifest -Config $Config -ExpectedRepository $ExpectedRepository -ExpectedStandardsRepository $ExpectedStandardsRepository -RepositoryOwnerType $OwnerType -ExpectedGovernanceCommitSha $ExpectedSha -ExpectedWorkflowInterfaceVersion $Interface -ExpectedWorkflowProfile $Profile -ExpectedRequiredCheckName $Check -ValidationDateUtc ([datetime]'2026-07-14T00:00:00Z'))
     }
+    function New-IsolatedStandardsRoot([string[]]$Standards = @('agents/AGENTS_Base.md','agents/AGENTS_PowerShell.md','agents/AGENTS_Integration.md','agents/AGENTS_Infrastructure.md')) {
+        $root = Join-Path ([System.IO.Path]::GetTempPath()) ('governance-provenance-' + [guid]::NewGuid())
+        New-Item -ItemType Directory -Path (Join-Path $root 'agents') -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $script:root 'AGENTS.md') -Destination (Join-Path $root 'AGENTS.md')
+        foreach ($standard in $Standards) {
+            $target = Join-Path $root $standard
+            New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force | Out-Null
+            Set-Content -LiteralPath $target -Value "# Synthetic $standard"
+        }
+        $root
+    }
 }
 
 Describe 'Governance contract semantic validation' {
@@ -275,6 +286,8 @@ Describe 'Governance contract semantic validation' {
     }
 
     It 'accepts complete vendored source identity without binding it to trusted checkout identity' {
+        $isolatedRoot = New-IsolatedStandardsRoot
+        try {
         $manifest = Copy-ContractObject $script:manifest
         $config = Copy-ContractObject $script:config
         $manifest.standardsConsumption = @{
@@ -283,8 +296,157 @@ Describe 'Governance contract semantic validation' {
             sourceCommitSha = ('b' * 40)
             localPath = 'agents'
         }
-        $results = Invoke-Semantics $manifest $config
+        $results = Invoke-Semantics $manifest $config -Root $isolatedRoot
         @($results | Where-Object { $_.message -match 'GCS004' }) | Should -HaveCount 0
+        }
+        finally { Remove-Item -LiteralPath $isolatedRoot -Recurse -Force }
+    }
+
+    It 'accepts a complete isolated local standards tree without central identity fields' {
+        $isolatedRoot = New-IsolatedStandardsRoot
+        try {
+            $manifest = Copy-ContractObject $script:manifest
+            $config = Copy-ContractObject $script:config
+            $manifest.standardsConsumption = @{ mode='local'; localPath='agents' }
+            $results = Invoke-Semantics $manifest $config -Root $isolatedRoot
+            @($results | Where-Object { $_.message -match 'GCS004' }) | Should -HaveCount 0
+        }
+        finally { Remove-Item -LiteralPath $isolatedRoot -Recurse -Force }
+    }
+
+    It 'rejects incomplete authoritative local and vendored standards trees' -ForEach @(
+        @{ Name='empty local tree'; Mode='local'; Present=@() },
+        @{ Name='empty vendored tree'; Mode='vendored'; Present=@() },
+        @{ Name='partial local tree'; Mode='local'; Present=@('agents/AGENTS_Base.md') },
+        @{ Name='partial vendored tree'; Mode='vendored'; Present=@('agents/AGENTS_Base.md') },
+        @{ Name='local missing base'; Mode='local'; Present=@('agents/AGENTS_PowerShell.md','agents/AGENTS_Integration.md','agents/AGENTS_Infrastructure.md') },
+        @{ Name='vendored missing technology standard'; Mode='vendored'; Present=@('agents/AGENTS_Base.md','agents/AGENTS_Integration.md','agents/AGENTS_Infrastructure.md') }
+    ) {
+        $isolatedRoot = New-IsolatedStandardsRoot -Standards $Present
+        try {
+            $manifest = Copy-ContractObject $script:manifest
+            $config = Copy-ContractObject $script:config
+            $manifest.standardsConsumption = @{ mode=$Mode; localPath='agents' }
+            if ($Mode -eq 'vendored') {
+                $manifest.standardsConsumption.sourceRepository = 'ExampleOrg/Vendored-Standards'
+                $manifest.standardsConsumption.sourceCommitSha = ('b' * 40)
+            }
+            $results = Invoke-Semantics $manifest $config -Root $isolatedRoot
+            ($results.message -join "`n") | Should -Match 'GCS004.*regular file.*authoritative' -Because $Name
+        }
+        finally { Remove-Item -LiteralPath $isolatedRoot -Recurse -Force }
+    }
+
+    It 'rejects malformed applicable-standard declarations during Contract-only semantics' -ForEach @(
+        @{ Name='blank'; Value=@('agents/AGENTS_Base.md',' ') },
+        @{ Name='null'; Value=@('agents/AGENTS_Base.md',$null) },
+        @{ Name='non-string'; Value=@('agents/AGENTS_Base.md',42) },
+        @{ Name='duplicate'; Value=@('agents/AGENTS_Base.md','agents/AGENTS_Base.md') },
+        @{ Name='absolute'; Value=@('agents/AGENTS_Base.md',[System.IO.Path]::GetFullPath('agents/AGENTS_PowerShell.md')) },
+        @{ Name='traversal'; Value=@('agents/AGENTS_Base.md','agents/../AGENTS.md') },
+        @{ Name='outside authoritative root'; Value=@('agents/AGENTS_Base.md','AGENTS.md') }
+    ) {
+        $isolatedRoot = New-IsolatedStandardsRoot
+        try {
+            $manifest = Copy-ContractObject $script:manifest
+            $config = Copy-ContractObject $script:config
+            $manifest.standardsConsumption = @{ mode='local'; localPath='agents' }
+            $manifest.applicableStandards = $Value
+            $config.applicableAgentStandards = $Value
+            $results = Invoke-Semantics $manifest $config -Root $isolatedRoot
+            ($results.message -join "`n") | Should -Match 'GCS004' -Because $Name
+        }
+        finally { Remove-Item -LiteralPath $isolatedRoot -Recurse -Force }
+    }
+
+    It 'rejects invalid <Document> standards collection shape <Case>' -ForEach @(
+        @{ Document='manifest'; Case='missing'; Value='__missing__' },
+        @{ Document='manifest'; Case='null'; Value=$null },
+        @{ Document='manifest'; Case='empty'; Value=@() },
+        @{ Document='manifest'; Case='scalar string'; Value='agents/AGENTS_Base.md' },
+        @{ Document='manifest'; Case='object'; Value=@{path='agents/AGENTS_Base.md'} },
+        @{ Document='config'; Case='missing'; Value='__missing__' },
+        @{ Document='config'; Case='null'; Value=$null },
+        @{ Document='config'; Case='empty'; Value=@() },
+        @{ Document='config'; Case='scalar string'; Value='agents/AGENTS_Base.md' },
+        @{ Document='config'; Case='object'; Value=@{path='agents/AGENTS_Base.md'} }
+    ) {
+        $isolatedRoot = New-IsolatedStandardsRoot
+        try {
+            $manifest = Copy-ContractObject $script:manifest
+            $config = Copy-ContractObject $script:config
+            $manifest.standardsConsumption = @{ mode='local'; localPath='agents' }
+            $target = if ($Document -eq 'manifest') { $manifest } else { $config }
+            $member = if ($Document -eq 'manifest') { 'applicableStandards' } else { 'applicableAgentStandards' }
+            if ($Value -eq '__missing__') { $target.Remove($member) }
+            else { $target[$member] = $Value }
+            $results = Invoke-Semantics $manifest $config -Root $isolatedRoot
+            ($results.message -join "`n") | Should -Match 'GCS004.*nonempty array' -Because "$Document $Case"
+        }
+        finally { Remove-Item -LiteralPath $isolatedRoot -Recurse -Force }
+    }
+
+    It 'rejects a regular file used as the authoritative localPath' {
+        $isolatedRoot = New-IsolatedStandardsRoot
+        try {
+            Set-Content -LiteralPath (Join-Path $isolatedRoot 'standards-file') -Value 'not a directory'
+            $manifest = Copy-ContractObject $script:manifest
+            $config = Copy-ContractObject $script:config
+            $manifest.standardsConsumption = @{ mode='local'; localPath='standards-file' }
+            $results = Invoke-Semantics $manifest $config -Root $isolatedRoot
+            ($results.message -join "`n") | Should -Match 'GCS004.*authoritative.*directory'
+        }
+        finally { Remove-Item -LiteralPath $isolatedRoot -Recurse -Force }
+    }
+
+    It 'rejects a <Mode> applicable standard target that is a directory' -ForEach @(
+        @{ Mode='local' },
+        @{ Mode='vendored' }
+    ) {
+        $isolatedRoot = New-IsolatedStandardsRoot
+        try {
+            Remove-Item -LiteralPath (Join-Path $isolatedRoot 'agents/AGENTS_Base.md') -Force
+            New-Item -ItemType Directory -Path (Join-Path $isolatedRoot 'agents/AGENTS_Base.md') | Out-Null
+            $manifest = Copy-ContractObject $script:manifest
+            $config = Copy-ContractObject $script:config
+            $manifest.standardsConsumption = @{ mode=$Mode; localPath='agents' }
+            if ($Mode -eq 'vendored') {
+                $manifest.standardsConsumption.sourceRepository = 'ExampleOrg/Vendored-Standards'
+                $manifest.standardsConsumption.sourceCommitSha = ('b' * 40)
+            }
+            $results = Invoke-Semantics $manifest $config -Root $isolatedRoot
+            ($results.message -join "`n") | Should -Match 'GCS004.*regular file'
+        }
+        finally { Remove-Item -LiteralPath $isolatedRoot -Recurse -Force }
+    }
+
+    It 'rejects a <Mode> applicable standard target that traverses a symbolic link or reparse point' -ForEach @(
+        @{ Mode='local' },
+        @{ Mode='vendored' }
+    ) {
+        $isolatedRoot = New-IsolatedStandardsRoot
+        $outsideFile = Join-Path ([System.IO.Path]::GetTempPath()) ('outside-standard-' + [guid]::NewGuid() + '.md')
+        try {
+            Set-Content -LiteralPath $outsideFile -Value '# Outside authority boundary'
+            $linkPath = Join-Path $isolatedRoot 'agents/AGENTS_Base.md'
+            Remove-Item -LiteralPath $linkPath -Force
+            try { New-Item -ItemType SymbolicLink -Path $linkPath -Target $outsideFile -ErrorAction Stop | Out-Null }
+            catch { Set-ItResult -Skipped -Because "Symbolic-link creation is unavailable: $($_.Exception.Message)"; return }
+
+            $manifest = Copy-ContractObject $script:manifest
+            $config = Copy-ContractObject $script:config
+            $manifest.standardsConsumption = @{ mode=$Mode; localPath='agents' }
+            if ($Mode -eq 'vendored') {
+                $manifest.standardsConsumption.sourceRepository = 'ExampleOrg/Vendored-Standards'
+                $manifest.standardsConsumption.sourceCommitSha = ('b' * 40)
+            }
+            $results = Invoke-Semantics $manifest $config -Root $isolatedRoot
+            ($results.message -join "`n") | Should -Match 'GCS004.*symbolic link|GCS004.*reparse|GCS004.*regular file'
+        }
+        finally {
+            if (Test-Path -LiteralPath $isolatedRoot) { Remove-Item -LiteralPath $isolatedRoot -Recurse -Force }
+            if (Test-Path -LiteralPath $outsideFile) { Remove-Item -LiteralPath $outsideFile -Force }
+        }
     }
 
     It 'enforces the vendored standards-consumption field and bounded-path contract without schema validation' -ForEach @(

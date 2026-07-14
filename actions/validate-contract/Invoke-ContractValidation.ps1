@@ -101,9 +101,18 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
 
     foreach ($standard in @($config.applicableAgentStandards + $manifest.applicableStandards | Select-Object -Unique)) {
         try {
-            $resolved = Resolve-SafePath -Root $root -ChildPath $standard -AllowMissingLeaf
-            $centralResolved = Resolve-SafePath -Root $standardsRoot -ChildPath $standard -AllowMissingLeaf
-            if (-not ((Test-Path -LiteralPath $resolved -PathType Leaf) -or (Test-Path -LiteralPath $centralResolved -PathType Leaf))) {
+            if ($manifest.schemaVersion -eq '1.2.0') {
+                $standardsMode = [string]$manifest.standardsConsumption.mode
+                $authoritativeCheckout = if ($standardsMode -eq 'central-reference') { $standardsRoot } else { $root }
+                $resolved = Resolve-SafePath -Root $authoritativeCheckout -ChildPath $standard -AllowMissingLeaf
+                $present = Test-Path -LiteralPath $resolved -PathType Leaf
+            }
+            else {
+                $resolved = Resolve-SafePath -Root $root -ChildPath $standard -AllowMissingLeaf
+                $centralResolved = Resolve-SafePath -Root $standardsRoot -ChildPath $standard -AllowMissingLeaf
+                $present = (Test-Path -LiteralPath $resolved -PathType Leaf) -or (Test-Path -LiteralPath $centralResolved -PathType Leaf)
+            }
+            if (-not $present) {
                 $results.Add((New-ValidationResult -Status Failed -Message 'Applicable agent standard missing.' -Path $standard))
             }
         }

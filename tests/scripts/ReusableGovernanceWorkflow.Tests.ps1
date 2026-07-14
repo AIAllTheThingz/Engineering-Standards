@@ -322,6 +322,58 @@ Describe 'Reusable governance workflow trust boundaries' {
         $report.results[0].name | Should -Be 'Contract'
     }
 
+    It 'rejects false <Mode> provenance through the aggregate downstream Contract entry point' -ForEach @(
+        @{ Mode='local' },
+        @{ Mode='vendored' }
+    ) {
+        $caller = New-StructuredDownstreamFixture -Name "structured-false-$Mode-provenance"
+        New-Item -ItemType Directory -Path (Join-Path $caller 'agents') -Force | Out-Null
+        $manifestPath = Join-Path $caller 'project-manifest.json'
+        $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable
+        $manifest.standardsConsumption = @{ mode=$Mode; localPath='agents' }
+        if ($Mode -eq 'vendored') {
+            $manifest.standardsConsumption.sourceRepository = 'ExampleOrg/Vendored-Standards'
+            $manifest.standardsConsumption.sourceCommitSha = ('b' * 40)
+        }
+        $manifest | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $manifestPath -Encoding utf8
+
+        $result = Invoke-DownstreamValidation -CallerRoot $caller -RepositoryOwnerType User -Category Contract
+
+        $result.ExitCode | Should -Not -Be 0
+        $result.Output | Should -Match 'GCS004.*regular file.*authoritative'
+        $report = Get-Content -LiteralPath (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
+        @($report.results).Count | Should -Be 1
+        $report.results[0].name | Should -Be 'Contract'
+        $report.results[0].status | Should -Be 'Failed'
+    }
+
+    It 'accepts complete <Mode> provenance through the aggregate downstream Contract entry point' -ForEach @(
+        @{ Mode='local' },
+        @{ Mode='vendored' }
+    ) {
+        $caller = New-StructuredDownstreamFixture -Name "structured-valid-$Mode-provenance"
+        New-Item -ItemType Directory -Path (Join-Path $caller 'agents') -Force | Out-Null
+        foreach ($name in @('AGENTS_Base.md','AGENTS_Integration.md')) {
+            Copy-Item -LiteralPath (Join-Path $script:repoRoot "agents/$name") -Destination (Join-Path $caller "agents/$name")
+        }
+        $manifestPath = Join-Path $caller 'project-manifest.json'
+        $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable
+        $manifest.standardsConsumption = @{ mode=$Mode; localPath='agents' }
+        if ($Mode -eq 'vendored') {
+            $manifest.standardsConsumption.sourceRepository = 'ExampleOrg/Vendored-Standards'
+            $manifest.standardsConsumption.sourceCommitSha = ('b' * 40)
+        }
+        $manifest | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $manifestPath -Encoding utf8
+
+        $result = Invoke-DownstreamValidation -CallerRoot $caller -RepositoryOwnerType User -Category Contract
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $report = Get-Content -LiteralPath (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
+        @($report.results).Count | Should -Be 1
+        $report.results[0].name | Should -Be 'Contract'
+        $report.results[0].status | Should -Be 'Passed'
+    }
+
     It 'rejects an explicit category override that omits Contract before structured-exception execution' {
         $caller = New-StructuredDownstreamFixture -Name 'structured-contract-omitted'
         $configPath = Join-Path $caller 'governance.config.json'
