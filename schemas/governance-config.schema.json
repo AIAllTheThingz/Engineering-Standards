@@ -95,9 +95,10 @@
           "CodexSkills",
           "Evidence",
           "Examples",
-          "WorkflowArchitecture"
-          ,"Pester"
-          ,"PSScriptAnalyzer"
+          "WorkflowArchitecture",
+          "Pester",
+          "PSScriptAnalyzer",
+          "PowerShellParser"
         ]
       },
       "minItems": 1,

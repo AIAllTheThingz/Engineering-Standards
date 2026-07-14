@@ -15,6 +15,8 @@ Optional JSON report.
 Return success while preserving findings.
 .PARAMETER ExpectedRepository
 Trusted owner/name repository identity, when available.
+.PARAMETER ExpectedStandardsRepository
+Trusted owner/name repository identity that supplied the standards workflow, when available.
 .PARAMETER RepositoryOwnerType
 Trusted repository owner type. Unknown performs structural-only owner-type validation.
 .PARAMETER ExpectedGovernanceCommitSha
@@ -35,6 +37,7 @@ param(
     [string]$ConfigPath = 'governance.config.json',
     [string]$OutputJson,
     [string]$ExpectedRepository,
+    [string]$ExpectedStandardsRepository,
     [ValidateSet('Unknown','User','Organization')][string]$RepositoryOwnerType = 'Unknown',
     [string]$ExpectedGovernanceCommitSha,
     [string]$ExpectedWorkflowInterfaceVersion,
@@ -80,7 +83,7 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
     $manifest = Read-JsonFile -Path $manifestFull
     $config = Read-JsonFile -Path $configFull
 
-    foreach ($item in @(Test-GovernanceContractSemantics -Root $root -Manifest $manifest -Config $config -ExpectedRepository $ExpectedRepository -RepositoryOwnerType $RepositoryOwnerType -ExpectedGovernanceCommitSha $ExpectedGovernanceCommitSha -ExpectedWorkflowInterfaceVersion $ExpectedWorkflowInterfaceVersion -ExpectedWorkflowProfile $ExpectedWorkflowProfile -ExpectedRequiredCheckName $ExpectedRequiredCheckName -ValidationDateUtc $ValidationDateUtc)) {
+    foreach ($item in @(Test-GovernanceContractSemantics -Root $root -Manifest $manifest -Config $config -ExpectedRepository $ExpectedRepository -ExpectedStandardsRepository $ExpectedStandardsRepository -RepositoryOwnerType $RepositoryOwnerType -ExpectedGovernanceCommitSha $ExpectedGovernanceCommitSha -ExpectedWorkflowInterfaceVersion $ExpectedWorkflowInterfaceVersion -ExpectedWorkflowProfile $ExpectedWorkflowProfile -ExpectedRequiredCheckName $ExpectedRequiredCheckName -ValidationDateUtc $ValidationDateUtc)) {
         $results.Add($item)
     }
 

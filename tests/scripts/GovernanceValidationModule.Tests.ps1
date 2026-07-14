@@ -261,6 +261,15 @@ Describe 'GovernanceValidation module' {
             @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
         }
 
+        It 'accepts PowerShellParser as a declared validation category' {
+            $document = Get-Content "$PSScriptRoot/../fixtures/valid/governance-config-1.2.0.json" -Raw | ConvertFrom-Json -AsHashtable
+            $document.validationCategories = @('Contract', 'PowerShellParser')
+            $path = Join-Path $script:tempRoot 'powershell-parser-governance-config.json'
+            $document | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path
+            $results = Test-GovernanceJsonDocument -Path $path -Kind 'governance-config'
+            @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
+        }
+
         It 'accepts unique rooted literal required CODEOWNERS paths' {
             $results = Test-GovernanceJsonDocument -Path "$PSScriptRoot/../fixtures/valid/governance-config-required-codeowner-paths.json" -Kind 'governance-config'
             @($results | Where-Object status -eq 'Failed').Count | Should -Be 0

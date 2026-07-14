@@ -30,11 +30,13 @@ For the standards repository itself, it also runs documentation completeness. Fo
 ## Script parameters and trusted context
 
 `Invoke-ContractValidation.ps1` also accepts `ExpectedRepository`,
-`RepositoryOwnerType` (`Unknown`, `User`, or `Organization`),
+`ExpectedStandardsRepository`, `RepositoryOwnerType` (`Unknown`, `User`, or `Organization`),
 `ExpectedGovernanceCommitSha`, `ExpectedWorkflowInterfaceVersion`,
 `ExpectedWorkflowProfile`, `ExpectedRequiredCheckName`, and
 `ValidationDateUtc`. The aggregate trusted workflow supplies these values from
-workflow identity or maintainer-profile context. Do not copy values from the
+workflow identity or maintainer-profile context. Central-reference source
+repository and commit declarations are compared with this trusted context and
+with `governanceCommitSha`. Do not copy values from the
 untrusted manifest into these parameters. Omitted live context remains
 unverified; syntax validation never proves that an owner exists or has access.
 

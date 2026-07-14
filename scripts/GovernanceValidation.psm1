@@ -388,7 +388,7 @@ function Test-GovernanceJsonDocument {
         foreach ($item in @(Test-UniqueValues -Items @($json.requiredDocumentationPaths) -Name 'requiredDocumentationPaths' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.applicableAgentStandards) -Name 'applicableAgentStandards' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.validationCategories) -Name 'validationCategories' -Path $Path)) { $results.Add($item) }
-        $supportedValidationCategories = @('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','Pester','PSScriptAnalyzer')
+        $supportedValidationCategories = @('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')
         foreach ($category in @($json.validationCategories)) {
             if ($category -notin $supportedValidationCategories) {
                 $results.Add((New-ValidationResult -Status Failed -Message "validationCategories contains unsupported value '$category'." -Path $Path))
@@ -908,7 +908,7 @@ function Test-GovernanceContractSemantics {
     .SYNOPSIS
     Cross-validates the manifest, governance configuration, standards, workflow interface, evidence, and exceptions.
     .DESCRIPTION
-    Performs deterministic offline validation. Trusted repository, owner-type, commit, workflow, profile, check-name, and date values must be supplied by the caller rather than inferred from repository declarations.
+    Performs deterministic offline validation. Trusted caller repository, standards repository, owner-type, commit, workflow, profile, check-name, and date values must be supplied by the caller rather than inferred from repository declarations.
     #>
     [CmdletBinding()]
     param(
@@ -916,6 +916,7 @@ function Test-GovernanceContractSemantics {
         [Parameter(Mandatory)][System.Collections.IDictionary]$Manifest,
         [Parameter(Mandatory)][System.Collections.IDictionary]$Config,
         [string]$ExpectedRepository,
+        [string]$ExpectedStandardsRepository,
         [ValidateSet('Unknown','User','Organization')][string]$RepositoryOwnerType = 'Unknown',
         [string]$ExpectedGovernanceCommitSha,
         [string]$ExpectedWorkflowInterfaceVersion,
@@ -974,8 +975,20 @@ function Test-GovernanceContractSemantics {
 
     $mode = if ($Manifest.Contains('standardsConsumption')) { [string]$Manifest.standardsConsumption.mode } else { $null }
     if ($Manifest.schemaVersion -eq '1.2.0' -and $mode -notin @('central-reference','vendored','local')) { Add-Finding 'GCS004' 'Standards consumption mode is unsupported.' }
+    $sourceRepository = if ($Manifest.Contains('standardsConsumption')) { [string](Get-JsonMemberValue -InputObject $Manifest.standardsConsumption -Name 'sourceRepository') } else { $null }
     $sourceCommitSha = if ($Manifest.Contains('standardsConsumption')) { Get-JsonMemberValue -InputObject $Manifest.standardsConsumption -Name 'sourceCommitSha' } else { $null }
     if ($mode -in @('central-reference','vendored') -and $sourceCommitSha -notmatch '^[A-Fa-f0-9]{40}$') { Add-Finding 'GCS004' 'Immutable standards source SHA is required for central-reference and vendored modes.' }
+    if ($Manifest.schemaVersion -eq '1.2.0' -and $mode -eq 'central-reference') {
+        if ($ExpectedStandardsRepository -and -not [string]::Equals($sourceRepository, $ExpectedStandardsRepository, [System.StringComparison]::OrdinalIgnoreCase)) {
+            Add-Finding 'GCS004' "Central standards source repository '$sourceRepository' does not match trusted standards repository '$ExpectedStandardsRepository'."
+        }
+        if ($ExpectedGovernanceCommitSha -and $sourceCommitSha -ne $ExpectedGovernanceCommitSha) {
+            Add-Finding 'GCS004' 'Central standards source commit SHA does not match the trusted workflow standards SHA.'
+        }
+        if ($Manifest.Contains('governanceCommitSha') -and $sourceCommitSha -ne $Manifest.governanceCommitSha) {
+            Add-Finding 'GCS004' 'Central standards source commit SHA disagrees with the declared governance commit SHA.'
+        }
+    }
     if ($mode -in @('vendored','local')) {
         try { Resolve-SafePath -Root $Root -ChildPath $Manifest.standardsConsumption.localPath | Out-Null } catch { Add-Finding 'GCS004' $_.Exception.Message }
     }
@@ -1011,10 +1024,16 @@ function Test-GovernanceContractSemantics {
         if ($interface.path -ne '.github/workflows/governance-ci-reusable.yml' -or $interface.jobId -ne 'governance' -or $interface.jobName -ne 'Governance validation' -or $interface.artifactNamePattern -ne 'governance-evidence-${run_id}') { Add-Finding 'GCS007' 'Workflow interface declaration conflicts with the supported interface.' }
     }
 
-    $supportedCategories = @('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','Pester','PSScriptAnalyzer')
+    $supportedCategories = @('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')
+    $maintainerOnlyCategories = @('JsonSchemas','YamlSyntax','WorkflowArchitecture','RepositoryHealth','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')
     foreach ($category in @($Config.validationCategories)) { if ($category -notin $supportedCategories) { Add-Finding 'GCS008' "Unsupported validation category '$category'." } }
     if ($workflowProfile -eq 'standards-maintainer') {
         foreach ($category in $supportedCategories) { if (@($Config.validationCategories) -notcontains $category) { Add-Finding 'GCS008' "Maintainer profile omits executed category '$category'." } }
+    }
+    elseif ($workflowProfile -eq 'downstream') {
+        foreach ($category in @($Config.validationCategories)) {
+            if ($category -in $maintainerOnlyCategories) { Add-Finding 'GCS008' "Downstream profile cannot declare maintainer-only validation category '$category'." }
+        }
     }
 
     if ($Manifest.schemaVersion -eq '1.2.0') {
@@ -1023,15 +1042,55 @@ function Test-GovernanceContractSemantics {
     }
 
     $exceptionById = @{}
-    foreach ($exception in @($Config.exceptions)) {
-        if ($exception -is [string]) { continue }
-        if ($exceptionById.ContainsKey($exception.identifier)) { Add-Finding 'GCS010' "Duplicate exception identifier '$($exception.identifier)'."; continue }
-        $exceptionById[$exception.identifier] = $exception
+    $activeExceptionIds = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    $exceptionRecords = @($Manifest.exceptions) + @($Config.exceptions)
+    $requiresStructuredExceptions = $Manifest.schemaVersion -eq '1.2.0' -or $Config.schemaVersion -eq '1.2.0'
+    $requiredExceptionFields = @('identifier','status','scope','owner','approver','approvalDate','expiration','affectedControl','compensatingControls','remediationPlan','evidenceReference')
+    foreach ($exception in $exceptionRecords) {
+        if ($exception -is [string]) {
+            if ($requiresStructuredExceptions) { Add-Finding 'GCS010' "Legacy exception reference '$exception' is not valid for schema version 1.2.0." }
+            continue
+        }
+        if ($exception -isnot [System.Collections.IDictionary]) {
+            Add-Finding 'GCS010' 'Exception record is malformed and must be a structured object.'
+            continue
+        }
+
+        $missingFields = @($requiredExceptionFields | Where-Object { -not $exception.Contains($_) })
+        $identifier = if ($exception.Contains('identifier')) { [string]$exception.identifier } else { '<missing>' }
+        $malformed = $missingFields.Count -gt 0
+        if ($missingFields.Count -gt 0) { Add-Finding 'GCS010' "Exception '$identifier' is missing required fields: $($missingFields -join ', ')." }
+        if ($identifier -notmatch '^GOV-[A-Z0-9-]+$') { Add-Finding 'GCS010' "Exception identifier '$identifier' is malformed."; $malformed = $true }
+        if ($identifier -ne '<missing>') {
+            if ($exceptionById.ContainsKey($identifier)) { Add-Finding 'GCS010' "Duplicate exception identifier '$identifier'."; continue }
+            $exceptionById[$identifier] = $exception
+        }
+
+        $lengthRules = @{ scope=@(10,500); owner=@(2,254); approver=@(2,254); affectedControl=@(3,160); remediationPlan=@(20,1000) }
+        foreach ($field in $lengthRules.Keys) {
+            $value = if ($exception.Contains($field)) { [string]$exception[$field] } else { '' }
+            if ($value.Length -lt $lengthRules[$field][0] -or $value.Length -gt $lengthRules[$field][1]) { $malformed = $true }
+        }
+        $evidenceReference = if ($exception.Contains('evidenceReference')) { [string]$exception.evidenceReference } else { '' }
+        if ([string]::IsNullOrWhiteSpace($evidenceReference) -or [System.IO.Path]::IsPathRooted($evidenceReference) -or $evidenceReference.Contains('..')) { $malformed = $true }
+        $compensatingControls = @()
+        if ($exception.Contains('compensatingControls')) { $compensatingControls = @($exception.compensatingControls) }
+        if ($compensatingControls.Count -eq 0 -or @($compensatingControls | Where-Object { ([string]$_).Length -lt 10 }).Count -gt 0 -or @(Compare-Object $compensatingControls ($compensatingControls | Select-Object -Unique)).Count -gt 0) { $malformed = $true }
+        if ($malformed) { Add-Finding 'GCS010' "Exception '$identifier' is malformed." }
+
+        $approvalDate = [datetime]::MinValue
         $expiration = [datetime]::MinValue
-        if (-not [datetime]::TryParse([string]$exception.expiration, [ref]$expiration) -or $exception.status -ne 'Approved' -or $expiration.Date -lt $ValidationDateUtc.ToUniversalTime().Date) { Add-Finding 'GCS010' "Exception '$($exception.identifier)' is not active and unexpired." }
+        $dateStyles = [System.Globalization.DateTimeStyles]::AssumeUniversal
+        $approvalDateValid = $exception.Contains('approvalDate') -and [datetime]::TryParseExact([string]$exception.approvalDate, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture, $dateStyles, [ref]$approvalDate)
+        $expirationValid = $exception.Contains('expiration') -and [datetime]::TryParseExact([string]$exception.expiration, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture, $dateStyles, [ref]$expiration)
+        $validationDate = $ValidationDateUtc.ToUniversalTime().Date
+        $status = if ($exception.Contains('status')) { [string]$exception.status } else { $null }
+        $active = -not $malformed -and $status -eq 'Approved' -and $approvalDateValid -and $expirationValid -and $approvalDate.Date -le $validationDate -and $expiration.Date -ge $validationDate -and $expiration.Date -ge $approvalDate.Date
+        if (-not $active) { Add-Finding 'GCS010' "Exception '$identifier' is not an active, approved, and unexpired record." }
+        elseif ($identifier -ne '<missing>') { [void]$activeExceptionIds.Add($identifier) }
     }
     foreach ($disabled in @($Config.controls.mandatoryControlsDisabled)) {
-        if (-not $exceptionById.ContainsKey($disabled.exceptionReference) -or $exceptionById[$disabled.exceptionReference].affectedControl -ne $disabled.control) { Add-Finding 'GCS011' "Disabled control '$($disabled.control)' lacks an applicable active exception." }
+        if (-not $exceptionById.ContainsKey($disabled.exceptionReference) -or -not $activeExceptionIds.Contains([string]$disabled.exceptionReference) -or $exceptionById[$disabled.exceptionReference].affectedControl -ne $disabled.control) { Add-Finding 'GCS011' "Disabled control '$($disabled.control)' lacks an applicable active exception." }
     }
 
     if ($ExpectedRequiredCheckName -and $Config.schemaVersion -eq '1.2.0' -and @($Config.requiredCheckNames) -notcontains $ExpectedRequiredCheckName) { Add-Finding 'GCS012' "Required check '$ExpectedRequiredCheckName' is absent from the workflow contract." }

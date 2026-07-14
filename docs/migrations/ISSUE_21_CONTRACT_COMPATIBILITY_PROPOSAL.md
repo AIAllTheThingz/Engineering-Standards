@@ -132,7 +132,7 @@ Version `1.2.0` requires a `standardsConsumption` object:
 
 | Mode | Required semantics |
 | --- | --- |
-| `central-reference` | `sourceRepository` and full `sourceCommitSha` are required; paths resolve in the immutable central checkout; missing source fails closed. |
+| `central-reference` | `sourceRepository` and full `sourceCommitSha` are required and must match the trusted workflow repository/SHA; `sourceCommitSha` must also equal `governanceCommitSha`; paths resolve in the immutable central checkout; missing or contradictory source identity fails closed. |
 | `vendored` | `sourceRepository`, full `sourceCommitSha`, and repository-relative `localPath` are required; local files are authoritative for the run and drift from the recorded source fails validation. |
 | `local` | repository-relative `localPath` is required; the current repository is authoritative; source repository/SHA are omitted; missing files fail closed. |
 
@@ -173,9 +173,12 @@ Version `1.2.0` exception records contain:
 
 Valid statuses are `Approved`, `Rejected`, `Revoked`, and `Expired`; only an
 approved, in-scope, unexpired record is active. Dates are interpreted in UTC and
-tests inject a fixed validation date. Duplicate identifiers are invalid.
-Disabled mandatory controls must reference an active exception covering that
-exact control. Legacy versions retain exception identifier strings.
+tests inject a fixed validation date. Manifest and configuration records form
+one exception inventory; duplicate identifiers across either document are
+invalid. Disabled mandatory controls must reference an active exception covering
+that exact control. Schema `1.2.0` rejects legacy string entries, malformed
+records, inactive statuses, future approvals, and expired records. Legacy
+versions retain exception identifier strings.
 
 ## Schema identifier namespace
 
@@ -251,11 +254,13 @@ source repository and SHA and identify the authoritative `localPath`.
 The controlled category inventory is `Contract`, `JsonSchemas`, `YamlSyntax`,
 `WorkflowArchitecture`, `MarkdownLinks`, `DocumentationCompleteness`,
 `ForbiddenPatterns`, `RepositoryHealth`, `CodexSkills`, `Evidence`, `Examples`,
-`Pester`, and `PSScriptAnalyzer`.
+`Pester`, `PSScriptAnalyzer`, and `PowerShellParser`.
 
 The `standards-maintainer` profile declares every category actually executed by
-candidate validation. The `downstream` profile declares the supported subset
-selected by the caller configuration. Issue #21 detects unsupported,
+candidate validation. The `downstream` profile is limited to `Contract`,
+`MarkdownLinks`, `DocumentationCompleteness`, `ForbiddenPatterns`, and
+`CodexSkills`; maintainer-only categories fail semantic validation before the
+reusable workflow dispatches tools. Issue #21 detects unsupported,
 declared-but-never-executed, and required-but-omitted categories; it does not
 redesign how Issue #22 aggregates or schedules them.
 

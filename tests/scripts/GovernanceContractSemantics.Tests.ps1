@@ -6,8 +6,23 @@ BeforeAll {
     function Copy-ContractObject([object]$Value) {
         $Value | ConvertTo-Json -Depth 30 | ConvertFrom-Json -AsHashtable
     }
-    function Invoke-Semantics([hashtable]$Manifest, [hashtable]$Config, [string]$ExpectedRepository = 'AIAllTheThingz/Engineering-Standards', [string]$OwnerType = 'User', [string]$ExpectedSha = 'a3792195a0a2d1d443f8feea57c648aa2ac83d87', [string]$Interface = '1.0.0', [string]$Profile = 'standards-maintainer', [string]$Check = 'Governance / Governance validation', [string]$Root = $script:root) {
-        @(Test-GovernanceContractSemantics -Root $Root -Manifest $Manifest -Config $Config -ExpectedRepository $ExpectedRepository -RepositoryOwnerType $OwnerType -ExpectedGovernanceCommitSha $ExpectedSha -ExpectedWorkflowInterfaceVersion $Interface -ExpectedWorkflowProfile $Profile -ExpectedRequiredCheckName $Check -ValidationDateUtc ([datetime]'2026-07-14T00:00:00Z'))
+    function New-TestException([string]$Identifier = 'GOV-2026-ACTIVE', [string]$Status = 'Approved', [string]$AffectedControl = 'SyntheticControl', [string]$ApprovalDate = '2026-01-01', [string]$Expiration = '2026-12-31') {
+        @{
+            identifier = $Identifier
+            status = $Status
+            scope = 'Synthetic governance exception scope'
+            owner = '@owner'
+            approver = '@approver'
+            approvalDate = $ApprovalDate
+            expiration = $Expiration
+            affectedControl = $AffectedControl
+            compensatingControls = @('Synthetic compensating validation')
+            remediationPlan = 'Remove the synthetic exception after remediation.'
+            evidenceReference = 'evidence/exception.json'
+        }
+    }
+    function Invoke-Semantics([hashtable]$Manifest, [hashtable]$Config, [string]$ExpectedRepository = 'AIAllTheThingz/Engineering-Standards', [string]$ExpectedStandardsRepository = 'AIAllTheThingz/Engineering-Standards', [string]$OwnerType = 'User', [string]$ExpectedSha = 'a3792195a0a2d1d443f8feea57c648aa2ac83d87', [string]$Interface = '1.0.0', [string]$Profile = 'standards-maintainer', [string]$Check = 'Governance / Governance validation', [string]$Root = $script:root) {
+        @(Test-GovernanceContractSemantics -Root $Root -Manifest $Manifest -Config $Config -ExpectedRepository $ExpectedRepository -ExpectedStandardsRepository $ExpectedStandardsRepository -RepositoryOwnerType $OwnerType -ExpectedGovernanceCommitSha $ExpectedSha -ExpectedWorkflowInterfaceVersion $Interface -ExpectedWorkflowProfile $Profile -ExpectedRequiredCheckName $Check -ValidationDateUtc ([datetime]'2026-07-14T00:00:00Z'))
     }
 }
 
@@ -15,6 +30,76 @@ Describe 'Governance contract semantic validation' {
     It 'accepts the coherent current repository contract' {
         $results = Invoke-Semantics (Copy-ContractObject $script:manifest) (Copy-ContractObject $script:config)
         @($results | Where-Object status -eq 'Failed').Count | Should -Be 0
+        $script:config.validationCategories | Should -Contain 'PowerShellParser'
+    }
+
+    It 'rejects every maintainer-only category for the downstream profile' -ForEach @(
+        'JsonSchemas', 'YamlSyntax', 'WorkflowArchitecture', 'RepositoryHealth', 'Evidence', 'Examples', 'Pester', 'PSScriptAnalyzer', 'PowerShellParser'
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.workflowProfile = 'downstream'
+        $config.validationCategories = @('Contract', $_)
+        $results = Invoke-Semantics $manifest $config -Profile 'downstream' -Check ''
+        ($results.message -join "`n") | Should -Match "GCS008.*$_"
+    }
+
+    It 'binds central-reference repository and commit identity to trusted workflow context' -ForEach @(
+        @{ Name='repository mismatch'; SourceRepository='Untrusted/Standards'; SourceSha='a3792195a0a2d1d443f8feea57c648aa2ac83d87'; GovernanceSha='a3792195a0a2d1d443f8feea57c648aa2ac83d87'; Pattern='trusted standards repository' },
+        @{ Name='trusted SHA mismatch'; SourceRepository='AIAllTheThingz/Engineering-Standards'; SourceSha=('b' * 40); GovernanceSha=('b' * 40); Pattern='trusted workflow standards SHA' },
+        @{ Name='governance SHA disagreement'; SourceRepository='AIAllTheThingz/Engineering-Standards'; SourceSha=('b' * 40); GovernanceSha='a3792195a0a2d1d443f8feea57c648aa2ac83d87'; Pattern='declared governance commit SHA' }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.standardsConsumption = @{ mode='central-reference'; sourceRepository=$SourceRepository; sourceCommitSha=$SourceSha }
+        $manifest.governanceCommitSha = $GovernanceSha
+        $config.governanceCommitSha = $GovernanceSha
+        $expectedSha = if ($Name -eq 'trusted SHA mismatch') { 'a3792195a0a2d1d443f8feea57c648aa2ac83d87' } else { $SourceSha }
+        $results = Invoke-Semantics $manifest $config -ExpectedSha $expectedSha
+        ($results.message -join "`n") | Should -Match "GCS004.*$Pattern" -Because $Name
+    }
+
+    It 'evaluates active manifest exceptions when authorizing a disabled configuration control' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.exceptions = @(New-TestException)
+        $config.controls.mandatoryControlsDisabled = @(@{control='SyntheticControl';exceptionReference='GOV-2026-ACTIVE'})
+        $results = Invoke-Semantics $manifest $config
+        @($results | Where-Object { $_.message -match 'GCS01[01]' }) | Should -HaveCount 0
+    }
+
+    It 'rejects inactive manifest exception records' -ForEach @(
+        @{ Name='expired'; Status='Approved'; Approval='2026-01-01'; Expiration='2026-07-01' },
+        @{ Name='rejected'; Status='Rejected'; Approval='2026-01-01'; Expiration='2026-12-31' },
+        @{ Name='revoked'; Status='Revoked'; Approval='2026-01-01'; Expiration='2026-12-31' },
+        @{ Name='future approval'; Status='Approved'; Approval='2026-08-01'; Expiration='2026-12-31' }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $manifest.exceptions = @(New-TestException -Status $Status -ApprovalDate $Approval -Expiration $Expiration)
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS010.*not an active' -Because $Name
+    }
+
+    It 'rejects malformed, legacy, and cross-document duplicate version 1.2.0 exceptions' -ForEach @(
+        @{ Name='malformed'; Apply={ param($m,$c) $m.exceptions=@(@{identifier='bad'}) }; Pattern='GCS010.*malformed' },
+        @{ Name='legacy string'; Apply={ param($m,$c) $m.exceptions=@('GOV-2026-LEGACY') }; Pattern='GCS010.*Legacy exception' },
+        @{ Name='duplicate'; Apply={ param($m,$c) $m.exceptions=@(New-TestException); $c.exceptions=@(New-TestException) }; Pattern='GCS010.*Duplicate exception' }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        & $Apply $manifest $config
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match $Pattern -Because $Name
+    }
+
+    It 'requires a disabled mandatory control to reference an active exception for the exact control' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.exceptions = @(New-TestException -AffectedControl 'DifferentControl')
+        $config.controls.mandatoryControlsDisabled = @(@{control='SyntheticControl';exceptionReference='GOV-2026-ACTIVE'})
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS011.*lacks an applicable active exception'
     }
 
     It 'reports stable finding IDs for cross-document contradictions' -ForEach @(
