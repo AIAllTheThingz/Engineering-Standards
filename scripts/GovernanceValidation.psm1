@@ -461,6 +461,7 @@ function Test-GovernanceJsonDocument {
                 }
             }
         }
+        if (@($results | Where-Object status -eq 'Failed').Count -gt 0) { return @($results) }
     }
     if ($json.ContainsKey('status') -and $statuses -notcontains $json.status) {
         $results.Add((New-ValidationResult -Status Failed -Message "Unknown status '$($json.status)'." -Path $Path))

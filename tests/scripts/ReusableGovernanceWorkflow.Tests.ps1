@@ -63,11 +63,11 @@ function script:New-StructuredDownstreamFixture {
     $manifest.governanceCommitSha = $script:standardsSha
     $manifest.repositoryOwnerType = $DeclaredOwnerType
     $manifest.standardsConsumption.sourceCommitSha = $script:standardsSha
-    $manifest.owners = if ($DeclaredOwnerType -eq 'Organization') {
-        @([ordered]@{ type='github-team'; identifier='@ExampleOrg/maintainers'; responsibility='Owns governance review.'; escalation='SECURITY.md' })
+    if ($DeclaredOwnerType -eq 'Organization') {
+        $manifest.owners = @([ordered]@{ type='github-team'; identifier='@ExampleOrg/maintainers'; responsibility='Owns governance review.'; escalation='SECURITY.md' })
     }
     else {
-        @([ordered]@{ type='github-user'; identifier='@ExampleOrg'; responsibility='Owns governance review.'; escalation='SECURITY.md' })
+        $manifest.owners = @([ordered]@{ type='github-user'; identifier='@ExampleOrg'; responsibility='Owns governance review.'; escalation='SECURITY.md' })
     }
     $config.governanceCommitSha = $script:standardsSha
     $manifest | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $root 'project-manifest.json') -Encoding utf8
