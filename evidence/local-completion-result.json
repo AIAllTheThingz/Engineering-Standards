@@ -7,8 +7,8 @@
   "githubJob": null,
   "artifactName": null,
   "repository": "AIAllTheThingz/Engineering-Standards",
-  "commitSha": "8ec9835837cfb5555a7674a7a4d3b8ea0f8593a3",
-  "validatedCommitSha": "8ec9835837cfb5555a7674a7a4d3b8ea0f8593a3",
+  "commitSha": "4fb9bfc1b5f3154c89f634d55cda626257f01352",
+  "validatedCommitSha": "4fb9bfc1b5f3154c89f634d55cda626257f01352",
   "evidenceCommitSha": null,
   "branch": "feature/issue-20-codex-skill-validation",
   "pullRequest": null,
@@ -16,16 +16,14 @@
   "riskClassification": "High",
   "changeCategory": "mixed",
   "status": "NotRun",
-  "startedAtUtc": "2026-07-14T00:15:18.6003959Z",
-  "completedAtUtc": "2026-07-14T00:15:18.6031621Z",
+  "startedAtUtc": "2026-07-14T00:42:37.0880012Z",
+  "completedAtUtc": "2026-07-14T00:42:37.0912073Z",
   "durationSeconds": 0,
-  "summary": "Issue #20 deterministic local validation passed, including 449 Pester tests and all nine selected aggregate categories. Eight model-behavior expectations and GitHub-hosted execution remain NotRun; five existing Windows symbolic-link tests were skipped because administrator privilege was unavailable.",
+  "summary": "Issue #20 deterministic local validation passed, including 450 Pester tests and all nine selected aggregate categories. Eight model-behavior expectations and corrected-head GitHub-hosted execution remain NotRun; five existing Windows symbolic-link tests were skipped because administrator privilege was unavailable.",
   "changedFiles": [
     "evidence/codex-skills.json",
-    "evidence/forbidden-patterns.json",
     "evidence/governance-validation.json",
-    "evidence/issue-20-local-test-results.json",
-    "evidence/local-completion-result.json"
+    "evidence/issue-20-local-test-results.json"
   ],
   "changedFileCategories": {
     "source": [],
@@ -34,10 +32,8 @@
     "tests": [],
     "generatedEvidence": [
       "evidence/codex-skills.json",
-      "evidence/forbidden-patterns.json",
       "evidence/governance-validation.json",
-      "evidence/issue-20-local-test-results.json",
-      "evidence/local-completion-result.json"
+      "evidence/issue-20-local-test-results.json"
     ],
     "generatedBuildOutput": []
   },
@@ -65,7 +61,7 @@
   "dataClassification": "Internal",
   "identityUsed": "Local maintainer context",
   "credentialMode": "Local workstation credentials",
-  "notRunReason": "GitHub-hosted pull request checks were not run in this Local evidence context.",
+  "notRunReason": "Corrected final-head GitHub-hosted pull request checks were not run in this Local evidence context.",
   "blockedReason": null,
   "notApplicableRationale": null,
   "commandsExecuted": [
@@ -88,10 +84,12 @@
     "git status --short",
     "git diff --check",
     "git diff --stat",
-    "git diff origin/master...HEAD"
+    "git diff origin/master...HEAD",
+    "pwsh -NoProfile -Command '$env:GITHUB_ACTIONS=\"true\"; Invoke-Pester -Path tests/scripts/CodexSkills.Tests.ps1 -Output Detailed'",
+    "pwsh -NoProfile -File scripts/Invoke-PesterSuite.ps1 -EvidenceRoot .tmp/candidate-validation/pester-correction-final"
   ],
   "commandsNotExecuted": [
-    "GitHub-hosted pull request checks were not run in this Local evidence context.",
+    "Corrected final-head GitHub-hosted pull request checks were not run in this Local evidence context.",
     "The eight prompt-behavior model evaluations were not run; deterministic fixture structure only was validated."
   ],
   "tests": [
@@ -111,9 +109,9 @@
       "toolVersion": "7.6.3",
       "environment": "Local",
       "exitCode": 3,
-      "summary": "GitHub-hosted workflow execution was not run in the local evidence context.",
+      "summary": "GitHub-hosted execution of the corrected final head was not run in the local evidence context.",
       "warnings": [],
-      "failureReason": "GitHub-hosted workflow execution was not performed before pull-request creation.",
+      "failureReason": "The initial hosted cycle failed and the corrected final head had not yet run when this local evidence was generated.",
       "blockedReason": null,
       "notApplicableRationale": null,
       "manualProcedure": null,
@@ -140,7 +138,7 @@
   ],
   "remainingRisks": [
     "Human review is required for the High-risk governance and workflow change.",
-    "Hosted checks and independent artifact verification remain pending."
+    "Corrected-head hosted checks and independent artifact verification remain pending."
   ],
   "exceptions": [],
   "approvals": [],
@@ -158,9 +156,9 @@
     "infrastructure": {
       "governanceWorkflow": {
         "callerRepository": "AIAllTheThingz/Engineering-Standards",
-        "callerCommitSha": "8ec9835837cfb5555a7674a7a4d3b8ea0f8593a3",
+        "callerCommitSha": "4fb9bfc1b5f3154c89f634d55cda626257f01352",
         "standardsRepository": "AIAllTheThingz/Engineering-Standards",
-        "standardsWorkflowSha": "900d0b6213e0de3d4c06c93cc6703987fd635901",
+        "standardsWorkflowSha": "5528558513a8861f31c4ca0f910bbce46396f239",
         "validationProfile": "standards-maintainer",
         "checksExecuted": [
           "Contract",
