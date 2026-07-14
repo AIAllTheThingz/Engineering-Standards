@@ -309,10 +309,21 @@ Describe 'Governance contract semantic validation' {
         $config = Copy-ContractObject $script:config
         $config.workflowProfile = 'downstream'
         $config.validationCategories = @('Contract', 'MarkdownLinks', 'DocumentationCompleteness', 'ForbiddenPatterns', 'CodexSkills')
-        $config.requiredCheckNames = @('Downstream governance / Governance validation')
-        $config.workflowInterface.requiredCheckNames = @('Downstream governance / Governance validation')
-        $results = Invoke-Semantics $manifest $config -Profile 'downstream' -Check 'Downstream governance / Governance validation'
+        $config.requiredCheckNames = @('Repository Governance / Governance validation')
+        $config.workflowInterface.requiredCheckNames = @('Repository Governance / Governance validation')
+        $results = Invoke-Semantics $manifest $config -Profile 'downstream' -Check ''
         @($results | Where-Object { $_.message -match 'GCS012' }) | Should -HaveCount 0
+    }
+
+    It 'rejects matching downstream required-check arrays that omit the reusable governance job' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.workflowProfile = 'downstream'
+        $config.validationCategories = @('Contract', 'MarkdownLinks', 'DocumentationCompleteness', 'ForbiddenPatterns', 'CodexSkills')
+        $config.requiredCheckNames = @('Unit tests')
+        $config.workflowInterface.requiredCheckNames = @('Unit tests')
+        $results = Invoke-Semantics $manifest $config -Profile 'downstream' -Check ''
+        ($results.message -join "`n") | Should -Match "GCS012.*must include a caller check for workflow job 'Governance validation'"
     }
 
     It 'preserves singular ExpectedRequiredCheckName compatibility for additional trusted checks' {

@@ -1471,6 +1471,19 @@ function Test-GovernanceContractSemantics {
         if ($ExpectedRequiredCheckName -and $requiredCheckNames -cnotcontains $ExpectedRequiredCheckName) { Add-Finding 'GCS012' "Required check '$ExpectedRequiredCheckName' is absent from the workflow contract." }
         if ($requiredCheckArraysValid -and -not (Test-ExactStringSet -Actual $requiredCheckNames -Expected ([string[]]$interfaceRequiredCheckNames))) { Add-Finding 'GCS012' 'Branch-protection and workflow-interface required check names must agree exactly as a case-sensitive set using ordinal comparison.' }
 
+        if ($requiredCheckArraysValid -and $workflowProfile -ceq 'downstream') {
+            $reusableJobName = [string](Get-JsonMemberValue -InputObject $workflowInterfaceObject -Name 'jobName')
+            $downstreamCheckSuffix = ' / ' + $reusableJobName
+            $hasDownstreamGovernanceCheck = @($requiredCheckNames | Where-Object {
+                $candidateCheckName = [string]$_
+                $candidateCheckName.EndsWith($downstreamCheckSuffix, [System.StringComparison]::Ordinal) -and
+                    -not [string]::IsNullOrWhiteSpace($candidateCheckName.Substring(0, $candidateCheckName.Length - $downstreamCheckSuffix.Length))
+            }).Count -gt 0
+            if (-not $hasDownstreamGovernanceCheck) {
+                Add-Finding 'GCS012' "Downstream required check names must include a caller check for workflow job '$reusableJobName'."
+            }
+        }
+
         if ($workflowProfile -ceq 'standards-maintainer' -and $Config.workflowInterfaceVersion -ceq '1.0.0') {
             foreach ($canonicalCheckName in @(Get-CanonicalMaintainerRequiredCheckNames)) {
                 if ($requiredCheckNames -cnotcontains $canonicalCheckName) { Add-Finding 'GCS012' "Maintainer branch-protection checks omit canonical check '$canonicalCheckName'." }
