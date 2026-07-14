@@ -16,7 +16,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Changed
 
-- Rotated both governance self-CI jobs and current `1.2.0` declarations to immutable Issue #21 implementation commit `06727051ddb33f73bdc1b6dd5e31ac7abe0278cb`.
+- Rotated both governance self-CI jobs and current `1.2.0` declarations to immutable Issue #21 implementation commit `e2c0f9c1e839e92603c929d676a69412e7591983`.
 
 - Reconciled repository ownership declarations with three verified GitHub user reviewers and documented safe CODEOWNERS, last-push, branch, tag, bypass, and rollback enforcement.
 - Repaired reusable-workflow trust boundaries so downstream repositories execute immutable central tooling while treating caller content as untrusted data.
