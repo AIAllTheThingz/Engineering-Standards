@@ -1410,7 +1410,8 @@ function Test-GovernanceContractSemantics {
             $evidenceReference.Contains('..')
         ) { $malformed = $true }
         $compensatingControls = @()
-        $compensatingControlsValue = if ($exception.Contains('compensatingControls')) { $exception.compensatingControls } else { $null }
+        $compensatingControlsValue = $null
+        if ($exception.Contains('compensatingControls')) { $compensatingControlsValue = $exception['compensatingControls'] }
         $compensatingControlsIsArray = $compensatingControlsValue -is [System.Collections.IList] -and $compensatingControlsValue -isnot [string]
         if ($compensatingControlsIsArray) { $compensatingControls = @($compensatingControlsValue) }
         $seenCompensatingControls = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
