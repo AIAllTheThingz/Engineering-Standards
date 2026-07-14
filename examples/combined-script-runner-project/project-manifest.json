@@ -67,12 +67,12 @@
     }
   },
   "exceptions": [],
-  "governanceCommitSha": "0e2b527b158bc6e2c6b8995786565e7a866c2d20",
+  "governanceCommitSha": "b5bd25c3b86d8a19b646d19fd15b639d72a7a2fa",
   "workflowInterfaceVersion": "1.0.0",
   "repositoryOwnerType": "User",
   "standardsConsumption": {
     "mode": "central-reference",
     "sourceRepository": "AIAllTheThingz/Engineering-Standards",
-    "sourceCommitSha": "0e2b527b158bc6e2c6b8995786565e7a866c2d20"
+    "sourceCommitSha": "b5bd25c3b86d8a19b646d19fd15b639d72a7a2fa"
   }
 }
