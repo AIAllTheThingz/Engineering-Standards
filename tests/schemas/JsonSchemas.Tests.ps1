@@ -23,5 +23,21 @@ Describe 'JSON schema validation' {
                 (Get-Content -LiteralPath $fixture.FullName -Raw | Test-Json -SchemaFile $schema) | Should -BeFalse -Because $fixture.Name
             }
         }
+
+        It 'accepts current structured owner and workflow contracts directly in JSON Schema' {
+            $manifestSchema = Resolve-Path "$PSScriptRoot/../../schemas/project-manifest.schema.json"
+            $configSchema = Resolve-Path "$PSScriptRoot/../../schemas/governance-config.schema.json"
+            foreach ($name in @('project-manifest-1.2.0-user.json','project-manifest-1.2.0-team.json')) {
+                (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/$name" -Raw | Test-Json -SchemaFile $manifestSchema) | Should -BeTrue -Because $name
+            }
+            (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/governance-config-1.2.0.json" -Raw | Test-Json -SchemaFile $configSchema) | Should -BeTrue
+        }
+
+        It 'uses only the controlled schema identifier namespace' {
+            foreach ($schemaFile in Get-ChildItem "$PSScriptRoot/../../schemas" -Filter '*.schema.json') {
+                $schema = Get-Content -LiteralPath $schemaFile.FullName -Raw | ConvertFrom-Json
+                $schema.'$id' | Should -Match '^urn:aiallthethingz:engineering-standards:schema:[a-z0-9-]+$' -Because $schemaFile.Name
+            }
+        }
     }
 }

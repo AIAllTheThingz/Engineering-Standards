@@ -31,13 +31,16 @@ The manifest is intentionally concise. It should identify the project clearly wi
 | `projectName` | Yes | Human-readable project name. | Must be specific enough for evidence and review. |
 | `repository` | Yes | Repository owner/name. | Must match the actual repository. |
 | `description` | Yes | System purpose. | Must not be generic filler. |
-| `governanceVersion` | Yes | Adopted standards version. | Must identify the central standards version or SHA. |
+| `governanceVersion` | Yes | Adopted semantic governance release. | Must be SemVer and must never contain a commit SHA. |
+| `governanceCommitSha` | Yes in `1.2.0` | Immutable standards/workflow implementation. | Must be the full 40-character SHA used by the workflow reference. |
+| `workflowInterfaceVersion` | Yes in `1.2.0` | Reusable workflow compatibility contract. | Initial supported interface is `1.0.0`; it is independent of the governance release. |
+| `repositoryOwnerType` | Yes in `1.2.0` | GitHub repository owner kind. | Use `User` or `Organization` from trusted repository context. |
 | `riskClassification` | Yes | Low, Moderate, High, or Critical. | Must reflect data, production, infrastructure, and security impact. |
 | `applicableStandards` | Yes | Central agent standard files. | Must include the base standard and relevant technology standards. |
-| `owners` | Yes | Accountable GitHub users, organization/teams, or email contacts. | Reserved exact placeholder identities and email local parts are rejected case-insensitively; legitimate names that merely contain those substrings remain valid. |
-| `evidence` | Yes | Evidence file paths. | Must match generated evidence artifacts. |
-| `exceptions` | No | Approved `GOV-*` exceptions. | Must be current, scoped, and unexpired. |
-| `workflowInterfaceVersion` | No | Workflow interface version expected by the repository. | Use when downstream automation binds to a specific reusable workflow contract. |
+| `owners` | Yes | Legacy strings in `1.0.0`/`1.1.0`; structured typed owners in `1.2.0`. | Current owners require type, stable identifier, responsibility, and escalation. Syntax does not prove access. |
+| `standardsConsumption` | Yes in `1.2.0` | `central-reference`, `vendored`, or `local` authority model. | Central and vendored modes require an immutable source SHA; vendored and local modes require a bounded local path. |
+| `evidence` | Yes | Separate local paths and hosted-workspace declarations in `1.2.0`. | Hosted paths are relative to the workflow evidence workspace, not the caller checkout. |
+| `exceptions` | No | Legacy identifiers or structured `1.2.0` records. | Current records must be approved, applicable, scoped, and unexpired. |
 | `supportedEvidenceSchemaVersions` | No | Accepted evidence schema versions. | Use during additive migration windows such as `1.0.0` to `1.1.0`. |
 
 ## Governance Config Schema
@@ -52,14 +55,17 @@ The governance config MUST NOT be used to remove mandatory controls silently. If
 | --- | --- | --- | --- |
 | `schemaVersion` | Yes | Config schema version. | Must be supported by validators. |
 | `manifestPath` | Yes | Path to `project-manifest.json`. | Must resolve within the repository. |
+| `governanceVersion` / `governanceCommitSha` | Yes in `1.2.0` | Release and immutable implementation identities. | Must agree with the manifest. |
+| `workflowInterfaceVersion` / `workflowProfile` | Yes in `1.2.0` | Interface compatibility and selected execution profile. | Must agree with the manifest and actual workflow. |
+| `workflowInterface` | Yes in `1.2.0` | Path, inputs, outputs, job, artifact, and check contract. | Must match interface `1.0.0`. |
+| `requiredCheckNames` | Yes in `1.2.0` | Exact branch-protection checks. | Must match the workflow interface and live protection evidence. |
 | `evidencePath` | Yes | Evidence directory or root. | Must be written by validation workflows. |
 | `requiredDocumentationPaths` | Yes | Required local documents. | Must include README, SECURITY, CONTRIBUTING, and AGENTS. |
 | `applicableAgentStandards` | Yes | Central standard paths. | Must align with manifest standards. |
 | `additionalForbiddenPatterns` | No | Repository-specific scanner rules. | Must remain empty for central downstream validation until Issue #21 defines the supported model. |
 | `reviewedAllowlist` | No | Approved scanner exceptions. | Must remain empty for central downstream validation until Issue #21 defines the supported model. |
 | `schemaSupport` | No | Supported evidence schema versions and compatibility window. | Use to declare additive migration support explicitly. |
-| `workflowInterfaces` | No | Named workflow interfaces used by the repository. | Keep aligned with reusable workflow consumers. |
-| `branchProtectionCheckName` | No | Exact required GitHub check name. | Use the exact check string after it exists in GitHub. |
+| `workflowInterfaces` / `branchProtectionCheckName` | Legacy | Older unstructured compatibility declarations. | Migrate to `workflowInterface` and `requiredCheckNames` in `1.2.0`. |
 | `ownership.requiredCodeownerPaths` | No | Rooted literal CODEOWNERS paths requiring effective ownership. | List only repository paths that exist and need explicit protection; omit the property to require generic default `*` coverage without central-repository path assumptions. |
 | `controls` | Yes | Control toggles. | Disabled mandatory controls require `GOV-*` exceptions. |
 | `exceptions` | No | Active governance exceptions. | Must match exception records and evidence. |
@@ -78,7 +84,19 @@ Paths are repository-relative and MUST NOT escape the repository root. Absolute 
 
 For every configured path, repository health evaluates rules in file order and validates the owners on the last matching rule. It supports `*`, rooted or unrooted literal file and directory rules, and simple `*` or `**` globs. If a later unsupported pattern could change the ownership decision, validation fails closed with the pattern and line number. This structural check does not prove that an identity exists or has write access; that requires trusted live GitHub evidence.
 
-Evidence paths should be stable. A changing path makes historical comparison and artifact review harder.
+Evidence paths should be stable. In `1.2.0`, `evidence.local` resolves beneath
+the caller repository, while `evidence.hosted` resolves beneath the workflow's
+separate evidence workspace. A hosted path is not required to exist in the
+caller checkout. Absolute paths, traversal, and local/hosted workspace confusion
+fail validation.
+
+## Standards consumption
+
+`central-reference` executes files from the immutable central checkout and
+requires `sourceRepository` plus `sourceCommitSha`. `vendored` records those
+source fields plus `localPath` and requires drift review. `local` makes the
+bounded `localPath` authoritative and omits central source fields. Missing
+sources fail closed; validators never silently switch modes.
 
 ## Workflow Configuration
 
@@ -97,7 +115,7 @@ The reusable workflow checks out caller content under `caller/`, trusted central
 
 `Contract` is mandatory for all downstream callers. `MarkdownLinks`, `DocumentationCompleteness`, `ForbiddenPatterns`, and `CodexSkills` are supported central static categories when present in validated configuration. `CodexSkills` treats caller skill content as inert data and never executes skill scripts, tools, dependencies, or model evaluations. Categories that imply repository-maintainer layout or caller code execution—such as `Examples`, `Pester`, `JsonSchemas`, `WorkflowArchitecture`, and `RepositoryHealth`—are rejected for downstream use; run caller-owned builds and tests in separate caller CI jobs. Any nonempty `controls.mandatoryControlsDisabled` fails closed unless a future interface can independently validate the approved exception.
 
-The central downstream workflow does not yet apply repository-provided `additionalForbiddenPatterns` or `reviewedAllowlist`. Both arrays MUST be empty; a nonempty value fails with the unsupported field name instead of being silently ignored. The complete reviewed scanner-configuration model remains deferred to Issue #21.
+The central downstream workflow does not apply repository-provided `additionalForbiddenPatterns` or `reviewedAllowlist`. Both arrays MUST be empty; a nonempty value fails with the unsupported field name instead of being silently ignored.
 
 The public downstream canary uses the smallest supported profile: `Contract` as its only validation category, empty repository-provided scanner arrays, and no disabled mandatory controls. Its negative fixtures separately prove version mismatch, required-file enforcement, and mandatory-control disablement. See [Downstream Governance Canary](DOWNSTREAM_CANARY.md); the canary profile does not remove additional controls applicable to a real consumer.
 
@@ -111,7 +129,11 @@ Allowlists MUST be narrow. A repository-wide allowlist for a dangerous pattern r
 
 ## Exception Rules
 
-Exceptions in either configuration file MUST reference approved `GOV-*` records. The exception must define scope, expiration, owner, compensating control, and renewal requirements.
+In schema `1.2.0`, exceptions are structured records containing identifier,
+status, scope, owner, approver, approval date, expiration, affected control,
+compensating controls, remediation plan, and evidence reference. A disabled
+mandatory control must reference an approved, unexpired record for that exact
+control. Older schema versions retain identifier strings for compatibility.
 
 Expired exceptions are invalid. A pull request that extends an exception must explain why remediation has not occurred and what changed in the risk assessment.
 

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.2.0",
   "projectName": "Example Project",
   "repository": "example-org/example-repository",
   "description": "Describe the repository purpose, production impact, and primary users.",
@@ -10,12 +10,32 @@
     "agents/AGENTS_PowerShell.md"
   ],
   "owners": [
-    "example-owner",
-    "example-security-reviewer"
+    {
+      "type": "github-team",
+      "identifier": "@example-org/engineering",
+      "responsibility": "Owns governance-sensitive review and approval for this repository.",
+      "escalation": "SECURITY.md"
+    }
   ],
   "evidence": {
-    "completionEvidencePath": "evidence/completion-result.json",
-    "testEvidencePath": "evidence/test-evidence.json"
+    "local": {
+      "completion": "evidence/local-completion-result.json",
+      "tests": "evidence/local-test-results.json"
+    },
+    "hosted": {
+      "workspace": "evidence",
+      "completion": "completion-result.json",
+      "tests": "ci-test-results.json",
+      "artifactNamePattern": "governance-evidence-${run_id}"
+    }
   },
-  "exceptions": []
+  "exceptions": [],
+  "governanceCommitSha": "5528558513a8861f31c4ca0f910bbce46396f239",
+  "workflowInterfaceVersion": "1.0.0",
+  "repositoryOwnerType": "Organization",
+  "standardsConsumption": {
+    "mode": "central-reference",
+    "sourceRepository": "AIAllTheThingz/Engineering-Standards",
+    "sourceCommitSha": "5528558513a8861f31c4ca0f910bbce46396f239"
+  }
 }

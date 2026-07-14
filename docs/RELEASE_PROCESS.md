@@ -95,6 +95,13 @@ The reviewer MUST check for excessive permissions, untrusted input execution, un
 
 Release approval requires passing mandatory checks or documented approved exceptions. A maintainer must verify that release notes, versioning, evidence, and migration guidance agree.
 
+When a release changes governance contract or reusable-workflow semantics,
+review `governanceVersion`, `governanceCommitSha`, and
+`workflowInterfaceVersion` independently. Rotate the central self-CI pin only
+after the implementation commit exists, validate the rotated commit through
+GitHub Actions, and preserve the prior supported schema versions until their
+separate major-version removal is approved.
+
 Do not approve a release when evidence contradicts the stated status, required files are missing, mandatory controls are disabled without exception, or a known secret exposure is unresolved.
 
 Do not approve a workflow-evidence release until `latest-verified-run.json` validates, the success artifact hash is independently recorded, the controlled-failure artifact is downloadable, absolute-path scans pass, secret-pattern scans pass, and sanitized Pester details are present.

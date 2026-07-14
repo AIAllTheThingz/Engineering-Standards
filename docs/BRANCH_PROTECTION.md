@@ -131,6 +131,13 @@ This historical configuration is not the current enforcement state and is not pr
 
 At minimum, require the governance workflow check produced by the reusable governance workflow. The required check set SHOULD include schema validation, documentation completeness, contract validation, forbidden-pattern scanning, repository health, evidence validation, and applicable technology checks.
 
+Schema `1.2.0` records exact check strings in `requiredCheckNames` and the
+workflow-interface declaration. For this repository the governed checks are
+`Governance / Governance validation` and
+`Candidate implementation validation / Candidate implementation validation`.
+Local syntax validation cannot prove live branch settings; compare these values
+with trusted GitHub protection evidence.
+
 Technology-specific repositories must also require their build and test checks, such as .NET test, web lint/build/test, PowerShell parser and Pester validation, database migration validation, worker-service tests, or infrastructure plan validation.
 
 ## Workflow Permissions

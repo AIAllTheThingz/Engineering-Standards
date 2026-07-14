@@ -10,7 +10,7 @@
 
 ## Purpose
 
-This action validates governance contract adoption. It checks the project manifest, governance configuration, required documentation paths, applicable agent standards, evidence path syntax, and exception references.
+This action validates governance contract adoption. It checks the project manifest, governance configuration, required documentation paths, applicable agent standards, evidence path syntax, exception records, and `GCS001`-`GCS013` cross-document semantics.
 
 For the standards repository itself, it also runs documentation completeness. For downstream example or consuming repositories, it validates configured required documentation and resolves applicable agent standards from the downstream repository first, then from the central standards repository.
 
@@ -26,6 +26,17 @@ For the standards repository itself, it also runs documentation completeness. Fo
 
 - `report-path`: JSON report path when configured.
 - `failed-count`: intended count of blocking findings. The JSON report is authoritative.
+
+## Script parameters and trusted context
+
+`Invoke-ContractValidation.ps1` also accepts `ExpectedRepository`,
+`RepositoryOwnerType` (`Unknown`, `User`, or `Organization`),
+`ExpectedGovernanceCommitSha`, `ExpectedWorkflowInterfaceVersion`,
+`ExpectedWorkflowProfile`, `ExpectedRequiredCheckName`, and
+`ValidationDateUtc`. The aggregate trusted workflow supplies these values from
+workflow identity or maintainer-profile context. Do not copy values from the
+untrusted manifest into these parameters. Omitted live context remains
+unverified; syntax validation never proves that an owner exists or has access.
 
 ## Exit Codes
 

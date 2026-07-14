@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.1.0",
+  "projectName": "Legacy Compatible Project",
+  "repository": "ExampleOrg/legacy-compatible",
+  "description": "A legacy manifest proving that version 1.1.0 remains accepted after migration.",
+  "projectType": "powershell",
+  "technologies": ["powershell"],
+  "governanceVersion": "1.1.0",
+  "riskClassification": "Moderate",
+  "dataClassification": "Internal",
+  "owners": ["@ExampleOrg/platform"],
+  "environments": [],
+  "applicableStandards": ["agents/AGENTS_Base.md", "agents/AGENTS_PowerShell.md"],
+  "requiredWorkflows": ["governance"],
+  "externalIntegrations": [],
+  "secretsProvider": "none-required",
+  "productionApprovalRequired": false,
+  "evidence": {"completionEvidencePath": "evidence/local-completion-result.json", "testEvidencePath": "evidence/local-test-results.json"},
+  "exceptions": []
+}

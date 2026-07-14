@@ -58,6 +58,12 @@ Pull request content, filenames, workflow inputs, issue text, comments, generate
 
 The reusable governance workflow maintains a dual-checkout boundary. `caller/` is explicitly checked out from `${{ github.repository }}` at `${{ github.sha }}` and is treated as untrusted validation data. `standards/` is explicitly checked out from `${{ job.workflow_repository }}` at the full immutable `${{ job.workflow_sha }}` and is the only source of validator scripts, modules, dependency requirements, tests, and examples. Generated reports are written to the sibling `evidence/` workspace. All checkouts use `persist-credentials: false`.
 
+Contract `1.2.0` models those trust boundaries explicitly. Caller-local evidence
+paths resolve only beneath `caller/`; hosted evidence declarations resolve
+beneath the separate workflow evidence workspace. `governanceCommitSha` is
+compared with trusted workflow identity when supplied and is never inferred from
+untrusted manifest content.
+
 Callers cannot provide a standards repository, ref, or SHA. The workflow validates the expected central repository and full SHA before use. It fails closed when GitHub does not provide workflow identity fields, including GitHub Enterprise Server environments where `job.workflow_*` is unavailable. No moving branch, tag, caller path, or caller-provided fallback is permitted.
 
 Engineering Standards self-CI also calls the reusable workflow through a reviewed full remote SHA. A local reusable call on `pull_request` would make the pull-request commit both the untrusted caller and the implementation labeled as trusted. Maintainers must advance the self-CI pin intentionally after validating a new reusable-workflow implementation.

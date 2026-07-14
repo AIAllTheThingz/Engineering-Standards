@@ -1,31 +1,23 @@
 {
   "schemaVersion": "1.2.0",
-  "projectName": "Engineering Standards",
-  "repository": "AIAllTheThingz/Engineering-Standards",
-  "description": "Engineering Standards demonstrates adoption of the Engineering Standards repository with real validation commands.",
-  "projectType": "governance",
+  "projectName": "Synthetic User Repository",
+  "repository": "ExampleUser/synthetic-repository",
+  "description": "Synthetic user-owned repository used to validate the current governance contract.",
+  "projectType": "powershell",
   "technologies": [
-    "governance",
-    "github-actions"
+    "powershell"
   ],
   "governanceVersion": "1.1.0",
-  "governanceCommitSha": "5528558513a8861f31c4ca0f910bbce46396f239",
+  "governanceCommitSha": "1111111111111111111111111111111111111111",
   "workflowInterfaceVersion": "1.0.0",
   "repositoryOwnerType": "User",
   "riskClassification": "High",
   "dataClassification": "Internal",
   "owners": [
     {
-      "type": "github-user",
-      "identifier": "@AIAllTheThingz",
-      "responsibility": "Owns governance policy, workflow, schema, and release decisions.",
-      "escalation": "SECURITY.md",
-      "displayName": "Engineering Standards owner"
-    },
-    {
-      "type": "github-user",
-      "identifier": "@mezuccolini",
-      "responsibility": "Reviews governance-sensitive implementation and evidence changes.",
+      "type": "github-team",
+      "identifier": "@ExampleOrg/team",
+      "responsibility": "Approves governance-sensitive changes for this synthetic repository.",
       "escalation": "SECURITY.md"
     }
   ],
@@ -38,9 +30,7 @@
   ],
   "applicableStandards": [
     "agents/AGENTS_Base.md",
-    "agents/AGENTS_PowerShell.md",
-    "agents/AGENTS_Integration.md",
-    "agents/AGENTS_Infrastructure.md"
+    "agents/AGENTS_PowerShell.md"
   ],
   "standardsConsumption": {
     "mode": "local",
@@ -50,7 +40,7 @@
     "governance"
   ],
   "externalIntegrations": [],
-  "secretsProvider": "none-required-for-example",
+  "secretsProvider": "none-required",
   "productionApprovalRequired": true,
   "evidence": {
     "local": {

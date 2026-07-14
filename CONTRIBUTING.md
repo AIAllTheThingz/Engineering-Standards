@@ -46,6 +46,12 @@ Pull requests MUST explain risk classification, reason for change, security impa
 
 Documentation changes are substantive when they add, remove, or reinterpret a requirement. New or changed controls MUST define applicability, requirement, validation, evidence, exception handling, and failure behavior.
 
+Governance contract changes additionally require a versioned compatibility
+proposal before schema edits. Keep manifest/config schemas, semantic finding
+IDs, valid and invalid fixtures, templates, examples, workflow-interface fields,
+branch-protection check names, evidence locations, and migration documentation
+in the same focused pull request.
+
 Do not use repeated boilerplate to satisfy completeness checks. Author the operational details needed by maintainers and downstream repositories.
 
 ## Schema And Evidence Changes

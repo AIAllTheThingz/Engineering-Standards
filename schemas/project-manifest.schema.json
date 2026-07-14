@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aiallthethingz.example/engineering-standards/project-manifest.schema.json",
+  "$id": "urn:aiallthethingz:engineering-standards:schema:project-manifest",
   "title": "Project Manifest",
   "type": "object",
   "additionalProperties": false,
@@ -29,7 +29,8 @@
       "type": "string",
       "enum": [
         "1.0.0",
-        "1.1.0"
+        "1.1.0",
+        "1.2.0"
       ]
     },
     "projectName": {
@@ -74,12 +75,23 @@
       "type": "string",
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$"
     },
+    "governanceCommitSha": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{40}$"
+    },
     "workflowInterfaceVersion": {
       "type": [
         "string",
         "null"
       ],
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$"
+    },
+    "repositoryOwnerType": {
+      "type": "string",
+      "enum": [
+        "User",
+        "Organization"
+      ]
     },
     "supportedEvidenceSchemaVersions": {
       "type": "array",
@@ -110,12 +122,10 @@
     "owners": {
       "type": "array",
       "items": {
-        "type": "string",
-        "minLength": 2,
-        "pattern": "^(@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?(?:/[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?)?|[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,})$",
-        "not": {
-          "pattern": "^(?:@(?:(?:[Pp][Ll][Aa][Cc][Ee][Hh][Oo][Ll][Dd][Ee][Rr]|[Cc][Hh][Aa][Nn][Gg][Ee][Mm][Ee]|[Rr][Ee][Pp][Ll][Aa][Cc][Ee]-[Mm][Ee]|[Tt][Oo][Dd][Oo])(?:/|$)|[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/(?:[Pp][Ll][Aa][Cc][Ee][Hh][Oo][Ll][Dd][Ee][Rr]|[Cc][Hh][Aa][Nn][Gg][Ee][Mm][Ee]|[Rr][Ee][Pp][Ll][Aa][Cc][Ee]-[Mm][Ee]|[Tt][Oo][Dd][Oo])$)|(?:[Pp][Ll][Aa][Cc][Ee][Hh][Oo][Ll][Dd][Ee][Rr]|[Cc][Hh][Aa][Nn][Gg][Ee][Mm][Ee]|[Rr][Ee][Pp][Ll][Aa][Cc][Ee]-[Mm][Ee]|[Tt][Oo][Dd][Oo])@)"
-        }
+        "oneOf": [
+          { "$ref": "#/$defs/legacyOwner" },
+          { "$ref": "#/$defs/structuredOwner" }
+        ]
       },
       "minItems": 1,
       "uniqueItems": true
@@ -157,6 +167,9 @@
       },
       "minItems": 1,
       "uniqueItems": true
+    },
+    "standardsConsumption": {
+      "$ref": "#/$defs/standardsConsumption"
     },
     "requiredWorkflows": {
       "type": "array",
@@ -201,35 +214,123 @@
       "type": "boolean"
     },
     "evidence": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "completionEvidencePath",
-        "testEvidencePath"
-      ],
-      "properties": {
-        "completionEvidencePath": {
-          "type": "string",
-          "pattern": "^(?!.*\\.\\.)(?![A-Za-z]:)(?!/).+\\.json$"
-        },
-        "testEvidencePath": {
-          "type": "string",
-          "pattern": "^(?!.*\\.\\.)(?![A-Za-z]:)(?!/).+\\.json$"
-        },
-        "artifactManifestPath": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "pattern": "^(?!.*\\.\\.)(?![A-Za-z]:)(?!/).+\\.json$"
-        }
-      }
+      "oneOf": [
+        { "$ref": "#/$defs/legacyEvidence" },
+        { "$ref": "#/$defs/structuredEvidence" }
+      ]
     },
     "exceptions": {
       "type": "array",
       "items": {
-        "type": "string",
-        "pattern": "^GOV-[A-Z0-9-]+$"
+        "oneOf": [
+          { "type": "string", "pattern": "^GOV-[A-Z0-9-]+$" },
+          { "$ref": "#/$defs/exceptionRecord" }
+        ]
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "relativeJsonPath": {
+      "type": "string",
+      "pattern": "^(?!.*\\.\\.)(?![A-Za-z]:)(?!/)(?!\\\\).+\\.json$"
+    },
+    "relativePath": {
+      "type": "string",
+      "pattern": "^(?!.*\\.\\.)(?![A-Za-z]:)(?!/)(?!\\\\).+"
+    },
+    "legacyOwner": {
+      "type": "string",
+      "minLength": 2,
+      "pattern": "^(@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?(?:/[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?)?|[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,})$",
+      "not": {
+        "pattern": "^(?:@(?:(?:[Pp][Ll][Aa][Cc][Ee][Hh][Oo][Ll][Dd][Ee][Rr]|[Cc][Hh][Aa][Nn][Gg][Ee][Mm][Ee]|[Rr][Ee][Pp][Ll][Aa][Cc][Ee]-[Mm][Ee]|[Tt][Oo][Dd][Oo])(?:/|$)|[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/(?:[Pp][Ll][Aa][Cc][Ee][Hh][Oo][Ll][Dd][Ee][Rr]|[Cc][Hh][Aa][Nn][Gg][Ee][Mm][Ee]|[Rr][Ee][Pp][Ll][Aa][Cc][Ee]-[Mm][Ee]|[Tt][Oo][Dd][Oo])$)|(?:[Pp][Ll][Aa][Cc][Ee][Hh][Oo][Ll][Dd][Ee][Rr]|[Cc][Hh][Aa][Nn][Gg][Ee][Mm][Ee]|[Rr][Ee][Pp][Ll][Aa][Cc][Ee]-[Mm][Ee]|[Tt][Oo][Dd][Oo])@)"
+      }
+    },
+    "structuredOwner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "identifier", "responsibility", "escalation"],
+      "properties": {
+        "type": { "enum": ["github-user", "github-team", "email-contact"] },
+        "identifier": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 254,
+          "not": { "pattern": "(?i:placeholder|changeme|replace-me|todo)" }
+        },
+        "responsibility": { "type": "string", "minLength": 20, "maxLength": 500 },
+        "escalation": { "type": "string", "minLength": 2, "maxLength": 254 },
+        "displayName": { "type": "string", "minLength": 2, "maxLength": 120 }
+      },
+      "allOf": [
+        { "if": { "properties": { "type": { "const": "github-user" } } }, "then": { "properties": { "identifier": { "pattern": "^@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$" } } } },
+        { "if": { "properties": { "type": { "const": "github-team" } } }, "then": { "properties": { "identifier": { "pattern": "^@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$" } } } },
+        { "if": { "properties": { "type": { "const": "email-contact" } } }, "then": { "properties": { "identifier": { "pattern": "^[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$" } } } }
+      ]
+    },
+    "standardsConsumption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["central-reference", "vendored", "local"] },
+        "sourceRepository": { "type": "string", "pattern": "^[^/]+/[^/]+$" },
+        "sourceCommitSha": { "type": "string", "pattern": "^[A-Fa-f0-9]{40}$" },
+        "localPath": { "$ref": "#/$defs/relativePath" }
+      },
+      "allOf": [
+        { "if": { "properties": { "mode": { "const": "central-reference" } } }, "then": { "required": ["sourceRepository", "sourceCommitSha"], "not": { "required": ["localPath"] } } },
+        { "if": { "properties": { "mode": { "const": "vendored" } } }, "then": { "required": ["sourceRepository", "sourceCommitSha", "localPath"] } },
+        { "if": { "properties": { "mode": { "const": "local" } } }, "then": { "required": ["localPath"], "not": { "anyOf": [{ "required": ["sourceRepository"] }, { "required": ["sourceCommitSha"] }] } } }
+      ]
+    },
+    "legacyEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["completionEvidencePath", "testEvidencePath"],
+      "properties": {
+        "completionEvidencePath": { "$ref": "#/$defs/relativeJsonPath" },
+        "testEvidencePath": { "$ref": "#/$defs/relativeJsonPath" },
+        "artifactManifestPath": { "oneOf": [{ "$ref": "#/$defs/relativeJsonPath" }, { "type": "null" }] }
+      }
+    },
+    "structuredEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["local", "hosted"],
+      "properties": {
+        "local": {
+          "type": "object", "additionalProperties": false, "required": ["completion", "tests"],
+          "properties": { "completion": { "$ref": "#/$defs/relativeJsonPath" }, "tests": { "$ref": "#/$defs/relativeJsonPath" } }
+        },
+        "hosted": {
+          "type": "object", "additionalProperties": false, "required": ["workspace", "completion", "tests", "artifactNamePattern"],
+          "properties": {
+            "workspace": { "$ref": "#/$defs/relativePath" },
+            "completion": { "$ref": "#/$defs/relativeJsonPath" },
+            "tests": { "$ref": "#/$defs/relativeJsonPath" },
+            "artifactNamePattern": { "type": "string", "pattern": "^governance-evidence-\\$\\{run_id\\}$" }
+          }
+        }
+      }
+    },
+    "exceptionRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identifier", "status", "scope", "owner", "approver", "approvalDate", "expiration", "affectedControl", "compensatingControls", "remediationPlan", "evidenceReference"],
+      "properties": {
+        "identifier": { "type": "string", "pattern": "^GOV-[A-Z0-9-]+$" },
+        "status": { "enum": ["Approved", "Rejected", "Revoked", "Expired"] },
+        "scope": { "type": "string", "minLength": 10, "maxLength": 500 },
+        "owner": { "type": "string", "minLength": 2, "maxLength": 254 },
+        "approver": { "type": "string", "minLength": 2, "maxLength": 254 },
+        "approvalDate": { "type": "string", "format": "date" },
+        "expiration": { "type": "string", "format": "date" },
+        "affectedControl": { "type": "string", "minLength": 3, "maxLength": 160 },
+        "compensatingControls": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 10 }, "uniqueItems": true },
+        "remediationPlan": { "type": "string", "minLength": 20, "maxLength": 1000 },
+        "evidenceReference": { "$ref": "#/$defs/relativePath" }
       }
     }
   },
@@ -250,6 +351,24 @@
           "productionApprovalRequired": {
             "const": true
           }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "schemaVersion": { "const": "1.2.0" } } },
+      "then": {
+        "required": ["governanceCommitSha", "workflowInterfaceVersion", "repositoryOwnerType", "standardsConsumption"],
+        "properties": {
+          "owners": { "items": { "$ref": "#/$defs/structuredOwner" } },
+          "evidence": { "$ref": "#/$defs/structuredEvidence" },
+          "exceptions": { "items": { "$ref": "#/$defs/exceptionRecord" } }
+        }
+      },
+      "else": {
+        "properties": {
+          "owners": { "items": { "$ref": "#/$defs/legacyOwner" } },
+          "evidence": { "$ref": "#/$defs/legacyEvidence" },
+          "exceptions": { "items": { "type": "string", "pattern": "^GOV-[A-Z0-9-]+$" } }
         }
       }
     }

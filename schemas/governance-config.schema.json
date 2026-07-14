@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aiallthethingz.example/engineering-standards/governance-config.schema.json",
+  "$id": "urn:aiallthethingz:engineering-standards:schema:governance-config",
   "title": "Governance Configuration",
   "type": "object",
   "additionalProperties": false,
@@ -21,12 +21,42 @@
       "type": "string",
       "enum": [
         "1.0.0",
-        "1.1.0"
+        "1.1.0",
+        "1.2.0"
       ]
     },
     "manifestPath": {
       "type": "string",
       "pattern": "^(?!.*\\.\\.)(?![A-Za-z]:)(?!/).+\\.json$"
+    },
+    "governanceVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$"
+    },
+    "governanceCommitSha": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{40}$"
+    },
+    "workflowInterfaceVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$"
+    },
+    "workflowProfile": {
+      "enum": ["downstream", "standards-maintainer"]
+    },
+    "workflowInterface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "inputs", "outputs", "jobId", "jobName", "artifactNamePattern", "requiredCheckNames"],
+      "properties": {
+        "path": { "type": "string", "const": ".github/workflows/governance-ci-reusable.yml" },
+        "inputs": { "type": "array", "items": { "enum": ["project-path", "governance-version", "artifact-retention-days", "controlled-failure-test"] }, "minItems": 4, "maxItems": 4, "uniqueItems": true },
+        "outputs": { "type": "array", "items": { "enum": ["evidence-path", "artifact-name"] }, "minItems": 2, "maxItems": 2, "uniqueItems": true },
+        "jobId": { "const": "governance" },
+        "jobName": { "const": "Governance validation" },
+        "artifactNamePattern": { "const": "governance-evidence-${run_id}" },
+        "requiredCheckNames": { "type": "array", "items": { "type": "string", "minLength": 3, "maxLength": 160 }, "minItems": 1, "uniqueItems": true }
+      }
     },
     "evidencePath": {
       "type": "string",
@@ -57,6 +87,7 @@
         "enum": [
           "Contract",
           "JsonSchemas",
+          "YamlSyntax",
           "MarkdownLinks",
           "DocumentationCompleteness",
           "ForbiddenPatterns",
@@ -65,6 +96,8 @@
           "Evidence",
           "Examples",
           "WorkflowArchitecture"
+          ,"Pester"
+          ,"PSScriptAnalyzer"
         ]
       },
       "minItems": 1,
@@ -131,6 +164,12 @@
       ],
       "minLength": 3,
       "maxLength": 160
+    },
+    "requiredCheckNames": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 3, "maxLength": 160 },
+      "minItems": 1,
+      "uniqueItems": true
     },
     "ownership": {
       "type": "object",
@@ -256,9 +295,45 @@
     "exceptions": {
       "type": "array",
       "items": {
-        "type": "string",
-        "pattern": "^GOV-[A-Z0-9-]+$"
+        "oneOf": [
+          { "type": "string", "pattern": "^GOV-[A-Z0-9-]+$" },
+          { "$ref": "#/$defs/exceptionRecord" }
+        ]
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "relativePath": { "type": "string", "pattern": "^(?!.*\\.\\.)(?![A-Za-z]:)(?!/)(?!\\\\).+" },
+    "exceptionRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identifier", "status", "scope", "owner", "approver", "approvalDate", "expiration", "affectedControl", "compensatingControls", "remediationPlan", "evidenceReference"],
+      "properties": {
+        "identifier": { "type": "string", "pattern": "^GOV-[A-Z0-9-]+$" },
+        "status": { "enum": ["Approved", "Rejected", "Revoked", "Expired"] },
+        "scope": { "type": "string", "minLength": 10, "maxLength": 500 },
+        "owner": { "type": "string", "minLength": 2, "maxLength": 254 },
+        "approver": { "type": "string", "minLength": 2, "maxLength": 254 },
+        "approvalDate": { "type": "string", "format": "date" },
+        "expiration": { "type": "string", "format": "date" },
+        "affectedControl": { "type": "string", "minLength": 3, "maxLength": 160 },
+        "compensatingControls": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 10 }, "uniqueItems": true },
+        "remediationPlan": { "type": "string", "minLength": 20, "maxLength": 1000 },
+        "evidenceReference": { "$ref": "#/$defs/relativePath" }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "schemaVersion": { "const": "1.2.0" } } },
+      "then": {
+        "required": ["governanceVersion", "governanceCommitSha", "workflowInterfaceVersion", "workflowProfile", "workflowInterface", "requiredCheckNames"],
+        "properties": { "exceptions": { "items": { "$ref": "#/$defs/exceptionRecord" } } }
+      },
+      "else": {
+        "properties": { "exceptions": { "items": { "type": "string", "pattern": "^GOV-[A-Z0-9-]+$" } } }
+      }
+    }
+  ]
 }

@@ -268,7 +268,7 @@ function Test-GovernanceJsonDocument {
     }
     if ($results.Count -gt 0) { return @($results) }
 
-    if (@('1.0.0','1.1.0') -notcontains $json.schemaVersion) {
+    if (@('1.0.0','1.1.0','1.2.0') -notcontains $json.schemaVersion) {
         $results.Add((New-ValidationResult -Status Failed -Message "Unsupported schemaVersion '$($json.schemaVersion)'." -Path $Path))
     }
     if ($json.ContainsKey('status') -and $statuses -notcontains $json.status) {
@@ -376,12 +376,19 @@ function Test-GovernanceJsonDocument {
     }
 
     if ($Kind -eq 'governance-config') {
+        if ($json.schemaVersion -eq '1.2.0') {
+            foreach ($name in @('governanceVersion','governanceCommitSha','workflowInterfaceVersion','workflowProfile','workflowInterface','requiredCheckNames')) {
+                if (-not $json.ContainsKey($name)) { $results.Add((New-ValidationResult -Status Failed -Message "Missing required 1.2.0 property '$name'." -Path $Path)) }
+            }
+            if ($json.ContainsKey('workflowProfile') -and $json.workflowProfile -notin @('downstream','standards-maintainer')) { $results.Add((New-ValidationResult -Status Failed -Message "Unsupported workflowProfile '$($json.workflowProfile)'." -Path $Path)) }
+            if ($json.ContainsKey('governanceCommitSha') -and $json.governanceCommitSha -notmatch '^[A-Fa-f0-9]{40}$') { $results.Add((New-ValidationResult -Status Failed -Message 'governanceCommitSha must be a full 40-character commit SHA.' -Path $Path)) }
+        }
         foreach ($item in @(Test-RelativeRepositoryPath -Value $json.manifestPath -Name 'manifestPath' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
         foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidencePath -Name 'evidencePath' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.requiredDocumentationPaths) -Name 'requiredDocumentationPaths' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.applicableAgentStandards) -Name 'applicableAgentStandards' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.validationCategories) -Name 'validationCategories' -Path $Path)) { $results.Add($item) }
-        $supportedValidationCategories = @('Contract','JsonSchemas','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','WorkflowArchitecture')
+        $supportedValidationCategories = @('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','Pester','PSScriptAnalyzer')
         foreach ($category in @($json.validationCategories)) {
             if ($category -notin $supportedValidationCategories) {
                 $results.Add((New-ValidationResult -Status Failed -Message "validationCategories contains unsupported value '$category'." -Path $Path))
@@ -422,7 +429,7 @@ function Test-GovernanceJsonDocument {
             if (-not $disabled.exceptionReference -or $disabled.exceptionReference -notmatch '^GOV-[A-Z0-9-]+$') {
                 $results.Add((New-ValidationResult -Status Failed -Message "Mandatory control '$($disabled.control)' lacks a valid exception reference." -Path $Path))
             }
-            elseif (@($json.exceptions) -notcontains $disabled.exceptionReference) {
+            elseif (@($json.exceptions | ForEach-Object { if ($_ -is [string]) { $_ } else { $_.identifier } }) -notcontains $disabled.exceptionReference) {
                 $results.Add((New-ValidationResult -Status Failed -Message "Mandatory control '$($disabled.control)' references exception '$($disabled.exceptionReference)' that is not listed in exceptions." -Path $Path))
             }
         }
@@ -438,6 +445,13 @@ function Test-GovernanceJsonDocument {
     }
 
     if ($Kind -eq 'project-manifest') {
+        if ($json.schemaVersion -eq '1.2.0') {
+            foreach ($name in @('governanceCommitSha','workflowInterfaceVersion','repositoryOwnerType','standardsConsumption')) {
+                if (-not $json.ContainsKey($name)) { $results.Add((New-ValidationResult -Status Failed -Message "Missing required 1.2.0 property '$name'." -Path $Path)) }
+            }
+            if ($json.ContainsKey('governanceCommitSha') -and $json.governanceCommitSha -notmatch '^[A-Fa-f0-9]{40}$') { $results.Add((New-ValidationResult -Status Failed -Message 'governanceCommitSha must be a full 40-character commit SHA.' -Path $Path)) }
+            if ($json.ContainsKey('workflowInterfaceVersion') -and $json.workflowInterfaceVersion -notmatch '^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$') { $results.Add((New-ValidationResult -Status Failed -Message 'workflowInterfaceVersion must use semantic version format.' -Path $Path)) }
+        }
         if ($json.governanceVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$') {
             $results.Add((New-ValidationResult -Status Failed -Message 'Governance version must be semantic version format.' -Path $Path))
         }
@@ -448,9 +462,29 @@ function Test-GovernanceJsonDocument {
             $results.Add((New-ValidationResult -Status Failed -Message 'High and Critical project manifests must require production approval.' -Path $Path))
         }
         foreach ($item in @(Test-UniqueValues -Items @($json.technologies) -Name 'technologies' -Path $Path)) { $results.Add($item) }
-        foreach ($item in @(Test-UniqueValues -Items @($json.owners) -Name 'owners' -Path $Path)) { $results.Add($item) }
+        $ownerIdentifiers = @($json.owners | ForEach-Object { if ($_ -is [string]) { $_ } else { $_.identifier } })
+        foreach ($item in @(Test-UniqueValues -Items $ownerIdentifiers -Name 'owners' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.applicableStandards) -Name 'applicableStandards' -Path $Path)) { $results.Add($item) }
         foreach ($owner in @($json.owners)) {
+            if ($json.schemaVersion -eq '1.2.0') {
+                if ($owner -isnot [System.Collections.IDictionary]) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Version 1.2.0 owners must be structured records.' -Path $Path))
+                    continue
+                }
+                if ([string]::IsNullOrWhiteSpace([string]$owner.responsibility) -or ([string]$owner.responsibility).Length -lt 20) {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Owner '$($owner.identifier)' lacks substantive responsibility." -Path $Path))
+                }
+                if ([string]::IsNullOrWhiteSpace([string]$owner.escalation)) {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Owner '$($owner.identifier)' lacks escalation." -Path $Path))
+                }
+                if ([string]$owner.identifier -match '(?i)(?:placeholder|changeme|replace-me|todo)') {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Owner '$($owner.identifier)' is a placeholder and is not allowed." -Path $Path))
+                }
+                if ($owner.type -eq 'github-team' -and $json.repositoryOwnerType -ne 'Organization') {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'GitHub team ownership requires repositoryOwnerType Organization.' -Path $Path))
+                }
+                continue
+            }
             $isEmailOwner = $owner -match '^[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
             if ($owner -notmatch '^(@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?(?:/[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?)?|[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})$') {
                 $results.Add((New-ValidationResult -Status Failed -Message "Owner '$owner' must be a GitHub user handle, organization/team handle, or email address." -Path $Path))
@@ -468,8 +502,17 @@ function Test-GovernanceJsonDocument {
         foreach ($standard in @($json.applicableStandards)) {
             foreach ($item in @(Test-RelativeRepositoryPath -Value $standard -Name 'applicableStandards item' -Path $Path -RequiredExtension '.md')) { $results.Add($item) }
         }
-        foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.completionEvidencePath -Name 'completionEvidencePath' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
-        foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.testEvidencePath -Name 'testEvidencePath' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
+        if ($json.schemaVersion -eq '1.2.0') {
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.local.completion -Name 'local completion evidence' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.local.tests -Name 'local test evidence' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.hosted.workspace -Name 'hosted evidence workspace' -Path $Path)) { $results.Add($item) }
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.hosted.completion -Name 'hosted completion evidence' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.hosted.tests -Name 'hosted test evidence' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
+        }
+        else {
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.completionEvidencePath -Name 'completionEvidencePath' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.testEvidencePath -Name 'testEvidencePath' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
+        }
     }
 
     if ($Kind -eq 'standards-consistency') {
@@ -860,6 +903,151 @@ function Write-GovernanceBootstrapFailureReport {
     $reportPath
 }
 
+function Test-GovernanceContractSemantics {
+    <#
+    .SYNOPSIS
+    Cross-validates the manifest, governance configuration, standards, workflow interface, evidence, and exceptions.
+    .DESCRIPTION
+    Performs deterministic offline validation. Trusted repository, owner-type, commit, workflow, profile, check-name, and date values must be supplied by the caller rather than inferred from repository declarations.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Root,
+        [Parameter(Mandatory)][System.Collections.IDictionary]$Manifest,
+        [Parameter(Mandatory)][System.Collections.IDictionary]$Config,
+        [string]$ExpectedRepository,
+        [ValidateSet('Unknown','User','Organization')][string]$RepositoryOwnerType = 'Unknown',
+        [string]$ExpectedGovernanceCommitSha,
+        [string]$ExpectedWorkflowInterfaceVersion,
+        [string]$ExpectedWorkflowProfile,
+        [string]$ExpectedRequiredCheckName,
+        [datetime]$ValidationDateUtc = [datetime]::UtcNow
+    )
+
+    $results = [System.Collections.Generic.List[object]]::new()
+    $path = Join-Path $Root 'project-manifest.json'
+    function Add-Finding([string]$Id, [string]$Message, [string]$FindingPath = $path) {
+        $results.Add((New-ValidationResult -Status Failed -Message "$Id $Message" -Path $FindingPath))
+    }
+
+    if ($ExpectedRepository -and -not [string]::Equals([string]$Manifest.repository, $ExpectedRepository, [System.StringComparison]::OrdinalIgnoreCase)) {
+        Add-Finding 'GCS001' "Repository identity '$($Manifest.repository)' does not match trusted repository '$ExpectedRepository'."
+    }
+
+    foreach ($document in @($Manifest, $Config)) {
+        if ($document.Contains('governanceVersion') -and $document.governanceVersion -notmatch '^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$') {
+            Add-Finding 'GCS002' 'governanceVersion must contain a semantic release version, never a commit SHA.'
+        }
+        if ($document.Contains('governanceCommitSha') -and $document.governanceCommitSha -notmatch '^[A-Fa-f0-9]{40}$') {
+            Add-Finding 'GCS002' 'governanceCommitSha must contain exactly 40 hexadecimal characters.'
+        }
+    }
+    if ($Manifest.Contains('governanceVersion') -and $Config.Contains('governanceVersion') -and $Manifest.governanceVersion -ne $Config.governanceVersion) {
+        Add-Finding 'GCS002' 'Manifest and governance configuration governance versions disagree.'
+    }
+    if ($Manifest.Contains('governanceCommitSha') -and $Config.Contains('governanceCommitSha') -and $Manifest.governanceCommitSha -ne $Config.governanceCommitSha) {
+        Add-Finding 'GCS002' 'Manifest and governance configuration governance commit SHAs disagree.'
+    }
+    if ($ExpectedGovernanceCommitSha -and $Manifest.governanceCommitSha -ne $ExpectedGovernanceCommitSha) {
+        Add-Finding 'GCS002' 'Declared governance commit SHA does not match the trusted workflow standards SHA.'
+    }
+
+    if ($Manifest.schemaVersion -eq '1.2.0') {
+        $seenOwners = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+        $enforceableOwners = 0
+        foreach ($owner in @($Manifest.owners)) {
+            $identifier = [string]$owner.identifier
+            if (-not $seenOwners.Add($identifier)) { Add-Finding 'GCS003' "Duplicate owner identifier '$identifier'." }
+            if ($identifier -match '(?i)(?:placeholder|changeme|replace-me|todo)') { Add-Finding 'GCS003' "Owner '$identifier' is a placeholder." }
+            if ($owner.type -eq 'github-user') { $enforceableOwners++ }
+            if ($owner.type -eq 'github-team') {
+                $enforceableOwners++
+                if ($Manifest.repositoryOwnerType -ne 'Organization' -or $RepositoryOwnerType -eq 'User') { Add-Finding 'GCS003' 'GitHub team ownership is invalid for a user-owned repository.' }
+            }
+            if ($owner.type -eq 'email-contact' -and $identifier -notmatch '^[^@\s]+@[^@\s]+\.[^@\s]+$') { Add-Finding 'GCS003' "Email owner '$identifier' is malformed." }
+            if ([string]::IsNullOrWhiteSpace([string]$owner.responsibility) -or ([string]$owner.responsibility).Length -lt 20) { Add-Finding 'GCS003' "Owner '$identifier' lacks substantive responsibility." }
+            if ([string]::IsNullOrWhiteSpace([string]$owner.escalation)) { Add-Finding 'GCS003' "Owner '$identifier' lacks escalation." }
+        }
+        if ($enforceableOwners -lt 1) { Add-Finding 'GCS003' 'At least one GitHub user or team owner is required.' }
+        if ($RepositoryOwnerType -ne 'Unknown' -and $Manifest.repositoryOwnerType -ne $RepositoryOwnerType) { Add-Finding 'GCS003' 'Manifest repository owner type disagrees with trusted owner type.' }
+    }
+
+    $mode = if ($Manifest.Contains('standardsConsumption')) { [string]$Manifest.standardsConsumption.mode } else { $null }
+    if ($Manifest.schemaVersion -eq '1.2.0' -and $mode -notin @('central-reference','vendored','local')) { Add-Finding 'GCS004' 'Standards consumption mode is unsupported.' }
+    $sourceCommitSha = if ($Manifest.Contains('standardsConsumption')) { Get-JsonMemberValue -InputObject $Manifest.standardsConsumption -Name 'sourceCommitSha' } else { $null }
+    if ($mode -in @('central-reference','vendored') -and $sourceCommitSha -notmatch '^[A-Fa-f0-9]{40}$') { Add-Finding 'GCS004' 'Immutable standards source SHA is required for central-reference and vendored modes.' }
+    if ($mode -in @('vendored','local')) {
+        try { Resolve-SafePath -Root $Root -ChildPath $Manifest.standardsConsumption.localPath | Out-Null } catch { Add-Finding 'GCS004' $_.Exception.Message }
+    }
+
+    $technologyStandards = @{
+        powershell='agents/AGENTS_PowerShell.md'; dotnet='agents/AGENTS_DotNet.md'; web='agents/AGENTS_WebFrontend.md'; database='agents/AGENTS_Database.md';
+        'worker-service'='agents/AGENTS_WorkerService.md'; integration='agents/AGENTS_Integration.md'; infrastructure='agents/AGENTS_Infrastructure.md'
+    }
+    $manifestStandards = @($Manifest.applicableStandards)
+    $configStandards = @($Config.applicableAgentStandards)
+    if ($manifestStandards -notcontains 'agents/AGENTS_Base.md') { Add-Finding 'GCS005' 'The base agent standard is required.' }
+    foreach ($technology in @($Manifest.technologies)) {
+        if ($technologyStandards.ContainsKey([string]$technology) -and $manifestStandards -notcontains $technologyStandards[[string]$technology]) { Add-Finding 'GCS005' "Technology '$technology' requires '$($technologyStandards[[string]$technology])'." }
+    }
+    if ($Manifest.projectType -eq 'governance') {
+        foreach ($requiredStandard in @('agents/AGENTS_PowerShell.md','agents/AGENTS_Integration.md','agents/AGENTS_Infrastructure.md')) {
+            if ($manifestStandards -notcontains $requiredStandard) { Add-Finding 'GCS005' "Governance and GitHub Actions repositories require '$requiredStandard'." }
+        }
+    }
+    if (@(Compare-Object $manifestStandards $configStandards).Count -gt 0) { Add-Finding 'GCS006' 'Manifest and governance configuration applicable standards disagree.' }
+    $agentsPath = Join-Path $Root 'AGENTS.md'
+    if (Test-Path -LiteralPath $agentsPath -PathType Leaf) {
+        $agentsText = Get-Content -Raw -LiteralPath $agentsPath
+        foreach ($standard in $manifestStandards) { if ($agentsText -notmatch [regex]::Escape($standard)) { Add-Finding 'GCS006' "Root AGENTS.md does not declare '$standard'." $agentsPath } }
+    }
+
+    if ($Manifest.Contains('workflowInterfaceVersion') -and $Config.Contains('workflowInterfaceVersion') -and $Manifest.workflowInterfaceVersion -ne $Config.workflowInterfaceVersion) { Add-Finding 'GCS007' 'Manifest and configuration workflow interface versions disagree.' }
+    if ($ExpectedWorkflowInterfaceVersion -and $Manifest.workflowInterfaceVersion -ne $ExpectedWorkflowInterfaceVersion) { Add-Finding 'GCS007' 'Workflow interface version does not match trusted context.' }
+    $workflowProfile = if ($Config.Contains('workflowProfile')) { [string]$Config.workflowProfile } else { $null }
+    if ($ExpectedWorkflowProfile -and $Config.schemaVersion -eq '1.2.0' -and $workflowProfile -ne $ExpectedWorkflowProfile) { Add-Finding 'GCS007' 'Workflow profile does not match trusted context.' }
+    if ($Config.schemaVersion -eq '1.2.0') {
+        $interface = $Config.workflowInterface
+        if ($interface.path -ne '.github/workflows/governance-ci-reusable.yml' -or $interface.jobId -ne 'governance' -or $interface.jobName -ne 'Governance validation' -or $interface.artifactNamePattern -ne 'governance-evidence-${run_id}') { Add-Finding 'GCS007' 'Workflow interface declaration conflicts with the supported interface.' }
+    }
+
+    $supportedCategories = @('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','Pester','PSScriptAnalyzer')
+    foreach ($category in @($Config.validationCategories)) { if ($category -notin $supportedCategories) { Add-Finding 'GCS008' "Unsupported validation category '$category'." } }
+    if ($workflowProfile -eq 'standards-maintainer') {
+        foreach ($category in $supportedCategories) { if (@($Config.validationCategories) -notcontains $category) { Add-Finding 'GCS008' "Maintainer profile omits executed category '$category'." } }
+    }
+
+    if ($Manifest.schemaVersion -eq '1.2.0') {
+        if ($Manifest.evidence.hosted.workspace -ne 'evidence' -or $Manifest.evidence.hosted.completion -ne 'completion-result.json' -or $Manifest.evidence.hosted.tests -ne 'ci-test-results.json' -or $Manifest.evidence.hosted.artifactNamePattern -ne 'governance-evidence-${run_id}') { Add-Finding 'GCS009' 'Hosted evidence declaration conflicts with reusable workflow outputs.' }
+        foreach ($localPath in @($Manifest.evidence.local.completion, $Manifest.evidence.local.tests)) { try { Resolve-SafePath -Root $Root -ChildPath $localPath -AllowMissingLeaf | Out-Null } catch { Add-Finding 'GCS009' $_.Exception.Message } }
+    }
+
+    $exceptionById = @{}
+    foreach ($exception in @($Config.exceptions)) {
+        if ($exception -is [string]) { continue }
+        if ($exceptionById.ContainsKey($exception.identifier)) { Add-Finding 'GCS010' "Duplicate exception identifier '$($exception.identifier)'."; continue }
+        $exceptionById[$exception.identifier] = $exception
+        $expiration = [datetime]::MinValue
+        if (-not [datetime]::TryParse([string]$exception.expiration, [ref]$expiration) -or $exception.status -ne 'Approved' -or $expiration.Date -lt $ValidationDateUtc.ToUniversalTime().Date) { Add-Finding 'GCS010' "Exception '$($exception.identifier)' is not active and unexpired." }
+    }
+    foreach ($disabled in @($Config.controls.mandatoryControlsDisabled)) {
+        if (-not $exceptionById.ContainsKey($disabled.exceptionReference) -or $exceptionById[$disabled.exceptionReference].affectedControl -ne $disabled.control) { Add-Finding 'GCS011' "Disabled control '$($disabled.control)' lacks an applicable active exception." }
+    }
+
+    if ($ExpectedRequiredCheckName -and $Config.schemaVersion -eq '1.2.0' -and @($Config.requiredCheckNames) -notcontains $ExpectedRequiredCheckName) { Add-Finding 'GCS012' "Required check '$ExpectedRequiredCheckName' is absent from the workflow contract." }
+    if ($Config.schemaVersion -eq '1.2.0' -and @(Compare-Object @($Config.requiredCheckNames) @($Config.workflowInterface.requiredCheckNames)).Count -gt 0) { Add-Finding 'GCS012' 'Branch-protection and workflow-interface required check names disagree.' }
+
+    if ($Manifest.projectType -eq 'governance') {
+        foreach ($schemaFile in @(Get-ChildItem -LiteralPath (Join-Path $Root 'schemas') -Filter '*.schema.json' -File -ErrorAction SilentlyContinue)) {
+            $schema = Read-JsonFile -Path $schemaFile.FullName
+            if (-not $schema.Contains('$id') -or $schema['$id'] -notmatch '^urn:aiallthethingz:engineering-standards:schema:[a-z0-9-]+$') { Add-Finding 'GCS013' "Schema '$($schemaFile.Name)' does not use the controlled namespace." $schemaFile.FullName }
+        }
+    }
+
+    if ($results.Count -eq 0) { $results.Add((New-ValidationResult -Status Passed -Message 'Governance contract semantics are coherent.' -Path $Root -Severity info)) }
+    @($results)
+}
+
 Export-ModuleMember -Function @(
     'New-ValidationResult',
     'New-ValidationReport',
@@ -871,6 +1059,7 @@ Export-ModuleMember -Function @(
     'Get-JsonMemberValue',
     'Read-JsonFile',
     'Test-GovernanceJsonDocument',
+    'Test-GovernanceContractSemantics',
     'Test-TestEvidenceObject',
     'Test-ArtifactRecordObject',
     'Test-VerifiedRunObject',

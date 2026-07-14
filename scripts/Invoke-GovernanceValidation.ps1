@@ -305,7 +305,7 @@ else {
 
 $script:results = [System.Collections.Generic.List[object]]::new()
 $toolMap = @{
-    Contract = @{ path='actions/validate-contract/Invoke-ContractValidation.ps1'; args=@('-Path',$projectRoot) }
+    Contract = @{ path='actions/validate-contract/Invoke-ContractValidation.ps1'; args=@('-Path',$projectRoot,'-ExpectedRepository',$CallerRepository,'-RepositoryOwnerType',$RepositoryOwnerType,'-ExpectedWorkflowInterfaceVersion','1.0.0','-ExpectedWorkflowProfile',$validationProfile) + $(if ($StandardsWorkflowSha) { @('-ExpectedGovernanceCommitSha',$StandardsWorkflowSha) } else { @() }) + $(if ($isMaintainerProfile) { @('-ExpectedRequiredCheckName','Governance / Governance validation') } else { @() }) }
     JsonSchemas = @{ path='scripts/Test-JsonSchemas.ps1'; args=@('-Path',$projectRoot) }
     YamlSyntax = @{ path='scripts/Test-YamlSyntax.ps1'; args=@('-Path',$projectRoot) }
     WorkflowArchitecture = @{ path='scripts/Test-GitHubWorkflowArchitecture.ps1'; args=@('-Path',$projectRoot,'-DefaultBranch','master') + $(if ($StandardsWorkflowSha) { @('-ExpectedReusableWorkflowSha',$StandardsWorkflowSha) } else { @() }) + $(if ($isMaintainerProfile) { @('-RequireCandidateValidation') } else { @() }) }

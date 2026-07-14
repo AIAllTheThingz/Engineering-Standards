@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.2.0",
   "manifestPath": "project-manifest.json",
   "evidencePath": "evidence",
   "requiredDocumentationPaths": [
@@ -26,5 +26,31 @@
   "controls": {
     "mandatoryControlsDisabled": []
   },
-  "exceptions": []
+  "exceptions": [],
+  "governanceVersion": "1.1.0",
+  "governanceCommitSha": "5528558513a8861f31c4ca0f910bbce46396f239",
+  "workflowInterfaceVersion": "1.0.0",
+  "workflowProfile": "downstream",
+  "workflowInterface": {
+    "path": ".github/workflows/governance-ci-reusable.yml",
+    "inputs": [
+      "project-path",
+      "governance-version",
+      "artifact-retention-days",
+      "controlled-failure-test"
+    ],
+    "outputs": [
+      "evidence-path",
+      "artifact-name"
+    ],
+    "jobId": "governance",
+    "jobName": "Governance validation",
+    "artifactNamePattern": "governance-evidence-${run_id}",
+    "requiredCheckNames": [
+      "Governance / Governance validation"
+    ]
+  },
+  "requiredCheckNames": [
+    "Governance / Governance validation"
+  ]
 }

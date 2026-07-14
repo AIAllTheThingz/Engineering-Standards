@@ -45,7 +45,12 @@ When changing a schema, update the schema file, at least one valid fixture, at l
 
 Schemas MUST reject ambiguous evidence. For example, overall Passed status cannot coexist with failed mandatory tests.
 
-Additive schema changes should prefer a minor schema version such as `1.1.0` with a documented compatibility window. During that window, validators may accept both `1.0.0` and `1.1.0` while generators move to the newer version.
+Additive schema changes should prefer a minor schema version with a documented
+compatibility window. Contract `1.2.0` retains `1.0.0` and `1.1.0` instance
+support while templates and examples move forward. Maintainers must keep schema,
+semantic validator, fixtures, templates, examples, workflow interface, and
+migration rationale synchronized; required fields must never be backported
+silently into an older document version.
 
 ## Validator Maintenance
 

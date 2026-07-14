@@ -49,10 +49,18 @@ Schema changes MUST include fixture updates and validation evidence.
 
 Current evidence-schema migration approach:
 
-- Existing historical documents may remain at `1.0.0`.
-- New additive fields are introduced under `1.1.0`.
-- Validators may accept both `1.0.0` and `1.1.0` during the compatibility window.
-- Generators should move forward to `1.1.0` once the compatibility path is in place.
+- Existing historical documents may remain at `1.0.0` or `1.1.0`.
+- Governance contract `1.2.0` adds structured ownership, standards consumption,
+  workflow-interface, evidence-path, exception, and immutable-SHA semantics.
+- Validators accept `1.0.0`, `1.1.0`, and `1.2.0`; new required fields apply
+  only to `1.2.0`.
+- Templates and examples use `1.2.0`. Removing a legacy version requires a
+  separately reviewed major migration.
+
+`governanceVersion` identifies a semantic release. `governanceCommitSha`
+identifies immutable content. `workflowInterfaceVersion` identifies callable
+workflow compatibility. These values are distinct and are never substituted
+for one another.
 
 ## Workflow Compatibility
 
