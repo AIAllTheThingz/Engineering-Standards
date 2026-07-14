@@ -21,6 +21,13 @@ function script:New-DownstreamFixture {
     foreach ($document in @('README.md','SECURITY.md','CONTRIBUTING.md','AGENTS.md')) {
         Set-Content -LiteralPath (Join-Path $root $document) -Value "# $document`n`nSynthetic downstream fixture documentation." -Encoding utf8
     }
+    Add-Content -LiteralPath (Join-Path $root 'AGENTS.md') -Value @'
+
+## Applicable Standards
+
+- [Base](agents/AGENTS_Base.md)
+- [Integration](agents/AGENTS_Integration.md)
+'@ -Encoding utf8
     [ordered]@{
         schemaVersion='1.0.0'; projectName='Downstream Fixture'; repository='ExampleOrg/downstream-fixture'
         description='Synthetic downstream fixture for reusable governance workflow testing.'; projectType='integration'

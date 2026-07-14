@@ -95,4 +95,22 @@ Describe 'Governance contract semantic validation' {
             @($results | Where-Object status -eq 'Failed').Count | Should -Be 0 -Because $fixture
         }
     }
+
+    It 'does not require 1.2-only fields from a legacy contract when trusted workflow context is supplied' {
+        $manifest = Read-JsonFile -Path (Join-Path $script:root 'tests/fixtures/valid/project-manifest.json')
+        $config = Read-JsonFile -Path (Join-Path $script:root 'tests/fixtures/valid/governance-config.json')
+        $results = @()
+        {
+            $results = @(Test-GovernanceContractSemantics `
+                -Root $script:root `
+                -Manifest $manifest `
+                -Config $config `
+                -ExpectedRepository 'example-org/fixture' `
+                -ExpectedGovernanceCommitSha ('a' * 40) `
+                -ExpectedWorkflowInterfaceVersion '1.0.0' `
+                -ExpectedWorkflowProfile 'downstream' `
+                -ValidationDateUtc ([datetime]'2026-07-14T00:00:00Z'))
+        } | Should -Not -Throw
+        ($results.message -join "`n") | Should -Not -Match 'GCS002|GCS007'
+    }
 }

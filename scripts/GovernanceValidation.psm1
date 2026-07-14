@@ -948,7 +948,7 @@ function Test-GovernanceContractSemantics {
     if ($Manifest.Contains('governanceCommitSha') -and $Config.Contains('governanceCommitSha') -and $Manifest.governanceCommitSha -ne $Config.governanceCommitSha) {
         Add-Finding 'GCS002' 'Manifest and governance configuration governance commit SHAs disagree.'
     }
-    if ($ExpectedGovernanceCommitSha -and $Manifest.governanceCommitSha -ne $ExpectedGovernanceCommitSha) {
+    if ($ExpectedGovernanceCommitSha -and $Manifest.schemaVersion -eq '1.2.0' -and $Manifest.governanceCommitSha -ne $ExpectedGovernanceCommitSha) {
         Add-Finding 'GCS002' 'Declared governance commit SHA does not match the trusted workflow standards SHA.'
     }
 
@@ -1003,7 +1003,7 @@ function Test-GovernanceContractSemantics {
     }
 
     if ($Manifest.Contains('workflowInterfaceVersion') -and $Config.Contains('workflowInterfaceVersion') -and $Manifest.workflowInterfaceVersion -ne $Config.workflowInterfaceVersion) { Add-Finding 'GCS007' 'Manifest and configuration workflow interface versions disagree.' }
-    if ($ExpectedWorkflowInterfaceVersion -and $Manifest.workflowInterfaceVersion -ne $ExpectedWorkflowInterfaceVersion) { Add-Finding 'GCS007' 'Workflow interface version does not match trusted context.' }
+    if ($ExpectedWorkflowInterfaceVersion -and $Manifest.schemaVersion -eq '1.2.0' -and $Manifest.workflowInterfaceVersion -ne $ExpectedWorkflowInterfaceVersion) { Add-Finding 'GCS007' 'Workflow interface version does not match trusted context.' }
     $workflowProfile = if ($Config.Contains('workflowProfile')) { [string]$Config.workflowProfile } else { $null }
     if ($ExpectedWorkflowProfile -and $Config.schemaVersion -eq '1.2.0' -and $workflowProfile -ne $ExpectedWorkflowProfile) { Add-Finding 'GCS007' 'Workflow profile does not match trusted context.' }
     if ($Config.schemaVersion -eq '1.2.0') {
