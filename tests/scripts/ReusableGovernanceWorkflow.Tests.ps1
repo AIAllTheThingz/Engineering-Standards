@@ -75,6 +75,28 @@ function script:New-StructuredDownstreamFixture {
     $root
 }
 
+function script:New-ActiveException {
+    param(
+        [string]$Identifier = 'GOV-2026-ACTIVE',
+        [string]$Status = 'Approved',
+        [string]$AffectedControl = 'SyntheticControl'
+    )
+
+    [ordered]@{
+        identifier = $Identifier
+        status = $Status
+        scope = 'Synthetic aggregate exception scope'
+        owner = '@owner'
+        approver = '@approver'
+        approvalDate = '2026-01-01'
+        expiration = '2099-12-31'
+        affectedControl = $AffectedControl
+        compensatingControls = @('Synthetic compensating validation')
+        remediationPlan = 'Remove the synthetic exception after remediation.'
+        evidenceReference = 'evidence/exception.json'
+    }
+}
+
 function script:Invoke-DownstreamValidation {
     param(
         [Parameter(Mandatory)][string]$CallerRoot,
@@ -83,12 +105,16 @@ function script:Invoke-DownstreamValidation {
         [string]$StandardsRepository='AIAllTheThingz/Engineering-Standards',
         [string]$StandardsSha=$script:standardsSha,
         [string]$RepositoryOwnerType='Unknown',
+        [string[]]$Category,
         [switch]$ControlledFailure
     )
     $prior = $env:GITHUB_ACTIONS
     $env:GITHUB_ACTIONS = 'true'
     try {
-        $output = @(& pwsh -NoProfile -File $script:validator -Path $CallerRoot -ProjectPath $ProjectPath -EvidenceRoot $EvidenceRoot -ExpectedGovernanceVersion '1.1.0' -CallerRepository 'ExampleOrg/downstream-fixture' -CallerCommitSha $script:callerSha -StandardsRepository $StandardsRepository -StandardsWorkflowSha $StandardsSha -RepositoryOwnerType $RepositoryOwnerType -ControlledFailure:$ControlledFailure 2>&1)
+        $arguments = @('-NoProfile', '-File', $script:validator, '-Path', $CallerRoot, '-ProjectPath', $ProjectPath, '-EvidenceRoot', $EvidenceRoot, '-ExpectedGovernanceVersion', '1.1.0', '-CallerRepository', 'ExampleOrg/downstream-fixture', '-CallerCommitSha', $script:callerSha, '-StandardsRepository', $StandardsRepository, '-StandardsWorkflowSha', $StandardsSha, '-RepositoryOwnerType', $RepositoryOwnerType)
+        if ($Category) { $arguments += @('-Category') + @($Category) }
+        if ($ControlledFailure) { $arguments += '-ControlledFailure' }
+        $output = @(& pwsh @arguments 2>&1)
         $joinedOutput = $output -join [Environment]::NewLine
         $joinedOutput = [regex]::Replace($joinedOutput, '\x1B\[[0-9;?]*[ -/]*[@-~]', '')
         $joinedOutput = [regex]::Replace($joinedOutput, '\s+', ' ')
@@ -246,9 +272,13 @@ Describe 'Reusable governance workflow trust boundaries' {
         $report.results[0].failureReason | Should -Be "Governance version mismatch: workflow expects '1.1.0' but manifest declares '1.0.0'."
     }
 
-    It 'rejects an attempt to disable a mandatory control' {
+    It 'keeps legacy schema version <SchemaVersion> mandatory-control disablement fail-closed before Contract execution' -ForEach @(
+        @{ SchemaVersion = '1.0.0' }
+        @{ SchemaVersion = '1.1.0' }
+    ) {
         $caller = New-DownstreamFixture -Name 'mandatory-disabled'
         $config = Get-Content -LiteralPath (Join-Path $caller 'governance.config.json') -Raw | ConvertFrom-Json
+        $config.schemaVersion = $SchemaVersion
         $config.controls.mandatoryControlsDisabled = @([pscustomobject]@{control='Contract';exceptionReference='GOV-TEST-1'})
         $config | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $caller 'governance.config.json') -Encoding utf8
         $result = Invoke-DownstreamValidation -CallerRoot $caller
@@ -258,6 +288,73 @@ Describe 'Reusable governance workflow trust boundaries' {
         $report.failed | Should -Be 1
         $report.results[0].name | Should -Be 'BootstrapValidation'
         $report.results[0].failureReason | Should -Be 'governance.config.json attempts to disable one or more mandatory controls. Reusable workflow validation requires an independently validated approved exception.'
+    }
+
+    It 'accepts a schema version 1.2.0 disabled control with a matching active structured exception' {
+        $caller = New-StructuredDownstreamFixture -Name 'structured-active-exception'
+        $configPath = Join-Path $caller 'governance.config.json'
+        $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json -AsHashtable
+        $config.exceptions = @(New-ActiveException)
+        $config.controls.mandatoryControlsDisabled = @([ordered]@{control='SyntheticControl';exceptionReference='GOV-2026-ACTIVE'})
+        $config | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $configPath -Encoding utf8
+
+        $result = Invoke-DownstreamValidation -CallerRoot $caller -RepositoryOwnerType User
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $report = Get-Content -LiteralPath (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
+        $report.results[0].name | Should -Be 'Contract'
+        $report.results[0].status | Should -Be 'Passed'
+    }
+
+    It 'runs explicitly selected Contract for schema version 1.2.0 structured-exception validation' {
+        $caller = New-StructuredDownstreamFixture -Name 'structured-contract-first'
+        $configPath = Join-Path $caller 'governance.config.json'
+        $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json -AsHashtable
+        $config.exceptions = @(New-ActiveException)
+        $config.controls.mandatoryControlsDisabled = @([ordered]@{control='SyntheticControl';exceptionReference='GOV-2026-ACTIVE'})
+        $config | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $configPath -Encoding utf8
+
+        $result = Invoke-DownstreamValidation -CallerRoot $caller -RepositoryOwnerType User -Category Contract
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $report = Get-Content -LiteralPath (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
+        @($report.results).Count | Should -Be 1
+        $report.results[0].name | Should -Be 'Contract'
+    }
+
+    It 'rejects an explicit category override that omits Contract before structured-exception execution' {
+        $caller = New-StructuredDownstreamFixture -Name 'structured-contract-omitted'
+        $configPath = Join-Path $caller 'governance.config.json'
+        $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json -AsHashtable
+        $config.exceptions = @(New-ActiveException)
+        $config.controls.mandatoryControlsDisabled = @([ordered]@{control='SyntheticControl';exceptionReference='GOV-2026-ACTIVE'})
+        $config | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $configPath -Encoding utf8
+
+        $result = Invoke-DownstreamValidation -CallerRoot $caller -RepositoryOwnerType User -Category ForbiddenPatterns
+
+        $result.ExitCode | Should -Not -Be 0
+        $result.Output | Should -Match 'Contract validation is mandatory.*structured-exception validation.*cannot be omitted'
+        $report = Get-Content -LiteralPath (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
+        $report.results[0].name | Should -Be 'BootstrapValidation'
+        $report.results[0].failureReason | Should -Match 'Contract validation is mandatory'
+    }
+
+    It 'reports invalid schema version 1.2.0 structured exceptions through Contract semantics' {
+        $caller = New-StructuredDownstreamFixture -Name 'structured-inactive-exception'
+        $configPath = Join-Path $caller 'governance.config.json'
+        $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json -AsHashtable
+        $config.exceptions = @(New-ActiveException -Status Rejected)
+        $config.controls.mandatoryControlsDisabled = @([ordered]@{control='SyntheticControl';exceptionReference='GOV-2026-ACTIVE'})
+        $config | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $configPath -Encoding utf8
+
+        $result = Invoke-DownstreamValidation -CallerRoot $caller -RepositoryOwnerType User
+
+        $result.ExitCode | Should -Not -Be 0
+        $result.Output | Should -Match 'GCS010'
+        $result.Output | Should -Match 'GCS011'
+        $report = Get-Content -LiteralPath (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
+        $report.results[0].name | Should -Be 'Contract'
+        $report.results[0].status | Should -Be 'Failed'
     }
 
     It 'records the missing required documentation path in aggregate evidence' {

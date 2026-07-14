@@ -113,10 +113,22 @@ function Test-ExactStringSet {
         }
     }
 
+    $expectedValues = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
     foreach ($requiredValue in $Expected) {
-        if (-not $seen.Contains($requiredValue)) { return $false }
+        if ([string]::IsNullOrWhiteSpace($requiredValue) -or -not $expectedValues.Add($requiredValue) -or -not $seen.Contains($requiredValue)) { return $false }
     }
     return $true
+}
+
+function Get-CanonicalMaintainerRequiredCheckNames {
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param()
+
+    @(
+        'Governance / Governance validation'
+        'Candidate implementation validation / Candidate implementation validation'
+    )
 }
 
 function Write-ValidationReport {
@@ -1167,8 +1179,19 @@ function Test-GovernanceContractSemantics {
         if (-not $exceptionById.ContainsKey($disabled.exceptionReference) -or -not $activeExceptionIds.Contains([string]$disabled.exceptionReference) -or $exceptionById[$disabled.exceptionReference].affectedControl -ne $disabled.control) { Add-Finding 'GCS011' "Disabled control '$($disabled.control)' lacks an applicable active exception." }
     }
 
-    if ($ExpectedRequiredCheckName -and $Config.schemaVersion -eq '1.2.0' -and @($Config.requiredCheckNames) -notcontains $ExpectedRequiredCheckName) { Add-Finding 'GCS012' "Required check '$ExpectedRequiredCheckName' is absent from the workflow contract." }
-    if ($Config.schemaVersion -eq '1.2.0' -and @(Compare-Object @($Config.requiredCheckNames) @($Config.workflowInterface.requiredCheckNames)).Count -gt 0) { Add-Finding 'GCS012' 'Branch-protection and workflow-interface required check names disagree.' }
+    if ($Config.schemaVersion -eq '1.2.0') {
+        $requiredCheckNames = @($Config.requiredCheckNames)
+        $interfaceRequiredCheckNames = @($Config.workflowInterface.requiredCheckNames)
+        if ($ExpectedRequiredCheckName -and $requiredCheckNames -cnotcontains $ExpectedRequiredCheckName) { Add-Finding 'GCS012' "Required check '$ExpectedRequiredCheckName' is absent from the workflow contract." }
+        if (-not (Test-ExactStringSet -Actual $requiredCheckNames -Expected ([string[]]$interfaceRequiredCheckNames))) { Add-Finding 'GCS012' 'Branch-protection and workflow-interface required check names must be unique and agree exactly as a case-sensitive set.' }
+
+        if ($workflowProfile -eq 'standards-maintainer' -and $Config.workflowInterfaceVersion -eq '1.0.0') {
+            foreach ($canonicalCheckName in @(Get-CanonicalMaintainerRequiredCheckNames)) {
+                if ($requiredCheckNames -cnotcontains $canonicalCheckName) { Add-Finding 'GCS012' "Maintainer branch-protection checks omit canonical check '$canonicalCheckName'." }
+                if ($interfaceRequiredCheckNames -cnotcontains $canonicalCheckName) { Add-Finding 'GCS012' "Maintainer workflow-interface checks omit canonical check '$canonicalCheckName'." }
+            }
+        }
+    }
 
     if ($Manifest.projectType -eq 'governance') {
         foreach ($schemaFile in @(Get-ChildItem -LiteralPath (Join-Path $Root 'schemas') -Filter '*.schema.json' -File -ErrorAction SilentlyContinue)) {

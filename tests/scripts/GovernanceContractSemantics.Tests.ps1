@@ -127,6 +127,94 @@ Describe 'Governance contract semantic validation' {
         @($results | Where-Object { $_.message -match 'GCS007' }) | Should -HaveCount 0
     }
 
+    It 'accepts both canonical maintainer checks in both arrays and preserves matching extras' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $checks = @(
+            'Candidate implementation validation / Candidate implementation validation'
+            'Additional trusted check / Validation'
+            'Governance / Governance validation'
+        )
+        $config.requiredCheckNames = @($checks)
+        $config.workflowInterface.requiredCheckNames = @($checks[2], $checks[0], $checks[1])
+        $results = Invoke-Semantics $manifest $config
+        @($results | Where-Object { $_.message -match 'GCS012' }) | Should -HaveCount 0
+    }
+
+    It 'rejects a canonical maintainer check omitted from both arrays' -ForEach @(
+        @{ Name='Candidate'; Check='Candidate implementation validation / Candidate implementation validation' },
+        @{ Name='Governance'; Check='Governance / Governance validation' }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.requiredCheckNames = @($config.requiredCheckNames | Where-Object { $_ -cne $Check })
+        $config.workflowInterface.requiredCheckNames = @($config.workflowInterface.requiredCheckNames | Where-Object { $_ -cne $Check })
+        $results = Invoke-Semantics $manifest $config -Check ''
+        ($results.message -join "`n") | Should -Match "GCS012.*canonical check.*$([regex]::Escape($Check))" -Because $Name
+    }
+
+    It 'rejects a renamed Candidate maintainer check in both arrays' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $renamedCheck = 'Candidate implementation / Candidate implementation validation'
+        $config.requiredCheckNames[1] = $renamedCheck
+        $config.workflowInterface.requiredCheckNames[1] = $renamedCheck
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS012.*canonical check.*Candidate implementation validation'
+    }
+
+    It 'rejects wrong case for the Governance maintainer check in both arrays' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $wrongCaseCheck = 'governance / Governance validation'
+        $config.requiredCheckNames[0] = $wrongCaseCheck
+        $config.workflowInterface.requiredCheckNames[0] = $wrongCaseCheck
+        $results = Invoke-Semantics $manifest $config -Check ''
+        ($results.message -join "`n") | Should -Match 'GCS012.*canonical check.*Governance / Governance validation'
+    }
+
+    It 'rejects required-check arrays that disagree as case-sensitive sets' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.workflowInterface.requiredCheckNames[1] = 'Renamed candidate check'
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS012.*agree exactly as a case-sensitive set'
+    }
+
+    It 'rejects duplicate required checks even when both arrays contain the same duplicate' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.requiredCheckNames += 'Governance / Governance validation'
+        $config.workflowInterface.requiredCheckNames += 'Governance / Governance validation'
+        $results = Invoke-Semantics $manifest $config
+        ($results.message -join "`n") | Should -Match 'GCS012.*must be unique'
+    }
+
+    It 'does not impose maintainer-only check names on the downstream profile' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.workflowProfile = 'downstream'
+        $config.validationCategories = @('Contract', 'MarkdownLinks', 'DocumentationCompleteness', 'ForbiddenPatterns', 'CodexSkills')
+        $config.requiredCheckNames = @('Downstream governance / Governance validation')
+        $config.workflowInterface.requiredCheckNames = @('Downstream governance / Governance validation')
+        $results = Invoke-Semantics $manifest $config -Profile 'downstream' -Check 'Downstream governance / Governance validation'
+        @($results | Where-Object { $_.message -match 'GCS012' }) | Should -HaveCount 0
+    }
+
+    It 'preserves singular ExpectedRequiredCheckName compatibility for additional trusted checks' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $additionalCheck = 'Additional trusted check / Validation'
+        $config.requiredCheckNames += $additionalCheck
+        $config.workflowInterface.requiredCheckNames += $additionalCheck
+
+        $presentResults = Invoke-Semantics $manifest $config -Check $additionalCheck
+        @($presentResults | Where-Object { $_.message -match 'GCS012' }) | Should -HaveCount 0
+
+        $missingResults = Invoke-Semantics $manifest $config -Check 'Missing trusted check / Validation'
+        ($missingResults.message -join "`n") | Should -Match 'GCS012.*Missing trusted check / Validation.*absent'
+    }
+
     It 'rejects every maintainer-only category for the downstream profile' -ForEach @(
         'JsonSchemas', 'YamlSyntax', 'WorkflowArchitecture', 'RepositoryHealth', 'Evidence', 'Examples', 'Pester', 'PSScriptAnalyzer', 'PowerShellParser'
     ) {

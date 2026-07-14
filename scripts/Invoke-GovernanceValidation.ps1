@@ -274,7 +274,9 @@ if ($ExpectedGovernanceVersion -and $manifest.governanceVersion -ne $ExpectedGov
 if ($CallerRepository -and $manifest.repository -ne $CallerRepository) {
     throw "Manifest repository '$($manifest.repository)' does not match caller repository '$CallerRepository'."
 }
-if (@($config.controls.mandatoryControlsDisabled).Count -gt 0) {
+$disabledMandatoryControls = @($config.controls.mandatoryControlsDisabled)
+$usesStructuredExceptionFlow = $config['schemaVersion'] -eq '1.2.0' -and $disabledMandatoryControls.Count -gt 0
+if ($disabledMandatoryControls.Count -gt 0 -and -not $usesStructuredExceptionFlow) {
     throw 'governance.config.json attempts to disable one or more mandatory controls. Reusable workflow validation requires an independently validated approved exception.'
 }
 
@@ -288,8 +290,11 @@ if (-not $isMaintainerProfile) {
     }
 }
 $requestedCategories = if ($Category) { @($Category) } else { @($config.validationCategories) }
+if ($usesStructuredExceptionFlow -and $Category -and @($requestedCategories) -notcontains 'Contract') {
+    throw 'Contract validation is mandatory for schema version 1.2.0 structured-exception validation and cannot be omitted when mandatory controls are disabled.'
+}
 $selected = [System.Collections.Generic.List[string]]::new()
-if (-not $Category) { $selected.Add('Contract') }
+if (-not $Category -or ($usesStructuredExceptionFlow -and @($requestedCategories) -contains 'Contract')) { $selected.Add('Contract') }
 foreach ($item in $requestedCategories) {
     if ($item -notin $selected) { $selected.Add([string]$item) }
 }
