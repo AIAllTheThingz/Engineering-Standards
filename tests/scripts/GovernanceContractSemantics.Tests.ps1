@@ -237,6 +237,62 @@ Describe 'Governance contract semantic validation' {
         ($results.message -join "`n") | Should -Match "GCS008.*$_"
     }
 
+    It 'rejects an empty downstream validation category declaration' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.workflowProfile = 'downstream'
+        $config.validationCategories = @()
+        $results = Invoke-Semantics $manifest $config -Profile 'downstream' -Check ''
+
+        ($results.message -join "`n") |
+            Should -Match "(?m)^GCS008 Downstream profile validationCategories declaration must be nonempty and include mandatory category 'Contract'\.$"
+    }
+
+    It 'rejects a downstream optional-only declaration that omits Contract' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.workflowProfile = 'downstream'
+        $config.validationCategories = @('MarkdownLinks')
+        $results = Invoke-Semantics $manifest $config -Profile 'downstream' -Check ''
+
+        ($results.message -join "`n") |
+            Should -Match "(?m)^GCS008 Downstream profile validationCategories declaration must include mandatory category 'Contract'\.$"
+    }
+
+    It 'accepts a downstream declaration that includes Contract' -ForEach @(
+        @{ Categories = @('Contract') },
+        @{ Categories = @('Contract', 'MarkdownLinks') }
+    ) {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.workflowProfile = 'downstream'
+        $config.validationCategories = @($Categories)
+        $results = Invoke-Semantics $manifest $config -Profile 'downstream' -Check ''
+
+        ($results.message -join "`n") | Should -Not -Match '(?m)^GCS008\s'
+    }
+
+    It 'proves the anchored GCS008 selector rejects a finding-free downstream result' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.workflowProfile = 'downstream'
+        $config.validationCategories = @('Contract')
+        $results = Invoke-Semantics $manifest $config -Profile 'downstream' -Check ''
+
+        { ($results.message -join "`n") | Should -Match '(?m)^GCS008\s' } |
+            Should -Throw
+    }
+
+    It 'preserves standards-maintainer category completeness enforcement' {
+        $manifest = Copy-ContractObject $script:manifest
+        $config = Copy-ContractObject $script:config
+        $config.validationCategories = @($config.validationCategories | Where-Object { $_ -ne 'PowerShellParser' })
+        $results = Invoke-Semantics $manifest $config
+
+        ($results.message -join "`n") |
+            Should -Match "(?m)^GCS008 Maintainer profile omits executed category 'PowerShellParser'\.$"
+    }
+
     It 'binds central-reference repository and commit identity to trusted workflow context' -ForEach @(
         @{ Name='repository mismatch'; SourceRepository='Untrusted/Standards'; SourceSha='ff32376d102bba047f8ca07b852f79262fd13fc4'; GovernanceSha='ff32376d102bba047f8ca07b852f79262fd13fc4'; Pattern='trusted standards repository' },
         @{ Name='trusted SHA mismatch'; SourceRepository='AIAllTheThingz/Engineering-Standards'; SourceSha=('b' * 40); GovernanceSha=('b' * 40); Pattern='trusted workflow standards SHA' },

@@ -1316,12 +1316,21 @@ function Test-GovernanceContractSemantics {
 
     $supportedCategories = @('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')
     $maintainerOnlyCategories = @('JsonSchemas','YamlSyntax','WorkflowArchitecture','RepositoryHealth','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')
-    foreach ($category in @($Config.validationCategories)) { if ($category -notin $supportedCategories) { Add-Finding 'GCS008' "Unsupported validation category '$category'." } }
+    $declaredCategories = @($Config.validationCategories)
+    foreach ($category in $declaredCategories) { if ($category -notin $supportedCategories) { Add-Finding 'GCS008' "Unsupported validation category '$category'." } }
     if ($workflowProfile -eq 'standards-maintainer') {
-        foreach ($category in $supportedCategories) { if (@($Config.validationCategories) -notcontains $category) { Add-Finding 'GCS008' "Maintainer profile omits executed category '$category'." } }
+        foreach ($category in $supportedCategories) { if ($declaredCategories -notcontains $category) { Add-Finding 'GCS008' "Maintainer profile omits executed category '$category'." } }
     }
     elseif ($workflowProfile -eq 'downstream') {
-        foreach ($category in @($Config.validationCategories)) {
+        if ($Config.schemaVersion -eq '1.2.0') {
+            if ($declaredCategories.Count -eq 0) {
+                Add-Finding 'GCS008' "Downstream profile validationCategories declaration must be nonempty and include mandatory category 'Contract'."
+            }
+            elseif ($declaredCategories -notcontains 'Contract') {
+                Add-Finding 'GCS008' "Downstream profile validationCategories declaration must include mandatory category 'Contract'."
+            }
+        }
+        foreach ($category in $declaredCategories) {
             if ($category -in $maintainerOnlyCategories) { Add-Finding 'GCS008' "Downstream profile cannot declare maintainer-only validation category '$category'." }
         }
     }
