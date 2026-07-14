@@ -29,7 +29,7 @@ BeforeAll {
             escalation = 'SECURITY.md'
         }
     }
-    function Invoke-Semantics([hashtable]$Manifest, [hashtable]$Config, [string]$ExpectedRepository = 'AIAllTheThingz/Engineering-Standards', [string]$ExpectedStandardsRepository = 'AIAllTheThingz/Engineering-Standards', [string]$OwnerType = 'User', [string]$ExpectedSha = 'f378c4b64d3d79d96cd2874d543696dd52e6283d', [string]$Interface = '1.0.0', [string]$Profile = 'standards-maintainer', [string]$Check = 'Governance / Governance validation', [string]$Root = $script:root) {
+    function Invoke-Semantics([hashtable]$Manifest, [hashtable]$Config, [string]$ExpectedRepository = 'AIAllTheThingz/Engineering-Standards', [string]$ExpectedStandardsRepository = 'AIAllTheThingz/Engineering-Standards', [string]$OwnerType = 'User', [string]$ExpectedSha = 'bf9147a8dea5ebac50bdcaaedf78bcafde284b2b', [string]$Interface = '1.0.0', [string]$Profile = 'standards-maintainer', [string]$Check = 'Governance / Governance validation', [string]$Root = $script:root) {
         @(Test-GovernanceContractSemantics -Root $Root -Manifest $Manifest -Config $Config -ExpectedRepository $ExpectedRepository -ExpectedStandardsRepository $ExpectedStandardsRepository -RepositoryOwnerType $OwnerType -ExpectedGovernanceCommitSha $ExpectedSha -ExpectedWorkflowInterfaceVersion $Interface -ExpectedWorkflowProfile $Profile -ExpectedRequiredCheckName $Check -ValidationDateUtc ([datetime]'2026-07-14T00:00:00Z'))
     }
     function New-IsolatedStandardsRoot([string[]]$Standards = @('agents/AGENTS_Base.md','agents/AGENTS_PowerShell.md','agents/AGENTS_Integration.md','agents/AGENTS_Infrastructure.md')) {
@@ -367,16 +367,16 @@ Describe 'Governance contract semantic validation' {
     }
 
     It 'binds central-reference repository and commit identity to trusted workflow context' -ForEach @(
-        @{ Name='repository mismatch'; SourceRepository='Untrusted/Standards'; SourceSha='f378c4b64d3d79d96cd2874d543696dd52e6283d'; GovernanceSha='f378c4b64d3d79d96cd2874d543696dd52e6283d'; Pattern='trusted standards repository' },
+        @{ Name='repository mismatch'; SourceRepository='Untrusted/Standards'; SourceSha='bf9147a8dea5ebac50bdcaaedf78bcafde284b2b'; GovernanceSha='bf9147a8dea5ebac50bdcaaedf78bcafde284b2b'; Pattern='trusted standards repository' },
         @{ Name='trusted SHA mismatch'; SourceRepository='AIAllTheThingz/Engineering-Standards'; SourceSha=('b' * 40); GovernanceSha=('b' * 40); Pattern='trusted workflow standards SHA' },
-        @{ Name='governance SHA disagreement'; SourceRepository='AIAllTheThingz/Engineering-Standards'; SourceSha=('b' * 40); GovernanceSha='f378c4b64d3d79d96cd2874d543696dd52e6283d'; Pattern='declared governance commit SHA' }
+        @{ Name='governance SHA disagreement'; SourceRepository='AIAllTheThingz/Engineering-Standards'; SourceSha=('b' * 40); GovernanceSha='bf9147a8dea5ebac50bdcaaedf78bcafde284b2b'; Pattern='declared governance commit SHA' }
     ) {
         $manifest = Copy-ContractObject $script:manifest
         $config = Copy-ContractObject $script:config
         $manifest.standardsConsumption = @{ mode='central-reference'; sourceRepository=$SourceRepository; sourceCommitSha=$SourceSha }
         $manifest.governanceCommitSha = $GovernanceSha
         $config.governanceCommitSha = $GovernanceSha
-        $expectedSha = if ($Name -eq 'trusted SHA mismatch') { 'f378c4b64d3d79d96cd2874d543696dd52e6283d' } else { $SourceSha }
+        $expectedSha = if ($Name -eq 'trusted SHA mismatch') { 'bf9147a8dea5ebac50bdcaaedf78bcafde284b2b' } else { $SourceSha }
         $results = Invoke-Semantics $manifest $config -ExpectedSha $expectedSha
         ($results.message -join "`n") | Should -Match "GCS004.*$Pattern" -Because $Name
     }
@@ -395,7 +395,7 @@ Describe 'Governance contract semantic validation' {
         $manifest.standardsConsumption = @{
             mode = 'central-reference'
             sourceRepository = 'AIAllTheThingz/Engineering-Standards'
-            sourceCommitSha = 'f378c4b64d3d79d96cd2874d543696dd52e6283d'
+            sourceCommitSha = 'bf9147a8dea5ebac50bdcaaedf78bcafde284b2b'
         }
         & $Mutate $manifest.standardsConsumption
         $results = Invoke-Semantics $manifest $config
@@ -408,7 +408,7 @@ Describe 'Governance contract semantic validation' {
         $manifest.standardsConsumption = @{
             mode = 'central-reference'
             sourceRepository = 'AIAllTheThingz/Engineering-Standards'
-            sourceCommitSha = 'f378c4b64d3d79d96cd2874d543696dd52e6283d'
+            sourceCommitSha = 'bf9147a8dea5ebac50bdcaaedf78bcafde284b2b'
         }
         $results = Invoke-Semantics $manifest $config
         @($results | Where-Object { $_.message -match 'GCS004' }) | Should -HaveCount 0
