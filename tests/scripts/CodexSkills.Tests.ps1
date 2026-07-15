@@ -79,12 +79,12 @@ function Set-AggregateFixtureIdentity {
 }
 
 Describe 'Codex skill validation' {
-    It 'preserves the repository enterprise-powershell skill and reports model evaluation honestly' {
+    It 'keeps the suspended repository skill outside deterministic active discovery' {
         $report = Invoke-CodexSkillValidation -Path $repoRoot
         $report.deterministicStatus | Should -Be 'Passed'
-        $report.modelEvaluationStatus | Should -Be 'NotRun'
-        $report.skillsDiscovered | Should -Contain 'enterprise-powershell'
-        @($report.promptBehaviorResults | Where-Object status -eq 'NotRun').Count | Should -Be 9
+        $report.modelEvaluationStatus | Should -Be 'NotApplicable'
+        $report.skillsDiscovered | Should -Not -Contain 'enterprise-powershell'
+        Test-Path -LiteralPath (Join-Path $repoRoot '.agents/suspended-skills/enterprise-powershell/SKILL.md') | Should -BeTrue
     }
 
     It 'returns NotApplicable when no governed skill root exists' {

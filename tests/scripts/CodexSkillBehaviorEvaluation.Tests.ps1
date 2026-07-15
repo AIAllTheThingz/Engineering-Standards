@@ -25,14 +25,18 @@ Describe 'Controlled Codex skill behavior evaluation' {
 
     It 'hashes the root catalog and a new skill-local README without touching an existing skill file' {
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
-        $inputs.SkillPaths | Should -Contain '.agents/skills/README.md'
+        $inputs.SkillPaths | Should -Contain '.agents/suspended-skills/README.md'
         $fixtureName = 'behavior-readme-fixture-' + [guid]::NewGuid().ToString('N')
         $fixtureDirectory = Join-Path $repoRoot ".agents/skills/$fixtureName"
         $skillReadme = Join-Path $fixtureDirectory 'README.md'
         New-Item -ItemType Directory -Path $fixtureDirectory | Out-Null
         New-Item -ItemType File -Path $skillReadme | Out-Null
         try { (Get-CodexBehaviorInput -Path $repoRoot).SkillPaths | Should -Contain ".agents/skills/$fixtureName/README.md" }
-        finally { Remove-Item -LiteralPath $fixtureDirectory -Recurse -Force }
+        finally {
+            Remove-Item -LiteralPath $fixtureDirectory -Recurse -Force
+            $activeRoot = Join-Path $repoRoot '.agents/skills'
+            if ((Test-Path -LiteralPath $activeRoot -PathType Container) -and @((Get-ChildItem -LiteralPath $activeRoot -Force)).Count -eq 0) { Remove-Item -LiteralPath $activeRoot -Force }
+        }
     }
 
     It 'passes a complete live run while identifying it as probabilistic evidence' {
@@ -177,10 +181,12 @@ Describe 'Controlled Codex skill behavior evaluation' {
     }
 
     It 'enforces the checked Active-skill suspension through the aggregate wrapper' {
-        (Get-Content -LiteralPath (Join-Path $repoRoot '.agents/skills/README.md') -Raw) | Should -Match '(?m)^\|.*enterprise-powershell.*\|\s*Suspended\s*\|'
+        Test-Path -LiteralPath (Join-Path $repoRoot '.agents/skills/enterprise-powershell/SKILL.md') | Should -BeFalse
+        Test-Path -LiteralPath (Join-Path $repoRoot '.agents/suspended-skills/enterprise-powershell/SKILL.md') | Should -BeTrue
         $wrapper = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1') -Raw
         $wrapper | Should -Match "decision\.action -ne 'Suspend'"
-        $wrapper | Should -Match 'not marked Suspended'
+        $wrapper | Should -Match 'not physically suspended'
+        $wrapper | Should -Match 'Passed behavior evidence requires attributable human adjudication'
     }
 
     It 'rejects fabricated checked evidence and partial checked evidence' {

@@ -58,11 +58,14 @@ try {
         if ($behavior.status -in @('Failed','Blocked','NotRun')) {
             if ($behavior.decision.skillStatus -eq 'Active') {
                 if ($behavior.decision.action -ne 'Suspend') { Write-Error 'Nonpassing Active-skill evidence must require suspension.'; exit 1 }
-                $catalog = Get-Content -LiteralPath (Join-Path $root '.agents/skills/README.md') -Raw
-                $escapedSkill = [regex]::Escape([string]$approvedBehavior.Skill.Name)
-                if ($catalog -notmatch "(?m)^\|[^|]*$escapedSkill[^|]*\|[^|]*\|\s*Suspended\s*\|") { Write-Error "Active skill '$($approvedBehavior.Skill.Name)' has nonpassing behavior evidence but is not marked Suspended in the catalog."; exit 1 }
+                $activeInstruction = Join-Path $root $approvedBehavior.Skill.ActiveInstructionPath
+                $suspendedInstruction = Join-Path $root $approvedBehavior.Skill.SuspendedInstructionPath
+                if ((Test-Path -LiteralPath $activeInstruction -PathType Leaf) -or -not (Test-Path -LiteralPath $suspendedInstruction -PathType Leaf)) { Write-Error "Active skill '$($approvedBehavior.Skill.Name)' has nonpassing behavior evidence but its discoverable SKILL.md is not physically suspended."; exit 1 }
             }
             elseif ($behavior.decision.action -ne 'BlockPromotion') { Write-Error 'Nonpassing Candidate evidence must block promotion.'; exit 1 }
+        }
+        elseif ($behavior.status -eq 'Passed') {
+            if ($behavior.humanAdjudication.status -ne 'Passed' -or [string]::IsNullOrWhiteSpace([string]$behavior.humanAdjudication.reviewer) -or $null -eq $behavior.humanAdjudication.reviewedAtUtc) { Write-Error 'Passed behavior evidence requires attributable human adjudication before aggregate success.'; exit 1 }
         }
     }
     exit 0

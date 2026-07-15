@@ -14,6 +14,8 @@
     Skill = @{
         Name = 'enterprise-powershell'
         Status = 'Active'
+        ActiveInstructionPath = '.agents/skills/enterprise-powershell/SKILL.md'
+        SuspendedInstructionPath = '.agents/suspended-skills/enterprise-powershell/SKILL.md'
     }
 
     Model = @{

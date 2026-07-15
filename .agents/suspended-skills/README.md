@@ -1,4 +1,4 @@
-# Codex Skills Catalog
+# Suspended Codex Skills Catalog
 
 This directory contains repository-scoped Codex skills maintained by `AIAllTheThingz/Engineering-Standards`.
 

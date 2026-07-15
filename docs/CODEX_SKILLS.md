@@ -45,7 +45,7 @@ Repository validation is defined in [Codex Skill Validation](CODEX_SKILL_VALIDAT
 
 ## Current Skill
 
-The first active skill is [`enterprise-powershell`](../.agents/skills/enterprise-powershell/SKILL.md).
+The first implemented skill is [`enterprise-powershell`](../.agents/suspended-skills/enterprise-powershell/SKILL.md); it is currently outside the discoverable active-skills root while suspended.
 
 It creates or substantially modifies governed enterprise PowerShell automation, including project structure, configuration, credential handling, safe operating modes, reporting, tests, documentation, validation, and completion evidence.
 
@@ -251,7 +251,7 @@ A skill installed without its governing context is incomplete. If central standa
 
 ## Planned Skill Sequence
 
-`enterprise-powershell` is implemented but currently Suspended by the checked
+`enterprise-powershell` is implemented but currently Suspended outside the discoverable `.agents/skills` root by the checked
 `Blocked` controlled behavior result. It may return to Active only after a
 passing unchanged-input live evaluation and attributable human approval. The remaining planned skills are owned by
 GitHub issues rather than prose-only checklist entries. Live issue state,
