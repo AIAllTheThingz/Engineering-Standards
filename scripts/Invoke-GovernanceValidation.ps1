@@ -40,7 +40,7 @@ callers must not infer this value from the repository name. Schema version
 Adds an intentional final failed check after normal validation so evidence can
 be generated and uploaded before enforcement fails.
 .EXAMPLE
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path .
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
 .OUTPUTS
 Console results and governance-validation.json in EvidenceRoot.
 .NOTES

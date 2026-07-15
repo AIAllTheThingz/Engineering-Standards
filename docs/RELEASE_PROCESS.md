@@ -49,7 +49,7 @@ Before tagging, maintainers MUST confirm:
 Run the standard release validation:
 
 ```powershell
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
 ```
 
 Run Pester when scripts, actions, schemas, validators, or completion evidence behavior changed:

@@ -381,6 +381,26 @@ Describe 'GovernanceValidation module' {
             $report.results.Count | Should -BeGreaterThan 0
             $report.results[0].path | Should -Be 'scripts/Test-JsonSchemas.ps1'
         }
+
+        It 'passes a verified repository owner type in every documented aggregate command' {
+            $repoRoot = Resolve-Path "$PSScriptRoot/../.."
+            $commandDocuments = @(
+                Get-Item -LiteralPath (Join-Path $repoRoot 'README.md')
+                Get-ChildItem -LiteralPath (Join-Path $repoRoot 'docs') -Filter '*.md' -File -Recurse
+                Get-Item -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-GovernanceValidation.ps1')
+            )
+
+            foreach ($document in $commandDocuments) {
+                $lineNumber = 0
+                foreach ($line in Get-Content -LiteralPath $document.FullName) {
+                    $lineNumber++
+                    if ($line -match '(?i)pwsh\b.*Invoke-GovernanceValidation\.ps1') {
+                        $relativePath = [System.IO.Path]::GetRelativePath($repoRoot, $document.FullName).Replace('\\', '/')
+                        $line | Should -Match '(?i)(?:^|\s)-RepositoryOwnerType(?:\s|$)' -Because "${relativePath}:$lineNumber must not rely on the unsafe Unknown default"
+                    }
+                }
+            }
+        }
     }
 
     Context 'manifest semantics' {

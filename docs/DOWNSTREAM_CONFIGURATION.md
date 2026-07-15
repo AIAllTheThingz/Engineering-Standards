@@ -156,7 +156,8 @@ pwsh -NoProfile -File scripts/Test-JsonSchemas.ps1 -Path .
 For complete repository validation, run:
 
 ```powershell
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Category JsonSchemas,Contract,RepositoryHealth,Evidence
+$RepositoryOwnerType = 'Organization' # Replace only with GitHub's verified User or Organization owner type.
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType $RepositoryOwnerType -Category JsonSchemas,Contract,RepositoryHealth,Evidence
 ```
 
 The aggregate validator uses `RepositoryOwnerType` value `Unknown` by default

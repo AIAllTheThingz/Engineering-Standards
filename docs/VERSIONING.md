@@ -109,7 +109,7 @@ Changing `VERSION` requires a changelog update, release evidence refresh, and re
 Before changing `VERSION`, validate the intended release:
 
 ```powershell
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
 ```
 
 Schema and validator changes also require Pester evidence.

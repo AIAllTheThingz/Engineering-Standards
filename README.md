@@ -209,7 +209,7 @@ pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/codex-skills-validation.json
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path .
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
 Invoke-Pester -Path tests -Output Detailed
 ```
 

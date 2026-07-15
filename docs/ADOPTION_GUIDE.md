@@ -146,9 +146,10 @@ Adoption MUST NOT use exceptions to hide missing ownership, absent evidence, dis
 Run the local governance validation before requesting review:
 
 ```powershell
+$RepositoryOwnerType = 'Organization' # Replace only with GitHub's verified User or Organization owner type.
 pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path .
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Category JsonSchemas,YamlSyntax,WorkflowArchitecture,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType $RepositoryOwnerType -Category JsonSchemas,YamlSyntax,WorkflowArchitecture,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
 ```
 
 For downstream repositories, run the reusable workflow in GitHub Actions and attach the uploaded governance evidence artifact. Technology repositories MUST also run their build, lint, test, migration, security, or deployment dry-run checks.
