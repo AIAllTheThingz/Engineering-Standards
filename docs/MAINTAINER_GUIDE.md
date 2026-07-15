@@ -56,7 +56,13 @@ silently into an older document version.
 
 Validators MUST fail closed for malformed required inputs and write structured output when an output path is requested. They must not leak secrets in logs. They should distinguish `Failed`, `Blocked`, and `NotRun` instead of flattening everything into failure.
 
-When updating validators, run Pester and the aggregate governance validation. Tests must cover positive cases, negative cases, and any edge case that caused a bug or regression.
+The aggregate validator and `scripts/governance-validation.registry.psd1` are the
+authoritative validation surface. Maintainer profile categories, order,
+applicability, prerequisites, and trust behavior must be changed in the registry
+with synchronized tests and documentation. Explicit category selection can
+filter optional categories only; it cannot remove mandatory checks.
+
+When updating validators, run focused Pester tests and the aggregate governance validation. Tests must cover positive cases, negative cases, and any edge case that caused a bug or regression.
 
 Codex skill changes require `scripts/Test-CodexSkills.ps1`, prompt-corpus structural validation, safe metadata/reference review, and human trigger-quality review. Deterministic CI must not execute skill scripts or relabel unevaluated model behavior as passed.
 
@@ -113,9 +119,12 @@ Common drift examples include a schema field that documentation does not describ
 Run the maintainer validation set before merging substantive changes:
 
 ```powershell
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,CodexSkills,Evidence,Examples
-pwsh -NoProfile -Command "Invoke-Pester -Path tests -Output Detailed"
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
 ```
+
+The aggregate report is non-passing when a mandatory category is `Failed`,
+`Blocked`, or `NotRun`. Missing tools are recorded as `NotRun`; install the
+declared prerequisites rather than omitting the category.
 
 `User` is explicit because this repository is verified as user-owned. Hosted
 schema `1.2.0` validation derives the trusted value from GitHub event metadata

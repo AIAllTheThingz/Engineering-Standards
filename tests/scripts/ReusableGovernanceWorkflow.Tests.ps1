@@ -374,7 +374,7 @@ Describe 'Reusable governance workflow trust boundaries' {
         $report.results[0].status | Should -Be 'Passed'
     }
 
-    It 'rejects an explicit category override that omits Contract before structured-exception execution' {
+    It 'adds mandatory Contract when an explicit category selection omits it' {
         $caller = New-StructuredDownstreamFixture -Name 'structured-contract-omitted'
         $configPath = Join-Path $caller 'governance.config.json'
         $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json -AsHashtable
@@ -384,11 +384,11 @@ Describe 'Reusable governance workflow trust boundaries' {
 
         $result = Invoke-DownstreamValidation -CallerRoot $caller -RepositoryOwnerType User -Category ForbiddenPatterns
 
-        $result.ExitCode | Should -Not -Be 0
-        $result.Output | Should -Match 'Contract validation is mandatory.*structured-exception validation.*cannot be omitted'
+        $result.ExitCode | Should -Be 0 -Because $result.Output
         $report = Get-Content -LiteralPath (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
-        $report.results[0].name | Should -Be 'BootstrapValidation'
-        $report.results[0].failureReason | Should -Match 'Contract validation is mandatory'
+        ($report.results.name -join ',') | Should -BeExactly 'Contract,ForbiddenPatterns'
+        $report.mandatoryCategories | Should -Contain 'Contract'
+        $report.requestedCategories | Should -Contain 'ForbiddenPatterns'
     }
 
     It 'reports invalid schema version 1.2.0 structured exceptions through Contract semantics' {

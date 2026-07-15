@@ -120,7 +120,7 @@ Outputs are `evidence-path` and `artifact-name`. Root files under `workflows/` a
 
 The reusable workflow checks out caller content under `caller/`, trusted central tooling under `standards/`, and reports under `evidence/`. The standards checkout is selected from GitHub's immutable `job.workflow_repository` and `job.workflow_sha` context; callers cannot supply either value. Evidence keeps the caller repository and commit as `repository`, `commitSha`, and `validatedCommitSha`, and records the standards workflow repository/SHA separately.
 
-`Contract` is mandatory for all downstream callers. `MarkdownLinks`, `DocumentationCompleteness`, `ForbiddenPatterns`, and `CodexSkills` are supported central static categories when present in validated configuration. `CodexSkills` treats caller skill content as inert data and never executes skill scripts, tools, dependencies, or model evaluations. `JsonSchemas`, `YamlSyntax`, `WorkflowArchitecture`, `RepositoryHealth`, `Evidence`, `Examples`, `Pester`, `PSScriptAnalyzer`, and `PowerShellParser` are maintainer-only and fail downstream semantic validation; run caller-owned builds and tests in separate caller CI jobs. For schema version `1.2.0`, a nonempty `controls.mandatoryControlsDisabled` collection requires `Contract` validation and proceeds only when GCS010 and GCS011 validate an active structured exception for the exact control. Explicit category overrides cannot omit `Contract`. Legacy schema versions `1.0.0` and `1.1.0` remain fail-closed for every nonempty collection.
+`Contract` is mandatory for all downstream callers. `MarkdownLinks`, `DocumentationCompleteness`, `ForbiddenPatterns`, and `CodexSkills` are supported central static categories when present in validated configuration. `CodexSkills` treats caller skill content as inert data and never executes skill scripts, tools, dependencies, or model evaluations. `AgentStandards`, `JsonSchemas`, `YamlSyntax`, `WorkflowArchitecture`, `RepositoryHealth`, `Evidence`, `Examples`, `Pester`, `PSScriptAnalyzer`, and `PowerShellParser` are maintainer-only and fail downstream semantic validation; run caller-owned builds and tests in separate caller CI jobs. For schema version `1.2.0`, a nonempty `controls.mandatoryControlsDisabled` collection requires `Contract` validation and proceeds only when GCS010 and GCS011 validate an active structured exception for the exact control. Explicit category overrides cannot omit `Contract`. Legacy schema versions `1.0.0` and `1.1.0` remain fail-closed for every nonempty collection.
 
 The central downstream workflow does not apply repository-provided `additionalForbiddenPatterns` or `reviewedAllowlist`. Both arrays MUST be empty; a nonempty value fails with the unsupported field name instead of being silently ignored.
 
@@ -157,8 +157,13 @@ For complete repository validation, run:
 
 ```powershell
 $RepositoryOwnerType = 'Organization' # Replace only with GitHub's verified User or Organization owner type.
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType $RepositoryOwnerType -Category JsonSchemas,Contract,RepositoryHealth,Evidence
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType $RepositoryOwnerType
 ```
+
+The aggregate resolves the `downstream` profile from the validated repository
+identity. `Contract` is mandatory and cannot be filtered; supported configured
+static categories are added without executing repository-owned code. An
+explicit `-Category` value filters optional downstream categories only.
 
 The aggregate validator uses `RepositoryOwnerType` value `Unknown` by default
 and does not infer ownership from the repository name. Schema `1.2.0` requires

@@ -63,11 +63,23 @@ jobs:
           $module = Import-Module (Join-Path $moduleRoot 'PSScriptAnalyzer.psd1') -Force -PassThru
           if (-not $module -or $module.Version.ToString() -ne '1.22.0') { throw 'Required PSScriptAnalyzer 1.22.0 was not installed.' }
 
+          $pesterPackagePath = Join-Path $env:RUNNER_TEMP 'Pester.5.7.1.nupkg'
+          $pesterExpectedHash = '4a27904c6814a5fbe4758f8e49861f6a1994aee77b71165a5c43c0371ba6c580'
+          Invoke-WebRequest -Uri 'https://www.powershellgallery.com/api/v2/package/Pester/5.7.1' -OutFile $pesterPackagePath -UseBasicParsing
+          $pesterActualHash = (Get-FileHash -LiteralPath $pesterPackagePath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($pesterActualHash -ne $pesterExpectedHash) { throw "Pester package hash mismatch. Expected $pesterExpectedHash but received $pesterActualHash." }
+          $pesterRoot = Join-Path $moduleParent 'Pester/5.7.1'
+          New-Item -ItemType Directory -Path $pesterRoot -Force | Out-Null
+          [System.IO.Compression.ZipFile]::ExtractToDirectory($pesterPackagePath, $pesterRoot, $true)
+          $pesterModule = Import-Module (Join-Path $pesterRoot 'Pester.psd1') -Force -PassThru
+          if (-not $pesterModule -or $pesterModule.Version.ToString() -ne '5.7.1') { throw 'Required Pester 5.7.1 was not installed.' }
+
       - name: Run candidate implementation validation
         shell: pwsh
         working-directory: candidate
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
+          CALLER_REPOSITORY: ${{ github.repository }}
           CANDIDATE_SHA: ${{ github.sha }}
           HARNESS_SHA: ${{ job.workflow_sha }}
         run: |
@@ -76,7 +88,7 @@ jobs:
           Write-Output "::stop-commands::$commandMarker"
           try {
             $root = (Resolve-Path .).Path
-            $reportRoot = Join-Path $root '.tmp/candidate-validation'
+            $reportRoot = Join-Path $env:RUNNER_TEMP 'candidate-validation'
             New-Item -ItemType Directory -Path $reportRoot -Force | Out-Null
 
             function Invoke-CandidateScript {
@@ -93,30 +105,15 @@ jobs:
             & git diff --check "$baseSha...$($env:CANDIDATE_SHA)"
             if ($LASTEXITCODE -ne 0) { throw 'Candidate git diff check failed.' }
 
-            $parseErrors = [System.Collections.Generic.List[string]]::new()
-            foreach ($relativePath in @(& git ls-files -- '*.ps1' '*.psm1' '*.psd1')) {
-              $tokens = $null
-              $errors = $null
-              [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $root $relativePath), [ref]$tokens, [ref]$errors) | Out-Null
-              foreach ($errorRecord in @($errors)) { $parseErrors.Add("${relativePath}: $($errorRecord.Message)") }
-            }
-            if ($parseErrors.Count -gt 0) { throw "Candidate PowerShell parser failures:`n$($parseErrors -join [Environment]::NewLine)" }
-
-            Invoke-CandidateScript 'scripts/Test-AgentStandards.ps1' @('-Path',$root)
-            Invoke-CandidateScript 'scripts/Test-YamlSyntax.ps1' @('-Path',$root,'-OutputJson',(Join-Path $reportRoot 'yaml-syntax.json'))
-            Invoke-CandidateScript 'scripts/Test-GitHubWorkflowArchitecture.ps1' @('-Path',$root,'-DefaultBranch','master','-ExpectedReusableWorkflowSha',$env:HARNESS_SHA,'-RequireCandidateValidation','-OutputJson',(Join-Path $reportRoot 'workflow-architecture.json'))
-            Invoke-CandidateScript 'scripts/Test-JsonSchemas.ps1' @('-Path',$root,'-OutputJson',(Join-Path $reportRoot 'json-schemas.json'))
-            Invoke-CandidateScript 'scripts/Test-MarkdownLinks.ps1' @('-Path',$root,'-OutputJson',(Join-Path $reportRoot 'markdown-links.json'))
-            Invoke-CandidateScript 'scripts/Test-DocumentationCompleteness.ps1' @('-Path',$root,'-OutputJson',(Join-Path $reportRoot 'documentation-completeness.json'))
-            Invoke-CandidateScript 'actions/validate-contract/Invoke-ContractValidation.ps1' @('-Path',$root,'-OutputJson',(Join-Path $reportRoot 'contract.json'))
-            Invoke-CandidateScript 'actions/repository-health/Invoke-RepositoryHealth.ps1' @('-Path',$root,'-RepositoryOwnerType','User','-OutputJson',(Join-Path $reportRoot 'repository-health.json'))
-            Invoke-CandidateScript 'actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1' @('-Path',$root,'-OutputJson',(Join-Path $reportRoot 'forbidden-patterns.json'))
-            Invoke-CandidateScript 'scripts/Test-CodexSkills.ps1' @('-Path',$root,'-OutputJson',(Join-Path $reportRoot 'codex-skills.json'))
-            Invoke-CandidateScript 'scripts/Invoke-PesterSuite.ps1' @('-EvidenceRoot',(Join-Path $reportRoot 'pester'))
-
-            $analyzerFindings = @(Invoke-ScriptAnalyzer -Path $root -Recurse -Severity Error)
-            if ($analyzerFindings.Count -gt 0) { throw "Candidate PSScriptAnalyzer error findings:`n$($analyzerFindings | Out-String)" }
-            Invoke-CandidateScript 'scripts/Test-Examples.ps1'
+            Invoke-CandidateScript 'scripts/Invoke-GovernanceValidation.ps1' @(
+              '-Path',$root,
+              '-EvidenceRoot',$reportRoot,
+              '-CallerRepository',$env:CALLER_REPOSITORY,
+              '-CallerCommitSha',$env:CANDIDATE_SHA,
+              '-RepositoryOwnerType','User',
+              '-ExpectedReusableWorkflowSha',$env:HARNESS_SHA,
+              '-CandidateMaintainerValidation'
+            )
           }
           finally {
             Write-Output "::$commandMarker::"

@@ -19,8 +19,9 @@ the caller and standards workspaces.
 Optional backward-compatible local report path. Reusable workflows use the
 dedicated EvidenceRoot report instead.
 .PARAMETER Category
-Optional local-only category override. Reusable-workflow callers use the
-validated governance.config.json categories instead.
+Optional explicit category selection. The selection applies only to optional
+profile categories; mandatory categories remain selected unless an active,
+contract-validated exception disables the exact category.
 .PARAMETER ExpectedGovernanceVersion
 Governance version required by the reusable-workflow interface.
 .PARAMETER CallerRepository
@@ -31,6 +32,10 @@ Immutable caller commit being validated.
 GitHub owner/name that supplied the reusable workflow.
 .PARAMETER StandardsWorkflowSha
 Immutable commit containing the reusable workflow and validators.
+.PARAMETER ExpectedReusableWorkflowSha
+Optional immutable SHA that workflow architecture validation must require.
+Candidate validation uses the immutable harness SHA while executing the
+candidate validator implementation from a different candidate commit.
 .PARAMETER RepositoryOwnerType
 Trusted repository owner type used by ownership-aware validation. Accepted
 values are exactly Unknown, User, or Organization. The default is Unknown;
@@ -39,6 +44,11 @@ callers must not infer this value from the repository name. Schema version
 .PARAMETER ControlledFailure
 Adds an intentional final failed check after normal validation so evidence can
 be generated and uploaded before enforcement fails.
+.PARAMETER CandidateMaintainerValidation
+Allows the Engineering Standards candidate harness to validate the candidate
+checkout with its own candidate validators. This mode requires the exact
+maintainer repository identity, immutable candidate SHA, external evidence
+root, and expected immutable harness SHA; it is not available downstream.
 .EXAMPLE
 pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
 .OUTPUTS
@@ -52,16 +62,18 @@ param(
     [string]$ProjectPath = '.',
     [string]$EvidenceRoot,
     [string]$OutputJson,
-    [ValidateSet('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')]
+    [ValidateSet('Contract','AgentStandards','CodexSkills','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','Evidence','PowerShellParser','Pester','PSScriptAnalyzer','Examples')]
     [string[]]$Category,
     [string]$ExpectedGovernanceVersion,
     [string]$CallerRepository,
     [string]$CallerCommitSha,
     [string]$StandardsRepository = 'AIAllTheThingz/Engineering-Standards',
     [string]$StandardsWorkflowSha,
+    [string]$ExpectedReusableWorkflowSha,
     [ValidateScript({ @('Unknown', 'User', 'Organization') -ccontains $_ }, ErrorMessage = 'RepositoryOwnerType must be exactly Unknown, User, or Organization.')]
     [string]$RepositoryOwnerType = 'Unknown',
-    [switch]$ControlledFailure
+    [switch]$ControlledFailure,
+    [switch]$CandidateMaintainerValidation
 )
 
 Set-StrictMode -Version Latest
@@ -193,6 +205,73 @@ function Invoke-TrustedValidation {
     if ($totalOutputLines -gt $output.Count) { Write-Output "[validator-output] $($totalOutputLines - $output.Count) earlier lines were omitted." }
 }
 
+function Add-AggregateResult {
+    <#
+    .SYNOPSIS
+    Adds a canonical child result to the aggregate validation report.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][ValidateSet('Passed','Failed','NotRun','Blocked','NotApplicable')][string]$Status,
+        [Parameter(Mandatory)][string]$Summary,
+        [AllowNull()][Nullable[int]]$ExitCode,
+        [string]$Command,
+        [string]$ToolPath,
+        [string]$FailureReason,
+        [string]$NotApplicableRationale,
+        [string]$ExceptionReference
+    )
+
+    $now = (Get-Date).ToUniversalTime()
+    $record = [ordered]@{
+        name = $Name
+        category = $Name
+        status = $Status
+        requiredValidation = $true
+        command = $Command
+        toolPath = $ToolPath
+        target = 'caller'
+        startedAtUtc = $now.ToString('o')
+        completedAtUtc = $now.ToString('o')
+        durationSeconds = 0
+        exitCode = $ExitCode
+        summary = $Summary
+        failureReason = $FailureReason
+        notApplicableRationale = $NotApplicableRationale
+        exceptionReference = $ExceptionReference
+    }
+    $script:results.Add($record)
+}
+
+function Get-CategoryNonApplicabilityReason {
+    <#
+    .SYNOPSIS
+    Returns a reason when a conditional category does not apply to the project.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][System.Collections.IDictionary]$PlanEntry,
+        [Parameter(Mandatory)][string]$ProjectRoot
+    )
+
+    switch -CaseSensitive ([string]$PlanEntry.applicability) {
+        'Always' { return $null }
+        'WhenSkillsPresent' {
+            if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot '.agents/skills') -PathType Container)) {
+                return 'No governed .agents/skills directory is present.'
+            }
+            return $null
+        }
+        'WhenPowerShellPresent' {
+            $powerShellFile = Get-ChildItem -LiteralPath $ProjectRoot -Recurse -File -Include *.ps1,*.psm1,*.psd1 -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $powerShellFile) { return 'No PowerShell files are present.' }
+            return $null
+        }
+        default { throw "Unsupported validation applicability '$($PlanEntry.applicability)'." }
+    }
+}
+
 $callerRoot = (Resolve-Path -LiteralPath $Path).Path
 $evidenceFull = $null
 $bootstrapEvidenceReady = $false
@@ -229,7 +308,7 @@ try {
         $bootstrapEvidenceReady = $true
     }
 
-    if ($env:GITHUB_ACTIONS -eq 'true' -and (Test-RootsOverlap -First $callerRoot -Second $standardsRoot)) {
+    if ($env:GITHUB_ACTIONS -eq 'true' -and -not $CandidateMaintainerValidation -and (Test-RootsOverlap -First $callerRoot -Second $standardsRoot)) {
         throw 'Caller and standards workspaces must be separate and must not overlap.'
     }
 
@@ -239,7 +318,10 @@ if ($CallerCommitSha -and $CallerCommitSha -notmatch '^[a-fA-F0-9]{40}$') {
 if ($StandardsWorkflowSha -and $StandardsWorkflowSha -notmatch '^[a-fA-F0-9]{40}$') {
     throw 'Standards workflow SHA must be a full 40-character hexadecimal commit SHA.'
 }
-if ($StandardsRepository -ne 'AIAllTheThingz/Engineering-Standards') {
+if ($ExpectedReusableWorkflowSha -and $ExpectedReusableWorkflowSha -notmatch '^[a-fA-F0-9]{40}$') {
+    throw 'Expected reusable workflow SHA must be a full 40-character hexadecimal commit SHA.'
+}
+if ($StandardsRepository -cne 'AIAllTheThingz/Engineering-Standards') {
     throw "Unexpected standards workflow repository '$StandardsRepository'."
 }
 if ($CallerCommitSha -and (Test-Path -LiteralPath (Join-Path $callerRoot '.git'))) {
@@ -282,6 +364,23 @@ if ($disabledMandatoryControls.Count -gt 0 -and -not $usesStructuredExceptionFlo
 
 $isMaintainerProfile = $manifest.projectType -eq 'governance' -and $manifest.repository -eq $StandardsRepository
 $validationProfile = if ($isMaintainerProfile) { 'standards-maintainer' } else { 'downstream' }
+if ($CandidateMaintainerValidation) {
+    if ($env:GITHUB_ACTIONS -ne 'true') {
+        throw 'Candidate maintainer validation is restricted to the GitHub Actions candidate harness.'
+    }
+    if ($env:GITHUB_REPOSITORY -cne 'AIAllTheThingz/Engineering-Standards' -or $env:GITHUB_SHA -cne $CallerCommitSha) {
+        throw 'Candidate maintainer validation requires trusted GitHub repository and candidate SHA context.'
+    }
+    if (-not $isMaintainerProfile -or $CallerRepository -cne 'AIAllTheThingz/Engineering-Standards') {
+        throw 'Candidate maintainer validation is restricted to the Engineering Standards repository.'
+    }
+    if (-not $CallerCommitSha -or -not $ExpectedReusableWorkflowSha) {
+        throw 'Candidate maintainer validation requires immutable candidate and reusable harness SHAs.'
+    }
+    if ($StandardsWorkflowSha) {
+        throw 'Candidate maintainer validation must not label the candidate checkout as the trusted baseline standards workflow SHA.'
+    }
+}
 if (-not $isMaintainerProfile) {
     foreach ($unsupportedField in @('additionalForbiddenPatterns','reviewedAllowlist')) {
         if (@($config[$unsupportedField]).Count -gt 0) {
@@ -289,94 +388,102 @@ if (-not $isMaintainerProfile) {
         }
     }
 }
-$requestedCategories = if ($Category) { @($Category) } else { @($config.validationCategories) }
-if ($usesStructuredExceptionFlow -and $Category -and @($requestedCategories) -notcontains 'Contract') {
-    throw 'Contract validation is mandatory for schema version 1.2.0 structured-exception validation and cannot be omitted when mandatory controls are disabled.'
+$configuredCategories = @($config.validationCategories)
+$requestedCategories = if ($Category) { @($Category) } else { @() }
+$profileDefinition = Get-GovernanceValidationProfile -Name $validationProfile
+$planArguments = @{
+    Profile = $validationProfile
+    ConfiguredCategory = $configuredCategories
 }
-$selected = [System.Collections.Generic.List[string]]::new()
-if (-not $Category -or ($usesStructuredExceptionFlow -and @($requestedCategories) -contains 'Contract')) { $selected.Add('Contract') }
-foreach ($item in $requestedCategories) {
-    if ($item -notin $selected) { $selected.Add([string]$item) }
-}
-if ($isMaintainerProfile) {
-    if (-not $Category) {
-        foreach ($item in @('JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','PowerShellParser','Pester','PSScriptAnalyzer','Examples')) {
-            if ($item -notin $selected) { $selected.Add($item) }
+if ($Category) { $planArguments.RequestedCategory = @($Category) }
+$validationPlan = @(Resolve-GovernanceValidationPlan @planArguments)
+
+$candidateDisabledCategories = [ordered]@{}
+foreach ($disabledControl in @($disabledMandatoryControls)) {
+    if ($disabledControl -isnot [System.Collections.IDictionary]) { continue }
+    $controlName = [string]$disabledControl.control
+    if (@($profileDefinition.mandatoryCategories) -ccontains $controlName) {
+        if ($controlName -ceq 'Contract') {
+            throw 'Contract validation cannot be disabled because it validates the exception authority.'
         }
+        $candidateDisabledCategories[$controlName] = [string]$disabledControl.exceptionReference
     }
 }
-else {
-    $unsupported = @($selected | Where-Object { $_ -in @('JsonSchemas','YamlSyntax','WorkflowArchitecture','RepositoryHealth','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser') })
-    if ($unsupported.Count -gt 0) {
-        throw "Downstream validation categories require repository-owned execution or maintainer layout and are not safe in this workflow: $($unsupported -join ', ')."
-    }
+
+$workflowArchitectureSha = if ($ExpectedReusableWorkflowSha) { $ExpectedReusableWorkflowSha } else { $StandardsWorkflowSha }
+$toolArguments = @{
+    Contract = @('-Path',$projectRoot,'-ExpectedRepository',$CallerRepository,'-ExpectedStandardsRepository',$StandardsRepository,'-RepositoryOwnerType',$RepositoryOwnerType,'-ExpectedWorkflowInterfaceVersion','1.0.0','-ExpectedWorkflowProfile',$validationProfile) + $(if ($StandardsWorkflowSha) { @('-ExpectedGovernanceCommitSha',$StandardsWorkflowSha) } else { @() }) + $(if ($isMaintainerProfile) { @('-ExpectedRequiredCheckName','Governance / Governance validation') } else { @() })
+    AgentStandards = @('-Path',$projectRoot)
+    CodexSkills = @('-Path',$projectRoot,'-OutputJson',(Join-Path $evidenceFull 'codex-skills.json'),'-AllowedOutputRoot',$evidenceFull)
+    JsonSchemas = @('-Path',$projectRoot)
+    YamlSyntax = @('-Path',$projectRoot)
+    WorkflowArchitecture = @('-Path',$projectRoot,'-DefaultBranch','master') + $(if ($workflowArchitectureSha) { @('-ExpectedReusableWorkflowSha',$workflowArchitectureSha) } else { @() }) + $(if ($isMaintainerProfile) { @('-RequireCandidateValidation') } else { @() })
+    MarkdownLinks = @('-Path',$projectRoot)
+    DocumentationCompleteness = @('-Path',$projectRoot)
+    ForbiddenPatterns = @('-Path',$projectRoot)
+    RepositoryHealth = @('-Path',$projectRoot,'-RepositoryOwnerType',$RepositoryOwnerType)
+    Evidence = @('-Path',$projectRoot,'-EvidencePath','evidence/local-completion-result.json')
+    Pester = @('-EvidenceRoot',$evidenceFull)
+    Examples = @()
 }
 
 $script:results = [System.Collections.Generic.List[object]]::new()
-$toolMap = @{
-    Contract = @{ path='actions/validate-contract/Invoke-ContractValidation.ps1'; args=@('-Path',$projectRoot,'-ExpectedRepository',$CallerRepository,'-ExpectedStandardsRepository',$StandardsRepository,'-RepositoryOwnerType',$RepositoryOwnerType,'-ExpectedWorkflowInterfaceVersion','1.0.0','-ExpectedWorkflowProfile',$validationProfile) + $(if ($StandardsWorkflowSha) { @('-ExpectedGovernanceCommitSha',$StandardsWorkflowSha) } else { @() }) + $(if ($isMaintainerProfile) { @('-ExpectedRequiredCheckName','Governance / Governance validation') } else { @() }) }
-    JsonSchemas = @{ path='scripts/Test-JsonSchemas.ps1'; args=@('-Path',$projectRoot) }
-    YamlSyntax = @{ path='scripts/Test-YamlSyntax.ps1'; args=@('-Path',$projectRoot) }
-    WorkflowArchitecture = @{ path='scripts/Test-GitHubWorkflowArchitecture.ps1'; args=@('-Path',$projectRoot,'-DefaultBranch','master') + $(if ($StandardsWorkflowSha) { @('-ExpectedReusableWorkflowSha',$StandardsWorkflowSha) } else { @() }) + $(if ($isMaintainerProfile) { @('-RequireCandidateValidation') } else { @() }) }
-    MarkdownLinks = @{ path='scripts/Test-MarkdownLinks.ps1'; args=@('-Path',$projectRoot) }
-    DocumentationCompleteness = @{ path='scripts/Test-DocumentationCompleteness.ps1'; args=@('-Path',$projectRoot) }
-    ForbiddenPatterns = @{ path='actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1'; args=@('-Path',$projectRoot) }
-    RepositoryHealth = @{ path='actions/repository-health/Invoke-RepositoryHealth.ps1'; args=@('-Path',$projectRoot,'-RepositoryOwnerType',$RepositoryOwnerType) }
-    CodexSkills = @{ path='scripts/Test-CodexSkills.ps1'; args=@('-Path',$projectRoot,'-OutputJson',(Join-Path $evidenceFull 'codex-skills.json'),'-AllowedOutputRoot',$evidenceFull) }
-    Evidence = @{ path='actions/validate-evidence/Invoke-EvidenceValidation.ps1'; args=@('-Path',$projectRoot,'-EvidencePath','evidence/local-completion-result.json') }
-}
+$structuredExceptionsApproved = $candidateDisabledCategories.Count -eq 0
+foreach ($planEntry in @($validationPlan)) {
+    $name = [string]$planEntry.name
 
-foreach ($name in @($selected)) {
-    if ($toolMap.ContainsKey($name)) {
-        $definition = $toolMap[$name]
-        Invoke-TrustedValidation -Name $name -ScriptPath (Join-Path $standardsRoot $definition.path) -Arguments $definition.args
-        if ($name -eq 'CodexSkills') {
-            $codexReportPath = Join-Path $evidenceFull 'codex-skills.json'
-            if (Test-Path -LiteralPath $codexReportPath -PathType Leaf) {
-                $codexReport = Get-Content -LiteralPath $codexReportPath -Raw | ConvertFrom-Json
-                if (@($codexReport.skillsDiscovered).Count -eq 0 -and @($codexReport.results | Where-Object status -eq 'NotApplicable').Count -gt 0) {
-                    $lastResult = $script:results[$script:results.Count - 1]
-                    if (@($requestedCategories) -contains 'CodexSkills') {
-                        $lastResult.status = 'Failed'
-                        $lastResult.exitCode = 1
-                        $lastResult.summary = 'CodexSkills was explicitly required, but no governed skill root exists.'
-                        $lastResult.failureReason = $lastResult.summary
-                    }
-                    else {
-                        $lastResult.status = 'NotApplicable'
-                        $lastResult.summary = 'No governed Codex skill root exists; optional skill validation is not applicable.'
-                    }
-                }
-            }
-        }
+    if ($candidateDisabledCategories.Contains($name) -and $structuredExceptionsApproved) {
+        $exceptionReference = [string]$candidateDisabledCategories[$name]
+        Add-AggregateResult -Name $name -Status NotApplicable -ExitCode $null -Command 'Approved governance exception' -ToolPath 'governance.config.json' -Summary "$name is disabled by active exception '$exceptionReference'." -NotApplicableRationale 'An active contract-validated exception disables this mandatory category.' -ExceptionReference $exceptionReference
         continue
     }
-    switch ($name) {
+
+    $nonApplicabilityReason = Get-CategoryNonApplicabilityReason -PlanEntry $planEntry -ProjectRoot $projectRoot
+    if ($nonApplicabilityReason) {
+        Add-AggregateResult -Name $name -Status NotApplicable -ExitCode $null -Command 'Applicability evaluation' -ToolPath 'scripts/governance-validation.registry.psd1' -Summary "$name is not applicable: $nonApplicabilityReason" -NotApplicableRationale $nonApplicabilityReason
+        continue
+    }
+
+    $missingPrerequisites = @(Get-GovernanceMissingValidationPrerequisite -PlanEntry $planEntry)
+    if ($missingPrerequisites.Count -gt 0) {
+        $reason = "Required validation tooling is unavailable: $($missingPrerequisites -join ', ')."
+        Add-AggregateResult -Name $name -Status NotRun -ExitCode 3 -Command 'Tool prerequisite discovery' -ToolPath 'scripts/governance-validation.registry.psd1' -Summary $reason -FailureReason $reason
+        continue
+    }
+
+    switch -CaseSensitive ([string]$planEntry.runner) {
+        'Script' {
+            $scriptPath = Resolve-SafePath -Root $standardsRoot -ChildPath ([string]$planEntry.path)
+            $arguments = if ($toolArguments.ContainsKey($name)) { @($toolArguments[$name]) } else { @() }
+            Invoke-TrustedValidation -Name $name -ScriptPath $scriptPath -Arguments $arguments
+        }
         'PowerShellParser' {
             $started = (Get-Date).ToUniversalTime()
-            $parseErrors = [System.Collections.Generic.List[object]]::new()
-            Get-ChildItem -LiteralPath $projectRoot -Recurse -File -Include *.ps1,*.psm1,*.psd1 | ForEach-Object {
+            $parseErrors = [System.Collections.Generic.List[string]]::new()
+            foreach ($file in Get-ChildItem -LiteralPath $projectRoot -Recurse -File -Include *.ps1,*.psm1,*.psd1) {
                 $tokens = $null
                 $errors = $null
-                [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
-                foreach ($error in @($errors)) { $parseErrors.Add($error) }
+                [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+                foreach ($errorRecord in @($errors)) {
+                    $relativeFile = [System.IO.Path]::GetRelativePath($projectRoot, $file.FullName).Replace('\','/')
+                    $parseErrors.Add("${relativeFile}: $($errorRecord.Message)")
+                }
             }
             $completed = (Get-Date).ToUniversalTime()
-            $script:results.Add([ordered]@{ name='PowerShellParser'; category='PowerShellParser'; status=if($parseErrors.Count){'Failed'}else{'Passed'}; requiredValidation=$true; command='PowerShell parser (caller data only)'; toolPath='pwsh'; target='caller'; startedAtUtc=$started.ToString('o'); completedAtUtc=$completed.ToString('o'); durationSeconds=[math]::Round(($completed-$started).TotalSeconds,3); exitCode=if($parseErrors.Count){1}else{0}; summary="Parsed caller PowerShell files; errors: $($parseErrors.Count)."; failureReason=if($parseErrors.Count){($parseErrors -join [Environment]::NewLine)}else{$null} })
-        }
-        'Pester' {
-            Invoke-TrustedValidation -Name Pester -ScriptPath (Join-Path $standardsRoot 'scripts/Invoke-PesterSuite.ps1') -Arguments @('-EvidenceRoot',$evidenceFull)
+            $script:results.Add([ordered]@{ name=$name; category=$name; status=if($parseErrors.Count){'Failed'}else{'Passed'}; requiredValidation=$true; command='PowerShell parser (caller data only)'; toolPath='pwsh'; target='caller'; startedAtUtc=$started.ToString('o'); completedAtUtc=$completed.ToString('o'); durationSeconds=[math]::Round(($completed-$started).TotalSeconds,3); exitCode=if($parseErrors.Count){1}else{0}; summary="Parsed caller PowerShell files; errors: $($parseErrors.Count)."; failureReason=if($parseErrors.Count){($parseErrors -join [Environment]::NewLine)}else{$null} })
         }
         'PSScriptAnalyzer' {
             $started = (Get-Date).ToUniversalTime()
             $findings = @(Invoke-ScriptAnalyzer -Path $projectRoot -Recurse -Severity Error)
             $completed = (Get-Date).ToUniversalTime()
-            $script:results.Add([ordered]@{ name='PSScriptAnalyzer'; category='PSScriptAnalyzer'; status=if($findings.Count){'Failed'}else{'Passed'}; requiredValidation=$true; command='Invoke-ScriptAnalyzer -Path caller -Recurse -Severity Error'; toolPath='PSScriptAnalyzer'; target='caller'; startedAtUtc=$started.ToString('o'); completedAtUtc=$completed.ToString('o'); durationSeconds=[math]::Round(($completed-$started).TotalSeconds,3); exitCode=if($findings.Count){1}else{0}; summary="PSScriptAnalyzer error findings: $($findings.Count)."; failureReason=if($findings.Count){($findings | Out-String)}else{$null} })
+            $script:results.Add([ordered]@{ name=$name; category=$name; status=if($findings.Count){'Failed'}else{'Passed'}; requiredValidation=$true; command='Invoke-ScriptAnalyzer -Path caller -Recurse -Severity Error'; toolPath='PSScriptAnalyzer'; target='caller'; startedAtUtc=$started.ToString('o'); completedAtUtc=$completed.ToString('o'); durationSeconds=[math]::Round(($completed-$started).TotalSeconds,3); exitCode=if($findings.Count){1}else{0}; summary="PSScriptAnalyzer error findings: $($findings.Count)."; failureReason=if($findings.Count){($findings | Out-String)}else{$null} })
         }
-        'Examples' {
-            Invoke-TrustedValidation -Name Examples -ScriptPath (Join-Path $standardsRoot 'scripts/Test-Examples.ps1')
-        }
-        default { throw "Unsupported validation category '$name'." }
+        default { throw "Unsupported validation runner '$($planEntry.runner)' for category '$name'." }
+    }
+
+    if ($name -ceq 'Contract' -and $candidateDisabledCategories.Count -gt 0) {
+        $contractResult = $script:results[$script:results.Count - 1]
+        $structuredExceptionsApproved = $contractResult.status -ceq 'Passed'
     }
 }
 
@@ -385,18 +492,35 @@ if ($ControlledFailure) {
     $script:results.Add([ordered]@{ name='ControlledFailure'; category='workflow'; status='Failed'; requiredValidation=$true; command='controlled-failure-test'; toolPath='standards reusable workflow'; target='caller'; startedAtUtc=$now.ToString('o'); completedAtUtc=$now.ToString('o'); durationSeconds=0; exitCode=1; summary='Controlled failure was requested after normal validation.'; failureReason='Controlled failure test intentionally fails after validation evidence is created.' })
 }
 
+$overallStatus = Get-GovernanceAggregateStatus -Results @($script:results)
+$approvedDisabledCategories = @()
+if ($structuredExceptionsApproved) { $approvedDisabledCategories = @($candidateDisabledCategories.Keys) }
 $report = [ordered]@{
     schemaVersion = '1.0.0'
+    validationRegistryVersion = '1.0.0'
     generatedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
     caller = [ordered]@{ repository=$CallerRepository; commitSha=$CallerCommitSha; workspace='caller'; projectPath=$ProjectPath }
-    standards = [ordered]@{ repository=$StandardsRepository; workflowSha=$StandardsWorkflowSha; workspace='standards' }
+    standards = [ordered]@{ repository=$StandardsRepository; workflowSha=$StandardsWorkflowSha; expectedReusableWorkflowSha=$workflowArchitectureSha; workspace='standards' }
     evidenceWorkspace = 'evidence'
     governanceVersion = $manifest.governanceVersion
     riskClassification = $manifest.riskClassification
     validationProfile = $validationProfile
+    trustModel = $profileDefinition.trustModel
+    executesRepositoryCode = $profileDefinition.executesRepositoryCode
+    configuredCategories = @($configuredCategories)
+    requestedCategories = @($requestedCategories)
+    mandatoryCategories = @($profileDefinition.mandatoryCategories)
+    selectedCategories = @($validationPlan | ForEach-Object { $_.name })
+    approvedDisabledCategories = @($approvedDisabledCategories)
     checksExecuted = @($script:results | ForEach-Object { $_.name })
+    status = $overallStatus
     results = @($script:results)
     failed = @($script:results | Where-Object status -eq 'Failed').Count
+    blocked = @($script:results | Where-Object status -eq 'Blocked').Count
+    notRun = @($script:results | Where-Object status -eq 'NotRun').Count
+    notApplicable = @($script:results | Where-Object status -eq 'NotApplicable').Count
+    passed = @($script:results | Where-Object status -eq 'Passed').Count
+    total = $script:results.Count
 }
 $reportPath = Join-Path $evidenceFull 'governance-validation.json'
 $report | ConvertTo-OrderedJson | Set-Content -LiteralPath $reportPath -Encoding utf8
@@ -409,7 +533,7 @@ if ($OutputJson) {
     $report | ConvertTo-OrderedJson | Set-Content -LiteralPath $legacyReportPath -Encoding utf8
 }
 $script:results | ForEach-Object { "[$($_.status)] $($_.name): $($_.summary)" }
-    if ($report.failed -gt 0) { exit 1 }
+    if ($report.status -ne 'Passed') { exit 1 }
 }
 catch {
     $safeFailure = ConvertTo-SanitizedWorkflowFailureMessage -InputObject $_.Exception.Message -WorkspaceRoot $workflowWorkspaceRoot -TemporaryRoot $temporaryRoot

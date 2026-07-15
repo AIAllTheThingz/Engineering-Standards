@@ -90,6 +90,16 @@ Agents MUST NOT weaken branch protection, review, evidence, scanner, workflow, o
 
 Agents MUST run the applicable subset for each change and MUST NOT claim a command passed unless it actually ran.
 
+The final repository-wide command is authoritative. It resolves every mandatory
+`standards-maintainer` category from the validation registry; `-Category` can
+restrict optional categories only and cannot remove a mandatory check.
+
+```powershell
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
+```
+
+The individual commands below remain the supported fast diagnostic paths.
+
 ```powershell
 pwsh -NoProfile -File scripts/Test-AgentStandards.ps1 -Path .
 ```

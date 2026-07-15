@@ -6,6 +6,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
+- Added a versioned aggregate validation registry, explicit maintainer and downstream profiles, canonical status aggregation, prerequisite reporting, and an Issue #22 coverage matrix.
 - Added governance contract schema `1.2.0`, controlled schema URNs, structured ownership, standards-consumption, workflow-interface, evidence-path, and exception records, plus deterministic `GCS001`-`GCS013` cross-document validation for Issue #21.
 
 - Added bounded deterministic Codex skill validation, safe metadata/reference parsing, prompt-behavior corpus structure, aggregate/candidate CI integration, and honest model-evaluation `NotRun` reporting for Issue #20.
@@ -16,6 +17,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Changed
 
+- Made the default aggregate validator authoritative for all mandatory maintainer checks, made `-Category` filtering additive to mandatory controls, and reduced candidate CI to one isolated aggregate invocation.
 - Rotated governance self-CI, repository templates, examples, and current `1.2.0` declarations to final immutable Issue #21 implementation commit `1ee830403569a7e59a5d193229cd19e210113c56`.
 
 - Reconciled repository ownership declarations with three verified GitHub user reviewers and documented safe CODEOWNERS, last-push, branch, tag, bypass, and rollback enforcement.
@@ -29,6 +31,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Migration Notes
 
+- Existing aggregate commands with `-Category` remain accepted, but the option now filters optional profile categories only. Maintainers should remove hand-maintained category lists and use the complete default command documented in the Issue #22 coverage matrix.
 - `v1.1.0` remains the latest published release and does not contain these changes. Consumers needing that control set may use tag `v1.1.0` at `2704049d7e826975d956611b194214dd79ea3686`.
 - Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `de32b77e2043f5336a54b92ab9ed867abe93ba7e`.
 - See [Release Status](docs/RELEASE_STATUS.md) for the authoritative published-versus-unreleased boundary.

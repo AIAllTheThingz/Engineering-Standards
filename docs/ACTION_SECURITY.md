@@ -68,9 +68,15 @@ Callers cannot provide a standards repository, ref, or SHA. The workflow validat
 
 Engineering Standards self-CI also calls the reusable workflow through a reviewed full remote SHA. A local reusable call on `pull_request` would make the pull-request commit both the untrusted caller and the implementation labeled as trusted. Maintainers must advance the self-CI pin intentionally after validating a new reusable-workflow implementation.
 
-Self-CI uses a second reusable harness at the same reviewed full SHA for candidate implementation validation. The immutable harness runs on a separate ephemeral runner with only `contents: read`, checks out the candidate at `${{ github.sha }}` with credentials removed, receives no secrets or environment, suspends workflow-command processing while candidate code executes, and explicitly runs candidate parsers, validators, Pester, ScriptAnalyzer, examples, and diff checks. Candidate execution is intentionally untrusted and its outputs are not consumed by the trusted baseline job.
+Self-CI uses a second reusable harness at the same reviewed full SHA for candidate implementation validation. The immutable harness runs on a separate ephemeral runner with only `contents: read`, checks out the candidate at `${{ github.sha }}` with credentials removed, receives no secrets or environment, suspends workflow-command processing while candidate code executes, performs a diff-integrity check, and invokes the candidate aggregate validator exactly once. The candidate registry-resolved plan owns parsers, validators, Pester, ScriptAnalyzer, and examples inside that isolation boundary. Candidate execution is intentionally untrusted and its outputs are not consumed by the trusted baseline job.
 
 Downstream manifests, configuration, paths, and files remain untrusted. The aggregate validator canonicalizes the caller project root, rejects rooted paths and `..`, rejects every symbolic link, junction, or reparse point anywhere in caller content—including internal-target links—requires nonoverlapping caller/standards/evidence roots, and loads modules only from the standards checkout. The all-links-denied rule deliberately fails closed against workspace-boundary and validator-confusion attacks. It does not execute downstream tests, scripts, examples, package hooks, or build commands.
+
+The aggregate registry declares the `downstream` profile as non-executing and
+the `standards-maintainer` profile as repository-code executing. Candidate
+maintainer mode is accepted only in GitHub Actions for the exact central
+repository with immutable candidate and harness identities and an external
+evidence workspace. Callers cannot select candidate mode to widen trust.
 
 The public downstream canary tests this cross-repository boundary before reusable-workflow release. It contains no secrets or production environments, grants only `contents: read`, pins all reusable calls to one full candidate SHA, and rejects copied central implementation directories. All five scenario artifacts must be independently verified; see [Downstream Governance Canary](DOWNSTREAM_CANARY.md). Public canary evidence must contain only sanitized governance metadata and must not be treated as authorization to introduce credentials or privileged integration tests.
 

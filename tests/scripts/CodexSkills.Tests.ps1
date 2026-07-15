@@ -48,8 +48,33 @@ function Invoke-TestValidation { param([string]$Root) Invoke-CodexSkillValidatio
 
 function Set-AggregateFixtureIdentity {
     param([string]$Root)
-    @{ repository='Example/Fixture'; projectType='application'; governanceVersion='1.1.0'; riskClassification='Moderate' } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $Root 'project-manifest.json')
-    @{ validationCategories=@('CodexSkills'); controls=@{ mandatoryControlsDisabled=@() }; additionalForbiddenPatterns=@(); reviewedAllowlist=@() } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $Root 'governance.config.json')
+    foreach ($document in @('README.md','SECURITY.md','CONTRIBUTING.md')) {
+        "# $document`n`nSynthetic aggregate Codex skill fixture." | Set-Content -LiteralPath (Join-Path $Root $document) -Encoding utf8
+    }
+    @'
+# AGENTS
+
+## Applicable Standards
+
+- [Base](agents/AGENTS_Base.md)
+- [Integration](agents/AGENTS_Integration.md)
+'@ | Set-Content -LiteralPath (Join-Path $Root 'AGENTS.md') -Encoding utf8
+    [ordered]@{
+        schemaVersion='1.0.0'; projectName='Codex Skill Fixture'; repository='Example/Fixture'
+        description='Synthetic downstream fixture for aggregate Codex skill validation.'; projectType='integration'
+        technologies=@('integration'); governanceVersion='1.1.0'; riskClassification='Moderate'; dataClassification='Internal'
+        owners=@('@Example/maintainers'); environments=@([ordered]@{name='local';type='development';production=$false})
+        applicableStandards=@('agents/AGENTS_Base.md','agents/AGENTS_Integration.md'); requiredWorkflows=@('governance')
+        externalIntegrations=@(); secretsProvider='none'; productionApprovalRequired=$false
+        evidence=[ordered]@{completionEvidencePath='evidence/completion-result.json';testEvidencePath='evidence/test-results.json'}; exceptions=@()
+    } | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $Root 'project-manifest.json') -Encoding utf8
+    [ordered]@{
+        schemaVersion='1.0.0'; manifestPath='project-manifest.json'; evidencePath='evidence'
+        requiredDocumentationPaths=@('README.md','SECURITY.md','CONTRIBUTING.md','AGENTS.md')
+        applicableAgentStandards=@('agents/AGENTS_Base.md','agents/AGENTS_Integration.md')
+        validationCategories=@('Contract','CodexSkills'); additionalForbiddenPatterns=@(); reviewedAllowlist=@()
+        controls=[ordered]@{mandatoryControlsDisabled=@()}; exceptions=@()
+    } | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $Root 'governance.config.json') -Encoding utf8
 }
 }
 
@@ -78,7 +103,7 @@ Describe 'Codex skill validation' {
         $report.deterministicStatus | Should -Be 'Failed'
     }
 
-    It 'fails aggregate validation when CodexSkills is explicitly required and no skill root exists' {
+    It 'records aggregate CodexSkills as NotApplicable when no skill root exists' {
         $root = Join-Path $TestDrive 'aggregate-no-skills'
         New-Item -ItemType Directory -Path $root -Force | Out-Null
         Set-AggregateFixtureIdentity $root
@@ -92,9 +117,10 @@ Describe 'Codex skill validation' {
             if ($null -eq $githubActions) { Remove-Item Env:GITHUB_ACTIONS -ErrorAction SilentlyContinue }
             else { $env:GITHUB_ACTIONS = $githubActions }
         }
-        $LASTEXITCODE | Should -Be 1
+        $LASTEXITCODE | Should -Be 0
         $aggregate = Get-Content -LiteralPath (Join-Path $evidence 'governance-validation.json') -Raw | ConvertFrom-Json
-        ($aggregate.results | Where-Object name -eq 'CodexSkills').status | Should -Be 'Failed'
+        ($aggregate.results | Where-Object name -eq 'CodexSkills').status | Should -Be 'NotApplicable'
+        $aggregate.status | Should -Be 'Passed'
     }
 
     It 'rejects an output path outside the approved report root' {

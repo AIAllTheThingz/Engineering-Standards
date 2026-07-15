@@ -356,7 +356,7 @@ Describe 'Governance contract semantic validation' {
     }
 
     It 'rejects every maintainer-only category for the downstream profile' -ForEach @(
-        'JsonSchemas', 'YamlSyntax', 'WorkflowArchitecture', 'RepositoryHealth', 'Evidence', 'Examples', 'Pester', 'PSScriptAnalyzer', 'PowerShellParser'
+        'AgentStandards', 'JsonSchemas', 'YamlSyntax', 'WorkflowArchitecture', 'RepositoryHealth', 'Evidence', 'Examples', 'Pester', 'PSScriptAnalyzer', 'PowerShellParser'
     ) {
         $manifest = Copy-ContractObject $script:manifest
         $config = Copy-ContractObject $script:config

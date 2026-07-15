@@ -15,6 +15,12 @@ When a failure reveals a real governance gap, fix the gap. When a failure is cau
 
 Start by identifying the failing category, command, working directory, exit code, and affected file. Then determine whether the failure is policy, schema, workflow, environment, tooling, or evidence related.
 
+The authoritative aggregate report is `governance-validation.json`. Inspect
+`validationProfile`, `mandatoryCategories`, `selectedCategories`, and `results`
+before rerunning a child validator. A requested `-Category` list cannot explain
+a missing mandatory category; if one is absent, treat it as a registry or
+planning defect.
+
 Do not change multiple controls at once during diagnosis. Small fixes make evidence easier to trust.
 
 ## Contract Validation Failures
@@ -71,7 +77,7 @@ Regenerate completion evidence after validation runs. Never edit evidence to cla
 
 Run `pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/codex-skills-validation.json` and use the stable `SKL001` through `SKL019` rule ID. Fix the bounded structural defect; do not execute a skill script to prove it is safe.
 
-Safe YAML parsing failures require Python and the reviewed PyYAML dependency. Reference failures require a real in-bound file beneath the skill or approved authority path. Prompt-corpus structural success may coexist with `modelEvaluationStatus: NotRun`; this is honest and must not be changed to `Passed` without an approved controlled model evaluation. Candidate CI output must remain beneath `.tmp/candidate-validation`, with read-only permissions and no secrets.
+Safe YAML parsing failures require Python and the reviewed PyYAML dependency. Reference failures require a real in-bound file beneath the skill or approved authority path. Prompt-corpus structural success may coexist with `modelEvaluationStatus: NotRun`; this is honest and must not be changed to `Passed` without an approved controlled model evaluation. Candidate CI output must remain in the external runner temporary directory, with read-only permissions and no secrets.
 
 ## Forbidden Pattern Findings
 
@@ -175,6 +181,14 @@ An exception cannot approve false evidence or known secret exposure.
 ## Recovery Steps
 
 After fixing a failure, rerun the smallest relevant validator, then run aggregate validation. Regenerate completion evidence only after the final validation run.
+
+```powershell
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
+```
+
+An aggregate process exit of `1` is expected for overall `Failed`, `Blocked`,
+or `NotRun`. Install a missing prerequisite reported with policy exit code `3`;
+do not remove that category from the command.
 
 If a central bug blocks many downstream repositories, open an emergency fix in this repository, document affected versions, and publish guidance.
 

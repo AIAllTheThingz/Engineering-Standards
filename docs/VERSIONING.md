@@ -109,10 +109,12 @@ Changing `VERSION` requires a changelog update, release evidence refresh, and re
 Before changing `VERSION`, validate the intended release:
 
 ```powershell
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
 ```
 
-Schema and validator changes also require Pester evidence.
+The authoritative default includes schema semantics, Pester, ScriptAnalyzer,
+and functional examples. Release evidence must show every mandatory category;
+an explicit category list cannot narrow the maintainer plan.
 
 ## Evidence
 

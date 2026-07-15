@@ -152,9 +152,9 @@ if ($AggregateReportPath) {
     $aggregateFull = Resolve-SafePath -Root $root -ChildPath $AggregateReportPath
     $aggregate = Read-JsonFile -Path $aggregateFull
     $categoryMap = @{
-        Contract='workflow'; JsonSchemas='schema'; YamlSyntax='schema'; WorkflowArchitecture='workflow'
+        Contract='workflow'; AgentStandards='policy'; CodexSkills='security'; JsonSchemas='schema'; YamlSyntax='schema'; WorkflowArchitecture='workflow'
         MarkdownLinks='documentation'; DocumentationCompleteness='documentation'; ForbiddenPatterns='security'
-        RepositoryHealth='workflow'; CodexSkills='security'; PowerShellParser='lint'; Pester='unit'; PSScriptAnalyzer='lint'
+        RepositoryHealth='workflow'; Evidence='workflow'; PowerShellParser='lint'; Pester='unit'; PSScriptAnalyzer='lint'
         Examples='integration'; ControlledFailure='workflow'; BootstrapValidation='workflow'
     }
     foreach ($result in @($aggregate.results)) {
@@ -178,8 +178,8 @@ if ($AggregateReportPath) {
             summary = [string]$result.summary
             warnings = @()
             failureReason = $result.failureReason
-            blockedReason = $null
-            notApplicableRationale = $null
+            blockedReason = Get-JsonMemberValue -InputObject $result -Name 'blockedReason'
+            notApplicableRationale = Get-JsonMemberValue -InputObject $result -Name 'notApplicableRationale'
             manualProcedure = $null
             executionMode = [ordered]@{ dryRun=$false; whatIf=$false; planOnly=$false; applied=$true }
             details = [ordered]@{ toolPath=$result.toolPath; target=$result.target; validationProfile=$aggregate.validationProfile }

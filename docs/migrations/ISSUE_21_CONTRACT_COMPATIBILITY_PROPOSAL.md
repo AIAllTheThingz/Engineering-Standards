@@ -257,10 +257,10 @@ source repository and SHA and identify the authoritative `localPath`.
 
 ## Validation categories and profiles
 
-The controlled category inventory is `Contract`, `JsonSchemas`, `YamlSyntax`,
-`WorkflowArchitecture`, `MarkdownLinks`, `DocumentationCompleteness`,
-`ForbiddenPatterns`, `RepositoryHealth`, `CodexSkills`, `Evidence`, `Examples`,
-`Pester`, `PSScriptAnalyzer`, and `PowerShellParser`.
+The controlled category inventory is `Contract`, `AgentStandards`, `CodexSkills`,
+`JsonSchemas`, `YamlSyntax`, `WorkflowArchitecture`, `MarkdownLinks`,
+`DocumentationCompleteness`, `ForbiddenPatterns`, `RepositoryHealth`,
+`Evidence`, `PowerShellParser`, `Pester`, `PSScriptAnalyzer`, and `Examples`.
 
 The `standards-maintainer` profile declares every category actually executed by
 candidate validation. The `downstream` profile is limited to `Contract`,

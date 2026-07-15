@@ -202,6 +202,18 @@ proposal](docs/migrations/ISSUE_21_CONTRACT_COMPATIBILITY_PROPOSAL.md).
 
 ## Local Validation
 
+The aggregate validator is the authoritative final check. Its default
+`standards-maintainer` profile runs every mandatory category in registry order;
+an explicit `-Category` list cannot remove mandatory checks. Missing tools and
+conditional non-applicability remain visible in the JSON report instead of
+being treated as success.
+
+```powershell
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
+```
+
+Use individual validators for focused iteration:
+
 ```powershell
 pwsh -NoProfile -File scripts/Test-JsonSchemas.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-MarkdownLinks.ps1 -Path .
@@ -209,9 +221,10 @@ pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/codex-skills-validation.json
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
-Invoke-Pester -Path tests -Output Detailed
 ```
+
+See the [Issue #22 coverage matrix](docs/migrations/ISSUE_22_VALIDATION_COVERAGE_MATRIX.md)
+for profile, migration, trust-boundary, and status details.
 
 ## Functional Examples
 

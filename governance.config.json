@@ -44,6 +44,8 @@
   ],
   "validationCategories": [
     "Contract",
+    "AgentStandards",
+    "CodexSkills",
     "JsonSchemas",
     "YamlSyntax",
     "WorkflowArchitecture",
@@ -51,12 +53,11 @@
     "DocumentationCompleteness",
     "ForbiddenPatterns",
     "RepositoryHealth",
-    "CodexSkills",
     "Evidence",
-    "Examples",
+    "PowerShellParser",
     "Pester",
     "PSScriptAnalyzer",
-    "PowerShellParser"
+    "Examples"
   ],
   "ownership": {
     "requiredCodeownerPaths": [

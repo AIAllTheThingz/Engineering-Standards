@@ -10,6 +10,9 @@ Path to the Pester NUnit XML result file.
 Path to write sanitized JSON details.
 .PARAMETER RepositoryPath
 Repository root used to relativize paths.
+.PARAMETER EvidenceRoot
+Dedicated root that must contain both input XML and output JSON. Defaults to
+RepositoryPath for backward compatibility with repository-local conversion.
 .EXAMPLE
 pwsh -File scripts/Convert-PesterResultToSanitizedJson.ps1 -InputPath tmp/pester.xml -OutputPath evidence/pester-details.json
 #>
@@ -17,7 +20,8 @@ pwsh -File scripts/Convert-PesterResultToSanitizedJson.ps1 -InputPath tmp/pester
 param(
     [Parameter(Mandatory)][string]$InputPath,
     [Parameter(Mandatory)][string]$OutputPath,
-    [string]$RepositoryPath = '.'
+    [string]$RepositoryPath = '.',
+    [string]$EvidenceRoot
 )
 
 Set-StrictMode -Version Latest
@@ -25,8 +29,9 @@ $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'GovernanceValidation.psm1') -Force
 
 $root = (Resolve-Path -LiteralPath $RepositoryPath).Path
-$inputFull = Resolve-SafePath -Root $root -ChildPath $InputPath
-$outputFull = Resolve-SafePath -Root $root -ChildPath $OutputPath -AllowMissingLeaf
+$evidenceRootFull = if ($EvidenceRoot) { (Resolve-Path -LiteralPath $EvidenceRoot).Path } else { $root }
+$inputFull = Resolve-SafePath -Root $evidenceRootFull -ChildPath $InputPath
+$outputFull = Resolve-SafePath -Root $evidenceRootFull -ChildPath $OutputPath -AllowMissingLeaf
 
 function ConvertTo-SanitizedText {
     param([AllowNull()][string]$Text)
@@ -36,6 +41,10 @@ function ConvertTo-SanitizedText {
     $rootEscaped = [regex]::Escape($root)
     $value = [regex]::Replace($value, $rootEscaped, '.')
     $value = $value.Replace($rootSlash, '.')
+    $evidenceRootSlash = $evidenceRootFull.Replace('\','/')
+    $evidenceRootEscaped = [regex]::Escape($evidenceRootFull)
+    $value = [regex]::Replace($value, $evidenceRootEscaped, '<evidence-root>')
+    $value = $value.Replace($evidenceRootSlash, '<evidence-root>')
     $value = [regex]::Replace($value, '/home/runner/work/[^/\s]+/[^/\s]+', '.')
     $value = [regex]::Replace($value, 'C:\\Users\\[^\\\s]+', '<user-profile>')
     $value = [regex]::Replace($value, '/tmp/[^\s<>"'']+', '<temp-path>')

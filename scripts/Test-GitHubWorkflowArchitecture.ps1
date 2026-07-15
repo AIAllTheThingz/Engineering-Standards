@@ -448,6 +448,13 @@ if ($isStandardsRepository) {
                 if ([string]$validationStep['working-directory'] -ne 'candidate') {
                     $results.Add((New-ValidationResult -Status Failed -Message 'Candidate implementation validation must execute from the candidate checkout.' -Path $candidateWorkflowPath))
                 }
+                $validationEnvironment = $validationStep.env
+                if ($validationEnvironment -isnot [hashtable] -or
+                    [string]$validationEnvironment.CALLER_REPOSITORY -ne '${{ github.repository }}' -or
+                    [string]$validationEnvironment.CANDIDATE_SHA -ne '${{ github.sha }}' -or
+                    [string]$validationEnvironment.HARNESS_SHA -ne '${{ job.workflow_sha }}') {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Candidate authoritative validation must bind caller, candidate, and harness identities to trusted GitHub context.' -Path $candidateWorkflowPath))
+                }
                 $runText = [string]$validationStep.run
                 $candidateTokens = $null
                 $candidateParseErrors = $null
@@ -456,80 +463,44 @@ if ($isStandardsRepository) {
                     $results.Add((New-ValidationResult -Status Failed -Message 'Candidate implementation validation PowerShell does not parse.' -Path $candidateWorkflowPath))
                 }
                 $candidateCommands = @($candidateAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] }, $true))
-                $candidateScriptPaths = @(
-                    $candidateCommands |
-                        Where-Object { $_.GetCommandName() -eq 'Invoke-CandidateScript' -and $_.CommandElements.Count -gt 1 } |
-                        ForEach-Object { [string]$_.CommandElements[1].Value }
-                )
-                foreach ($requiredScript in @(
-                    'scripts/Test-AgentStandards.ps1','scripts/Test-YamlSyntax.ps1','scripts/Test-GitHubWorkflowArchitecture.ps1',
-                    'scripts/Test-JsonSchemas.ps1','scripts/Test-MarkdownLinks.ps1','scripts/Test-DocumentationCompleteness.ps1',
-                    'actions/validate-contract/Invoke-ContractValidation.ps1','actions/repository-health/Invoke-RepositoryHealth.ps1',
-                    'actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1','scripts/Test-CodexSkills.ps1','scripts/Invoke-PesterSuite.ps1','scripts/Test-Examples.ps1'
-                )) {
-                    if ($candidateScriptPaths -notcontains $requiredScript) {
-                        $results.Add((New-ValidationResult -Status Failed -Message "Candidate harness is missing required candidate script invocation '$requiredScript'." -Path $candidateWorkflowPath))
-                    }
-                }
-                $codexSkillCommands = @(
+                $aggregateCommands = @(
                     $candidateCommands |
                         Where-Object {
                             $_.GetCommandName() -eq 'Invoke-CandidateScript' -and
                             $_.CommandElements.Count -gt 1 -and
-                            [string]$_.CommandElements[1].Value -eq 'scripts/Test-CodexSkills.ps1'
+                            [string]$_.CommandElements[1].Value -eq 'scripts/Invoke-GovernanceValidation.ps1'
                         }
                 )
-                if ($codexSkillCommands.Count -ne 1 -or $codexSkillCommands[0].Extent.Text -notmatch "Join-Path\s+\`$reportRoot\s+'codex-skills\.json'") {
-                    $results.Add((New-ValidationResult -Status Failed -Message 'Candidate Codex skill validation must write beneath .tmp/candidate-validation through reportRoot.' -Path $candidateWorkflowPath))
+                $candidateScriptInvocations = @($candidateCommands | Where-Object { $_.GetCommandName() -eq 'Invoke-CandidateScript' })
+                if ($aggregateCommands.Count -ne 1) {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Candidate harness must invoke the authoritative 'scripts/Invoke-GovernanceValidation.ps1' exactly once." -Path $candidateWorkflowPath))
+                }
+                elseif ($candidateScriptInvocations.Count -ne 1) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness must not orchestrate additional candidate scripts outside the authoritative aggregate validator.' -Path $candidateWorkflowPath))
+                }
+                else {
+                    $aggregateText = $aggregateCommands[0].Extent.Text
+                    $aggregateArguments = @(
+                        $aggregateCommands[0].FindAll({
+                            param($node)
+                            $node -is [System.Management.Automation.Language.StringConstantExpressionAst]
+                        }, $true) | ForEach-Object { [string]$_.Value }
+                    )
+                    foreach ($requiredArgument in @('-Path','-EvidenceRoot','-CallerRepository','-CallerCommitSha','-RepositoryOwnerType','-ExpectedReusableWorkflowSha','-CandidateMaintainerValidation')) {
+                        if ($aggregateArguments -cnotcontains $requiredArgument) {
+                            $results.Add((New-ValidationResult -Status Failed -Message "Candidate authoritative validation is missing required argument '$requiredArgument'." -Path $candidateWorkflowPath))
+                        }
+                    }
+                    $ownerTypeIndex = [array]::IndexOf($aggregateArguments, '-RepositoryOwnerType')
+                    if ($ownerTypeIndex -lt 0 -or $ownerTypeIndex + 1 -ge $aggregateArguments.Count -or $aggregateArguments[$ownerTypeIndex + 1] -cne 'User') {
+                        $results.Add((New-ValidationResult -Status Failed -Message 'Candidate authoritative validation must explicitly use RepositoryOwnerType User.' -Path $candidateWorkflowPath))
+                    }
+                    if ($aggregateText -notmatch "'-EvidenceRoot'\s*,\s*\`$reportRoot") {
+                        $results.Add((New-ValidationResult -Status Failed -Message 'Candidate authoritative validation must write to the external runner report root.' -Path $candidateWorkflowPath))
+                    }
                 }
                 $gitDiffCommand = @($candidateCommands | Where-Object { $_.GetCommandName() -eq 'git' -and ($_.CommandElements.Extent.Text -join ' ') -match '\bdiff\b.*--check' })
                 if ($gitDiffCommand.Count -eq 0) { $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness is missing an executable git diff --check command.' -Path $candidateWorkflowPath)) }
-                if (@($candidateCommands | Where-Object { $_.GetCommandName() -eq 'Invoke-ScriptAnalyzer' }).Count -eq 0) { $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness is missing an executable Invoke-ScriptAnalyzer command.' -Path $candidateWorkflowPath)) }
-                $parseFileCalls = @($candidateAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.InvokeMemberExpressionAst] -and [string]$node.Member.Value -eq 'ParseFile' }, $true))
-                if ($parseFileCalls.Count -eq 0) { $results.Add((New-ValidationResult -Status Failed -Message 'Candidate harness is missing executable PowerShell parser validation.' -Path $candidateWorkflowPath)) }
-                $architectureCommands = @(
-                    $candidateCommands |
-                        Where-Object {
-                            $_.GetCommandName() -eq 'Invoke-CandidateScript' -and
-                            $_.CommandElements.Count -gt 1 -and
-                            [string]$_.CommandElements[1].Value -eq 'scripts/Test-GitHubWorkflowArchitecture.ps1'
-                        }
-                )
-                $candidatePolicyArguments = @(
-                    $architectureCommands |
-                        ForEach-Object {
-                            $_.FindAll({
-                                param($node)
-                                $node -is [System.Management.Automation.Language.StringConstantExpressionAst]
-                            }, $true)
-                        } |
-                        ForEach-Object { [string]$_.Value }
-                )
-                if ($candidatePolicyArguments -notcontains '-RequireCandidateValidation') {
-                    $results.Add((New-ValidationResult -Status Failed -Message 'Candidate workflow architecture validation must fail closed with RequireCandidateValidation.' -Path $candidateWorkflowPath))
-                }
-                $repositoryHealthCommands = @(
-                    $candidateCommands |
-                        Where-Object {
-                            $_.GetCommandName() -eq 'Invoke-CandidateScript' -and
-                            $_.CommandElements.Count -gt 1 -and
-                            [string]$_.CommandElements[1].Value -eq 'actions/repository-health/Invoke-RepositoryHealth.ps1'
-                        }
-                )
-                $repositoryHealthArguments = @(
-                    $repositoryHealthCommands |
-                        ForEach-Object {
-                            $_.FindAll({
-                                param($node)
-                                $node -is [System.Management.Automation.Language.StringConstantExpressionAst]
-                            }, $true)
-                        } |
-                        ForEach-Object { [string]$_.Value }
-                )
-                $ownerTypeArgumentIndex = [array]::IndexOf($repositoryHealthArguments, '-RepositoryOwnerType')
-                if ($ownerTypeArgumentIndex -lt 0 -or $ownerTypeArgumentIndex + 1 -ge $repositoryHealthArguments.Count -or $repositoryHealthArguments[$ownerTypeArgumentIndex + 1] -cne 'User') {
-                    $results.Add((New-ValidationResult -Status Failed -Message 'Candidate repository-health validation must explicitly use RepositoryOwnerType User.' -Path $candidateWorkflowPath))
-                }
                 $stopCommandCalls = @(
                     $candidateCommands |
                         Where-Object { $_.GetCommandName() -eq 'Write-Output' -and $_.Extent.Text -match '::stop-commands::' }

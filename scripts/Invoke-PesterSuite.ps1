@@ -60,7 +60,7 @@ try {
     } | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $evidenceFull 'pester-summary.json') -Encoding utf8
 
     if (-not (Test-Path -LiteralPath $xmlPath -PathType Leaf)) { throw 'Pester did not produce the required NUnit XML result.' }
-    & (Join-Path $standardsRoot 'scripts/Convert-PesterResultToSanitizedJson.ps1') -InputPath $xmlPath -OutputPath (Join-Path $evidenceFull 'pester-details.json') -RepositoryPath $workspaceRoot
+    & (Join-Path $standardsRoot 'scripts/Convert-PesterResultToSanitizedJson.ps1') -InputPath $xmlPath -OutputPath (Join-Path $evidenceFull 'pester-details.json') -RepositoryPath $workspaceRoot -EvidenceRoot $evidenceFull
     if ($discovered -eq 0) { throw 'Pester discovered zero tests.' }
     if ($result.Result -ne 'Passed' -or $result.FailedCount -gt 0 -or $result.NotRunCount -gt 0) {
         throw "Pester result was '$($result.Result)' with $($result.FailedCount) failed and $($result.NotRunCount) NotRun tests."
