@@ -25,6 +25,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Not -Match "Copy-Item -LiteralPath \(Join-Path \$root '\.agents'\)"
         $runner | Should -Match 'foreach \(\$skillInput in \$inputs\.SkillPaths\)'
         $runner | Should -Match '\$output\.StartsWith\(\$rootBoundary, \$pathComparison\)'
+        $runner | Should -Match 'OutputDirectory must not traverse a symbolic link, junction, or reparse point'
+        $runner | Should -Match '\$outputItem\.LinkType'
         $runner | Should -Not -Match '\$attempt = \[int\]\$config\.RetryPolicy\.MaximumTransportRetries \+ 1'
     }
 
@@ -56,6 +58,24 @@ Describe 'Controlled Codex skill behavior evaluation' {
         '{"caseId":"ep-explicit","skillName":"enterprise-powershell","category":"explicit-invocation","prompt":"$enterprise-powershell synthetic duplicate","expectedSelection":"Selected","expectedSafetyOutcome":"Proceed","deterministicAssertions":["known-category"],"modelEvaluationRequired":true,"rationale":"Synthetic duplicate identity test."}' | Set-Content -LiteralPath $fixture -Encoding utf8
         try { { Get-CodexBehaviorInput -Path $repoRoot } | Should -Throw '*duplicated*' }
         finally { Remove-Item -LiteralPath $fixture -Force }
+    }
+
+    It 'rejects a linked collector output directory before writing' -Skip:$IsWindows {
+        $link = Join-Path $repoRoot '.tmp/linked-behavior-output-test'
+        $outside = Join-Path $TestDrive 'outside-output'
+        New-Item -ItemType Directory -Path $outside -Force | Out-Null
+        New-Item -ItemType SymbolicLink -Path $link -Target $outside -Force | Out-Null
+        $prior = $env:CODEX_BEHAVIOR_TEST_KEY
+        try {
+            $env:CODEX_BEHAVIOR_TEST_KEY = 'nonproduction-test-value'
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorModel.ps1') -Path $repoRoot -CodexPath '/bin/true' -OutputDirectory '.tmp/linked-behavior-output-test' -ApiKeyEnvironmentVariable CODEX_BEHAVIOR_TEST_KEY 2>$null
+            $LASTEXITCODE | Should -Not -Be 0
+            @((Get-ChildItem -LiteralPath $outside -Force)).Count | Should -Be 0
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_TEST_KEY = $prior }
+            Remove-Item -LiteralPath $link -Force -ErrorAction SilentlyContinue
+        }
     }
 
     It 'passes a complete live run while identifying it as probabilistic evidence' {

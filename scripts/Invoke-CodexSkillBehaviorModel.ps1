@@ -27,7 +27,16 @@ $output = if ([IO.Path]::IsPathRooted($OutputDirectory)) { [IO.Path]::GetFullPat
 $pathComparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
 $rootBoundary = $root.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 if (-not $output.StartsWith($rootBoundary, $pathComparison)) { throw 'OutputDirectory must be beneath the repository root.' }
+$currentOutputPath = $root
+foreach ($segment in @([IO.Path]::GetRelativePath($root, $output) -split '[\\/]' | Where-Object { $_ -and $_ -ne '.' })) {
+    $currentOutputPath = Join-Path $currentOutputPath $segment
+    if (-not (Test-Path -LiteralPath $currentOutputPath)) { break }
+    $outputItem = Get-Item -LiteralPath $currentOutputPath -Force
+    if ($outputItem.LinkType -or ($outputItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'OutputDirectory must not traverse a symbolic link, junction, or reparse point.' }
+}
 New-Item -ItemType Directory -Path $output -Force | Out-Null
+$outputItem = Get-Item -LiteralPath $output -Force
+if ($outputItem.LinkType -or ($outputItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'OutputDirectory must not be a symbolic link, junction, or reparse point.' }
 $scratch = Join-Path ([IO.Path]::GetTempPath()) ("codex-skill-behavior-{0}" -f [guid]::NewGuid().ToString('N'))
 $workspace = Join-Path $scratch 'workspace'
 $codexHome = Join-Path $scratch 'codex-home'
