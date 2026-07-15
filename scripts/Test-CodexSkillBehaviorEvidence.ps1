@@ -87,7 +87,7 @@ try {
     if ($evidence.status -eq 'Passed' -and (-not $evidence.aggregates.thresholdsPassed -or $evidence.executionMode -ne 'Live')) { throw 'Passing evidence contradicts its mode or thresholds.' }
     if ($evidence.status -eq 'Blocked' -and [string]::IsNullOrWhiteSpace([string]$evidence.blockedReason)) { throw 'Blocked evidence requires an explicit reason.' }
     if ($evidence.status -eq 'NotRun' -and [string]::IsNullOrWhiteSpace([string]$evidence.notRunReason)) { throw 'NotRun evidence requires an explicit reason.' }
-    if ($evidence.humanAdjudication.status -eq 'Passed' -and ([string]::IsNullOrWhiteSpace([string]$evidence.humanAdjudication.reviewer) -or $null -eq $evidence.humanAdjudication.reviewedAtUtc)) { throw 'Human adjudication must be attributable.' }
+    if ($evidence.status -eq 'Passed' -and ($evidence.humanAdjudication.status -ne 'Passed' -or $evidence.humanAdjudication.decision -ne 'Approved' -or [string]::IsNullOrWhiteSpace([string]$evidence.humanAdjudication.reviewer) -or $null -eq $evidence.humanAdjudication.reviewedAtUtc)) { throw 'Passing behavior evidence requires an attributable Approved human adjudication.' }
     Add-Result Passed "Behavior evidence contract is valid; underlying probabilistic result is '$($evidence.status)'."
 }
 catch { Add-Result Failed $_.Exception.Message }

@@ -201,10 +201,17 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $wrapper = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1') -Raw
         $wrapper | Should -Match "decision\.action -ne 'Suspend'"
         $wrapper | Should -Match 'not physically suspended'
-        $wrapper | Should -Match 'Passed behavior evidence requires attributable human adjudication'
+        $wrapper | Should -Match 'Passed behavior evidence requires an attributable Approved human adjudication'
+        $wrapper | Should -Match "humanAdjudication\.decision -ne 'Approved'"
         $aggregate = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-GovernanceValidation.ps1') -Raw
         $aggregate | Should -Match "\.agents/suspended-skills"
         $aggregate | Should -Match 'No governed active or suspended Codex skills directory'
+    }
+
+    It 'requires an explicit Approved decision for passing human adjudication' {
+        $verifier = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Raw
+        $verifier | Should -Match "humanAdjudication\.decision -ne 'Approved'"
+        $verifier | Should -Match 'Passing behavior evidence requires an attributable Approved human adjudication'
     }
 
     It 'compares complete dynamic input roots to detect deletions after evaluation' {

@@ -100,6 +100,18 @@ Describe 'Codex skill validation' {
         $LASTEXITCODE | Should -Be 1
     }
 
+    It 'validates one prompt corpus against the union of active and suspended skills' {
+        $root = New-TestRepository -Name coexistence-active -SkillName active-skill
+        $suspendedSource = New-TestRepository -Name coexistence-suspended-source -SkillName suspended-skill
+        New-Item -ItemType Directory -Path (Join-Path $root '.agents/suspended-skills') -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $suspendedSource '.agents/skills/suspended-skill') -Destination (Join-Path $root '.agents/suspended-skills/suspended-skill') -Recurse
+        foreach ($caseFile in Get-ChildItem -LiteralPath (Join-Path $suspendedSource 'tests/fixtures/codex-skills/prompt-behavior') -File) {
+            Copy-Item -LiteralPath $caseFile.FullName -Destination (Join-Path $root "tests/fixtures/codex-skills/prompt-behavior/suspended-$($caseFile.Name)")
+        }
+        & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1') -Path $root
+        $LASTEXITCODE | Should -Be 0
+    }
+
     It 'returns NotApplicable when no governed skill root exists' {
         $root = Join-Path $TestDrive 'no-skills'
         New-Item -ItemType Directory -Path $root -Force | Out-Null

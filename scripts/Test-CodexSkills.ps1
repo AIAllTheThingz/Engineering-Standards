@@ -27,13 +27,13 @@ try {
     $reports = [Collections.Generic.List[object]]::new()
     foreach ($skillRoot in @('.agents/skills','.agents/suspended-skills')) {
         if (Test-Path -LiteralPath (Join-Path $root $skillRoot) -PathType Container) {
-            $reports.Add((Invoke-CodexSkillValidation -Path $root -SkillsRootRelative $skillRoot))
+            $reports.Add((Invoke-CodexSkillValidation -Path $root -SkillsRootRelative $skillRoot -SkipPromptBehavior))
         }
     }
     if ($reports.Count -eq 0) { $reports.Add((Invoke-CodexSkillValidation -Path $root)) }
     $allResults = @($reports | ForEach-Object { $_.results })
-    $allPromptResults = @($reports | ForEach-Object { $_.promptBehaviorResults })
     $allSkills = @($reports | ForEach-Object { $_.skillsDiscovered } | Sort-Object -Unique)
+    $allPromptResults = if ($allSkills.Count -gt 0) { @(Test-PromptBehaviorCorpus -RepositoryRoot $root -SkillNames $allSkills) } else { @() }
     $requiredFailures = @($allResults + $allPromptResults | Where-Object { $_.requiredValidation -and $_.status -in @('Failed','Blocked') })
     $report = [ordered]@{
         schemaVersion='1.0.0'; generatedAtUtc=[DateTime]::UtcNow.ToString('o'); repositoryRoot=$root
@@ -86,7 +86,7 @@ try {
             elseif ($behavior.decision.action -ne 'BlockPromotion') { Write-Error 'Nonpassing Candidate evidence must block promotion.'; exit 1 }
         }
         elseif ($behavior.status -eq 'Passed') {
-            if ($behavior.humanAdjudication.status -ne 'Passed' -or [string]::IsNullOrWhiteSpace([string]$behavior.humanAdjudication.reviewer) -or $null -eq $behavior.humanAdjudication.reviewedAtUtc) { Write-Error 'Passed behavior evidence requires attributable human adjudication before aggregate success.'; exit 1 }
+            if ($behavior.humanAdjudication.status -ne 'Passed' -or $behavior.humanAdjudication.decision -ne 'Approved' -or [string]::IsNullOrWhiteSpace([string]$behavior.humanAdjudication.reviewer) -or $null -eq $behavior.humanAdjudication.reviewedAtUtc) { Write-Error 'Passed behavior evidence requires an attributable Approved human adjudication before aggregate success.'; exit 1 }
         }
     }
     exit 0
