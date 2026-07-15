@@ -47,6 +47,7 @@ Describe 'Validate contract action' {
 
             $manifest = Get-Content -LiteralPath "$PSScriptRoot/../../project-manifest.json" -Raw | ConvertFrom-Json -AsHashtable
             $config = Get-Content -LiteralPath "$PSScriptRoot/../../governance.config.json" -Raw | ConvertFrom-Json -AsHashtable
+            $expectedGovernanceCommitSha = [string]$manifest.governanceCommitSha
             $manifest.standardsConsumption = @{ mode=$Mode; localPath='agents' }
             if ($Mode -eq 'vendored') {
                 $manifest.standardsConsumption.sourceRepository = 'ExampleOrg/Vendored-Standards'
@@ -61,7 +62,7 @@ Describe 'Validate contract action' {
                 -ExpectedRepository 'AIAllTheThingz/Engineering-Standards' `
                 -ExpectedStandardsRepository 'AIAllTheThingz/Engineering-Standards' `
                 -RepositoryOwnerType User `
-                -ExpectedGovernanceCommitSha 'b14757f98e6a841c37e48ce023b692f529192f2d' `
+                -ExpectedGovernanceCommitSha $expectedGovernanceCommitSha `
                 -ExpectedWorkflowInterfaceVersion '1.0.0' `
                 -ExpectedWorkflowProfile 'standards-maintainer' `
                 -ExpectedRequiredCheckName 'Governance / Governance validation')
@@ -83,6 +84,7 @@ Describe 'Validate contract action' {
 
             $manifest = Get-Content -LiteralPath "$PSScriptRoot/../../project-manifest.json" -Raw | ConvertFrom-Json -AsHashtable
             $config = Get-Content -LiteralPath "$PSScriptRoot/../../governance.config.json" -Raw | ConvertFrom-Json -AsHashtable
+            $expectedGovernanceCommitSha = [string]$manifest.governanceCommitSha
             $manifest.standardsConsumption = @{ mode=$Mode; localPath='agents' }
             if ($Mode -eq 'vendored') {
                 $manifest.standardsConsumption.sourceRepository = 'ExampleOrg/Vendored-Standards'
@@ -97,7 +99,7 @@ Describe 'Validate contract action' {
                 -ExpectedRepository 'AIAllTheThingz/Engineering-Standards' `
                 -ExpectedStandardsRepository 'AIAllTheThingz/Engineering-Standards' `
                 -RepositoryOwnerType User `
-                -ExpectedGovernanceCommitSha 'b14757f98e6a841c37e48ce023b692f529192f2d' `
+                -ExpectedGovernanceCommitSha $expectedGovernanceCommitSha `
                 -ExpectedWorkflowInterfaceVersion '1.0.0' `
                 -ExpectedWorkflowProfile 'standards-maintainer' `
                 -ExpectedRequiredCheckName 'Governance / Governance validation'
