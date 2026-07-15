@@ -73,12 +73,16 @@ try {
     if ($lockFailures.Count -gt 0) { throw "Dependency lock validation failed: $($lockFailures[0].message)" }
 
     $actualPowerShell = $PSVersionTable.PSVersion.ToString()
-    $actualPython = (& python --version 2>&1 | Out-String).Trim() -replace '^Python\s+',''
-    if ($LASTEXITCODE -ne 0) { throw 'Pinned Python runtime is unavailable.' }
-    $actualNode = (& node --version 2>&1 | Out-String).Trim() -replace '^v',''
-    if ($LASTEXITCODE -ne 0) { throw 'Pinned Node runtime is unavailable.' }
-    $actualDotNet = (& dotnet --version 2>&1 | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0) { throw 'Pinned .NET runtime is unavailable.' }
+    Push-Location $repositoryRoot
+    try {
+        $actualPython = (& python --version 2>&1 | Out-String).Trim() -replace '^Python\s+',''
+        if ($LASTEXITCODE -ne 0) { throw 'Pinned Python runtime is unavailable.' }
+        $actualNode = (& node --version 2>&1 | Out-String).Trim() -replace '^v',''
+        if ($LASTEXITCODE -ne 0) { throw 'Pinned Node runtime is unavailable.' }
+        $actualDotNet = (& dotnet --version 2>&1 | Out-String).Trim()
+        if ($LASTEXITCODE -ne 0) { throw 'Pinned .NET runtime is unavailable.' }
+    }
+    finally { Pop-Location }
     $actualVersions = @{
         PowerShell=$actualPowerShell; Python=$actualPython; Node=$actualNode; DotNet=$actualDotNet
     }
@@ -166,7 +170,7 @@ try {
             verification='SHA-256'; status='Passed'
         })
     }
-    $runtimeInventory = @(Get-ValidatorCommandInventory -Lock $lock)
+    $runtimeInventory = @(Get-ValidatorCommandInventory -Lock $lock -WorkingDirectory $repositoryRoot)
     $status = 'Passed'
     $exitCode = 0
 }
@@ -185,7 +189,7 @@ catch {
 }
 finally {
     if ($lock -and $runtimeInventory.Count -eq 0) {
-        try { $runtimeInventory = @(Get-ValidatorCommandInventory -Lock $lock) } catch { $runtimeInventory = @() }
+        try { $runtimeInventory = @(Get-ValidatorCommandInventory -Lock $lock -WorkingDirectory $repositoryRoot) } catch { $runtimeInventory = @() }
     }
     $runtimeEvidence = $null
     if ($RuntimeEvidencePath -and (Test-Path -LiteralPath $RuntimeEvidencePath -PathType Leaf)) {

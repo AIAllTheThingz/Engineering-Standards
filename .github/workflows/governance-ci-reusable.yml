@@ -195,7 +195,7 @@ jobs:
             runnerArchitecture = $env:RUNNER_ARCH
             governanceVersion = $env:GOVERNANCE_VERSION
             projectPath = $env:PROJECT_PATH
-            runtimes = @(Get-ValidatorCommandInventory -Lock $lock)
+            runtimes = @(Get-ValidatorCommandInventory -Lock $lock -WorkingDirectory ./standards)
             dependencyLockSha256 = Get-ValidatorFileSha256 -Path ./standards/.github/dependencies/validator-dependencies.psd1
             pythonRequirementsSha256 = Get-ValidatorFileSha256 -Path ./standards/.github/dependencies/workflow-validation-requirements.txt
           } | ConvertTo-Json -Depth 15 | Set-Content -LiteralPath evidence/environment.json -Encoding utf8

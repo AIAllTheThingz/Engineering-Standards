@@ -43,6 +43,24 @@ try {
         $results.Add($result)
     }
 
+    $globalJsonPath = Join-Path $root 'global.json'
+    if (-not (Test-Path -LiteralPath $globalJsonPath -PathType Leaf)) {
+        $results.Add([ordered]@{ ruleId='DEP019'; status='Failed'; message='global.json is required to select the locked .NET SDK.'; path='global.json' })
+    }
+    else {
+        try {
+            $globalJson = Get-Content -LiteralPath $globalJsonPath -Raw | ConvertFrom-Json
+            if ([string]$globalJson.sdk.version -ne [string]$lock.Runtimes.DotNet.Version -or
+                [string]$globalJson.sdk.rollForward -ne 'disable' -or
+                [bool]$globalJson.sdk.allowPrerelease) {
+                $results.Add([ordered]@{ ruleId='DEP019'; status='Failed'; message='global.json must select the exact locked .NET SDK with roll-forward and prerelease disabled.'; path='global.json' })
+            }
+        }
+        catch {
+            $results.Add([ordered]@{ ruleId='DEP019'; status='Failed'; message='global.json is malformed or does not declare the locked .NET SDK.'; path='global.json' })
+        }
+    }
+
     if (-not @($results | Where-Object status -eq 'Failed')) {
         $workflowExpectations = @(
             @{ Path='.github/workflows/governance-ci-reusable.yml'; FullRuntime=$true },

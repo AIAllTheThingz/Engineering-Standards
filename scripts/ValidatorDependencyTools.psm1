@@ -319,13 +319,18 @@ function Get-ValidatorCommandInventory {
     absolute executable paths. Missing commands remain explicit in evidence.
     .PARAMETER Lock
     Validated dependency lock providing declared runtime versions.
+    .PARAMETER WorkingDirectory
+    Optional directory used for version selection files such as global.json.
     .EXAMPLE
-    Get-ValidatorCommandInventory -Lock $lock
+    Get-ValidatorCommandInventory -Lock $lock -WorkingDirectory .
     .NOTES
     Command output is reduced to version strings and executable SHA-256 values.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][hashtable]$Lock)
+    param(
+        [Parameter(Mandatory)][hashtable]$Lock,
+        [string]$WorkingDirectory
+    )
 
     $definitions = @(
         @{ Name='PowerShell'; Command='pwsh'; Declared=[string]$Lock.Runtimes.PowerShell.Version; Args=@('-NoProfile','-Command','$PSVersionTable.PSVersion.ToString()') },
@@ -335,23 +340,27 @@ function Get-ValidatorCommandInventory {
         @{ Name='DotNet'; Command='dotnet'; Declared=[string]$Lock.Runtimes.DotNet.Version; Args=@('--version') },
         @{ Name='Git'; Command='git'; Declared=$null; Args=@('--version') }
     )
-    foreach ($definition in $definitions) {
-        $command = Get-Command $definition.Command -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-        if (-not $command) {
-            [ordered]@{ name=$definition.Name; declaredVersion=$definition.Declared; actualVersion=$null; executableSha256=$null; status='NotRun' }
-            continue
-        }
-        $versionOutput = (& $command.Source @($definition.Args) 2>&1 | Out-String).Trim()
-        $versionExitCode = $LASTEXITCODE
-        $normalizedVersion = $versionOutput -replace '^(Python|v|git version)\s*',''
-        [ordered]@{
-            name = $definition.Name
-            declaredVersion = $definition.Declared
-            actualVersion = $normalizedVersion
-            executableSha256 = Get-ValidatorFileSha256 -Path $command.Source
-            status = if ($versionExitCode -eq 0) { 'Passed' } else { 'Failed' }
+    if ($WorkingDirectory) { Push-Location $WorkingDirectory }
+    try {
+        foreach ($definition in $definitions) {
+            $command = Get-Command $definition.Command -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $command) {
+                [ordered]@{ name=$definition.Name; declaredVersion=$definition.Declared; actualVersion=$null; executableSha256=$null; status='NotRun' }
+                continue
+            }
+            $versionOutput = (& $command.Source @($definition.Args) 2>&1 | Out-String).Trim()
+            $versionExitCode = $LASTEXITCODE
+            $normalizedVersion = $versionOutput -replace '^(Python|v|git version)\s*',''
+            [ordered]@{
+                name = $definition.Name
+                declaredVersion = $definition.Declared
+                actualVersion = $normalizedVersion
+                executableSha256 = Get-ValidatorFileSha256 -Path $command.Source
+                status = if ($versionExitCode -eq 0) { 'Passed' } else { 'Failed' }
+            }
         }
     }
+    finally { if ($WorkingDirectory) { Pop-Location } }
 }
 
 function New-ValidatorDependencySbom {

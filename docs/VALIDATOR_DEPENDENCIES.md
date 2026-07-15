@@ -30,7 +30,7 @@ lock.
 | PowerShell | `7.4.11` | Official PowerShell GitHub release archive; archive SHA-256 is locked and verified before extraction. |
 | Python | `3.12.11` | `actions/setup-python` pinned by full commit SHA; exact version is verified and the executable SHA-256 is recorded. |
 | Node.js | `22.17.0` | `actions/setup-node` pinned by full commit SHA; exact version is verified and the executable SHA-256 is recorded. |
-| .NET SDK | `8.0.411` | `actions/setup-dotnet` pinned by full commit SHA; exact version is verified and the executable SHA-256 is recorded. |
+| .NET SDK | `8.0.411` | `actions/setup-dotnet` pinned by full commit SHA plus root `global.json` with roll-forward and prerelease disabled; exact version is verified and the executable SHA-256 is recorded. |
 | PyYAML | `6.0.2` | Binary wheel only; exact wheel SHA-256 is locked and pip uses `--require-hashes`, `--no-deps`, and a verified local cache for installation. |
 | Pester | `5.7.1` | Exact PSGallery package URL, filename, version, module manifest, and package SHA-256 are locked and verified. |
 | PSScriptAnalyzer | `1.22.0` | Exact PSGallery package URL, filename, version, module manifest, and package SHA-256 are locked and verified. |
@@ -78,7 +78,9 @@ signature, vulnerability scanning, retention, and rollback controls exist.
 1. Check out caller content and immutable trusted standards into separate paths.
 2. Validate the trusted workflow repository and full workflow SHA.
 3. Install exact Python, Node, and .NET versions through setup actions pinned by
-   full commit SHA.
+   full commit SHA. Root `global.json` selects .NET SDK `8.0.411` with
+   `rollForward: disable` so a newer runner-preinstalled SDK cannot win normal
+   SDK resolution.
 4. Run `scripts/Install-ValidatorRuntime.ps1` from the trusted standards or
    harness checkout. Verify the PowerShell archive SHA-256 before extraction.
 5. Run `scripts/Install-ValidatorDependencies.ps1` with that pinned PowerShell.
