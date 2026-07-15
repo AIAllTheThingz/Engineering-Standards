@@ -5,16 +5,16 @@
   "scoringContractVersion": "1.0.0",
   "configurationId": "codex-skill-behavior-gpt-5.6-sol-medium-v1",
   "configurationHash": "4d56ca793d98857adabc2732e43cedb1c92e13dfe10d522d0acba079c031ff01",
-  "evaluatorHash": "b564313812a2abf247a8b3b6f8666a85fa01127ac90c0aa94ef06ad6259b3542",
+  "evaluatorHash": "62dbdf1f608e5967fef3b4914e2ef67c61f2a55c624ed6d817e2d6bba9bd937d",
   "corpusHash": "3d2286de0c3f3327492dc9780e69f23fa28b0bf32d1ce4faf0f99a9c2d7ebac8",
   "skillInputHash": "f29e1c8a25836dbbeb79529c4d9a910da6ca080de2731430bb8c7ef1ffb6e5fc",
-  "evaluatedCommitSha": "e4b5de6bb72cc53ecf82aea2d3988a2cae530dc5",
+  "evaluatedCommitSha": "232c0cac89aecc449c1e5284672d5beaaea284cf",
   "executionMode": "Live",
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "Blocked",
-  "startedAtUtc": "2026-07-15T19:30:57.7363143Z",
-  "completedAtUtc": "2026-07-15T19:30:57.9214804Z",
+  "startedAtUtc": "2026-07-15T19:34:53.8696301Z",
+  "completedAtUtc": "2026-07-15T19:34:54.0226166Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
@@ -88,8 +88,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8126833Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8126833Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9350698Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9350698Z"
         },
         {
           "sampleIndex": 2,
@@ -103,8 +103,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8258254Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8258254Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9444585Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9444585Z"
         },
         {
           "sampleIndex": 3,
@@ -118,8 +118,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8265315Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8265315Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9448899Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9448899Z"
         }
       ]
     },
@@ -148,8 +148,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8467777Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8467777Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9600230Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9600230Z"
         },
         {
           "sampleIndex": 2,
@@ -163,8 +163,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8472400Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8472400Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9604695Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9604695Z"
         },
         {
           "sampleIndex": 3,
@@ -178,8 +178,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8476362Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8476362Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9608671Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9608671Z"
         }
       ]
     },
@@ -208,8 +208,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8496833Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8496833Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9626563Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9626563Z"
         },
         {
           "sampleIndex": 2,
@@ -223,8 +223,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8500890Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8500890Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9630584Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9630584Z"
         },
         {
           "sampleIndex": 3,
@@ -238,8 +238,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8505049Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8505049Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9634301Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9634301Z"
         }
       ]
     },
@@ -268,8 +268,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8711049Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8711049Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9814825Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9814825Z"
         },
         {
           "sampleIndex": 2,
@@ -283,8 +283,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8715035Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8715035Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9818627Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9818627Z"
         },
         {
           "sampleIndex": 3,
@@ -298,8 +298,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8719303Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8719303Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9821770Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9821770Z"
         }
       ]
     },
@@ -328,8 +328,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8734109Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8734109Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9831650Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9831650Z"
         },
         {
           "sampleIndex": 2,
@@ -343,8 +343,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8741563Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8741563Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9835139Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9835139Z"
         },
         {
           "sampleIndex": 3,
@@ -358,8 +358,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8750322Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8750322Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9838794Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9838794Z"
         }
       ]
     },
@@ -388,8 +388,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8779126Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8779126Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9854968Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9854968Z"
         },
         {
           "sampleIndex": 2,
@@ -403,8 +403,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8785298Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8785298Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9858399Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9858399Z"
         },
         {
           "sampleIndex": 3,
@@ -418,8 +418,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8791011Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8791011Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9861564Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9861564Z"
         }
       ]
     },
@@ -448,8 +448,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8814617Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8814617Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9877757Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9877757Z"
         },
         {
           "sampleIndex": 2,
@@ -463,8 +463,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8820110Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8820110Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9881261Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9881261Z"
         },
         {
           "sampleIndex": 3,
@@ -478,8 +478,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8825401Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8825401Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9884324Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9884324Z"
         }
       ]
     },
@@ -508,8 +508,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8836886Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8836886Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9892549Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9892549Z"
         },
         {
           "sampleIndex": 2,
@@ -523,8 +523,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8842165Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8842165Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9895671Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9895671Z"
         },
         {
           "sampleIndex": 3,
@@ -538,8 +538,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8846960Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8846960Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9898649Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9898649Z"
         }
       ]
     },
@@ -568,8 +568,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8859631Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8859631Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9906411Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9906411Z"
         },
         {
           "sampleIndex": 2,
@@ -583,8 +583,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8865645Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8865645Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9909447Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9909447Z"
         },
         {
           "sampleIndex": 3,
@@ -598,8 +598,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved gpt-5.6-sol request repeatedly disconnected in the restricted local network on 2026-07-15; no model response was received.",
-          "startedAtUtc": "2026-07-15T19:30:57.8869305Z",
-          "completedAtUtc": "2026-07-15T19:30:57.8869305Z"
+          "startedAtUtc": "2026-07-15T19:34:53.9912358Z",
+          "completedAtUtc": "2026-07-15T19:34:53.9912358Z"
         }
       ]
     }

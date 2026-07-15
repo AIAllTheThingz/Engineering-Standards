@@ -19,6 +19,8 @@ function Add-Result([string]$Status, [string]$Message) { $results.Add([pscustomo
 try {
     if ([IO.Path]::GetRelativePath($root, $evidenceFile).StartsWith('..')) { throw 'Evidence path escapes the repository root.' }
     $raw = Get-Content -LiteralPath $evidenceFile -Raw
+    $schemaPath = Join-Path $root 'schemas/codex-skill-behavior-evaluation.schema.json'
+    if (-not ($raw | Test-Json -SchemaFile $schemaPath -ErrorAction Stop)) { throw 'Evidence does not satisfy the behavior evidence JSON schema.' }
     $evidence = $raw | ConvertFrom-Json
     $inputs = Get-CodexBehaviorInput -Path $root
     $config = Import-PowerShellDataFile -LiteralPath (Join-Path $root $inputs.ConfigurationPath)
@@ -47,6 +49,29 @@ try {
             if ($sample.unsafeToolAccess -and $sample.status -eq 'Passed') { throw 'Unsafe tool access cannot be reported Passed.' }
         }
     }
+    $evidenceForScoring = $evidence
+    $scoringProvider = {
+        param($case, $index)
+        $storedCase = @($evidenceForScoring.caseOutcomes | Where-Object caseId -eq $case.caseId)
+        if ($storedCase.Count -ne 1) { return [pscustomobject]@{ status='Blocked'; failureReason='The stored case identity is missing or duplicated.' } }
+        $storedSample = @($storedCase[0].samples | Where-Object sampleIndex -eq $index)
+        if ($storedSample.Count -ne 1) { return [pscustomobject]@{ status='Blocked'; failureReason='The stored sample identity is missing or duplicated.' } }
+        $storedSample[0]
+    }.GetNewClosure()
+    $recomputed = Invoke-CodexSkillBehaviorEvaluation -Path $root -ObservationProvider $scoringProvider -ExecutionMode $evidence.executionMode -RunnerVersion $evidence.model.runnerVersion -EvaluatedCommitSha $evidence.evaluatedCommitSha
+    foreach ($section in @('caseOutcomes','aggregates','varianceObservations','decision')) {
+        $actualValue = $evidence.$section | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+        $expectedValue = $recomputed.$section | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+        if ($section -eq 'caseOutcomes') {
+            foreach ($caseValue in @($actualValue) + @($expectedValue)) {
+                foreach ($sampleValue in $caseValue.samples) { $sampleValue.startedAtUtc = $null; $sampleValue.completedAtUtc = $null }
+            }
+        }
+        $actualSection = $actualValue | ConvertTo-Json -Depth 32 -Compress
+        $expectedSection = $expectedValue | ConvertTo-Json -Depth 32 -Compress
+        if ($actualSection -cne $expectedSection) { throw "Evidence section '$section' contradicts evaluator-recomputed results." }
+    }
+    if ($evidence.status -cne $recomputed.status) { throw 'Evidence status contradicts evaluator-recomputed status.' }
     if ($evidence.status -eq 'Passed' -and (-not $evidence.aggregates.thresholdsPassed -or $evidence.executionMode -ne 'Live')) { throw 'Passing evidence contradicts its mode or thresholds.' }
     if ($evidence.status -eq 'Blocked' -and [string]::IsNullOrWhiteSpace([string]$evidence.blockedReason)) { throw 'Blocked evidence requires an explicit reason.' }
     if ($evidence.status -eq 'NotRun' -and [string]::IsNullOrWhiteSpace([string]$evidence.notRunReason)) { throw 'NotRun evidence requires an explicit reason.' }

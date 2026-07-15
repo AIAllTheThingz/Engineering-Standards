@@ -108,6 +108,13 @@ Describe 'Controlled Codex skill behavior evaluation' {
             $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $partial -Encoding utf8
             & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/partial.json' 2>$null
             $LASTEXITCODE | Should -Be 1
+
+            $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
+            $evidence.aggregates.samplesCompleted = 27
+            $contradictory = Join-Path $testRoot 'contradictory.json'
+            $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $contradictory -Encoding utf8
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/contradictory.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
         }
         finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
     }
