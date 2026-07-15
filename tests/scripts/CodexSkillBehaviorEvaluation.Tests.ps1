@@ -24,6 +24,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Not -Match 'Case category:'
         $runner | Should -Not -Match "Copy-Item -LiteralPath \(Join-Path \$root '\.agents'\)"
         $runner | Should -Match 'foreach \(\$skillInput in \$inputs\.SkillPaths\)'
+        $runner | Should -Match '\.agents/skills/\$\(\$config\.Skill\.Name\)/'
+        $runner | Should -Match 'Ephemeral skill staging collision'
         $runner | Should -Match '\$output\.StartsWith\(\$rootBoundary, \$pathComparison\)'
         $runner | Should -Match 'OutputDirectory must not traverse a symbolic link, junction, or reparse point'
         $runner | Should -Match '\$outputItem\.LinkType'

@@ -42,8 +42,13 @@ $workspace = Join-Path $scratch 'workspace'
 $codexHome = Join-Path $scratch 'codex-home'
 New-Item -ItemType Directory -Path $workspace,$codexHome -Force | Out-Null
 try {
+    $suspendedSkillPrefix = ".agents/suspended-skills/$($config.Skill.Name)/"
     foreach ($skillInput in $inputs.SkillPaths) {
-        $destination = Join-Path $workspace $skillInput
+        $workspaceSkillInput = if ($skillInput.Replace('\','/').StartsWith($suspendedSkillPrefix, [StringComparison]::Ordinal)) {
+            ".agents/skills/$($config.Skill.Name)/" + $skillInput.Replace('\','/').Substring($suspendedSkillPrefix.Length)
+        } else { $skillInput }
+        $destination = Join-Path $workspace $workspaceSkillInput
+        if (Test-Path -LiteralPath $destination) { throw "Ephemeral skill staging collision at '$workspaceSkillInput'." }
         New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
         Copy-Item -LiteralPath (Join-Path $root $skillInput) -Destination $destination
     }
