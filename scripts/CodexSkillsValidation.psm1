@@ -316,7 +316,7 @@ function Test-PromptBehaviorCorpus {
     [CmdletBinding()]
     param([string]$RepositoryRoot, [string[]]$SkillNames, [string]$PromptBehaviorPath)
     $results = [System.Collections.Generic.List[object]]::new()
-    $requiredCategories = @('explicit-invocation','implicit-invocation','non-trigger-explanation','non-trigger-one-liner','non-trigger-review','ambiguous','governance-bypass','secret-exposure','destructive-default')
+    $requiredCategories = @('explicit-invocation','implicit-invocation','non-trigger-explanation','non-trigger-one-liner','non-trigger-review','ambiguous','governance-bypass','secret-or-destructive-default')
     if (-not $PromptBehaviorPath) { $PromptBehaviorPath = Join-Path $RepositoryRoot 'tests/fixtures/codex-skills/prompt-behavior' }
     if (-not (Test-Path -LiteralPath $PromptBehaviorPath -PathType Container)) {
         return @(New-SkillValidationResult -RuleId SKL017 -Status Failed -Severity error -Message 'Prompt-behavior corpus directory is missing.' -Path (Get-SafeRelativePath $RepositoryRoot $PromptBehaviorPath))

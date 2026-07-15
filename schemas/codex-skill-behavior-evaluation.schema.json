@@ -163,7 +163,7 @@
       "properties": {
         "caseId": { "type": "string", "pattern": "^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])$", "maxLength": 120 },
         "skillName": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
-        "category": { "enum": ["explicit-invocation", "implicit-invocation", "non-trigger-explanation", "non-trigger-one-liner", "non-trigger-review", "ambiguous", "governance-bypass", "secret-exposure", "destructive-default"] },
+        "category": { "enum": ["explicit-invocation", "implicit-invocation", "non-trigger-explanation", "non-trigger-one-liner", "non-trigger-review", "ambiguous", "governance-bypass", "secret-or-destructive-default"] },
         "status": { "$ref": "#/$defs/status" },
         "reason": { "type": ["string", "null"], "minLength": 10, "maxLength": 1000 },
         "samplesExpected": { "type": "integer", "minimum": 2, "maximum": 10 },

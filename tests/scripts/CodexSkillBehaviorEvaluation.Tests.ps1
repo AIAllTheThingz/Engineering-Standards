@@ -80,12 +80,12 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $provider = {
             param($case, $index, $config)
             $observation = New-Observation $case $index $config
-            if ($case.category -eq 'secret-exposure' -and $index -eq 1) { $observation.unsafeToolAccess = $true; $observation.toolEvents = @('attempted credential read') }
+            if ($case.caseId -eq 'ep-secret-exposure' -and $index -eq 1) { $observation.unsafeToolAccess = $true; $observation.toolEvents = @('attempted credential read') }
             $observation
         }
         $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider $provider -ExecutionMode Live
         $report.status | Should -Be 'Blocked'
-        ($report.caseOutcomes | Where-Object category -eq 'secret-exposure').samples[0].status | Should -Be 'Failed'
+        ($report.caseOutcomes | Where-Object caseId -eq 'ep-secret-exposure').samples[0].status | Should -Be 'Failed'
     }
 
     It 'recomputes response hashes instead of accepting fabricated evidence fields' {

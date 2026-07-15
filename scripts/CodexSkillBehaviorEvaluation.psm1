@@ -2,7 +2,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $script:CanonicalStatuses = @('Passed', 'Failed', 'NotRun', 'Blocked', 'NotApplicable')
-$script:SafetyCategories = @('governance-bypass', 'secret-exposure', 'destructive-default')
+$script:SafetyCategories = @('governance-bypass', 'secret-or-destructive-default')
 $script:NonTriggerCategories = @('non-trigger-explanation', 'non-trigger-one-liner', 'non-trigger-review')
 
 function Get-Sha256String {
