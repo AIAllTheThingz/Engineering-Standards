@@ -49,4 +49,18 @@ Describe 'Pester result conversion' {
         & pwsh -NoProfile -File $script:converter -RepositoryPath $script:tempRoot -InputPath '.tmp/bad.xml' -OutputPath 'evidence/out.json' 2>$null
         $LASTEXITCODE | Should -Not -Be 0
     }
+
+    It 'allows an isolated evidence root without widening repository access' {
+        $repositoryRoot = Join-Path $script:tempRoot 'repository'
+        $evidenceRoot = Join-Path $script:tempRoot 'external-evidence'
+        New-Item -ItemType Directory -Path $repositoryRoot,$evidenceRoot -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $evidenceRoot 'pester.xml') -Value '<test-results><test-suite><results><test-case name="Outer.passes" result="Success" time="0.1" /></results></test-suite></test-results>'
+
+        & pwsh -NoProfile -File $script:converter -RepositoryPath $repositoryRoot -EvidenceRoot $evidenceRoot -InputPath (Join-Path $evidenceRoot 'pester.xml') -OutputPath (Join-Path $evidenceRoot 'pester-details.json')
+        $LASTEXITCODE | Should -Be 0
+        Test-Path -LiteralPath (Join-Path $evidenceRoot 'pester-details.json') -PathType Leaf | Should -BeTrue
+
+        & pwsh -NoProfile -File $script:converter -RepositoryPath $repositoryRoot -EvidenceRoot $evidenceRoot -InputPath (Join-Path $evidenceRoot 'pester.xml') -OutputPath (Join-Path $repositoryRoot 'outside.json') 2>$null
+        $LASTEXITCODE | Should -Not -Be 0
+    }
 }

@@ -234,14 +234,14 @@ Describe 'GitHub workflow architecture validation' {
         $output -join "`n" | Should -Match 'Candidate implementation validation step must not use a condition that can skip execution'
     }
 
-    It 'rejects RequireCandidateValidation mentioned only in a comment' {
-        $root = New-CurrentWorkflowFixture -Name 'candidate-comment-only-require-policy'
+    It 'rejects CandidateMaintainerValidation mentioned only in a comment' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-comment-only-maintainer-mode'
         $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
-        $content = (Get-Content -LiteralPath $path -Raw).Replace("'-RequireCandidateValidation','-OutputJson'", "'-OutputJson' # '-RequireCandidateValidation'")
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("              '-CandidateMaintainerValidation'", "              '-OmittedCandidateMaintainerValidation' # '-CandidateMaintainerValidation'")
         Set-Content -LiteralPath $path -Value $content -Encoding utf8
         $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
         $LASTEXITCODE | Should -Not -Be 0
-        $output -join "`n" | Should -Match 'must fail closed with RequireCandidateValidation'
+        $output -join "`n" | Should -Match "missing required argument '-CandidateMaintainerValidation'"
     }
 
     It 'rejects workflow-command suspension mentioned only in a comment' {
@@ -254,14 +254,40 @@ Describe 'GitHub workflow architecture validation' {
         $output -join "`n" | Should -Match 'must suspend workflow-command processing'
     }
 
-    It 'rejects an omitted required candidate check' {
-        $root = New-CurrentWorkflowFixture -Name 'candidate-missing-check'
+    It 'rejects an omitted authoritative candidate validator' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-missing-authoritative-validator'
         $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
-        $content = (Get-Content -LiteralPath $path -Raw).Replace("            Invoke-CandidateScript 'scripts/Test-Examples.ps1'", "            Write-Output 'examples omitted'")
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("'scripts/Invoke-GovernanceValidation.ps1'", "'scripts/Omitted-GovernanceValidation.ps1'")
         Set-Content -LiteralPath $path -Value $content -Encoding utf8
         $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
         $LASTEXITCODE | Should -Not -Be 0
-        $output -join "`n" | Should -Match "missing required candidate script invocation 'scripts/Test-Examples.ps1'"
+        $output -join "`n" | Should -Match "must invoke the authoritative 'scripts/Invoke-GovernanceValidation.ps1' exactly once"
+    }
+
+    It 'rejects an additional candidate script beside the authoritative aggregate' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-duplicate-orchestration'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace(
+            "            Invoke-CandidateScript 'scripts/Invoke-GovernanceValidation.ps1' @(",
+            "            Invoke-CandidateScript 'scripts/Test-AgentStandards.ps1' @('-Path',`$root)`n            Invoke-CandidateScript 'scripts/Invoke-GovernanceValidation.ps1' @("
+        )
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must not orchestrate additional candidate scripts'
+    }
+
+    It 'rejects candidate aggregate identity not bound to trusted GitHub context' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-untrusted-identity-binding'
+        $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace(
+            '          CANDIDATE_SHA: ${{ github.sha }}' + "`n" + '          HARNESS_SHA: ${{ job.workflow_sha }}',
+            '          CANDIDATE_SHA: ${{ github.event.before }}' + "`n" + '          HARNESS_SHA: ${{ job.workflow_sha }}'
+        )
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'must bind caller, candidate, and harness identities to trusted GitHub context'
     }
 
     It 'rejects candidate repository-health validation without the explicit central User owner type' {
@@ -271,7 +297,7 @@ Describe 'GitHub workflow architecture validation' {
         Set-Content -LiteralPath $path -Value $content -Encoding utf8
         $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
         $LASTEXITCODE | Should -Not -Be 0
-        $output -join "`n" | Should -Match 'must explicitly use RepositoryOwnerType User'
+        $output -join "`n" | Should -Match 'authoritative validation must explicitly use RepositoryOwnerType User'
     }
 
     It 'rejects a case-variant candidate repository owner type' {
@@ -281,17 +307,17 @@ Describe 'GitHub workflow architecture validation' {
         Set-Content -LiteralPath $path -Value $content -Encoding utf8
         $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
         $LASTEXITCODE | Should -Not -Be 0
-        $output -join "`n" | Should -Match 'must explicitly use RepositoryOwnerType User'
+        $output -join "`n" | Should -Match 'authoritative validation must explicitly use RepositoryOwnerType User'
     }
 
-    It 'rejects a required candidate check mentioned only in a comment' {
-        $root = New-CurrentWorkflowFixture -Name 'candidate-comment-only-check'
+    It 'rejects the authoritative candidate validator mentioned only in a comment' {
+        $root = New-CurrentWorkflowFixture -Name 'candidate-comment-only-authoritative-validator'
         $path = Join-Path $root '.github/workflows/governance-ci-candidate.yml'
-        $content = (Get-Content -LiteralPath $path -Raw).Replace("            Invoke-CandidateScript 'scripts/Test-Examples.ps1'", "            # Invoke-CandidateScript 'scripts/Test-Examples.ps1'")
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("'scripts/Invoke-GovernanceValidation.ps1' @(", "'scripts/Omitted-GovernanceValidation.ps1' @( # scripts/Invoke-GovernanceValidation.ps1")
         Set-Content -LiteralPath $path -Value $content -Encoding utf8
         $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master -RequireCandidateValidation 2>&1)
         $LASTEXITCODE | Should -Not -Be 0
-        $output -join "`n" | Should -Match "missing required candidate script invocation 'scripts/Test-Examples.ps1'"
+        $output -join "`n" | Should -Match "must invoke the authoritative 'scripts/Invoke-GovernanceValidation.ps1' exactly once"
     }
 
     It 'passes a valid one-way workflow call with a pinned action' {

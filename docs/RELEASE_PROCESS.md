@@ -49,10 +49,11 @@ Before tagging, maintainers MUST confirm:
 Run the standard release validation:
 
 ```powershell
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
 ```
 
-Run Pester when scripts, actions, schemas, validators, or completion evidence behavior changed:
+The aggregate includes the complete maintainer Pester suite. A focused rerun is
+useful while diagnosing failures:
 
 ```powershell
 pwsh -NoProfile -Command "Invoke-Pester -Path tests -Output Detailed"

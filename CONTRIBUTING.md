@@ -27,14 +27,18 @@ Use PowerShell 7 and Git. Pester is required for script and action test coverage
 Core validation commands:
 
 ```powershell
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
+```
+
+The aggregate default runs every mandatory maintainer category, including
+Pester, PSScriptAnalyzer, and functional examples. Use the narrower commands
+below while iterating, then finish with the aggregate command above:
+
+```powershell
 pwsh -NoProfile -File scripts/Test-JsonSchemas.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-MarkdownLinks.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path .
-pwsh -NoProfile -Command "Invoke-Pester -Path tests -Output Detailed"
 ```
-
-Run narrower commands while iterating, then run the relevant aggregate set before review.
 
 ## Branching
 

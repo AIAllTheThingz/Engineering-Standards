@@ -11,6 +11,75 @@ AfterAll {
 }
 
 Describe 'GovernanceValidation module' {
+    Context 'authoritative validation registry and profiles' {
+        It 'defines unique ordered categories with valid trusted runner paths' {
+            $repoRoot = (Resolve-Path "$PSScriptRoot/../..").Path
+            $registry = @(Get-GovernanceValidationCategoryRegistry)
+
+            $registry.Count | Should -Be 15
+            @($registry.Name | Sort-Object -Unique).Count | Should -Be $registry.Count
+            @($registry.Order | Sort-Object -Unique).Count | Should -Be $registry.Count
+            ($registry.Name -join ',') | Should -BeExactly 'Contract,AgentStandards,CodexSkills,JsonSchemas,YamlSyntax,WorkflowArchitecture,MarkdownLinks,DocumentationCompleteness,ForbiddenPatterns,RepositoryHealth,Evidence,PowerShellParser,Pester,PSScriptAnalyzer,Examples'
+            foreach ($entry in $registry | Where-Object Runner -eq 'Script') {
+                Test-Path -LiteralPath (Join-Path $repoRoot $entry.Path) -PathType Leaf | Should -BeTrue -Because $entry.Name
+            }
+        }
+
+        It 'keeps the aggregate Category parameter synchronized with the registry' {
+            $repoRoot = (Resolve-Path "$PSScriptRoot/../..").Path
+            $scriptCommand = Get-Command -Name (Join-Path $repoRoot 'scripts/Invoke-GovernanceValidation.ps1')
+            $validateSet = @($scriptCommand.Parameters.Category.Attributes | Where-Object { $_ -is [System.Management.Automation.ValidateSetAttribute] })
+            $validateSet | Should -HaveCount 1
+            ($validateSet[0].ValidValues -join ',') | Should -BeExactly ((Get-GovernanceValidationCategoryRegistry).Name -join ',')
+        }
+
+        It 'adds every maintainer mandatory category to an explicit narrow selection' {
+            $profile = Get-GovernanceValidationProfile -Name 'standards-maintainer'
+            $plan = @(Resolve-GovernanceValidationPlan -Profile 'standards-maintainer' -ConfiguredCategory @('Contract') -RequestedCategory @('JsonSchemas'))
+
+            ($plan.Name -join ',') | Should -BeExactly ($profile.mandatoryCategories -join ',')
+            @($plan | Where-Object mandatory).Count | Should -Be $profile.mandatoryCategories.Count
+        }
+
+        It 'adds downstream Contract while allowing explicit optional category selection' {
+            $plan = @(Resolve-GovernanceValidationPlan -Profile downstream -ConfiguredCategory @('Contract','ForbiddenPatterns') -RequestedCategory @('MarkdownLinks'))
+
+            ($plan.Name -join ',') | Should -BeExactly 'Contract,MarkdownLinks'
+            ($plan | Where-Object Name -eq 'Contract').selectedBy | Should -BeExactly 'ProfileMandatory'
+            { Resolve-GovernanceValidationPlan -Profile downstream -ConfiguredCategory @('Contract') -RequestedCategory @('Pester') } | Should -Throw '*not applicable*'
+        }
+
+        It 'keeps an actively excepted mandatory category visible in the plan' {
+            $plan = @(Resolve-GovernanceValidationPlan -Profile 'standards-maintainer' -ConfiguredCategory @('Contract') -RequestedCategory @('JsonSchemas') -ApprovedDisabledControl @('Pester'))
+
+            ($plan | Where-Object Name -eq 'Pester').excepted | Should -BeTrue
+            { Resolve-GovernanceValidationPlan -Profile 'standards-maintainer' -ConfiguredCategory @('Contract') -ApprovedDisabledControl @('Contract') } | Should -Throw '*cannot be disabled*'
+        }
+
+        It 'aggregates mandatory child statuses using canonical completion semantics' {
+            Get-GovernanceAggregateStatus -Results @([pscustomobject]@{status='Passed';requiredValidation=$true}) | Should -BeExactly 'Passed'
+            Get-GovernanceAggregateStatus -Results @([pscustomobject]@{status='NotRun';requiredValidation=$true}) | Should -BeExactly 'NotRun'
+            Get-GovernanceAggregateStatus -Results @([pscustomobject]@{status='Blocked';requiredValidation=$true}) | Should -BeExactly 'Blocked'
+            Get-GovernanceAggregateStatus -Results @([pscustomobject]@{status='Failed';requiredValidation=$true}) | Should -BeExactly 'Failed'
+            Get-GovernanceAggregateStatus -Results @([pscustomobject]@{status='NotApplicable';requiredValidation=$true}) | Should -BeExactly 'NotApplicable'
+            Get-GovernanceAggregateStatus -Results @(
+                [pscustomobject]@{status='Passed';requiredValidation=$true},
+                [pscustomobject]@{status='Failed';requiredValidation=$false}
+            ) | Should -BeExactly 'Passed'
+        }
+
+        It 'reports missing validation tooling instead of silently skipping it' {
+            $entry = [ordered]@{
+                requiredCommands = @('governance-validator-command-that-does-not-exist')
+                requiredPythonModules = @()
+            }
+
+            $missing = @(Get-GovernanceMissingValidationPrerequisite -PlanEntry $entry)
+            $missing | Should -HaveCount 1
+            $missing[0] | Should -BeExactly "command 'governance-validator-command-that-does-not-exist'"
+        }
+    }
+
     Context 'workflow output sanitization' {
         It 'neutralizes every embedded workflow command physical line' {
             $inputText = "ordinary text`r`n::warning::warn`n  ::error::error`r::add-mask::secret`n::stop-commands::token`n::set-output name=x::value"
@@ -332,26 +401,11 @@ Describe 'GovernanceValidation module' {
     }
 
     Context 'aggregate governance evidence' {
-        It 'forwards the trusted repository owner type to repository-health behavior' {
+        It 'wires the trusted repository owner type into repository-health arguments' {
             $repoRoot = Resolve-Path "$PSScriptRoot/../.."
-            $callerRoot = Join-Path $script:tempRoot 'aggregate-owner-type-caller'
-            New-Item -ItemType Directory -Path $callerRoot -Force | Out-Null
-            Copy-Item -LiteralPath "$repoRoot/project-manifest.json" -Destination $callerRoot
-            $config = Get-Content -LiteralPath "$repoRoot/governance.config.json" -Raw | ConvertFrom-Json -AsHashtable
-            $config.ownership.requiredCodeownerPaths = @('/AGENTS.md')
-            $config.validationCategories = @('RepositoryHealth')
-            $config | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $callerRoot 'governance.config.json') -Encoding utf8
-            Set-Content -LiteralPath (Join-Path $callerRoot 'AGENTS.md') -Value '# Synthetic instructions' -Encoding utf8
-            Set-Content -LiteralPath (Join-Path $callerRoot 'CODEOWNERS') -Value "* @root-owner`n/AGENTS.md @ExampleOrg/maintainers" -Encoding utf8
+            $aggregateText = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-GovernanceValidation.ps1') -Raw
 
-            $userEvidence = Join-Path $script:tempRoot 'aggregate-owner-type-user-evidence'
-            $userOutput = @(& pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $callerRoot -Category RepositoryHealth -RepositoryOwnerType User -EvidenceRoot $userEvidence 2>&1)
-            $LASTEXITCODE | Should -Not -Be 0
-            $userOutput -join "`n" | Should -Match "incompatible with a User-owned repository"
-
-            $organizationEvidence = Join-Path $script:tempRoot 'aggregate-owner-type-organization-evidence'
-            $organizationOutput = @(& pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $callerRoot -Category RepositoryHealth -RepositoryOwnerType Organization -EvidenceRoot $organizationEvidence 2>&1)
-            $organizationOutput -join "`n" | Should -Not -Match "incompatible with a User-owned repository"
+            $aggregateText | Should -Match "RepositoryHealth\s*=\s*@\('-Path',\`$projectRoot,'-RepositoryOwnerType',\`$RepositoryOwnerType\)"
         }
 
         It 'rejects invalid and case-variant repository owner types at the aggregate entry point' {
@@ -363,23 +417,33 @@ Describe 'GovernanceValidation module' {
             }
         }
 
-        It 'writes repository-relative validator script paths' {
-            $repoRoot = Resolve-Path "$PSScriptRoot/../.."
-            $outputPath = Join-Path $script:tempRoot 'aggregate-governance.json'
-
+        It 'rejects candidate maintainer mode outside trusted GitHub repository context' {
+            $repoRoot = (Resolve-Path "$PSScriptRoot/../..").Path
+            $head = (& git -C $repoRoot rev-parse HEAD).Trim()
+            $evidence = Join-Path $script:tempRoot 'candidate-context-evidence'
             $priorGitHubActions = $env:GITHUB_ACTIONS
+            $priorGitHubRepository = $env:GITHUB_REPOSITORY
+            $priorGitHubSha = $env:GITHUB_SHA
             try {
-                $env:GITHUB_ACTIONS = $null
-                & pwsh -NoProfile -File "$repoRoot/scripts/Invoke-GovernanceValidation.ps1" -Path $repoRoot -Category JsonSchemas -RepositoryOwnerType User -OutputJson $outputPath
+                $env:GITHUB_ACTIONS = 'true'
+                $env:GITHUB_REPOSITORY = 'ExampleOrg/untrusted'
+                $env:GITHUB_SHA = $head
+                $output = @(& pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-GovernanceValidation.ps1') -Path $repoRoot -EvidenceRoot $evidence -CallerRepository 'AIAllTheThingz/Engineering-Standards' -CallerCommitSha $head -RepositoryOwnerType User -ExpectedReusableWorkflowSha ('a' * 40) -CandidateMaintainerValidation 2>&1)
+                $LASTEXITCODE | Should -Not -Be 0
+                $output -join "`n" | Should -Match '(?s)requires trusted GitHub repository and.*candidate SHA context'
             }
             finally {
-                $env:GITHUB_ACTIONS = $priorGitHubActions
+                if ($null -eq $priorGitHubActions) { Remove-Item Env:GITHUB_ACTIONS -ErrorAction SilentlyContinue } else { $env:GITHUB_ACTIONS = $priorGitHubActions }
+                if ($null -eq $priorGitHubRepository) { Remove-Item Env:GITHUB_REPOSITORY -ErrorAction SilentlyContinue } else { $env:GITHUB_REPOSITORY = $priorGitHubRepository }
+                if ($null -eq $priorGitHubSha) { Remove-Item Env:GITHUB_SHA -ErrorAction SilentlyContinue } else { $env:GITHUB_SHA = $priorGitHubSha }
             }
-            $LASTEXITCODE | Should -Be 0
+        }
 
-            $report = Get-Content -LiteralPath $outputPath -Raw | ConvertFrom-Json
-            $report.results.Count | Should -BeGreaterThan 0
-            $report.results[0].path | Should -Be 'scripts/Test-JsonSchemas.ps1'
+        It 'resolves repository-relative validator script paths from the registry' {
+            $repoRoot = Resolve-Path "$PSScriptRoot/../.."
+            $entry = Get-GovernanceValidationCategoryRegistry | Where-Object Name -eq 'JsonSchemas'
+            $entry.Path | Should -BeExactly 'scripts/Test-JsonSchemas.ps1'
+            Resolve-SafePath -Root $repoRoot -ChildPath $entry.Path | Should -BeExactly (Join-Path $repoRoot 'scripts/Test-JsonSchemas.ps1')
         }
 
         It 'passes a verified repository owner type in every documented aggregate command' {

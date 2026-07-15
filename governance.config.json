@@ -2,7 +2,7 @@
   "schemaVersion": "1.2.0",
   "manifestPath": "project-manifest.json",
   "governanceVersion": "1.1.0",
-  "governanceCommitSha": "1ee830403569a7e59a5d193229cd19e210113c56",
+  "governanceCommitSha": "b14757f98e6a841c37e48ce023b692f529192f2d",
   "workflowInterfaceVersion": "1.0.0",
   "workflowProfile": "standards-maintainer",
   "workflowInterface": {
@@ -44,6 +44,8 @@
   ],
   "validationCategories": [
     "Contract",
+    "AgentStandards",
+    "CodexSkills",
     "JsonSchemas",
     "YamlSyntax",
     "WorkflowArchitecture",
@@ -51,12 +53,11 @@
     "DocumentationCompleteness",
     "ForbiddenPatterns",
     "RepositoryHealth",
-    "CodexSkills",
     "Evidence",
-    "Examples",
+    "PowerShellParser",
     "Pester",
     "PSScriptAnalyzer",
-    "PowerShellParser"
+    "Examples"
   ],
   "ownership": {
     "requiredCodeownerPaths": [

@@ -10,6 +10,284 @@ $script:GovernanceSchemaVersionsByKind = [ordered]@{
     'standards-consistency' = @('1.0.0')
 }
 
+function Get-GovernanceValidationRegistry {
+    <#
+    .SYNOPSIS
+    Loads and validates the authoritative governance validation registry.
+    .DESCRIPTION
+    Imports the trusted PowerShell data file that defines validation profiles,
+    category order, applicability, runners, and tool prerequisites. Structural
+    defects fail closed before a validation plan can be resolved.
+    #>
+    [CmdletBinding()]
+    param()
+
+    $registryPath = Join-Path $PSScriptRoot 'governance-validation.registry.psd1'
+    if (-not (Test-Path -LiteralPath $registryPath -PathType Leaf)) {
+        throw 'The authoritative governance validation registry is missing.'
+    }
+
+    $registry = Import-PowerShellDataFile -LiteralPath $registryPath
+    if ($registry.SchemaVersion -cne '1.0.0') {
+        throw "Unsupported governance validation registry schema '$($registry.SchemaVersion)'."
+    }
+    if ($registry.Profiles -isnot [System.Collections.IDictionary] -or $registry.Profiles.Count -eq 0) {
+        throw 'The governance validation registry must define one or more profiles.'
+    }
+    if ($registry.Categories -isnot [System.Collections.IList] -or $registry.Categories.Count -eq 0) {
+        throw 'The governance validation registry must define one or more categories.'
+    }
+
+    foreach ($profileName in @($registry.Profiles.Keys)) {
+        $profile = $registry.Profiles[$profileName]
+        if ([string]$profileName -notmatch '^[a-z][a-z0-9-]*$' -or $profile -isnot [System.Collections.IDictionary]) {
+            throw "Governance validation profile '$profileName' is invalid."
+        }
+        foreach ($field in @('Description','ExecutesRepositoryCode','TrustModel')) {
+            if (-not $profile.Contains($field)) {
+                throw "Governance validation profile '$profileName' is missing '$field'."
+            }
+        }
+        if ([string]::IsNullOrWhiteSpace([string]$profile.Description) -or [string]::IsNullOrWhiteSpace([string]$profile.TrustModel)) {
+            throw "Governance validation profile '$profileName' requires a description and trust model."
+        }
+        if ($profile.ExecutesRepositoryCode -isnot [bool]) {
+            throw "Governance validation profile '$profileName' must declare boolean ExecutesRepositoryCode."
+        }
+    }
+
+    $names = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    $orders = [System.Collections.Generic.HashSet[int]]::new()
+    foreach ($category in @($registry.Categories)) {
+        if ($category -isnot [System.Collections.IDictionary]) {
+            throw 'Every governance validation category must be a structured registry record.'
+        }
+        foreach ($field in @('Name','Order','Profiles','MandatoryProfiles','Runner','Path','Applicability','RequiredCommands','RequiredPythonModules')) {
+            if (-not $category.Contains($field)) {
+                throw "Governance validation category registry record is missing '$field'."
+            }
+        }
+        if ([string]$category.Name -notmatch '^[A-Z][A-Za-z0-9]*$' -or -not $names.Add([string]$category.Name)) {
+            throw "Governance validation category name '$($category.Name)' is blank or duplicated."
+        }
+        if ([int]$category.Order -lt 1 -or -not $orders.Add([int]$category.Order)) {
+            throw "Governance validation category order '$($category.Order)' is invalid or duplicated."
+        }
+        foreach ($arrayField in @('Profiles','MandatoryProfiles','RequiredCommands','RequiredPythonModules')) {
+            if ($category[$arrayField] -isnot [System.Collections.IList]) {
+                throw "Governance validation category '$($category.Name)' field '$arrayField' must be an array."
+            }
+        }
+        if (@($category.Profiles).Count -eq 0) {
+            throw "Governance validation category '$($category.Name)' must apply to at least one profile."
+        }
+        if (@('Script','PowerShellParser','PSScriptAnalyzer') -cnotcontains [string]$category.Runner) {
+            throw "Governance validation category '$($category.Name)' uses unsupported runner '$($category.Runner)'."
+        }
+        if (@('Always','WhenSkillsPresent','WhenPowerShellPresent') -cnotcontains [string]$category.Applicability) {
+            throw "Governance validation category '$($category.Name)' uses unsupported applicability '$($category.Applicability)'."
+        }
+        if ($category.Runner -ceq 'Script' -and [string]::IsNullOrWhiteSpace([string]$category.Path)) {
+            throw "Governance validation category '$($category.Name)' requires a trusted script path."
+        }
+        if ($category.Runner -ceq 'Script') {
+            $trustedRunnerPath = Resolve-SafePath -Root (Split-Path -Parent $PSScriptRoot) -ChildPath ([string]$category.Path)
+            if ([System.IO.Path]::GetExtension($trustedRunnerPath) -cne '.ps1') {
+                throw "Governance validation category '$($category.Name)' runner must be a PowerShell script."
+            }
+        }
+        elseif ($null -ne $category.Path) {
+            throw "Governance validation category '$($category.Name)' must not declare an ignored runner path."
+        }
+        foreach ($profile in @($category.Profiles) + @($category.MandatoryProfiles)) {
+            if (-not $registry.Profiles.Contains([string]$profile)) {
+                throw "Governance validation category '$($category.Name)' references unknown profile '$profile'."
+            }
+        }
+        foreach ($mandatoryProfile in @($category.MandatoryProfiles)) {
+            if (@($category.Profiles) -cnotcontains [string]$mandatoryProfile) {
+                throw "Governance validation category '$($category.Name)' is mandatory for profile '$mandatoryProfile' but is not applicable to it."
+            }
+        }
+        foreach ($commandName in @($category.RequiredCommands)) {
+            if ([string]$commandName -notmatch '^[A-Za-z][A-Za-z0-9-]*$') {
+                throw "Governance validation category '$($category.Name)' declares unsafe command prerequisite '$commandName'."
+            }
+        }
+        foreach ($moduleName in @($category.RequiredPythonModules)) {
+            if ([string]$moduleName -notmatch '^[A-Za-z_][A-Za-z0-9_.]*$') {
+                throw "Governance validation category '$($category.Name)' declares unsafe Python module prerequisite '$moduleName'."
+            }
+        }
+    }
+    $registry
+}
+
+function Get-GovernanceValidationCategoryRegistry {
+    <#
+    .SYNOPSIS
+    Returns the ordered authoritative validation category registry.
+    #>
+    [CmdletBinding()]
+    param()
+
+    @((Get-GovernanceValidationRegistry).Categories | Sort-Object { [int]$_.Order })
+}
+
+function Get-GovernanceValidationProfile {
+    <#
+    .SYNOPSIS
+    Resolves one authoritative governance validation profile.
+    .PARAMETER Name
+    Canonical profile name from the validation registry.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name)
+
+    $registry = Get-GovernanceValidationRegistry
+    if (-not $registry.Profiles.Contains($Name)) {
+        throw "Unsupported governance validation profile '$Name'."
+    }
+    $categories = @(Get-GovernanceValidationCategoryRegistry | Where-Object { @($_.Profiles) -ccontains $Name })
+    [ordered]@{
+        name = $Name
+        description = [string]$registry.Profiles[$Name].Description
+        executesRepositoryCode = [bool]$registry.Profiles[$Name].ExecutesRepositoryCode
+        trustModel = [string]$registry.Profiles[$Name].TrustModel
+        categories = @($categories | ForEach-Object { [string]$_.Name })
+        mandatoryCategories = @($categories | Where-Object { @($_.MandatoryProfiles) -ccontains $Name } | ForEach-Object { [string]$_.Name })
+    }
+}
+
+function Resolve-GovernanceValidationPlan {
+    <#
+    .SYNOPSIS
+    Resolves configured and explicitly requested categories into an execution plan.
+    .DESCRIPTION
+    Adds every mandatory profile category even when a caller explicitly selects
+    a narrower category list. Approved exceptions remain visible as excepted
+    plan entries instead of silently removing mandatory validation.
+    .PARAMETER Profile
+    Canonical profile name.
+    .PARAMETER ConfiguredCategory
+    Categories declared by the validated repository configuration.
+    .PARAMETER RequestedCategory
+    Optional explicit category selection. This filters optional categories only.
+    .PARAMETER ApprovedDisabledControl
+    Mandatory category names disabled by active, contract-validated exceptions.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Profile,
+        [string[]]$ConfiguredCategory = @(),
+        [string[]]$RequestedCategory,
+        [string[]]$ApprovedDisabledControl = @()
+    )
+
+    $profileDefinition = Get-GovernanceValidationProfile -Name $Profile
+    $registry = @(Get-GovernanceValidationCategoryRegistry)
+    $known = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    $applicable = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    $mandatory = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($entry in $registry) { $known.Add([string]$entry.Name) | Out-Null }
+    foreach ($name in @($profileDefinition.categories)) { $applicable.Add([string]$name) | Out-Null }
+    foreach ($name in @($profileDefinition.mandatoryCategories)) { $mandatory.Add([string]$name) | Out-Null }
+
+    foreach ($name in @($ConfiguredCategory) + @($RequestedCategory)) {
+        if ($null -eq $name) { continue }
+        if (-not $known.Contains([string]$name)) {
+            throw "Unsupported validation category '$name'."
+        }
+        if (-not $applicable.Contains([string]$name)) {
+            throw "Validation category '$name' is not applicable to profile '$Profile'."
+        }
+    }
+    foreach ($name in @($ApprovedDisabledControl)) {
+        if (-not $mandatory.Contains([string]$name)) {
+            throw "Approved disabled control '$name' is not a mandatory validation category for profile '$Profile'."
+        }
+        if ([string]$name -ceq 'Contract') {
+            throw 'Contract validation cannot be disabled because it validates the exception authority.'
+        }
+    }
+
+    $hasRequestedCategory = $PSBoundParameters.ContainsKey('RequestedCategory') -and @($RequestedCategory).Count -gt 0
+    $optionalSource = if ($hasRequestedCategory) { @($RequestedCategory) } else { @($ConfiguredCategory) }
+    $selected = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($name in @($profileDefinition.mandatoryCategories) + $optionalSource) { $selected.Add([string]$name) | Out-Null }
+
+    $plan = [System.Collections.Generic.List[object]]::new()
+    foreach ($entry in $registry) {
+        $name = [string]$entry.Name
+        if (-not $selected.Contains($name)) { continue }
+        $plan.Add([ordered]@{
+            name = $name
+            order = [int]$entry.Order
+            mandatory = $mandatory.Contains($name)
+            excepted = @($ApprovedDisabledControl) -ccontains $name
+            selectedBy = if ($mandatory.Contains($name)) { 'ProfileMandatory' } elseif ($hasRequestedCategory) { 'ExplicitCategory' } else { 'RepositoryConfiguration' }
+            runner = [string]$entry.Runner
+            path = if ($null -eq $entry.Path) { $null } else { [string]$entry.Path }
+            applicability = [string]$entry.Applicability
+            requiredCommands = @($entry.RequiredCommands)
+            requiredPythonModules = @($entry.RequiredPythonModules)
+        })
+    }
+    @($plan)
+}
+
+function Get-GovernanceAggregateStatus {
+    <#
+    .SYNOPSIS
+    Aggregates child results with canonical completion-evidence semantics.
+    .DESCRIPTION
+    Failed, Blocked, and NotRun mandatory checks prevent an overall Passed
+    result. NotApplicable checks are visible but do not fail an applicable plan.
+    .PARAMETER Results
+    Aggregate child validation records.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object[]]$Results)
+
+    $required = @($Results | Where-Object { -not $_.PSObject.Properties['requiredValidation'] -or $_.requiredValidation })
+    if (@($required | Where-Object status -eq 'Failed').Count -gt 0) { return 'Failed' }
+    if (@($required | Where-Object status -eq 'Blocked').Count -gt 0) { return 'Blocked' }
+    if (@($required | Where-Object status -eq 'NotRun').Count -gt 0) { return 'NotRun' }
+    if ($required.Count -eq 0 -or @($required | Where-Object status -ne 'NotApplicable').Count -eq 0) { return 'NotApplicable' }
+    return 'Passed'
+}
+
+function Get-GovernanceMissingValidationPrerequisite {
+    <#
+    .SYNOPSIS
+    Returns missing command and Python-module prerequisites for a plan entry.
+    .PARAMETER PlanEntry
+    A trusted execution-plan entry resolved from the authoritative registry.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][System.Collections.IDictionary]$PlanEntry)
+
+    $missing = [System.Collections.Generic.List[string]]::new()
+    foreach ($commandName in @($PlanEntry.requiredCommands)) {
+        if (-not (Get-Command -Name ([string]$commandName) -ErrorAction SilentlyContinue)) {
+            $missing.Add("command '$commandName'")
+        }
+    }
+    if (@($PlanEntry.requiredPythonModules).Count -gt 0 -and -not (Get-Command -Name python -ErrorAction SilentlyContinue)) {
+        $missing.Add("command 'python'")
+    }
+    elseif (@($PlanEntry.requiredPythonModules).Count -gt 0) {
+        foreach ($moduleName in @($PlanEntry.requiredPythonModules)) {
+            if ([string]$moduleName -notmatch '^[A-Za-z_][A-Za-z0-9_.]*$') {
+                throw "Validation registry contains unsafe Python module name '$moduleName'."
+            }
+            & python -c "import $moduleName" 2>$null
+            if ($LASTEXITCODE -ne 0) { $missing.Add("Python module '$moduleName'") }
+        }
+    }
+    @($missing)
+}
+
 function New-ValidationResult {
     <#
     .SYNOPSIS
@@ -580,7 +858,7 @@ function Test-GovernanceJsonDocument {
         foreach ($item in @(Test-UniqueValues -Items @($json.requiredDocumentationPaths) -Name 'requiredDocumentationPaths' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.applicableAgentStandards) -Name 'applicableAgentStandards' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.validationCategories) -Name 'validationCategories' -Path $Path)) { $results.Add($item) }
-        $supportedValidationCategories = @('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')
+        $supportedValidationCategories = @(Get-GovernanceValidationCategoryRegistry | ForEach-Object { [string]$_.Name })
         foreach ($category in @($json.validationCategories)) {
             if ($category -notin $supportedValidationCategories) {
                 $results.Add((New-ValidationResult -Status Failed -Message "validationCategories contains unsupported value '$category'." -Path $Path))
@@ -1408,8 +1686,9 @@ function Test-GovernanceContractSemantics {
         if (-not (Test-ExactStringSet -Actual @($interface.outputs) -Expected $requiredOutputs)) { Add-Finding 'GCS007' 'Workflow interface outputs do not exactly match the supported interface.' }
     }
 
-    $supportedCategories = @('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')
-    $maintainerOnlyCategories = @('JsonSchemas','YamlSyntax','WorkflowArchitecture','RepositoryHealth','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')
+    $categoryRegistry = @(Get-GovernanceValidationCategoryRegistry)
+    $supportedCategories = @($categoryRegistry | ForEach-Object { [string]$_.Name })
+    $maintainerOnlyCategories = @($categoryRegistry | Where-Object { @($_.Profiles) -cnotcontains 'downstream' } | ForEach-Object { [string]$_.Name })
     [object]$validationCategoriesValue = $null
     if ($Config.Contains('validationCategories')) { $validationCategoriesValue = $Config['validationCategories'] }
     $validationCategoriesIsArray = $validationCategoriesValue -is [System.Collections.IList] -and $validationCategoriesValue -isnot [string]
@@ -1628,6 +1907,12 @@ function Test-GovernanceContractSemantics {
 }
 
 Export-ModuleMember -Function @(
+    'Get-GovernanceValidationRegistry',
+    'Get-GovernanceValidationCategoryRegistry',
+    'Get-GovernanceValidationProfile',
+    'Resolve-GovernanceValidationPlan',
+    'Get-GovernanceAggregateStatus',
+    'Get-GovernanceMissingValidationPrerequisite',
     'New-ValidationResult',
     'New-ValidationReport',
     'Write-ValidationReport',

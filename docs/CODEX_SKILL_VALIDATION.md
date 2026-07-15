@@ -71,4 +71,4 @@ Maintainers review trigger quality with representative prompts outside determini
 - `Blocked` for YAML parsing: verify Python and pinned PyYAML are available; do not substitute unsafe parsing.
 - SKL007: resolve the link relative to the skill, remove traversal, and keep authority links within approved roots.
 - SKL017: add the missing category or correct the safe enum/unique case ID; do not relabel behavior as evaluated.
-- Candidate architecture failure: keep output under `.tmp/candidate-validation`, permissions read-only, and both self-CI references pinned to the same reviewed full SHA.
+- Candidate architecture failure: keep aggregate output in the external runner temporary directory, permissions read-only, and both self-CI references pinned to the same reviewed full SHA.

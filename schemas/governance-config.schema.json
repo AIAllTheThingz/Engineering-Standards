@@ -86,19 +86,20 @@
         "type": "string",
         "enum": [
           "Contract",
+          "AgentStandards",
+          "CodexSkills",
           "JsonSchemas",
           "YamlSyntax",
+          "WorkflowArchitecture",
           "MarkdownLinks",
           "DocumentationCompleteness",
           "ForbiddenPatterns",
           "RepositoryHealth",
-          "CodexSkills",
           "Evidence",
-          "Examples",
-          "WorkflowArchitecture",
+          "PowerShellParser",
           "Pester",
           "PSScriptAnalyzer",
-          "PowerShellParser"
+          "Examples"
         ]
       },
       "minItems": 1,
