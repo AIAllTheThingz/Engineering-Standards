@@ -242,6 +242,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $verifier = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Raw
         $verifier | Should -Match "humanAdjudication\.decision -ne 'Approved'"
         $verifier | Should -Match 'Passing behavior evidence requires an attributable Approved human adjudication'
+        $verifier | Should -Match 'Resolve-BehaviorEvidencePath -Candidate \$OutputJson'
+        $verifier | Should -Match 'must not traverse a symbolic link, junction, or reparse point'
     }
 
     It 'compares complete dynamic input roots to detect deletions after evaluation' {

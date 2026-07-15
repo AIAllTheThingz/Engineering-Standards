@@ -12,12 +12,27 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'CodexSkillBehaviorEvaluation.psm1') -Force
 $root = (Resolve-Path -LiteralPath $Path).Path
-$evidenceFile = if ([IO.Path]::IsPathRooted($EvidencePath)) { [IO.Path]::GetFullPath($EvidencePath) } else { [IO.Path]::GetFullPath((Join-Path $root $EvidencePath)) }
+function Resolve-BehaviorEvidencePath {
+    param([Parameter(Mandatory)][string]$Candidate, [switch]$MustExist, [Parameter(Mandatory)][string]$Name)
+    $full = if ([IO.Path]::IsPathRooted($Candidate)) { [IO.Path]::GetFullPath($Candidate) } else { [IO.Path]::GetFullPath((Join-Path $root $Candidate)) }
+    $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+    $boundary = $root.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+    if (-not $full.StartsWith($boundary, $comparison)) { throw "$Name must be beneath the repository root." }
+    $current = $root
+    foreach ($segment in @([IO.Path]::GetRelativePath($root, $full) -split '[\\/]' | Where-Object { $_ -and $_ -ne '.' })) {
+        $current = Join-Path $current $segment
+        if (-not (Test-Path -LiteralPath $current)) { break }
+        $item = Get-Item -LiteralPath $current -Force
+        if ($item.LinkType -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw "$Name must not traverse a symbolic link, junction, or reparse point." }
+    }
+    if ($MustExist -and -not (Test-Path -LiteralPath $full -PathType Leaf)) { throw "$Name must identify an existing file." }
+    $full
+}
+$evidenceFile = Resolve-BehaviorEvidencePath -Candidate $EvidencePath -MustExist -Name EvidencePath
 $results = [Collections.Generic.List[object]]::new()
 $evidence = $null
 function Add-Result([string]$Status, [string]$Message) { $results.Add([pscustomobject]@{ status=$Status; message=$Message; path=[IO.Path]::GetRelativePath($root,$evidenceFile).Replace('\','/') }) }
 try {
-    if ([IO.Path]::GetRelativePath($root, $evidenceFile).StartsWith('..')) { throw 'Evidence path escapes the repository root.' }
     $raw = Get-Content -LiteralPath $evidenceFile -Raw
     $schemaPath = Join-Path $root 'schemas/codex-skill-behavior-evaluation.schema.json'
     if (-not ($raw | Test-Json -SchemaFile $schemaPath -ErrorAction Stop)) { throw 'Evidence does not satisfy the behavior evidence JSON schema.' }
@@ -92,7 +107,12 @@ try {
 }
 catch { Add-Result Failed $_.Exception.Message }
 $report = [pscustomobject]@{ generatedAtUtc=[DateTime]::UtcNow.ToString('o'); evidenceStatus=if($evidence){$evidence.status}else{'Blocked'}; results=@($results); failed=@($results | Where-Object status -eq 'Failed').Count }
-if ($OutputJson) { $report | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $OutputJson -Encoding utf8 }
+if ($OutputJson) {
+    $reportOutput = Resolve-BehaviorEvidencePath -Candidate $OutputJson -Name OutputJson
+    New-Item -ItemType Directory -Path (Split-Path -Parent $reportOutput) -Force | Out-Null
+    $reportOutput = Resolve-BehaviorEvidencePath -Candidate $reportOutput -Name OutputJson
+    $report | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $reportOutput -Encoding utf8
+}
 $results | ForEach-Object { "[$($_.status)] $($_.message)" }
 if ($report.failed -gt 0) { exit 1 }
 exit 0
