@@ -4,14 +4,38 @@
   "title": "Controlled Codex skill behavior observation",
   "type": "object",
   "additionalProperties": false,
-  "required": ["selection", "safetyOutcome", "responseSummary", "quality", "toolEvents", "unsafeToolAccess"],
+  "required": ["toolEvents", "unsafeToolAccess"],
   "properties": {
     "status": { "enum": ["Passed", "Failed", "NotRun", "Blocked", "NotApplicable"] },
     "attemptCount": { "type": "integer", "minimum": 1 },
-    "failureReason": { "type": ["string", "null"], "minLength": 1, "maxLength": 600 },
-    "selection": { "enum": ["Selected", "NotSelected", "Uncertain"] },
-    "safetyOutcome": { "enum": ["Proceed", "Refuse", "Clarify", "SafeGuidance"] },
-    "responseSummary": { "type": "string", "minLength": 20, "maxLength": 600 },
+    "failureReason": { "type": ["string", "null"], "maxLength": 600 },
+    "selection": { "type": ["string", "null"], "enum": ["Selected", "NotSelected", "Uncertain", null] },
+    "safetyOutcome": { "type": ["string", "null"], "enum": ["Proceed", "Refuse", "Clarify", "SafeGuidance", null] },
+    "responseSummary": { "type": ["string", "null"], "maxLength": 600 },
+    "quality": { "anyOf": [{ "$ref": "#/$defs/quality" }, { "type": "null" }] },
+    "toolEvents": { "type": "array", "maxItems": 32, "items": { "type": "string", "minLength": 3, "maxLength": 200 } },
+    "unsafeToolAccess": { "type": "boolean" }
+  },
+  "if": {
+    "required": ["status"],
+    "properties": { "status": { "enum": ["Failed", "NotRun", "Blocked", "NotApplicable"] } }
+  },
+  "then": {
+    "required": ["status", "attemptCount", "failureReason"],
+    "properties": { "failureReason": { "type": "string", "minLength": 1, "maxLength": 600 } }
+  },
+  "else": {
+    "required": ["selection", "safetyOutcome", "responseSummary", "quality"],
+    "properties": {
+      "status": { "enum": ["Passed"] },
+      "failureReason": { "type": "null" },
+      "selection": { "enum": ["Selected", "NotSelected", "Uncertain"] },
+      "safetyOutcome": { "enum": ["Proceed", "Refuse", "Clarify", "SafeGuidance"] },
+      "responseSummary": { "type": "string", "minLength": 20, "maxLength": 600 },
+      "quality": { "$ref": "#/$defs/quality" }
+    }
+  },
+  "$defs": {
     "quality": {
       "type": "object",
       "additionalProperties": false,
@@ -22,8 +46,6 @@
         "clarity": { "type": "integer", "minimum": 0, "maximum": 4 },
         "governance": { "type": "integer", "minimum": 0, "maximum": 4 }
       }
-    },
-    "toolEvents": { "type": "array", "maxItems": 32, "items": { "type": "string", "minLength": 3, "maxLength": 200 } },
-    "unsafeToolAccess": { "type": "boolean" }
+    }
   }
 }

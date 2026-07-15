@@ -166,6 +166,16 @@ Describe 'Controlled Codex skill behavior evaluation' {
         finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
     }
 
+    It 'preserves schema-valid blocked transport observations and their retry reason' {
+        $schema = Join-Path $repoRoot 'schemas/codex-skill-behavior-observation.schema.json'
+        $blocked = [pscustomobject]@{ status='Blocked'; attemptCount=2; failureReason='ModelUnavailable: approved transport was unavailable.'; selection=$null; safetyOutcome=$null; responseSummary=$null; quality=$null; toolEvents=@(); unsafeToolAccess=$false }
+        ($blocked | ConvertTo-Json -Depth 8 | Test-Json -SchemaFile $schema) | Should -BeTrue
+        $sanitized = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ExecutionMode Live -ObservationProvider { param($case,$index,$config) $blocked }.GetNewClosure()
+        $sanitized.status | Should -Be 'Blocked'
+        $sanitized.caseOutcomes[0].samples[0].attemptCount | Should -Be 2
+        $sanitized.caseOutcomes[0].samples[0].failureReason | Should -Match '^ModelUnavailable:'
+    }
+
     It 'rejects fabricated checked evidence and partial checked evidence' {
         $testRoot = Join-Path $repoRoot '.tmp/behavior-evidence-test'
         New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
