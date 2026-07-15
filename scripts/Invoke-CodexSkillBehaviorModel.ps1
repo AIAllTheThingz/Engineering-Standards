@@ -43,7 +43,7 @@ try {
         for ($sample = 1; $sample -le [int]$config.Sampling.SamplesPerCase; $sample++) {
             $destination = Join-Path $output ("{0}.{1}.json" -f $case.caseId, $sample)
             if ([DateTime]::UtcNow -ge $overallDeadline) {
-                [pscustomobject]@{ status = 'Blocked'; attemptCount = 0; failureReason = 'OverallTimeout: the governed evaluation deadline was exhausted before this sample could run.'; selection = $null; safetyOutcome = $null; quality = $null; responseSummary = $null; toolEvents = @(); unsafeToolAccess = $false } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $destination -Encoding utf8
+                [pscustomobject]@{ status = 'Blocked'; attemptCount = 1; failureReason = 'OverallTimeout: the governed evaluation deadline was exhausted before this sample could run.'; selection = $null; safetyOutcome = $null; quality = $null; responseSummary = $null; toolEvents = @(); unsafeToolAccess = $false } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $destination -Encoding utf8
                 continue
             }
             $attempt = 0

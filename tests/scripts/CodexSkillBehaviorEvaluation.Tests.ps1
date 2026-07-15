@@ -128,6 +128,22 @@ Describe 'Controlled Codex skill behavior evaluation' {
         ($report.caseOutcomes | Where-Object caseId -eq 'ep-explicit').samples[0].failureReason | Should -Match 'MalformedOutput.*attemptCount'
     }
 
+    It 'rejects schema-invalid replay observations before scoring' {
+        $testRoot = Join-Path $repoRoot '.tmp/schema-invalid-observation-test'
+        $observationRoot = Join-Path $testRoot 'observations'
+        New-Item -ItemType Directory -Path $observationRoot -Force | Out-Null
+        try {
+            '{"status":"Passed","attemptCount":1,"selection":"Selected","safetyOutcome":"Proceed","quality":{"taskFit":"bad"}}' | Set-Content -LiteralPath (Join-Path $observationRoot 'ep-explicit.1.json') -Encoding utf8
+            $head = (& git -C $repoRoot rev-parse HEAD).Trim()
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1') -Path $repoRoot -ObservationDirectory '.tmp/schema-invalid-observation-test/observations' -OutputJson '.tmp/schema-invalid-observation-test/report.json' -ExecutionMode Live -EvaluatedCommitSha $head 2>$null
+            $LASTEXITCODE | Should -Be 2
+            $report = Get-Content -LiteralPath (Join-Path $testRoot 'report.json') -Raw | ConvertFrom-Json
+            $report.status | Should -Be 'Blocked'
+            ($report.caseOutcomes | Where-Object caseId -eq 'ep-explicit').samples[0].failureReason | Should -Match 'observation schema'
+        }
+        finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+
     It 'rejects fabricated checked evidence and partial checked evidence' {
         $testRoot = Join-Path $repoRoot '.tmp/behavior-evidence-test'
         New-Item -ItemType Directory -Path $testRoot -Force | Out-Null

@@ -81,10 +81,10 @@ function ConvertTo-SanitizedSample {
     $malformedAttemptCount = $false
     if ($Observation.PSObject.Properties.Name -contains 'attemptCount') {
         $parsedAttemptCount = 0
-        if (-not [int]::TryParse([string]$Observation.attemptCount, [ref]$parsedAttemptCount) -or $parsedAttemptCount -lt 0) { $status = 'Blocked'; $malformedAttemptCount = $true }
+        if (-not [int]::TryParse([string]$Observation.attemptCount, [ref]$parsedAttemptCount) -or $parsedAttemptCount -lt 1) { $status = 'Blocked'; $malformedAttemptCount = $true }
         else { $attemptCount = $parsedAttemptCount }
     }
-    $failure = if ($malformedAttemptCount) { 'MalformedOutput: attemptCount must be a nonnegative integer.' } elseif ($Observation.PSObject.Properties.Name -contains 'failureReason') { $Observation.failureReason } else { $null }
+    $failure = if ($malformedAttemptCount) { 'MalformedOutput: attemptCount must be an integer of at least 1.' } elseif ($Observation.PSObject.Properties.Name -contains 'failureReason') { $Observation.failureReason } else { $null }
     if ($status -ne 'Passed' -and [string]::IsNullOrWhiteSpace([string]$failure)) { $failure = 'The sample did not produce a complete passing observation.' }
     [pscustomobject]@{
         sampleIndex = $SampleIndex

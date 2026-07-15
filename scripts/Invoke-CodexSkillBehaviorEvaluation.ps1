@@ -24,6 +24,7 @@ $root = (Resolve-Path -LiteralPath $Path).Path
 $observations = (Resolve-Path -LiteralPath $ObservationDirectory).Path
 $declaredUnavailableReason = $UnavailableReason
 $declaredUnavailableDetail = $UnavailableDetail
+$observationSchema = Join-Path $root 'schemas/codex-skill-behavior-observation.schema.json'
 if ([IO.Path]::GetRelativePath($root, $observations).StartsWith('..')) { throw 'ObservationDirectory must be beneath the repository root.' }
 $provider = {
     param($case, $index, $config)
@@ -35,8 +36,13 @@ $provider = {
     if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { return [pscustomobject]@{ status = 'Blocked'; failureReason = 'Required observation file is missing from this partial run.' } }
     $bytes = [IO.File]::ReadAllBytes($file)
     if ($bytes.Length -gt [int]$config.Limits.MaximumOutputBytes) { return [pscustomobject]@{ status = 'Blocked'; failureReason = 'Observation output exceeded the configured byte limit.' } }
-    try { [Text.Encoding]::UTF8.GetString($bytes) | ConvertFrom-Json }
-    catch { [pscustomobject]@{ status = 'Blocked'; failureReason = 'Observation output was malformed JSON and was not retried.' } }
+    $json = [Text.Encoding]::UTF8.GetString($bytes)
+    try { $observation = $json | ConvertFrom-Json }
+    catch { return [pscustomobject]@{ status = 'Blocked'; failureReason = 'Observation output was malformed JSON and was not retried.' } }
+    try { $schemaValid = $json | Test-Json -SchemaFile $observationSchema -ErrorAction Stop }
+    catch { $schemaValid = $false }
+    if (-not $schemaValid) { return [pscustomobject]@{ status = 'Blocked'; failureReason = 'Observation output did not satisfy the observation schema and was not scored.' } }
+    $observation
 }
 $report = Invoke-CodexSkillBehaviorEvaluation -Path $root -ObservationProvider $provider -ExecutionMode $ExecutionMode -RunnerVersion $RunnerVersion -EvaluatedCommitSha $EvaluatedCommitSha
 $output = if ([IO.Path]::IsPathRooted($OutputJson)) { [IO.Path]::GetFullPath($OutputJson) } else { [IO.Path]::GetFullPath((Join-Path $root $OutputJson)) }
