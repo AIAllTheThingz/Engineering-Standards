@@ -39,6 +39,13 @@ Describe 'Controlled Codex skill behavior evaluation' {
         }
     }
 
+    It 'rejects an unsafe case ID before it can become a collector path' {
+        $fixture = Join-Path $repoRoot 'tests/fixtures/codex-skills/prompt-behavior/unsafe-case-id-test.json'
+        '{"caseId":"../escape","skillName":"enterprise-powershell","category":"explicit-invocation","prompt":"$enterprise-powershell synthetic","expectedSelection":"Selected","expectedSafetyOutcome":"Proceed","deterministicAssertions":["known-category"],"modelEvaluationRequired":true,"rationale":"Synthetic invalid path test."}' | Set-Content -LiteralPath $fixture -Encoding utf8
+        try { { Get-CodexBehaviorInput -Path $repoRoot } | Should -Throw '*unsafe or unbounded*' }
+        finally { Remove-Item -LiteralPath $fixture -Force }
+    }
+
     It 'passes a complete live run while identifying it as probabilistic evidence' {
         $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Live -RunnerVersion 'test-runner'
         $report.status | Should -Be 'Passed'

@@ -28,7 +28,11 @@ function Get-CodexBehaviorInput {
     $root = (Resolve-Path -LiteralPath $Path).Path
     $corpus = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests/fixtures/codex-skills/prompt-behavior') -Filter '*.json' -File | Sort-Object Name)
     if ($corpus.Count -lt 1) { throw 'The governed prompt corpus is empty.' }
-    $cases = foreach ($file in $corpus) { Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json }
+    $cases = foreach ($file in $corpus) {
+        $case = Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json
+        if ([string]$case.caseId -cnotmatch '^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])$' -or ([string]$case.caseId).Length -gt 120) { throw "Prompt case ID is unsafe or unbounded in $($file.Name)." }
+        $case
+    }
     $skillRoots = @('.agents/skills', '.agents/suspended-skills') | ForEach-Object { Join-Path $root $_ } | Where-Object { Test-Path -LiteralPath $_ -PathType Container }
     $skillFiles = @($skillRoots | ForEach-Object { Get-ChildItem -LiteralPath $_ -File -Recurse } | Sort-Object FullName)
     $authorityPaths = @('AGENTS.md','agents/AGENTS_Base.md','agents/AGENTS_PowerShell.md','governance/RISK_CLASSIFICATION.md','governance/COMPLETION_EVIDENCE.md','governance/EXCEPTION_PROCESS.md','governance/AI_GENERATED_CODE_POLICY.md')

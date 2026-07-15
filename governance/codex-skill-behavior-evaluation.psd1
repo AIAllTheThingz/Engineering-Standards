@@ -37,7 +37,7 @@
         MaximumTransportRetries = 1
         RetryableReasons = @('ModelUnavailable', 'TransportTimeout')
         RetryDelaySeconds = 2
-        PreserveEveryAttempt = $true
+        PreserveEveryAttempt = $false
         RetryMalformedOutput = $false
         RetryThresholdFailure = $false
     }

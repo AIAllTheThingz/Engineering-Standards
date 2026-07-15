@@ -183,6 +183,8 @@ It pins model identity, evaluator/scoring versions, three independent samples,
 one transport-only retry, timeouts, isolation, and thresholds. The governed
 corpus covers explicit and implicit selection, three non-trigger forms,
 ambiguity, governance bypass, secret exposure, and destructive defaults.
+Evidence retains the final sanitized sample outcome, attempt count, and failure
+reason; transient raw attempt output is not retained or claimed as preserved.
 
 Every incomplete, unavailable, timed-out, malformed, contradictory, or unsafe
 sample fails closed. Replay is always `NotRun`. Valid evidence may honestly

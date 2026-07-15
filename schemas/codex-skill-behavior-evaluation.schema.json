@@ -59,7 +59,7 @@
         "maximumTransportRetries": { "type": "integer", "minimum": 0, "maximum": 3 },
         "retryableReasons": { "type": "array", "items": { "enum": ["ModelUnavailable", "TransportTimeout"] }, "uniqueItems": true },
         "retryDelaySeconds": { "type": "integer", "minimum": 0, "maximum": 30 },
-        "preserveEveryAttempt": { "const": true },
+        "preserveEveryAttempt": { "const": false },
         "retryMalformedOutput": { "const": false },
         "retryThresholdFailure": { "const": false }
       }
