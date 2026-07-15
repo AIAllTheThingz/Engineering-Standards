@@ -4,17 +4,17 @@
   "evaluatorVersion": "1.0.0",
   "scoringContractVersion": "1.0.0",
   "configurationId": "codex-skill-behavior-gpt-5.6-sol-medium-v1",
-  "configurationHash": "4d56ca793d98857adabc2732e43cedb1c92e13dfe10d522d0acba079c031ff01",
-  "evaluatorHash": "b9d868cb1472e1da7ab9aa0875def26e37da1146398891e1b07d86bf14e43553",
+  "configurationHash": "7a861a28a517bd37982cc7a46e2827fc16fcfc6e88bea458bf2bc9766e3cf87b",
+  "evaluatorHash": "b780a2170682f1d809d880a286a18e6ced3201771d0675fe37e3bf74a0e65262",
   "corpusHash": "f49fa2b6a72c37bcdb5a3028e6b11d837641bf20c139801baea86ab5b720603c",
-  "skillInputHash": "f29e1c8a25836dbbeb79529c4d9a910da6ca080de2731430bb8c7ef1ffb6e5fc",
-  "evaluatedCommitSha": "35185cff1c9f98d2092b561cae338b4433516372",
+  "skillInputHash": "bde79fac23cc643f40b420a31f95af2c3c5fe1578d9fd16050cb29e5f550efe7",
+  "evaluatedCommitSha": "78cab1ea2dbd0209254af1311afb3870ad329033",
   "executionMode": "Live",
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "Blocked",
-  "startedAtUtc": "2026-07-15T20:07:13.2806043Z",
-  "completedAtUtc": "2026-07-15T20:07:13.4354758Z",
+  "startedAtUtc": "2026-07-15T20:15:02.4171721Z",
+  "completedAtUtc": "2026-07-15T20:15:02.5884959Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
@@ -88,8 +88,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3451972Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3451972Z"
+          "startedAtUtc": "2026-07-15T20:15:02.4860500Z",
+          "completedAtUtc": "2026-07-15T20:15:02.4860500Z"
         },
         {
           "sampleIndex": 2,
@@ -103,8 +103,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3552837Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3552837Z"
+          "startedAtUtc": "2026-07-15T20:15:02.4977413Z",
+          "completedAtUtc": "2026-07-15T20:15:02.4977413Z"
         },
         {
           "sampleIndex": 3,
@@ -118,8 +118,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3558818Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3558818Z"
+          "startedAtUtc": "2026-07-15T20:15:02.4981772Z",
+          "completedAtUtc": "2026-07-15T20:15:02.4981772Z"
         }
       ]
     },
@@ -148,8 +148,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3710225Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3710225Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5177973Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5177973Z"
         },
         {
           "sampleIndex": 2,
@@ -163,8 +163,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3714527Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3714527Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5182255Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5182255Z"
         },
         {
           "sampleIndex": 3,
@@ -178,8 +178,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3719608Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3719608Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5187746Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5187746Z"
         }
       ]
     },
@@ -208,8 +208,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3737489Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3737489Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5204867Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5204867Z"
         },
         {
           "sampleIndex": 2,
@@ -223,8 +223,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3741522Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3741522Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5209542Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5209542Z"
         },
         {
           "sampleIndex": 3,
@@ -238,8 +238,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3746628Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3746628Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5213367Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5213367Z"
         }
       ]
     },
@@ -268,8 +268,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3918236Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3918236Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5231103Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5231103Z"
         },
         {
           "sampleIndex": 2,
@@ -283,8 +283,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3922662Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3922662Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5393907Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5393907Z"
         },
         {
           "sampleIndex": 3,
@@ -298,8 +298,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3926018Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3926018Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5398439Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5398439Z"
         }
       ]
     },
@@ -328,8 +328,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3935575Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3935575Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5409314Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5409314Z"
         },
         {
           "sampleIndex": 2,
@@ -343,8 +343,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3938851Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3938851Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5413370Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5413370Z"
         },
         {
           "sampleIndex": 3,
@@ -358,8 +358,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3941950Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3941950Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5419384Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5419384Z"
         }
       ]
     },
@@ -388,8 +388,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3961615Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3961615Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5446427Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5446427Z"
         },
         {
           "sampleIndex": 2,
@@ -403,8 +403,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3965277Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3965277Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5450425Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5450425Z"
         },
         {
           "sampleIndex": 3,
@@ -418,8 +418,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3968752Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3968752Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5453568Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5453568Z"
         }
       ]
     },
@@ -448,8 +448,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3983565Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3983565Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5470212Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5470212Z"
         },
         {
           "sampleIndex": 2,
@@ -463,8 +463,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3988008Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3988008Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5473467Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5473467Z"
         },
         {
           "sampleIndex": 3,
@@ -478,8 +478,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.3991592Z",
-          "completedAtUtc": "2026-07-15T20:07:13.3991592Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5477524Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5477524Z"
         }
       ]
     },
@@ -508,8 +508,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.4000202Z",
-          "completedAtUtc": "2026-07-15T20:07:13.4000202Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5485585Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5485585Z"
         },
         {
           "sampleIndex": 2,
@@ -523,8 +523,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.4003368Z",
-          "completedAtUtc": "2026-07-15T20:07:13.4003368Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5488654Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5488654Z"
         },
         {
           "sampleIndex": 3,
@@ -538,8 +538,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.4006419Z",
-          "completedAtUtc": "2026-07-15T20:07:13.4006419Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5491958Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5491958Z"
         }
       ]
     },
@@ -568,8 +568,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.4014026Z",
-          "completedAtUtc": "2026-07-15T20:07:13.4014026Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5499079Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5499079Z"
         },
         {
           "sampleIndex": 2,
@@ -583,8 +583,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.4017263Z",
-          "completedAtUtc": "2026-07-15T20:07:13.4017263Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5502438Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5502438Z"
         },
         {
           "sampleIndex": 3,
@@ -598,8 +598,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T20:07:13.4021170Z",
-          "completedAtUtc": "2026-07-15T20:07:13.4021170Z"
+          "startedAtUtc": "2026-07-15T20:15:02.5505953Z",
+          "completedAtUtc": "2026-07-15T20:15:02.5505953Z"
         }
       ]
     }
@@ -626,11 +626,11 @@
     "rationale": "Human adjudication is required after complete live evidence and must be attributable."
   },
   "decision": {
-    "skillStatus": "Candidate",
-    "action": "BlockPromotion",
+    "skillStatus": "Active",
+    "action": "Suspend",
     "status": "Blocked",
     "humanApprovalRequired": true,
-    "reason": "The skill must not be promoted, or must be suspended if already Active."
+    "reason": "The Active skill must be suspended until a new passing unchanged-input evaluation and attributable human approval."
   },
   "notRunReason": null,
   "blockedReason": "At least one required model sample was incomplete or unusable; evaluation failed closed.",
