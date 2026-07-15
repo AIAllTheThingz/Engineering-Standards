@@ -96,8 +96,11 @@ Describe 'Codex skill validation' {
         $suspended = Join-Path $root '.agents/suspended-skills'
         Move-Item -LiteralPath $active -Destination $suspended
         Remove-Item -LiteralPath (Join-Path $suspended 'sample-skill/SKILL.md') -Force
-        & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1') -Path $root 2>$null
+        $output = Join-Path $root '.tmp/codex-skills-failure.json'
+        & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1') -Path $root -OutputJson $output 2>$null
         $LASTEXITCODE | Should -Be 1
+        Test-Path -LiteralPath $output -PathType Leaf | Should -BeTrue
+        (Get-Content -LiteralPath $output -Raw | ConvertFrom-Json).deterministicStatus | Should -Be 'Failed'
     }
 
     It 'validates one prompt corpus against the union of active and suspended skills' {

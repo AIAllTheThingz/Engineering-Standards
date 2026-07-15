@@ -233,7 +233,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $wrapper | Should -Match 'not physically suspended'
         $wrapper | Should -Match 'Passed behavior evidence requires an attributable Approved human adjudication'
         $wrapper | Should -Match "humanAdjudication\.decision -ne 'Approved'"
-        $wrapper.IndexOf('$report | ConvertTo-Json') | Should -BeGreaterThan $wrapper.IndexOf('Passed behavior evidence requires an attributable Approved human adjudication')
+        $wrapper | Should -Match 'Stop-CodexSkillsBehaviorGate'
+        $wrapper | Should -Match 'Publish-CodexSkillsReport; exit 1'
         $aggregate = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-GovernanceValidation.ps1') -Raw
         $aggregate | Should -Match "\.agents/suspended-skills"
         $aggregate | Should -Match 'No governed active or suspended Codex skills directory'

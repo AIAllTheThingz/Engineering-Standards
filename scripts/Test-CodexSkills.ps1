@@ -48,33 +48,8 @@ try {
         notRun=@($allValidationResults | Where-Object status -eq 'NotRun').Count
         warnings=@($allValidationResults | Where-Object severity -eq 'warning').Count
     }
-    "Codex skills: deterministic=$($report.deterministicStatus), modelEvaluation=$($report.modelEvaluationStatus), skills=$(@($report.skillsDiscovered).Count), failed=$($report.failed), blocked=$($report.blocked), notRun=$($report.notRun)."
-    if ($report.deterministicStatus -in @('Failed','Blocked')) { exit 1 }
-    $behaviorEvidence = Join-Path $root 'evidence/codex-skill-behavior.json'
-    $behaviorConfiguration = Join-Path $root 'governance/codex-skill-behavior-evaluation.psd1'
-    if ((Test-Path -LiteralPath $behaviorEvidence -PathType Leaf) -or (Test-Path -LiteralPath $behaviorConfiguration -PathType Leaf)) {
-        if (-not (Test-Path -LiteralPath $behaviorEvidence -PathType Leaf) -or -not (Test-Path -LiteralPath $behaviorConfiguration -PathType Leaf)) {
-            Write-Error 'Controlled behavior evidence and its approved configuration must be present together.'
-            exit 1
-        }
-        & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $PSScriptRoot 'Test-CodexSkillBehaviorEvidence.ps1') -Path $root
-        if ($LASTEXITCODE -ne 0) { exit 1 }
-        $behavior = Get-Content -LiteralPath $behaviorEvidence -Raw | ConvertFrom-Json
-        $approvedBehavior = Import-PowerShellDataFile -LiteralPath $behaviorConfiguration
-        if ($behavior.status -in @('Failed','Blocked','NotRun')) {
-            if ($behavior.decision.skillStatus -eq 'Active') {
-                if ($behavior.decision.action -ne 'Suspend') { Write-Error 'Nonpassing Active-skill evidence must require suspension.'; exit 1 }
-                $activeInstruction = Join-Path $root $approvedBehavior.Skill.ActiveInstructionPath
-                $suspendedInstruction = Join-Path $root $approvedBehavior.Skill.SuspendedInstructionPath
-                if ((Test-Path -LiteralPath $activeInstruction -PathType Leaf) -or -not (Test-Path -LiteralPath $suspendedInstruction -PathType Leaf)) { Write-Error "Active skill '$($approvedBehavior.Skill.Name)' has nonpassing behavior evidence but its discoverable SKILL.md is not physically suspended."; exit 1 }
-            }
-            elseif ($behavior.decision.action -ne 'BlockPromotion') { Write-Error 'Nonpassing Candidate evidence must block promotion.'; exit 1 }
-        }
-        elseif ($behavior.status -eq 'Passed') {
-            if ($behavior.humanAdjudication.status -ne 'Passed' -or $behavior.humanAdjudication.decision -ne 'Approved' -or [string]::IsNullOrWhiteSpace([string]$behavior.humanAdjudication.reviewer) -or $null -eq $behavior.humanAdjudication.reviewedAtUtc) { Write-Error 'Passed behavior evidence requires an attributable Approved human adjudication before aggregate success.'; exit 1 }
-        }
-    }
-    if ($OutputJson) {
+    function Publish-CodexSkillsReport {
+        if (-not $OutputJson) { return }
         if ($AllowedOutputRoot) {
             $outputRoot = (Resolve-Path -LiteralPath $AllowedOutputRoot).Path
             $candidate = if ([System.IO.Path]::IsPathRooted($OutputJson)) { [System.IO.Path]::GetFullPath($OutputJson) } else { [System.IO.Path]::GetFullPath((Join-Path $outputRoot $OutputJson)) }
@@ -91,6 +66,42 @@ try {
         $report.skillsRoot = @($reports | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.skillsRoot).Replace('\','/') })
         $report | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $resolvedOutput -Encoding utf8
     }
+    function Stop-CodexSkillsBehaviorGate {
+        param([Parameter(Mandatory)][string]$Message, [ValidateSet('Failed','Blocked')][string]$Status = 'Failed')
+        $behaviorResult = [ordered]@{ ruleId='SKL020'; status=$Status; severity='error'; message=$Message; path='evidence/codex-skill-behavior.json'; skillName=''; deterministic=$false; requiredValidation=$true; data=$null }
+        $report.results = @($report.results) + @($behaviorResult)
+        if ($Status -eq 'Blocked') { $report.blocked = [int]$report.blocked + 1 } else { $report.failed = [int]$report.failed + 1 }
+        $report.modelEvaluationStatus = $Status
+        Publish-CodexSkillsReport
+        Write-Error $Message
+        exit 1
+    }
+    "Codex skills: deterministic=$($report.deterministicStatus), modelEvaluation=$($report.modelEvaluationStatus), skills=$(@($report.skillsDiscovered).Count), failed=$($report.failed), blocked=$($report.blocked), notRun=$($report.notRun)."
+    if ($report.deterministicStatus -in @('Failed','Blocked')) { Publish-CodexSkillsReport; exit 1 }
+    $behaviorEvidence = Join-Path $root 'evidence/codex-skill-behavior.json'
+    $behaviorConfiguration = Join-Path $root 'governance/codex-skill-behavior-evaluation.psd1'
+    if ((Test-Path -LiteralPath $behaviorEvidence -PathType Leaf) -or (Test-Path -LiteralPath $behaviorConfiguration -PathType Leaf)) {
+        if (-not (Test-Path -LiteralPath $behaviorEvidence -PathType Leaf) -or -not (Test-Path -LiteralPath $behaviorConfiguration -PathType Leaf)) {
+            Stop-CodexSkillsBehaviorGate 'Controlled behavior evidence and its approved configuration must be present together.' -Status Blocked
+        }
+        & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $PSScriptRoot 'Test-CodexSkillBehaviorEvidence.ps1') -Path $root
+        if ($LASTEXITCODE -ne 0) { Stop-CodexSkillsBehaviorGate 'Controlled behavior evidence verification failed.' -Status Blocked }
+        $behavior = Get-Content -LiteralPath $behaviorEvidence -Raw | ConvertFrom-Json
+        $approvedBehavior = Import-PowerShellDataFile -LiteralPath $behaviorConfiguration
+        if ($behavior.status -in @('Failed','Blocked','NotRun')) {
+            if ($behavior.decision.skillStatus -eq 'Active') {
+                if ($behavior.decision.action -ne 'Suspend') { Stop-CodexSkillsBehaviorGate 'Nonpassing Active-skill evidence must require suspension.' }
+                $activeInstruction = Join-Path $root $approvedBehavior.Skill.ActiveInstructionPath
+                $suspendedInstruction = Join-Path $root $approvedBehavior.Skill.SuspendedInstructionPath
+                if ((Test-Path -LiteralPath $activeInstruction -PathType Leaf) -or -not (Test-Path -LiteralPath $suspendedInstruction -PathType Leaf)) { Stop-CodexSkillsBehaviorGate "Active skill '$($approvedBehavior.Skill.Name)' has nonpassing behavior evidence but its discoverable SKILL.md is not physically suspended." }
+            }
+            elseif ($behavior.decision.action -ne 'BlockPromotion') { Stop-CodexSkillsBehaviorGate 'Nonpassing Candidate evidence must block promotion.' }
+        }
+        elseif ($behavior.status -eq 'Passed') {
+            if ($behavior.humanAdjudication.status -ne 'Passed' -or $behavior.humanAdjudication.decision -ne 'Approved' -or [string]::IsNullOrWhiteSpace([string]$behavior.humanAdjudication.reviewer) -or $null -eq $behavior.humanAdjudication.reviewedAtUtc) { Stop-CodexSkillsBehaviorGate 'Passed behavior evidence requires an attributable Approved human adjudication before aggregate success.' }
+        }
+    }
+    Publish-CodexSkillsReport
     exit 0
 }
 catch {
