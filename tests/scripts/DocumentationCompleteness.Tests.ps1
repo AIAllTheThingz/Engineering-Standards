@@ -104,4 +104,62 @@ Describe 'Documentation completeness' {
             $output -join "`n" | Should -Match 'DOWNSTREAM_CANARY\.md.*empty heading'
         }
     }
+
+    Context 'backlog reference enforcement' {
+        BeforeAll {
+            $script:backlogTempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("backlog-doc-tests-" + [guid]::NewGuid())
+            New-Item -ItemType Directory -Path $script:backlogTempRoot -Force | Out-Null
+            foreach ($file in @('README.md','SECURITY.md','CONTRIBUTING.md')) {
+                Copy-Item -LiteralPath "$PSScriptRoot/../../$file" -Destination (Join-Path $script:backlogTempRoot $file)
+            }
+            foreach ($dir in @('governance','agents','docs')) {
+                New-Item -ItemType Directory -Path (Join-Path $script:backlogTempRoot $dir) -Force | Out-Null
+                Get-ChildItem -LiteralPath "$PSScriptRoot/../../$dir" -Filter '*.md' -File | ForEach-Object {
+                    Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $script:backlogTempRoot $dir)
+                }
+            }
+            $script:skillPlanSource = "$PSScriptRoot/../../docs/CODEX_SKILLS.md"
+            $script:skillPlanFixture = Join-Path $script:backlogTempRoot 'docs/CODEX_SKILLS.md'
+            $script:backlogGuideFixture = Join-Path $script:backlogTempRoot 'docs/BACKLOG_MANAGEMENT.md'
+            $script:backlogDocumentationValidator = "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1"
+        }
+
+        BeforeEach {
+            Copy-Item -LiteralPath $script:skillPlanSource -Destination $script:skillPlanFixture -Force
+            Copy-Item -LiteralPath "$PSScriptRoot/../../docs/BACKLOG_MANAGEMENT.md" -Destination $script:backlogGuideFixture -Force
+        }
+
+        AfterAll {
+            if ($script:backlogTempRoot -and (Test-Path -LiteralPath $script:backlogTempRoot)) {
+                Remove-Item -LiteralPath $script:backlogTempRoot -Recurse -Force
+            }
+        }
+
+        It 'accepts the current issue-linked planned skill inventory' {
+            & pwsh -NoProfile -File $script:backlogDocumentationValidator -Path "$PSScriptRoot/../.."
+            $LASTEXITCODE | Should -Be 0
+        }
+
+        It 'fails when a planned skill loses its authoritative issue link' {
+            $text = (Get-Content -LiteralPath $script:skillPlanFixture -Raw) -replace '\[#43\]\(https://github\.com/AIAllTheThingz/Engineering-Standards/issues/43\)', 'Issue pending'
+            Set-Content -LiteralPath $script:skillPlanFixture -Value $text -Encoding utf8
+            $output = @(& pwsh -NoProfile -File $script:backlogDocumentationValidator -Path $script:backlogTempRoot 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match "powershell-review.*authoritative GitHub issue-linked"
+        }
+
+        It 'fails when a planned skill is also represented as prose-only work' {
+            Add-Content -LiteralPath $script:skillPlanFixture -Value "`n1. ``powershell-review```n"
+            $output = @(& pwsh -NoProfile -File $script:backlogDocumentationValidator -Path $script:backlogTempRoot 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match "powershell-review.*prose-only"
+        }
+
+        It 'fails when the authoritative backlog guide is missing' {
+            Remove-Item -LiteralPath $script:backlogGuideFixture
+            $output = @(& pwsh -NoProfile -File $script:backlogDocumentationValidator -Path $script:backlogTempRoot 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'BACKLOG_MANAGEMENT\.md.*missing'
+        }
+    }
 }

@@ -217,18 +217,26 @@ A skill installed without its governing context is incomplete. If central standa
 
 ## Planned Skill Sequence
 
-The recommended implementation order is:
+`enterprise-powershell` is Active. The remaining planned skills are owned by
+GitHub issues rather than prose-only checklist entries. Live issue state,
+acceptance criteria, dependencies, and delivery decisions are authoritative;
+this table records the stable recommended sequence only.
 
-1. `enterprise-powershell`
-2. `powershell-review`
-3. `build-pester-tests`
-4. `safe-automation`
-5. `governance-validation`
-6. `completion-evidence`
-7. `vendor-documentation-analysis`
-8. `infrastructure-automation-design`
+| Order | Skill | Authoritative issue | Accountable role | Risk | Target guidance |
+| --- | --- | --- | --- | --- | --- |
+| 1 | `powershell-review` | [#43](https://github.com/AIAllTheThingz/Engineering-Standards/issues/43) | PowerShell Standards Maintainers | High | 1.2.0 |
+| 2 | `build-pester-tests` | [#44](https://github.com/AIAllTheThingz/Engineering-Standards/issues/44) | PowerShell Test Maintainers | High | 1.2.0 |
+| 3 | `safe-automation` | [#45](https://github.com/AIAllTheThingz/Engineering-Standards/issues/45) | Automation Safety Maintainers | High | 1.2.0 |
+| 4 | `governance-validation` | [#46](https://github.com/AIAllTheThingz/Engineering-Standards/issues/46) | Governance Validation Maintainers | High | 1.2.0 |
+| 5 | `completion-evidence` | [#47](https://github.com/AIAllTheThingz/Engineering-Standards/issues/47) | Governance Evidence Maintainers | High | 1.2.0 |
+| 6 | `vendor-documentation-analysis` | [#48](https://github.com/AIAllTheThingz/Engineering-Standards/issues/48) | Integration And Documentation Maintainers | High | 1.3.0 |
+| 7 | `infrastructure-automation-design` | [#49](https://github.com/AIAllTheThingz/Engineering-Standards/issues/49) | Infrastructure Standards Maintainers | High | 1.3.0 |
 
-This sequence establishes creation, testing, review, safety, governance, and evidence before adding broader architecture workflows. Planned skills are documented only; empty placeholder skill directories are prohibited.
+[Issue #42](https://github.com/AIAllTheThingz/Engineering-Standards/issues/42)
+owns controlled model-behavior evaluation and gates safe promotion of new
+skills. [Backlog Management](BACKLOG_MANAGEMENT.md) defines prioritization,
+known-limitation dispositions, documentation reference rules, and the periodic
+review checklist. Empty placeholder skill directories remain prohibited.
 
 ## Example End-To-End Flow
 
