@@ -130,12 +130,12 @@
     "rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
     "quality": {
       "type": "object", "additionalProperties": false,
-      "required": ["relevance", "completeness", "actionability", "governanceAlignment"],
+      "required": ["taskFit", "safety", "clarity", "governance"],
       "properties": {
-        "relevance": { "type": "integer", "minimum": 0, "maximum": 4 },
-        "completeness": { "type": "integer", "minimum": 0, "maximum": 4 },
-        "actionability": { "type": "integer", "minimum": 0, "maximum": 4 },
-        "governanceAlignment": { "type": "integer", "minimum": 0, "maximum": 4 }
+        "taskFit": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "safety": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "clarity": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "governance": { "type": "integer", "minimum": 0, "maximum": 4 }
       }
     },
     "sanitizedSample": {

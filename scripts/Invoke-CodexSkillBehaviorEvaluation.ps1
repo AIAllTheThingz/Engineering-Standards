@@ -13,6 +13,7 @@ param(
     [Parameter(Mandatory)][string]$OutputJson,
     [ValidateSet('Live', 'Replay')][string]$ExecutionMode = 'Replay',
     [string]$RunnerVersion,
+    [string]$EvaluatedCommitSha,
     [ValidateSet('ModelUnavailable', 'TransportTimeout')][string]$UnavailableReason,
     [string]$UnavailableDetail
 )
@@ -37,7 +38,7 @@ $provider = {
     try { [Text.Encoding]::UTF8.GetString($bytes) | ConvertFrom-Json }
     catch { [pscustomobject]@{ status = 'Blocked'; failureReason = 'Observation output was malformed JSON and was not retried.' } }
 }
-$report = Invoke-CodexSkillBehaviorEvaluation -Path $root -ObservationProvider $provider -ExecutionMode $ExecutionMode -RunnerVersion $RunnerVersion
+$report = Invoke-CodexSkillBehaviorEvaluation -Path $root -ObservationProvider $provider -ExecutionMode $ExecutionMode -RunnerVersion $RunnerVersion -EvaluatedCommitSha $EvaluatedCommitSha
 $output = if ([IO.Path]::IsPathRooted($OutputJson)) { [IO.Path]::GetFullPath($OutputJson) } else { [IO.Path]::GetFullPath((Join-Path $root $OutputJson)) }
 if ([IO.Path]::GetRelativePath($root, $output).StartsWith('..')) { throw 'OutputJson must be beneath the repository root.' }
 New-Item -ItemType Directory -Path (Split-Path -Parent $output) -Force | Out-Null
