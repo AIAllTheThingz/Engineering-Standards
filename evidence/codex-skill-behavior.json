@@ -5,17 +5,17 @@
   "scoringContractVersion": "1.0.0",
   "configurationId": "codex-skill-behavior-gpt-5.6-sol-medium-v1",
   "configurationHash": "743dd761caaf2e465a4d747f3b5cabc94b416b5f608663e93e232f6691cbaebb",
-  "evaluatorHash": "1e0df6616f3dce33da798b93908680c6c0857637f7a10b4fb4001d982703b112",
+  "evaluatorHash": "4418501b499cc8cea9fbc619b2164acdebb902d819973917f93a56aa62c9b47e",
   "corpusHash": "f49fa2b6a72c37bcdb5a3028e6b11d837641bf20c139801baea86ab5b720603c",
   "skillInputHash": "2165bbeb3648e4cab82c5450d66c2298eaa39cd52b51adf98a10a82d241c3bcc",
   "authorityHash": "bec9d5ae199732927fe986050738bdf9f327f31784c0514b855a98cfec0156c6",
-  "evaluatedCommitSha": "6edba1939d5dfc3ed5d588e3f956111bc7efe24b",
+  "evaluatedCommitSha": "c33c096327624295a67347d0257de2f17df23971",
   "executionMode": "Live",
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "Blocked",
-  "startedAtUtc": "2026-07-15T21:53:29.0395736Z",
-  "completedAtUtc": "2026-07-15T21:53:29.2269064Z",
+  "startedAtUtc": "2026-07-15T22:02:26.7380263Z",
+  "completedAtUtc": "2026-07-15T22:02:26.9734332Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
@@ -89,8 +89,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1195296Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1195296Z"
+          "startedAtUtc": "2026-07-15T22:02:26.8440983Z",
+          "completedAtUtc": "2026-07-15T22:02:26.8440983Z"
         },
         {
           "sampleIndex": 2,
@@ -104,8 +104,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1395688Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1395688Z"
+          "startedAtUtc": "2026-07-15T22:02:26.8690718Z",
+          "completedAtUtc": "2026-07-15T22:02:26.8690718Z"
         },
         {
           "sampleIndex": 3,
@@ -119,8 +119,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1401088Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1401088Z"
+          "startedAtUtc": "2026-07-15T22:02:26.8700487Z",
+          "completedAtUtc": "2026-07-15T22:02:26.8700487Z"
         }
       ]
     },
@@ -149,8 +149,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1579844Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1579844Z"
+          "startedAtUtc": "2026-07-15T22:02:26.8920360Z",
+          "completedAtUtc": "2026-07-15T22:02:26.8920360Z"
         },
         {
           "sampleIndex": 2,
@@ -164,8 +164,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1585907Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1585907Z"
+          "startedAtUtc": "2026-07-15T22:02:26.8925508Z",
+          "completedAtUtc": "2026-07-15T22:02:26.8925508Z"
         },
         {
           "sampleIndex": 3,
@@ -179,8 +179,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1590100Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1590100Z"
+          "startedAtUtc": "2026-07-15T22:02:26.8929893Z",
+          "completedAtUtc": "2026-07-15T22:02:26.8929893Z"
         }
       ]
     },
@@ -209,8 +209,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1770520Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1770520Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9161188Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9161188Z"
         },
         {
           "sampleIndex": 2,
@@ -224,8 +224,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1774157Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1774157Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9165010Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9165010Z"
         },
         {
           "sampleIndex": 3,
@@ -239,8 +239,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1777946Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1777946Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9168249Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9168249Z"
         }
       ]
     },
@@ -269,8 +269,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1792936Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1792936Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9186562Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9186562Z"
         },
         {
           "sampleIndex": 2,
@@ -284,8 +284,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1796367Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1796367Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9190042Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9190042Z"
         },
         {
           "sampleIndex": 3,
@@ -299,8 +299,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1800131Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1800131Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9193257Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9193257Z"
         }
       ]
     },
@@ -329,8 +329,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1809569Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1809569Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9206274Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9206274Z"
         },
         {
           "sampleIndex": 2,
@@ -344,8 +344,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1813144Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1813144Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9210936Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9210936Z"
         },
         {
           "sampleIndex": 3,
@@ -359,8 +359,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1816535Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1816535Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9215618Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9215618Z"
         }
       ]
     },
@@ -389,8 +389,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1833718Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1833718Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9234127Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9234127Z"
         },
         {
           "sampleIndex": 2,
@@ -404,8 +404,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1838404Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1838404Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9238100Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9238100Z"
         },
         {
           "sampleIndex": 3,
@@ -419,8 +419,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1842553Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1842553Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9242062Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9242062Z"
         }
       ]
     },
@@ -449,8 +449,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1857244Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1857244Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9257756Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9257756Z"
         },
         {
           "sampleIndex": 2,
@@ -464,8 +464,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1861016Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1861016Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9261171Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9261171Z"
         },
         {
           "sampleIndex": 3,
@@ -479,8 +479,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1864407Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1864407Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9265675Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9265675Z"
         }
       ]
     },
@@ -509,8 +509,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1873307Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1873307Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9274646Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9274646Z"
         },
         {
           "sampleIndex": 2,
@@ -524,8 +524,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1876624Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1876624Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9278287Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9278287Z"
         },
         {
           "sampleIndex": 3,
@@ -539,8 +539,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1880363Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1880363Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9282056Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9282056Z"
         }
       ]
     },
@@ -569,8 +569,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1888881Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1888881Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9290611Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9290611Z"
         },
         {
           "sampleIndex": 2,
@@ -584,8 +584,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1892090Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1892090Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9293822Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9293822Z"
         },
         {
           "sampleIndex": 3,
@@ -599,8 +599,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T21:53:29.1895176Z",
-          "completedAtUtc": "2026-07-15T21:53:29.1895176Z"
+          "startedAtUtc": "2026-07-15T22:02:26.9297653Z",
+          "completedAtUtc": "2026-07-15T22:02:26.9297653Z"
         }
       ]
     }
