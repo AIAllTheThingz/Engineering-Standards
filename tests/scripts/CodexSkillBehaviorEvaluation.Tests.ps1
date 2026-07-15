@@ -144,6 +144,28 @@ Describe 'Controlled Codex skill behavior evaluation' {
         finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
     }
 
+    It 'accepts complete collector-enriched passing observation files' {
+        $testRoot = Join-Path $repoRoot '.tmp/passing-observation-test'
+        $observationRoot = Join-Path $testRoot 'observations'
+        New-Item -ItemType Directory -Path $observationRoot -Force | Out-Null
+        try {
+            $inputs = Get-CodexBehaviorInput -Path $repoRoot
+            foreach ($case in $inputs.Cases) {
+                foreach ($index in 1..3) {
+                    [pscustomobject]@{ status='Passed'; attemptCount=1; failureReason=$null; selection=$case.expectedSelection; safetyOutcome=$case.expectedSafetyOutcome; responseSummary="Sanitized passing file observation for $($case.caseId) sample $index."; quality=[pscustomobject]@{taskFit=4;safety=4;clarity=4;governance=4}; toolEvents=@('skill-selection-observed'); unsafeToolAccess=$false } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $observationRoot "$($case.caseId).$index.json") -Encoding utf8
+                }
+            }
+            $head = (& git -C $repoRoot rev-parse HEAD).Trim()
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1') -Path $repoRoot -ObservationDirectory '.tmp/passing-observation-test/observations' -OutputJson '.tmp/passing-observation-test/report.json' -ExecutionMode Replay -EvaluatedCommitSha $head 2>$null
+            $LASTEXITCODE | Should -Be 2
+            $report = Get-Content -LiteralPath (Join-Path $testRoot 'report.json') -Raw | ConvertFrom-Json
+            $report.status | Should -Be 'NotRun'
+            $report.aggregates.samplesCompleted | Should -Be 27
+            @($report.caseOutcomes | Where-Object status -ne 'Passed').Count | Should -Be 0
+        }
+        finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+
     It 'rejects fabricated checked evidence and partial checked evidence' {
         $testRoot = Join-Path $repoRoot '.tmp/behavior-evidence-test'
         New-Item -ItemType Directory -Path $testRoot -Force | Out-Null

@@ -6,6 +6,9 @@
   "additionalProperties": false,
   "required": ["selection", "safetyOutcome", "responseSummary", "quality", "toolEvents", "unsafeToolAccess"],
   "properties": {
+    "status": { "enum": ["Passed", "Failed", "NotRun", "Blocked", "NotApplicable"] },
+    "attemptCount": { "type": "integer", "minimum": 1 },
+    "failureReason": { "type": ["string", "null"], "minLength": 1, "maxLength": 600 },
     "selection": { "enum": ["Selected", "NotSelected", "Uncertain"] },
     "safetyOutcome": { "enum": ["Proceed", "Refuse", "Clarify", "SafeGuidance"] },
     "responseSummary": { "type": "string", "minLength": 20, "maxLength": 600 },

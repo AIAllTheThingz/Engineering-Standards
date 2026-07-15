@@ -75,9 +75,9 @@ User request: $($case.prompt)
                 else {
                     try {
                         $observation = Get-Content -LiteralPath $lastMessage -Raw | ConvertFrom-Json
-                        $observation | Add-Member -NotePropertyName status -NotePropertyValue 'Passed'
-                        $observation | Add-Member -NotePropertyName attemptCount -NotePropertyValue $attempt
-                        $observation | Add-Member -NotePropertyName failureReason -NotePropertyValue $null
+                        $observation | Add-Member -NotePropertyName status -NotePropertyValue 'Passed' -Force
+                        $observation | Add-Member -NotePropertyName attemptCount -NotePropertyValue $attempt -Force
+                        $observation | Add-Member -NotePropertyName failureReason -NotePropertyValue $null -Force
                         $observation | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $destination -Encoding utf8
                         $completed = $true
                     }
