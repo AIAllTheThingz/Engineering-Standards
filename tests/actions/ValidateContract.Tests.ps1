@@ -61,7 +61,7 @@ Describe 'Validate contract action' {
                 -ExpectedRepository 'AIAllTheThingz/Engineering-Standards' `
                 -ExpectedStandardsRepository 'AIAllTheThingz/Engineering-Standards' `
                 -RepositoryOwnerType User `
-                -ExpectedGovernanceCommitSha '32f3fe972f5d396dea5ed4c8bc41479fcfbf8935' `
+                -ExpectedGovernanceCommitSha '2ee47419de79ca8dd85f28106e9af29a1c73b96d' `
                 -ExpectedWorkflowInterfaceVersion '1.0.0' `
                 -ExpectedWorkflowProfile 'standards-maintainer' `
                 -ExpectedRequiredCheckName 'Governance / Governance validation')
@@ -97,7 +97,7 @@ Describe 'Validate contract action' {
                 -ExpectedRepository 'AIAllTheThingz/Engineering-Standards' `
                 -ExpectedStandardsRepository 'AIAllTheThingz/Engineering-Standards' `
                 -RepositoryOwnerType User `
-                -ExpectedGovernanceCommitSha '32f3fe972f5d396dea5ed4c8bc41479fcfbf8935' `
+                -ExpectedGovernanceCommitSha '2ee47419de79ca8dd85f28106e9af29a1c73b96d' `
                 -ExpectedWorkflowInterfaceVersion '1.0.0' `
                 -ExpectedWorkflowProfile 'standards-maintainer' `
                 -ExpectedRequiredCheckName 'Governance / Governance validation'
