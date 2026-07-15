@@ -44,6 +44,16 @@ try {
     }
     "Codex skills: deterministic=$($report.deterministicStatus), modelEvaluation=$($report.modelEvaluationStatus), skills=$(@($report.skillsDiscovered).Count), failed=$($report.failed), blocked=$($report.blocked), notRun=$($report.notRun)."
     if ($report.deterministicStatus -in @('Failed','Blocked')) { exit 1 }
+    $behaviorEvidence = Join-Path $root 'evidence/codex-skill-behavior.json'
+    $behaviorConfiguration = Join-Path $root 'governance/codex-skill-behavior-evaluation.psd1'
+    if ((Test-Path -LiteralPath $behaviorEvidence -PathType Leaf) -or (Test-Path -LiteralPath $behaviorConfiguration -PathType Leaf)) {
+        if (-not (Test-Path -LiteralPath $behaviorEvidence -PathType Leaf) -or -not (Test-Path -LiteralPath $behaviorConfiguration -PathType Leaf)) {
+            Write-Error 'Controlled behavior evidence and its approved configuration must be present together.'
+            exit 1
+        }
+        & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $PSScriptRoot 'Test-CodexSkillBehaviorEvidence.ps1') -Path $root
+        if ($LASTEXITCODE -ne 0) { exit 1 }
+    }
     exit 0
 }
 catch {

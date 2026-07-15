@@ -152,7 +152,7 @@ if ($AggregateReportPath) {
     $aggregateFull = Resolve-SafePath -Root $root -ChildPath $AggregateReportPath
     $aggregate = Read-JsonFile -Path $aggregateFull
     $categoryMap = @{
-        Contract='workflow'; AgentStandards='policy'; CodexSkills='security'; CodexSkillBehavior='security'; JsonSchemas='schema'; YamlSyntax='schema'; WorkflowArchitecture='workflow'
+        Contract='workflow'; AgentStandards='policy'; CodexSkills='security'; JsonSchemas='schema'; YamlSyntax='schema'; WorkflowArchitecture='workflow'
         MarkdownLinks='documentation'; DocumentationCompleteness='documentation'; ForbiddenPatterns='security'
         RepositoryHealth='workflow'; Evidence='workflow'; PowerShellParser='lint'; Pester='unit'; PSScriptAnalyzer='lint'
         Examples='integration'; ControlledFailure='workflow'; BootstrapValidation='workflow'

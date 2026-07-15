@@ -49,17 +49,6 @@
             RequiredPythonModules = @()
         }
         @{
-            Name = 'CodexSkillBehavior'
-            Order = 35
-            Profiles = @('standards-maintainer')
-            MandatoryProfiles = @('standards-maintainer')
-            Runner = 'Script'
-            Path = 'scripts/Test-CodexSkillBehaviorEvidence.ps1'
-            Applicability = 'WhenSkillsPresent'
-            RequiredCommands = @()
-            RequiredPythonModules = @()
-        }
-        @{
             Name = 'JsonSchemas'
             Order = 40
             Profiles = @('standards-maintainer')
