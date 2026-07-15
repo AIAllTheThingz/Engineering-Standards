@@ -30,6 +30,10 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Match 'OutputDirectory must not traverse a symbolic link, junction, or reparse point'
         $runner | Should -Match '\$outputItem\.LinkType'
         $runner | Should -Not -Match '\$attempt = \[int\]\$config\.RetryPolicy\.MaximumTransportRetries \+ 1'
+        $evaluationWrapper = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1') -Raw
+        $evaluationWrapper | Should -Match 'Resolve-BehaviorRepositoryPath'
+        $evaluationWrapper | Should -Match '\$full\.StartsWith\(\$boundary, \$comparison\)'
+        $evaluationWrapper | Should -Match 'must not traverse a symbolic link, junction, or reparse point'
     }
 
     It 'hashes the root catalog and a new skill-local README without touching an existing skill file' {
