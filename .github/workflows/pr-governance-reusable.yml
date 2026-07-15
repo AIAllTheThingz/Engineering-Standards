@@ -7,7 +7,7 @@ permissions:
 jobs:
   validate:
     name: Validate pull request governance record
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -34,14 +34,22 @@ jobs:
           ref: ${{ job.workflow_sha }}
           path: standards
           persist-credentials: false
+      - name: Install hash-verified PowerShell runtime
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File standards/scripts/Install-ValidatorRuntime.ps1 `
+            -RepositoryPath standards `
+            -PackageCachePath (Join-Path $env:RUNNER_TEMP 'pr-governance-runtime-cache') `
+            -InstallRoot (Join-Path $env:RUNNER_TEMP 'pr-governance-pwsh-7.4.11') `
+            -EvidencePath runtime-bootstrap.json
       - name: Retrieve changed filenames as data
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
-        run: pwsh -NoProfile -File standards/scripts/Get-PullRequestChangedFiles.ps1 -EventPath $env:GITHUB_EVENT_PATH -OutputJson changed-files.json
+        run: '& $env:VALIDATOR_PWSH -NoProfile -File standards/scripts/Get-PullRequestChangedFiles.ps1 -EventPath $env:GITHUB_EVENT_PATH -OutputJson changed-files.json'
       - name: Validate pull request governance record
         shell: pwsh
-        run: pwsh -NoProfile -File standards/scripts/Test-PullRequestGovernance.ps1 -EventPath $env:GITHUB_EVENT_PATH -ChangedFilesPath changed-files.json -GovernanceConfigPath standards/governance.config.json -OutputJson pr-governance-result.json
+        run: '& $env:VALIDATOR_PWSH -NoProfile -File standards/scripts/Test-PullRequestGovernance.ps1 -EventPath $env:GITHUB_EVENT_PATH -ChangedFilesPath changed-files.json -GovernanceConfigPath standards/governance.config.json -OutputJson pr-governance-result.json'
       - name: Write job summary
         if: always()
         shell: pwsh
@@ -57,6 +65,8 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: pr-governance-${{ github.run_id }}
-          path: pr-governance-result.json
+          path: |
+            pr-governance-result.json
+            runtime-bootstrap.json
           if-no-files-found: error
           retention-days: 30

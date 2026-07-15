@@ -6,6 +6,9 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
+- Added the Issue #23 validator dependency model, exact runtime and package lock,
+  hash-verifying online/offline installers, CycloneDX inventory, environment
+  provenance evidence, and missing/tampered dependency regression coverage.
 - Added a versioned aggregate validation registry, explicit maintainer and downstream profiles, canonical status aggregation, prerequisite reporting, and an Issue #22 coverage matrix.
 - Added governance contract schema `1.2.0`, controlled schema URNs, structured ownership, standards-consumption, workflow-interface, evidence-path, and exception records, plus deterministic `GCS001`-`GCS013` cross-document validation for Issue #21.
 
@@ -17,6 +20,10 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Changed
 
+- Replaced release-critical `ubuntu-latest` jobs with `ubuntu-24.04`, pinned
+  Python, Node, .NET, and PowerShell versions, centralized Pester,
+  PSScriptAnalyzer, and PyYAML installation, and added weekly pip dependency
+  review signals.
 - Made the default aggregate validator authoritative for all mandatory maintainer checks, made `-Category` filtering additive to mandatory controls, and reduced candidate CI to one isolated aggregate invocation.
 - Rotated governance self-CI and the root contract to immutable Issue #22 implementation commit `b14757f98e6a841c37e48ce023b692f529192f2d` using the two-commit bootstrap process.
 - Rotated governance self-CI, repository templates, examples, and current `1.2.0` declarations to final immutable Issue #21 implementation commit `1ee830403569a7e59a5d193229cd19e210113c56`.

@@ -28,6 +28,7 @@ Core validation commands:
 
 ```powershell
 pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
+pwsh -NoProfile -File scripts/Test-ValidatorDependencies.ps1 -Path . -OutputJson .tmp/validator-dependencies.json
 ```
 
 The aggregate default runs every mandatory maintainer category, including

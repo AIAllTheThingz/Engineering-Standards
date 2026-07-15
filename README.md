@@ -85,6 +85,7 @@ flowchart TD
 - [Downstream Configuration](docs/DOWNSTREAM_CONFIGURATION.md)
 - [Downstream Governance Canary](docs/DOWNSTREAM_CANARY.md)
 - [Action Security](docs/ACTION_SECURITY.md)
+- [Validator Dependency Model](docs/VALIDATOR_DEPENDENCIES.md)
 - [Codex Skill Validation](docs/CODEX_SKILL_VALIDATION.md)
 - [Maintainer Guide](docs/MAINTAINER_GUIDE.md)
 - [Versioning](docs/VERSIONING.md)
@@ -221,6 +222,7 @@ pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/codex-skills-validation.json
+pwsh -NoProfile -File scripts/Test-ValidatorDependencies.ps1 -Path . -OutputJson .tmp/validator-dependencies.json
 ```
 
 See the [Issue #22 coverage matrix](docs/migrations/ISSUE_22_VALIDATION_COVERAGE_MATRIX.md)

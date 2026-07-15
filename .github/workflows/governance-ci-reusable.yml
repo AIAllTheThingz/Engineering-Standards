@@ -37,7 +37,7 @@ permissions:
 jobs:
   governance:
     name: Governance validation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     outputs:
       evidence-path: ${{ steps.evidence_final.outputs.evidence-path }}
@@ -101,7 +101,57 @@ jobs:
           "repository-owner-type=$repositoryOwnerType" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           "artifact-retention-days=$retention" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
-      - name: Record environment information
+      - name: Set up pinned Python
+        id: setup_python
+        continue-on-error: true
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: 3.12.11
+
+      - name: Set up pinned Node
+        id: setup_node
+        continue-on-error: true
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22.17.0
+
+      - name: Set up pinned .NET
+        id: setup_dotnet
+        continue-on-error: true
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1
+        with:
+          dotnet-version: 8.0.411
+
+      - name: Install hash-verified PowerShell runtime
+        id: runtime
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path evidence -Force | Out-Null
+          pwsh -NoProfile -File standards/scripts/Install-ValidatorRuntime.ps1 `
+            -RepositoryPath standards `
+            -PackageCachePath (Join-Path $env:RUNNER_TEMP 'validator-runtime-cache') `
+            -InstallRoot (Join-Path $env:RUNNER_TEMP 'validator-pwsh-7.4.11') `
+            -EvidencePath evidence/runtime-bootstrap.json
+
+      - name: Install pinned validation dependencies
+        id: dependencies
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          validator_pwsh="${VALIDATOR_PWSH:-pwsh}"
+          "$validator_pwsh" -NoProfile -File standards/scripts/Install-ValidatorDependencies.ps1 \
+            -RepositoryPath standards \
+            -PackageCachePath "$RUNNER_TEMP/validator-package-cache" \
+            -ModuleRoot "$RUNNER_TEMP/validator-psmodules" \
+            -PythonPackageRoot "$RUNNER_TEMP/validator-python" \
+            -EvidencePath evidence/dependencies.json \
+            -SbomPath evidence/validator-sbom.cdx.json \
+            -RuntimeEvidencePath evidence/runtime-bootstrap.json
+
+      - name: Record validation environment information
         id: environment
         if: always()
         shell: pwsh
@@ -121,7 +171,8 @@ jobs:
           WORKFLOW_NAME: ${{ github.workflow }}
           RUNNER_OS_NAME: ${{ runner.os }}
         run: |
-          New-Item -ItemType Directory -Path evidence -Force | Out-Null
+          Import-Module ./standards/scripts/ValidatorDependencyTools.psm1 -Force
+          $lock = Import-ValidatorDependencyLock -Path ./standards/.github/dependencies/validator-dependencies.psd1
           [ordered]@{
             callerRepository = $env:CALLER_REPOSITORY
             callerRepositoryOwnerType = $env:CALLER_REPOSITORY_OWNER_TYPE
@@ -138,56 +189,20 @@ jobs:
             runAttempt = $env:RUN_ATTEMPT
             workflow = $env:WORKFLOW_NAME
             runnerOs = $env:RUNNER_OS_NAME
+            runnerLabel = $lock.Runner.Label
+            runnerImageOs = $env:ImageOS
+            runnerImageVersion = $env:ImageVersion
+            runnerArchitecture = $env:RUNNER_ARCH
             governanceVersion = $env:GOVERNANCE_VERSION
-            powerShellVersion = $PSVersionTable.PSVersion.ToString()
             projectPath = $env:PROJECT_PATH
-          } | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath evidence/environment.json -Encoding utf8
-
-      - name: Install pinned validation dependencies
-        id: dependencies
-        continue-on-error: true
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $status = 'Passed'
-          $failure = $null
-          $module = $null
-          $analyzerPackage = Join-Path $env:RUNNER_TEMP 'PSScriptAnalyzer.1.22.0.nupkg'
-          $analyzerHash = '71bfb9eb58e19d4b662f4494a7d572a724b60e0588848dcff34195a0e08ae1be'
-          try {
-            python -m pip install --disable-pip-version-check --no-input --require-hashes -r standards/.github/dependencies/workflow-validation-requirements.txt
-            Invoke-WebRequest -Uri 'https://www.powershellgallery.com/api/v2/package/PSScriptAnalyzer/1.22.0' -OutFile $analyzerPackage -UseBasicParsing
-            $actualHash = (Get-FileHash -LiteralPath $analyzerPackage -Algorithm SHA256).Hash.ToLowerInvariant()
-            if ($actualHash -ne $analyzerHash) { throw "PSScriptAnalyzer package hash mismatch. Expected $analyzerHash but received $actualHash." }
-            $moduleParent = Join-Path $env:RUNNER_TEMP 'psmodules'
-            $moduleRoot = Join-Path $moduleParent 'PSScriptAnalyzer/1.22.0'
-            New-Item -ItemType Directory -Path $moduleRoot -Force | Out-Null
-            Add-Type -AssemblyName System.IO.Compression.FileSystem
-            [System.IO.Compression.ZipFile]::ExtractToDirectory($analyzerPackage, $moduleRoot, $true)
-            $env:PSModulePath = $moduleParent + [System.IO.Path]::PathSeparator + $env:PSModulePath
-            "PSModulePath=$($env:PSModulePath)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-            $manifestPath = Join-Path $moduleRoot 'PSScriptAnalyzer.psd1'
-            if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw 'PSScriptAnalyzer package did not contain its module manifest.' }
-            $module = Import-Module $manifestPath -Force -PassThru
-            if (-not $module -or $module.Version.ToString() -ne '1.22.0') { throw 'Required PSScriptAnalyzer 1.22.0 was not installed.' }
-          }
-          catch {
-            $status = 'Failed'
-            $failure = $_.Exception.Message
-          }
-          [ordered]@{
-            pythonRequirement = 'PyYAML==6.0.2'
-            pythonInstall = 'pip --require-hashes'
-            psscriptAnalyzerPackageSha256 = $analyzerHash
-            psscriptAnalyzerVersion = if ($module) { $module.Version.ToString() } else { $null }
-            status = $status
-            failureReason = $failure
-            installedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
-          } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath evidence/dependencies.json -Encoding utf8
-          if ($status -ne 'Passed') { throw $failure }
+            runtimes = @(Get-ValidatorCommandInventory -Lock $lock)
+            dependencyLockSha256 = Get-ValidatorFileSha256 -Path ./standards/.github/dependencies/validator-dependencies.psd1
+            pythonRequirementsSha256 = Get-ValidatorFileSha256 -Path ./standards/.github/dependencies/workflow-validation-requirements.txt
+          } | ConvertTo-Json -Depth 15 | Set-Content -LiteralPath evidence/environment.json -Encoding utf8
 
       - name: Run trusted governance validation
         id: governance_validation
+        if: steps.setup_python.outcome == 'success' && steps.setup_node.outcome == 'success' && steps.setup_dotnet.outcome == 'success' && steps.runtime.outcome == 'success' && steps.dependencies.outcome == 'success'
         continue-on-error: true
         shell: pwsh
         env:
@@ -226,9 +241,13 @@ jobs:
         run: |
           Import-Module ./standards/scripts/GovernanceValidation.psm1 -Force
           $failure = $null
+          if (Test-Path -LiteralPath evidence/runtime-bootstrap.json -PathType Leaf) {
+            $runtime = Get-Content -LiteralPath evidence/runtime-bootstrap.json -Raw | ConvertFrom-Json
+            if ($runtime.status -in @('Failed','Blocked')) { $failure = [string]$(if($runtime.failureReason){$runtime.failureReason}else{$runtime.blockedReason}) }
+          }
           if (Test-Path -LiteralPath evidence/dependencies.json -PathType Leaf) {
             $dependencies = Get-Content -LiteralPath evidence/dependencies.json -Raw | ConvertFrom-Json
-            if ($dependencies.status -eq 'Failed') { $failure = [string]$dependencies.failureReason }
+            if ($dependencies.status -in @('Failed','Blocked')) { $failure = [string]$(if($dependencies.failureReason){$dependencies.failureReason}else{$dependencies.blockedReason}) }
           }
           Write-GovernanceBootstrapFailureReport `
             -EvidenceRoot ./evidence `
@@ -255,7 +274,7 @@ jobs:
         run: |
           $outcomes = @{ evidence_validation='notrun'; github_execution='notrun' }
           $reports = @{ evidence_validation='evidence/evidence-validation.json'; github_execution='evidence/environment.json' }
-          & ./standards/scripts/New-WorkflowTestEvidence.ps1 -RepositoryPath . -OutputPath evidence/ci-test-results.json -AggregateReportPath evidence/governance-validation.json -Outcomes $outcomes -Reports $reports -Runtime 'GitHub Actions ubuntu-latest / pwsh' -ToolVersion $PSVersionTable.PSVersion.ToString()
+          & ./standards/scripts/New-WorkflowTestEvidence.ps1 -RepositoryPath . -OutputPath evidence/ci-test-results.json -AggregateReportPath evidence/governance-validation.json -Outcomes $outcomes -Reports $reports -Runtime 'GitHub Actions ubuntu-24.04 / pinned pwsh' -ToolVersion $PSVersionTable.PSVersion.ToString()
 
       - name: Generate completion evidence
         id: evidence_initial
@@ -270,7 +289,7 @@ jobs:
           GOVERNANCE_VERSION: ${{ inputs.governance-version }}
         run: |
           $aggregate = Get-Content -LiteralPath evidence/governance-validation.json -Raw | ConvertFrom-Json
-          $artifacts = @('evidence/environment.json','evidence/dependencies.json','evidence/governance-validation.json','evidence/ci-test-results.json')
+          $artifacts = @('evidence/environment.json','evidence/runtime-bootstrap.json','evidence/dependencies.json','evidence/validator-sbom.cdx.json','evidence/governance-validation.json','evidence/ci-test-results.json')
           $artifacts += @('evidence/pester-summary.json','evidence/pester-details.json' | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
           & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath . -SourceRepositoryPath ./caller -OutputPath evidence/completion-result.json -GovernanceVersion $env:GOVERNANCE_VERSION -RiskClassification $aggregate.riskClassification -ExecutionContext GitHubActions -ArtifactName 'governance-evidence-${{ github.run_id }}' -Summary 'Reusable governance workflow generated preliminary caller evidence from trusted standards validators.' -TestResultPath evidence/ci-test-results.json -ArtifactPath $artifacts -CommandsExecuted @('Reusable governance validation') -CommandsNotExecuted @('Final workflow enforcement had not completed when preliminary evidence was generated.') -ValidatedCommitSha $env:CALLER_COMMIT_SHA -Repository $env:CALLER_REPOSITORY -Branch $env:CALLER_REF_NAME -StandardsRepository $env:STANDARDS_REPOSITORY -StandardsWorkflowSha $env:STANDARDS_WORKFLOW_SHA -ValidationProfile $aggregate.validationProfile -ChecksExecuted @($aggregate.checksExecuted)
           'evidence-path=evidence/completion-result.json' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
@@ -295,10 +314,10 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $githubOutcome = if ('${{ steps.governance_validation.outcome }}' -eq 'success' -and '${{ steps.dependencies.outcome }}' -eq 'success') { 'success' } else { 'failure' }
+          $githubOutcome = if ('${{ steps.setup_python.outcome }}' -eq 'success' -and '${{ steps.setup_node.outcome }}' -eq 'success' -and '${{ steps.setup_dotnet.outcome }}' -eq 'success' -and '${{ steps.runtime.outcome }}' -eq 'success' -and '${{ steps.governance_validation.outcome }}' -eq 'success' -and '${{ steps.dependencies.outcome }}' -eq 'success') { 'success' } else { 'failure' }
           $outcomes = @{ evidence_validation='${{ steps.evidence_validation.outcome }}'; github_execution=$githubOutcome }
           $reports = @{ evidence_validation='evidence/evidence-validation.json'; github_execution='evidence/environment.json' }
-          & ./standards/scripts/New-WorkflowTestEvidence.ps1 -RepositoryPath . -OutputPath evidence/ci-test-results.json -AggregateReportPath evidence/governance-validation.json -Outcomes $outcomes -Reports $reports -Runtime 'GitHub Actions ubuntu-latest / pwsh' -ToolVersion $PSVersionTable.PSVersion.ToString()
+          & ./standards/scripts/New-WorkflowTestEvidence.ps1 -RepositoryPath . -OutputPath evidence/ci-test-results.json -AggregateReportPath evidence/governance-validation.json -Outcomes $outcomes -Reports $reports -Runtime 'GitHub Actions ubuntu-24.04 / pinned pwsh' -ToolVersion $PSVersionTable.PSVersion.ToString()
 
       - name: Generate final completion evidence
         id: evidence_final
@@ -313,7 +332,7 @@ jobs:
           GOVERNANCE_VERSION: ${{ inputs.governance-version }}
         run: |
           $aggregate = Get-Content -LiteralPath evidence/governance-validation.json -Raw | ConvertFrom-Json
-          $artifacts = @('evidence/environment.json','evidence/dependencies.json','evidence/governance-validation.json','evidence/ci-test-results.json','evidence/evidence-validation.json')
+          $artifacts = @('evidence/environment.json','evidence/runtime-bootstrap.json','evidence/dependencies.json','evidence/validator-sbom.cdx.json','evidence/governance-validation.json','evidence/ci-test-results.json','evidence/evidence-validation.json')
           $artifacts += @('evidence/pester-summary.json','evidence/pester-details.json' | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
           & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath . -SourceRepositoryPath ./caller -OutputPath evidence/completion-result.json -GovernanceVersion $env:GOVERNANCE_VERSION -RiskClassification $aggregate.riskClassification -ExecutionContext GitHubActions -ArtifactName 'governance-evidence-${{ github.run_id }}' -Summary 'Reusable governance workflow generated final caller evidence from trusted standards validators.' -TestResultPath evidence/ci-test-results.json -ArtifactPath $artifacts -CommandsExecuted @('Reusable governance validation') -CommandsNotExecuted @() -ValidatedCommitSha $env:CALLER_COMMIT_SHA -Repository $env:CALLER_REPOSITORY -Branch $env:CALLER_REF_NAME -StandardsRepository $env:STANDARDS_REPOSITORY -StandardsWorkflowSha $env:STANDARDS_WORKFLOW_SHA -ValidationProfile $aggregate.validationProfile -ChecksExecuted @($aggregate.checksExecuted)
           'evidence-path=evidence/completion-result.json' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append

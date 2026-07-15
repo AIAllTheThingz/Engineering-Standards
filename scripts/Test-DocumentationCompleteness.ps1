@@ -39,6 +39,7 @@ $authoritative = @(
     'docs/DOWNSTREAM_CONFIGURATION.md',
     'docs/GOVERNANCE_ARCHITECTURE.md',
     'docs/ACTION_SECURITY.md',
+    'docs/VALIDATOR_DEPENDENCIES.md',
     'docs/MAINTAINER_GUIDE.md',
     'docs/VERSIONING.md',
     'docs/RELEASE_PROCESS.md',
