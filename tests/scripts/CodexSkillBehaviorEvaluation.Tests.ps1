@@ -15,7 +15,8 @@ BeforeAll {
 Describe 'Controlled Codex skill behavior evaluation' {
     It 'keeps the live adapter authority-complete and malformed output non-retryable' {
         $runner = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorModel.ps1') -Raw
-        $runner | Should -Match "agents/AGENTS_PowerShell\.md"
+        $runner | Should -Match 'inputs\.AuthorityPaths'
+        (Get-CodexBehaviorInput -Path $repoRoot).AuthorityPaths | Should -Contain 'agents/AGENTS_PowerShell.md'
         $runner | Should -Match 'Codex omitted the required structured response.'
         $runner | Should -Match 'MaximumTransportRetries \+ 1'
         $runner | Should -Match 'OverallTimeoutSeconds'
@@ -113,6 +114,18 @@ Describe 'Controlled Codex skill behavior evaluation' {
         }
         $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider $provider -ExecutionMode Live
         $report.caseOutcomes[0].samples[0].responseSha256 | Should -Not -Be ('0' * 64)
+    }
+
+    It 'fails closed into Blocked evidence for a malformed attempt count' {
+        $provider = {
+            param($case, $index, $config)
+            $observation = New-Observation $case $index $config
+            if ($case.caseId -eq 'ep-explicit' -and $index -eq 1) { $observation.attemptCount = 'not-an-integer' }
+            $observation
+        }
+        $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider $provider -ExecutionMode Live
+        $report.status | Should -Be 'Blocked'
+        ($report.caseOutcomes | Where-Object caseId -eq 'ep-explicit').samples[0].failureReason | Should -Match 'MalformedOutput.*attemptCount'
     }
 
     It 'rejects fabricated checked evidence and partial checked evidence' {

@@ -31,11 +31,13 @@ function Get-CodexBehaviorInput {
     $cases = foreach ($file in $corpus) { Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json }
     $skillRoot = Join-Path $root '.agents/skills'
     $skillFiles = @(Get-ChildItem -LiteralPath $skillRoot -File -Recurse | Sort-Object FullName)
+    $authorityPaths = @('AGENTS.md','agents/AGENTS_Base.md','agents/AGENTS_PowerShell.md','governance/RISK_CLASSIFICATION.md','governance/COMPLETION_EVIDENCE.md','governance/EXCEPTION_PROCESS.md','governance/AI_GENERATED_CODE_POLICY.md')
     [pscustomobject]@{
         Root = $root
         Cases = @($cases)
         CorpusPaths = @($corpus | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.FullName) })
         SkillPaths = @($skillFiles | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.FullName) })
+        AuthorityPaths = $authorityPaths
         ConfigurationPath = 'governance/codex-skill-behavior-evaluation.psd1'
         EvaluatorPaths = @('scripts/CodexSkillBehaviorEvaluation.psm1', 'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1', 'scripts/Invoke-CodexSkillBehaviorModel.ps1', 'scripts/Test-CodexSkillBehaviorEvidence.ps1', 'schemas/codex-skill-behavior-evaluation.schema.json', 'schemas/codex-skill-behavior-observation.schema.json')
     }
@@ -75,11 +77,18 @@ function ConvertTo-SanitizedSample {
     if ($Observation.PSObject.Properties.Name -contains 'toolEvents') { $events = @($Observation.toolEvents | Select-Object -First ([int]$Limits.MaximumToolEventsPerSample)) }
     $unsafe = ($Observation.PSObject.Properties.Name -contains 'unsafeToolAccess' -and [bool]$Observation.unsafeToolAccess)
     if ($unsafe) { $status = 'Failed' }
-    $failure = if ($Observation.PSObject.Properties.Name -contains 'failureReason') { $Observation.failureReason } else { $null }
+    $attemptCount = 1
+    $malformedAttemptCount = $false
+    if ($Observation.PSObject.Properties.Name -contains 'attemptCount') {
+        $parsedAttemptCount = 0
+        if (-not [int]::TryParse([string]$Observation.attemptCount, [ref]$parsedAttemptCount) -or $parsedAttemptCount -lt 0) { $status = 'Blocked'; $malformedAttemptCount = $true }
+        else { $attemptCount = $parsedAttemptCount }
+    }
+    $failure = if ($malformedAttemptCount) { 'MalformedOutput: attemptCount must be a nonnegative integer.' } elseif ($Observation.PSObject.Properties.Name -contains 'failureReason') { $Observation.failureReason } else { $null }
     if ($status -ne 'Passed' -and [string]::IsNullOrWhiteSpace([string]$failure)) { $failure = 'The sample did not produce a complete passing observation.' }
     [pscustomobject]@{
         sampleIndex = $SampleIndex
-        attemptCount = if ($Observation.PSObject.Properties.Name -contains 'attemptCount') { [int]$Observation.attemptCount } else { 1 }
+        attemptCount = $attemptCount
         status = $status
         selection = if ($Observation.PSObject.Properties.Name -contains 'selection') { $Observation.selection } else { $null }
         safetyOutcome = if ($Observation.PSObject.Properties.Name -contains 'safetyOutcome') { $Observation.safetyOutcome } else { $null }
@@ -166,6 +175,7 @@ function Invoke-CodexSkillBehaviorEvaluation {
         configurationId = $config.ConfigurationId; configurationHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths @($inputs.ConfigurationPath)
         evaluatorHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.EvaluatorPaths
         corpusHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.CorpusPaths; skillInputHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.SkillPaths
+        authorityHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.AuthorityPaths
         evaluatedCommitSha = $EvaluatedCommitSha; executionMode = $ExecutionMode; probabilistic = $true; deterministicStructureStatus = 'Passed'; status = $overall
         startedAtUtc = $started.ToString('o'); completedAtUtc = [DateTime]::UtcNow.ToString('o')
         model = [pscustomobject]@{ provider = $config.Model.Provider; surface = $config.Model.Surface; modelId = $config.Model.ModelId; reasoningEffort = $config.Model.ReasoningEffort; runnerVersion = $RunnerVersion }

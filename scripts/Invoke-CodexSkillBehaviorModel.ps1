@@ -32,8 +32,7 @@ $codexHome = Join-Path $scratch 'codex-home'
 New-Item -ItemType Directory -Path $workspace,$codexHome -Force | Out-Null
 try {
     Copy-Item -LiteralPath (Join-Path $root '.agents') -Destination $workspace -Recurse
-    Copy-Item -LiteralPath (Join-Path $root 'AGENTS.md') -Destination $workspace
-    foreach ($authority in @('agents/AGENTS_Base.md','agents/AGENTS_PowerShell.md','governance/RISK_CLASSIFICATION.md','governance/COMPLETION_EVIDENCE.md','governance/EXCEPTION_PROCESS.md','governance/AI_GENERATED_CODE_POLICY.md')) {
+    foreach ($authority in $inputs.AuthorityPaths) {
         $destination = Join-Path $workspace $authority
         New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
         Copy-Item -LiteralPath (Join-Path $root $authority) -Destination $destination

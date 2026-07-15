@@ -7,7 +7,7 @@
   "required": [
     "schemaVersion", "evidenceKind", "evaluatorVersion", "scoringContractVersion",
     "configurationId", "configurationHash", "evaluatorHash", "corpusHash", "skillInputHash",
-    "evaluatedCommitSha", "executionMode", "probabilistic", "deterministicStructureStatus",
+    "authorityHash", "evaluatedCommitSha", "executionMode", "probabilistic", "deterministicStructureStatus",
     "status", "startedAtUtc", "completedAtUtc", "model", "sampling", "retryPolicy",
     "isolation", "thresholds", "caseOutcomes", "aggregates", "varianceObservations",
     "humanAdjudication", "decision", "notRunReason", "blockedReason", "warnings", "limitations"
@@ -22,6 +22,7 @@
     "evaluatorHash": { "$ref": "#/$defs/sha256" },
     "corpusHash": { "$ref": "#/$defs/sha256" },
     "skillInputHash": { "$ref": "#/$defs/sha256" },
+    "authorityHash": { "$ref": "#/$defs/sha256" },
     "evaluatedCommitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
     "executionMode": { "enum": ["Live", "Replay"] },
     "probabilistic": { "const": true },
