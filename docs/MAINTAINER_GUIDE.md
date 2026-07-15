@@ -31,6 +31,23 @@ Changes enter through pull requests, issues, security reports, or emergency main
 
 Requests that weaken a mandatory control MUST be treated as exceptions or breaking governance changes. They cannot be merged as routine documentation edits.
 
+## Backlog Stewardship
+
+Planned active work MUST have an authoritative GitHub issue before or in the
+same change that documents it. The issue records the accountable role, assigned
+owner, risk, user value, dependencies, target release or milestone guidance,
+acceptance criteria, required validation and evidence, and rollback. Planning
+documents link to the issue and do not copy volatile status or progress
+checkboxes.
+
+Maintainers review the backlog monthly and before each release candidate. They
+inventory planned work and known limitations, deduplicate against existing
+issues, revisit accepted-risk and non-action decisions, and verify live issue
+assignment through GitHub. Empty skill directories and vague one-line issues do
+not satisfy ownership. Follow [Backlog Management](BACKLOG_MANAGEMENT.md) for
+the normalized backlog, limitation dispositions, priority rules, review
+checklist, and Exception triggers.
+
 ## Review Requirements
 
 Policy changes require review from a governance maintainer. Schema changes require valid and invalid fixtures. Validator changes require Pester tests. Workflow changes require action pin review, permission review, evidence review, and artifact behavior review.
@@ -176,6 +193,7 @@ Expired exceptions must be removed, renewed, or converted into tracked remediati
 - `docs/RELEASE_PROCESS.md`
 - `docs/ACTION_SECURITY.md`
 - `docs/VALIDATOR_DEPENDENCIES.md`
+- `docs/BACKLOG_MANAGEMENT.md`
 - `governance/EXCEPTION_PROCESS.md`
 - `governance/COMPLETION_EVIDENCE.md`
 - `docs/TROUBLESHOOTING.md`

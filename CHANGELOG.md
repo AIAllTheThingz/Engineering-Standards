@@ -6,6 +6,9 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
+- Added the Issue #24 owned remediation backlog model, periodic review
+  checklist, known-limitation dispositions, and normalized issues #42 through
+  #49 for controlled skill evaluation and the seven remaining planned skills.
 - Added the Issue #23 validator dependency model, exact runtime and package lock,
   hash-verifying online/offline installers, CycloneDX inventory, environment
   provenance evidence, and missing/tampered dependency regression coverage.
@@ -20,6 +23,9 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Changed
 
+- Replaced the prose-only planned Codex skill sequence with authoritative issue
+  links, accountable roles, risk classifications, dependency guidance, and
+  target release guidance.
 - Replaced release-critical `ubuntu-latest` jobs with `ubuntu-24.04`, pinned
   Python, Node, .NET, and PowerShell versions, centralized Pester,
   PSScriptAnalyzer, and PyYAML installation, and added weekly pip dependency

@@ -87,6 +87,7 @@ flowchart TD
 - [Action Security](docs/ACTION_SECURITY.md)
 - [Validator Dependency Model](docs/VALIDATOR_DEPENDENCIES.md)
 - [Codex Skill Validation](docs/CODEX_SKILL_VALIDATION.md)
+- [Backlog Management](docs/BACKLOG_MANAGEMENT.md)
 - [Maintainer Guide](docs/MAINTAINER_GUIDE.md)
 - [Versioning](docs/VERSIONING.md)
 - [Release Process](docs/RELEASE_PROCESS.md)

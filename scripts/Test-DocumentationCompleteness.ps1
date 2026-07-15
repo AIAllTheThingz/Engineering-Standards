@@ -40,6 +40,7 @@ $authoritative = @(
     'docs/GOVERNANCE_ARCHITECTURE.md',
     'docs/ACTION_SECURITY.md',
     'docs/VALIDATOR_DEPENDENCIES.md',
+    'docs/BACKLOG_MANAGEMENT.md',
     'docs/MAINTAINER_GUIDE.md',
     'docs/VERSIONING.md',
     'docs/RELEASE_PROCESS.md',
@@ -135,6 +136,34 @@ foreach ($file in $allMarkdown) {
     }
     if ($rel -notlike 'templates/*') {
         foreach ($item in @(Test-EmptyMarkdownHeading -Text $text -RelativePath $rel)) { $results.Add($item) }
+    }
+}
+
+$skillPlanRelativePath = 'docs/CODEX_SKILLS.md'
+$skillPlanPath = Join-Path $root $skillPlanRelativePath
+if (Test-Path -LiteralPath $skillPlanPath -PathType Leaf) {
+    $skillPlanText = Get-Content -LiteralPath $skillPlanPath -Raw
+    $plannedSkills = @(
+        'powershell-review',
+        'build-pester-tests',
+        'safe-automation',
+        'governance-validation',
+        'completion-evidence',
+        'vendor-documentation-analysis',
+        'infrastructure-automation-design'
+    )
+
+    foreach ($skill in $plannedSkills) {
+        $escapedSkill = [regex]::Escape($skill)
+        $issueLinkedRow = "(?m)^\|[^\r\n]*$escapedSkill[^\r\n]*\[#(?<issue>\d+)\]\(https://github\.com/AIAllTheThingz/Engineering-Standards/issues/\k<issue>\)[^\r\n]*\|\s*$"
+        if ([regex]::Matches($skillPlanText, $issueLinkedRow).Count -ne 1) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Planned skill '$skill' must appear exactly once in an authoritative GitHub issue-linked table row." -Path $skillPlanRelativePath))
+        }
+
+        $proseOnlyPattern = "(?m)^\s*(?:\d+\.|[-*]\s+\[[ xX]\])\s+``?$escapedSkill``?\s*$"
+        if ($skillPlanText -match $proseOnlyPattern) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Planned skill '$skill' is represented by a prose-only numbered or unchecked list item." -Path $skillPlanRelativePath))
+        }
     }
 }
 
