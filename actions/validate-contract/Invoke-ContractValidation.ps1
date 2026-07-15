@@ -13,6 +13,22 @@ Governance config path relative to repository root.
 Optional JSON report.
 .PARAMETER Advisory
 Return success while preserving findings.
+.PARAMETER ExpectedRepository
+Trusted owner/name repository identity, when available.
+.PARAMETER ExpectedStandardsRepository
+Trusted owner/name repository identity that supplied the standards workflow, when available.
+.PARAMETER RepositoryOwnerType
+Trusted repository owner type. Unknown performs structural-only owner-type validation.
+.PARAMETER ExpectedGovernanceCommitSha
+Trusted immutable standards commit SHA, when available.
+.PARAMETER ExpectedWorkflowInterfaceVersion
+Trusted workflow interface version, when available.
+.PARAMETER ExpectedWorkflowProfile
+Trusted workflow validation profile, when available.
+.PARAMETER ExpectedRequiredCheckName
+Trusted required check name, when available.
+.PARAMETER ValidationDateUtc
+UTC date used for deterministic exception expiration checks.
 #>
 [CmdletBinding()]
 param(
@@ -20,6 +36,14 @@ param(
     [string]$ManifestPath = 'project-manifest.json',
     [string]$ConfigPath = 'governance.config.json',
     [string]$OutputJson,
+    [string]$ExpectedRepository,
+    [string]$ExpectedStandardsRepository,
+    [ValidateSet('Unknown','User','Organization')][string]$RepositoryOwnerType = 'Unknown',
+    [string]$ExpectedGovernanceCommitSha,
+    [string]$ExpectedWorkflowInterfaceVersion,
+    [string]$ExpectedWorkflowProfile,
+    [string]$ExpectedRequiredCheckName,
+    [datetime]$ValidationDateUtc = [datetime]::UtcNow,
     [switch]$Advisory
 )
 
@@ -59,6 +83,10 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
     $manifest = Read-JsonFile -Path $manifestFull
     $config = Read-JsonFile -Path $configFull
 
+    foreach ($item in @(Test-GovernanceContractSemantics -Root $root -Manifest $manifest -Config $config -ExpectedRepository $ExpectedRepository -ExpectedStandardsRepository $ExpectedStandardsRepository -RepositoryOwnerType $RepositoryOwnerType -ExpectedGovernanceCommitSha $ExpectedGovernanceCommitSha -ExpectedWorkflowInterfaceVersion $ExpectedWorkflowInterfaceVersion -ExpectedWorkflowProfile $ExpectedWorkflowProfile -ExpectedRequiredCheckName $ExpectedRequiredCheckName -ValidationDateUtc $ValidationDateUtc)) {
+        $results.Add($item)
+    }
+
     foreach ($doc in @($config.requiredDocumentationPaths)) {
         try {
             $resolved = Resolve-SafePath -Root $root -ChildPath $doc
@@ -73,9 +101,18 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
 
     foreach ($standard in @($config.applicableAgentStandards + $manifest.applicableStandards | Select-Object -Unique)) {
         try {
-            $resolved = Resolve-SafePath -Root $root -ChildPath $standard -AllowMissingLeaf
-            $centralResolved = Resolve-SafePath -Root $standardsRoot -ChildPath $standard -AllowMissingLeaf
-            if (-not ((Test-Path -LiteralPath $resolved -PathType Leaf) -or (Test-Path -LiteralPath $centralResolved -PathType Leaf))) {
+            if ($manifest.schemaVersion -eq '1.2.0') {
+                $standardsMode = [string]$manifest.standardsConsumption.mode
+                $authoritativeCheckout = if ($standardsMode -eq 'central-reference') { $standardsRoot } else { $root }
+                $resolved = Resolve-SafePath -Root $authoritativeCheckout -ChildPath $standard -AllowMissingLeaf
+                $present = Test-Path -LiteralPath $resolved -PathType Leaf
+            }
+            else {
+                $resolved = Resolve-SafePath -Root $root -ChildPath $standard -AllowMissingLeaf
+                $centralResolved = Resolve-SafePath -Root $standardsRoot -ChildPath $standard -AllowMissingLeaf
+                $present = (Test-Path -LiteralPath $resolved -PathType Leaf) -or (Test-Path -LiteralPath $centralResolved -PathType Leaf)
+            }
+            if (-not $present) {
                 $results.Add((New-ValidationResult -Status Failed -Message 'Applicable agent standard missing.' -Path $standard))
             }
         }
@@ -85,22 +122,25 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
     }
 
     try {
-        $completionEvidence = Resolve-SafePath -Root $root -ChildPath $manifest.evidence.completionEvidencePath -AllowMissingLeaf
-        $testEvidence = Resolve-SafePath -Root $root -ChildPath $manifest.evidence.testEvidencePath -AllowMissingLeaf
+        $completionEvidencePath = if ($manifest.schemaVersion -eq '1.2.0') { $manifest.evidence.local.completion } else { $manifest.evidence.completionEvidencePath }
+        $testEvidencePath = if ($manifest.schemaVersion -eq '1.2.0') { $manifest.evidence.local.tests } else { $manifest.evidence.testEvidencePath }
+        $completionEvidence = Resolve-SafePath -Root $root -ChildPath $completionEvidencePath -AllowMissingLeaf
+        $testEvidence = Resolve-SafePath -Root $root -ChildPath $testEvidencePath -AllowMissingLeaf
         if (-not $completionEvidence.EndsWith('.json', [StringComparison]::OrdinalIgnoreCase)) {
-            $results.Add((New-ValidationResult -Status Failed -Message 'Completion evidence path must target a JSON file.' -Path $manifest.evidence.completionEvidencePath))
+            $results.Add((New-ValidationResult -Status Failed -Message 'Completion evidence path must target a JSON file.' -Path $completionEvidencePath))
         }
         if (-not $testEvidence.EndsWith('.json', [StringComparison]::OrdinalIgnoreCase)) {
-            $results.Add((New-ValidationResult -Status Failed -Message 'Test evidence path must target a JSON file.' -Path $manifest.evidence.testEvidencePath))
+            $results.Add((New-ValidationResult -Status Failed -Message 'Test evidence path must target a JSON file.' -Path $testEvidencePath))
         }
     }
     catch {
         $results.Add((New-ValidationResult -Status Failed -Message $_.Exception.Message -Path 'project-manifest.json'))
     }
 
-    foreach ($exception in @($manifest.exceptions + $config.exceptions | Select-Object -Unique)) {
-        if ($exception -notmatch '^GOV-[A-Z0-9-]+$') {
-            $results.Add((New-ValidationResult -Status Failed -Message "Invalid exception reference '$exception'." -Path $ConfigPath))
+    foreach ($exception in @($manifest.exceptions + $config.exceptions)) {
+        $identifier = if ($exception -is [string]) { $exception } else { $exception.identifier }
+        if ($identifier -notmatch '^GOV-[A-Z0-9-]+$') {
+            $results.Add((New-ValidationResult -Status Failed -Message "Invalid exception reference '$identifier'." -Path $ConfigPath))
         }
     }
 

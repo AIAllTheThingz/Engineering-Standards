@@ -568,6 +568,9 @@ if ($workflows.ContainsKey($reusable)) {
     if (@($callGraph[$reusable]).Count -gt 0) {
         $results.Add((New-ValidationResult -Status Failed -Message 'Reusable governance workflow must not call another reusable workflow.' -Path $reusable))
     }
+    if (-not $workflows[$reusable].ContainsKey('permissions') -or $workflows[$reusable].permissions -isnot [hashtable] -or $workflows[$reusable].permissions.Count -ne 1 -or [string]$workflows[$reusable].permissions.contents -ne 'read') {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Reusable governance workflow permissions must be exactly contents: read.' -Path $reusable))
+    }
     $requiredInputs = @('project-path','governance-version','artifact-retention-days')
     foreach ($inputName in $requiredInputs) {
         if (-not $workflowInputs[$reusable].ContainsKey($inputName)) {
@@ -584,6 +587,9 @@ if ($workflows.ContainsKey($reusable)) {
         elseif ($callerCheckout[0].with.repository -ne '${{ github.repository }}' -or $callerCheckout[0].with.ref -ne '${{ github.sha }}' -or $callerCheckout[0].with.path -ne 'caller') {
             $results.Add((New-ValidationResult -Status Failed -Message 'Caller checkout must explicitly use github.repository, github.sha, and the caller workspace.' -Path $reusable))
         }
+        if ($callerCheckout.Count -eq 1 -and [string]$callerCheckout[0].with['fetch-depth'] -ne '0') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Caller checkout must fetch full history so evidence validatedCommitSha objects can be verified.' -Path $reusable))
+        }
         if ($standardsCheckout.Count -ne 1 -or $standardsCheckout[0].uses -notmatch '^actions/checkout@[a-fA-F0-9]{40}$') {
             $results.Add((New-ValidationResult -Status Failed -Message 'Reusable workflow must contain one SHA-pinned trusted standards checkout.' -Path $reusable))
         }
@@ -592,6 +598,25 @@ if ($workflows.ContainsKey($reusable)) {
         }
         if ($workflowInputs[$reusable].ContainsKey('standards-repository') -or $workflowInputs[$reusable].ContainsKey('standards-sha') -or $workflowInputs[$reusable].ContainsKey('standards-ref')) {
             $results.Add((New-ValidationResult -Status Failed -Message 'Callers must not be able to override the standards repository or workflow SHA.' -Path $reusable))
+        }
+        if ($workflowInputs[$reusable].ContainsKey('repository-owner-type')) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Callers must not be able to supply or override the trusted repository owner type.' -Path $reusable))
+        }
+        $identitySteps = @($governanceSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Validate workflow identity and inputs' })
+        if ($identitySteps.Count -ne 1 -or $identitySteps[0].env -isnot [hashtable] -or [string]$identitySteps[0].env.CALLER_REPOSITORY_OWNER_TYPE -ne '${{ github.event.repository.owner.type }}') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Reusable workflow must read repository owner type from trusted github.event.repository.owner.type context.' -Path $reusable))
+        }
+        elseif ([string]$identitySteps[0].run -notmatch 'switch\s+-CaseSensitive\s+\(\$env:CALLER_REPOSITORY_OWNER_TYPE\)' -or
+            [string]$identitySteps[0].run -notmatch "'User'\s*\{\s*'User'" -or
+            [string]$identitySteps[0].run -notmatch "'Organization'\s*\{\s*'Organization'" -or
+            [string]$identitySteps[0].run -notmatch "default\s*\{\s*'Unknown'" -or
+            [string]$identitySteps[0].run -notmatch 'repository-owner-type=\$repositoryOwnerType') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Reusable workflow must normalize only exact User or Organization owner types and map every other value to Unknown.' -Path $reusable))
+        }
+        $validationSteps = @($governanceSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Run trusted governance validation' })
+        if ($validationSteps.Count -ne 1 -or $validationSteps[0].env -isnot [hashtable] -or [string]$validationSteps[0].env.CALLER_REPOSITORY_OWNER_TYPE -ne '${{ steps.inputs.outputs.repository-owner-type }}' -or
+            [string]$validationSteps[0].run -notmatch '(?m)^\s*-RepositoryOwnerType\s+\$env:CALLER_REPOSITORY_OWNER_TYPE\s+`?\s*$') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Reusable workflow must pass the normalized trusted repository owner type to Invoke-GovernanceValidation.ps1.' -Path $reusable))
         }
         if ($workflowInputs[$reusable].ContainsKey('run-examples') -or $workflowInputs[$reusable].ContainsKey('run-pester') -or $workflowInputs[$reusable].ContainsKey('run-documentation-validation')) {
             $results.Add((New-ValidationResult -Status Failed -Message 'Misleading mandatory-true compatibility inputs must not be exposed.' -Path $reusable))

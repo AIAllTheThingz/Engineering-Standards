@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aiallthethingz.example/engineering-standards/standards-consistency.schema.json",
+  "$id": "urn:aiallthethingz:engineering-standards:schema:standards-consistency",
   "title": "Standards Consistency Matrix",
   "type": "object",
   "additionalProperties": false,

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.2.0",
+  "projectName": "Synthetic Organization Repository",
+  "repository": "ExampleOrg/synthetic-repository",
+  "description": "Synthetic organization-owned repository used to validate team ownership semantics.",
+  "projectType": "integration",
+  "technologies": ["integration"],
+  "governanceVersion": "1.1.0",
+  "governanceCommitSha": "2222222222222222222222222222222222222222",
+  "workflowInterfaceVersion": "1.0.0",
+  "repositoryOwnerType": "Organization",
+  "riskClassification": "High",
+  "dataClassification": "Internal",
+  "owners": [{
+    "type": "github-team",
+    "identifier": "@ExampleOrg/platform-governance",
+    "responsibility": "Owns governance contract review for the synthetic organization repository.",
+    "escalation": "SECURITY.md"
+  }],
+  "environments": [{"name": "test", "type": "test", "production": false}],
+  "applicableStandards": ["agents/AGENTS_Base.md", "agents/AGENTS_Integration.md"],
+  "standardsConsumption": {"mode": "central-reference", "sourceRepository": "AIAllTheThingz/Engineering-Standards", "sourceCommitSha": "2222222222222222222222222222222222222222"},
+  "requiredWorkflows": ["governance"],
+  "externalIntegrations": [],
+  "secretsProvider": "none-required",
+  "productionApprovalRequired": true,
+  "evidence": {
+    "local": {"completion": "evidence/local-completion-result.json", "tests": "evidence/local-test-results.json"},
+    "hosted": {"workspace": "evidence", "completion": "completion-result.json", "tests": "ci-test-results.json", "artifactNamePattern": "governance-evidence-${run_id}"}
+  },
+  "exceptions": []
+}

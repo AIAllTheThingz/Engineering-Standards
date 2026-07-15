@@ -49,9 +49,9 @@ The manifest describes the system. The governance configuration describes how co
 
 ## Manifest Setup
 
-Create `project-manifest.json` from the repository template, then replace every example value with repository-specific facts. Set `projectName`, `repository`, `description`, `governanceVersion`, `riskClassification`, `applicableStandards`, `owners`, evidence paths, and exceptions.
+Create `project-manifest.json` from the repository template, then replace every example value with repository-specific facts. For schema `1.2.0`, set `governanceVersion` to the semantic release, `governanceCommitSha` to the exact workflow pin, `workflowInterfaceVersion` to `1.0.0`, and declare structured owners, standards consumption, local/hosted evidence, and structured exceptions.
 
-Owners MUST be real people, teams, or service ownership aliases. Evidence paths MUST point to files or directories produced by validation. Exceptions MUST reference approved `GOV-*` records and must not be used as a general backlog marker.
+Owners MUST be real people or teams with stable GitHub identifiers, substantive responsibility, and escalation. Email contacts are informational and cannot be the only enforceable owner. Evidence declarations MUST distinguish caller-local files from hosted workflow artifacts. Exceptions MUST be active structured `GOV-*` records and must not be used as a general backlog marker.
 
 ## Configuration Setup
 
@@ -146,9 +146,10 @@ Adoption MUST NOT use exceptions to hide missing ownership, absent evidence, dis
 Run the local governance validation before requesting review:
 
 ```powershell
+$RepositoryOwnerType = 'Organization' # Replace only with GitHub's verified User or Organization owner type.
 pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path .
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Category JsonSchemas,YamlSyntax,WorkflowArchitecture,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType $RepositoryOwnerType -Category JsonSchemas,YamlSyntax,WorkflowArchitecture,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
 ```
 
 For downstream repositories, run the reusable workflow in GitHub Actions and attach the uploaded governance evidence artifact. Technology repositories MUST also run their build, lint, test, migration, security, or deployment dry-run checks.

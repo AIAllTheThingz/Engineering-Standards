@@ -1,0 +1,5 @@
+{
+  "name": "Mismatched applicable standards",
+  "expectedFinding": "GCS006",
+  "mutation": "mismatched-standards"
+}

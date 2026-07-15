@@ -1,0 +1,5 @@
+{
+  "name": "Hosted evidence artifact mismatch",
+  "expectedFinding": "GCS009",
+  "mutation": "hosted-evidence-path-mismatch"
+}

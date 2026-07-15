@@ -19,6 +19,13 @@ Maintainers MUST keep central templates aligned with schemas, governance documen
 
 ## Repository Templates
 
+Repository manifest and governance-configuration templates use contract
+`1.2.0`. Replace the repository identity and owner records, but keep
+`governanceVersion`, immutable `governanceCommitSha`, and
+`workflowInterfaceVersion` distinct. Select `central-reference`, `vendored`, or
+`local` standards consumption deliberately, and keep local evidence paths
+separate from hosted workflow evidence declarations.
+
 Repository templates provide starting points for `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `AGENTS.md`, `project-manifest.json`, and `governance.config.json`. They must prompt for purpose, owners, risk, evidence, validation commands, rollback, security reporting, and exceptions.
 
 Generated repository files MUST replace placeholders, remove template notes, and include real commands.

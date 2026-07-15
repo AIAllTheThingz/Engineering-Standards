@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aiallthethingz.example/engineering-standards/artifact-record.schema.json",
+  "$id": "urn:aiallthethingz:engineering-standards:schema:artifact-record",
   "title": "Artifact Record",
   "type": "object",
   "additionalProperties": false,

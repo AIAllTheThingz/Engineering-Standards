@@ -1,5 +1,15 @@
 Set-StrictMode -Version Latest
 
+$script:GovernanceSchemaVersionsByKind = [ordered]@{
+    'completion-result'     = @('1.0.0', '1.1.0')
+    'test-evidence'         = @('1.0.0', '1.1.0')
+    'artifact-record'       = @('1.0.0', '1.1.0')
+    'project-manifest'      = @('1.0.0', '1.1.0', '1.2.0')
+    'governance-config'     = @('1.0.0', '1.1.0', '1.2.0')
+    'verified-run'          = @('1.0.0')
+    'standards-consistency' = @('1.0.0')
+}
+
 function New-ValidationResult {
     <#
     .SYNOPSIS
@@ -69,6 +79,107 @@ function Get-JsonMemberValue {
     }
     if ($InputObject.PSObject.Properties.Name -contains $Name) { return $InputObject.$Name }
     return $null
+}
+
+function Test-StructuredOwnerIdentifier {
+    [CmdletBinding()]
+    param(
+        [AllowNull()][object]$Type,
+        [AllowNull()][object]$Identifier
+    )
+
+    $ownerType = [string]$Type
+    $ownerIdentifier = [string]$Identifier
+    switch -CaseSensitive ($ownerType) {
+        'github-user' {
+            return $ownerIdentifier -cmatch '^@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$'
+        }
+        'github-team' {
+            return $ownerIdentifier -cmatch '^@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$'
+        }
+        'email-contact' {
+            return $ownerIdentifier -cmatch '^[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+        }
+        default {
+            return $false
+        }
+    }
+}
+
+function Test-ExactStringSet {
+    [CmdletBinding()]
+    param(
+        [AllowNull()][object[]]$Actual,
+        [Parameter(Mandatory)][string[]]$Expected
+    )
+
+    $actualValues = @($Actual)
+    if ($actualValues.Count -ne $Expected.Count) { return $false }
+
+    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($value in $actualValues) {
+        if ($value -isnot [string] -or [string]::IsNullOrWhiteSpace([string]$value) -or -not $seen.Add([string]$value)) {
+            return $false
+        }
+    }
+
+    $expectedValues = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($requiredValue in $Expected) {
+        if ([string]::IsNullOrWhiteSpace($requiredValue) -or -not $expectedValues.Add($requiredValue) -or -not $seen.Contains($requiredValue)) { return $false }
+    }
+    return $true
+}
+
+function Get-RequiredCheckNameContractIssues {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][System.Collections.IDictionary]$Wrapper,
+        [Parameter(Mandatory)][string]$Name
+    )
+
+    [object]$Value = $null
+    if ($Wrapper.Contains('Value') -and -not [object]::ReferenceEquals($null, $Wrapper['Value'])) {
+        $Value = $Wrapper['Value']
+    }
+    if ($null -eq $Value -or $Value -is [string] -or $Value -isnot [System.Collections.IList]) {
+        return @("$Name must be a nonempty array.")
+    }
+
+    if ($Value.Count -eq 0) {
+        return @("$Name must be a nonempty array.")
+    }
+
+    $issues = [System.Collections.Generic.List[string]]::new()
+    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    for ($index = 0; $index -lt $Value.Count; $index++) {
+        $valueItem = $Value[$index]
+        if ($null -eq $valueItem -or $valueItem -isnot [string]) {
+            $issues.Add("$Name members must be non-null strings.")
+            continue
+        }
+        if ([string]::IsNullOrWhiteSpace($valueItem)) {
+            $issues.Add("$Name members must not be blank.")
+            continue
+        }
+        if ($valueItem.Length -lt 3 -or $valueItem.Length -gt 160) {
+            $issues.Add("$Name members must be between 3 and 160 characters.")
+        }
+        if (-not $seen.Add($valueItem)) {
+            $issues.Add("$Name members must be unique using ordinal, case-sensitive comparison.")
+        }
+    }
+    $issues.ToArray()
+}
+
+function Get-CanonicalMaintainerRequiredCheckNames {
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param()
+
+    @(
+        'Governance / Governance validation'
+        'Candidate implementation validation / Candidate implementation validation'
+    )
 }
 
 function Write-ValidationReport {
@@ -157,6 +268,29 @@ function Resolve-SafePath {
     $candidateFull
 }
 
+function Test-ExactRepositoryPathCasing {
+    <#
+    .SYNOPSIS
+    Confirms that every declared path segment matches the filesystem entry exactly.
+    .DESCRIPTION
+    Prevents case-insensitive filesystems from silently resolving a declaration
+    to a differently cased standards path than the manifest recorded.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Root,
+        [Parameter(Mandatory)][string]$ChildPath
+    )
+
+    $current = (Resolve-Path -LiteralPath $Root).Path
+    foreach ($segment in @($ChildPath -split '[\\/]' | Where-Object { $_ -and $_ -ne '.' })) {
+        $exact = @(Get-ChildItem -LiteralPath $current -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ceq $segment })
+        if ($exact.Count -ne 1) { return $false }
+        $current = $exact[0].FullName
+    }
+    return $true
+}
+
 function Test-RelativeRepositoryPath {
     <#
     .SYNOPSIS
@@ -175,10 +309,15 @@ function Test-RelativeRepositoryPath {
         $results.Add((New-ValidationResult -Status Failed -Message "$Name must not be empty." -Path $Path))
         return @($results)
     }
-    if ([System.IO.Path]::IsPathRooted($Value) -or $Value -match '(^|[\\/])\.\.([\\/]|$)') {
+    if (
+        [System.IO.Path]::IsPathRooted($Value) -or
+        $Value -cmatch '^[A-Za-z]:' -or
+        $Value -cmatch '^[\\/]' -or
+        $Value.Contains('..')
+    ) {
         $results.Add((New-ValidationResult -Status Failed -Message "$Name must be a relative path that does not traverse outside the repository." -Path $Path))
     }
-    if ($RequiredExtension -and -not $Value.EndsWith($RequiredExtension, [StringComparison]::OrdinalIgnoreCase)) {
+    if ($RequiredExtension -and -not $Value.EndsWith($RequiredExtension, [StringComparison]::Ordinal)) {
         $results.Add((New-ValidationResult -Status Failed -Message "$Name must end with '$RequiredExtension'." -Path $Path))
     }
     @($results)
@@ -268,8 +407,61 @@ function Test-GovernanceJsonDocument {
     }
     if ($results.Count -gt 0) { return @($results) }
 
-    if (@('1.0.0','1.1.0') -notcontains $json.schemaVersion) {
-        $results.Add((New-ValidationResult -Status Failed -Message "Unsupported schemaVersion '$($json.schemaVersion)'." -Path $Path))
+    $supportedSchemaVersions = @($script:GovernanceSchemaVersionsByKind[$Kind])
+    $hasSupportedSchemaVersion = @($supportedSchemaVersions | Where-Object {
+        [string]::Equals([string]$_, [string]$json.schemaVersion, [System.StringComparison]::Ordinal)
+    }).Count -eq 1
+    if (-not $hasSupportedSchemaVersion) {
+        $results.Add((New-ValidationResult -Status Failed -Message "Unsupported schemaVersion '$($json.schemaVersion)' for governance document kind '$Kind'. Supported versions: $($supportedSchemaVersions -join ', ')." -Path $Path))
+    }
+    if ($json.schemaVersion -ceq '1.2.0' -and $Kind -in @('project-manifest', 'governance-config')) {
+        $collectionRules = if ($Kind -ceq 'project-manifest') {
+            @(
+                @{ Name='technologies'; Minimum=1 },
+                @{ Name='owners'; Minimum=1 },
+                @{ Name='environments'; Minimum=0 },
+                @{ Name='applicableStandards'; Minimum=1 },
+                @{ Name='requiredWorkflows'; Minimum=0 },
+                @{ Name='externalIntegrations'; Minimum=0 },
+                @{ Name='exceptions'; Minimum=0 }
+            )
+        }
+        else {
+            @(
+                @{ Name='requiredDocumentationPaths'; Minimum=1 },
+                @{ Name='applicableAgentStandards'; Minimum=1 },
+                @{ Name='validationCategories'; Minimum=1 },
+                @{ Name='additionalForbiddenPatterns'; Minimum=0 },
+                @{ Name='reviewedAllowlist'; Minimum=0 },
+                @{ Name='exceptions'; Minimum=0 }
+            )
+        }
+        foreach ($rule in $collectionRules) {
+            $collectionValue = $json[$rule.Name]
+            $isArray = $collectionValue -is [System.Collections.IList] -and $collectionValue -isnot [string]
+            if (-not $isArray) {
+                $results.Add((New-ValidationResult -Status Failed -Message "$($rule.Name) must be declared as an array." -Path $Path))
+            }
+            elseif ($collectionValue.Count -lt $rule.Minimum) {
+                $results.Add((New-ValidationResult -Status Failed -Message "$($rule.Name) must be declared as a nonempty array." -Path $Path))
+            }
+        }
+        if ($Kind -ceq 'governance-config') {
+            $controlsValue = $json['controls']
+            if ($controlsValue -isnot [System.Collections.IDictionary]) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'controls must be declared as an object.' -Path $Path))
+            }
+            else {
+                [object]$disabledControlsValue = $null
+                if ($controlsValue.Contains('mandatoryControlsDisabled')) {
+                    $disabledControlsValue = $controlsValue['mandatoryControlsDisabled']
+                }
+                if ($disabledControlsValue -is [string] -or $disabledControlsValue -isnot [System.Collections.IList]) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'controls.mandatoryControlsDisabled must be declared as an array.' -Path $Path))
+                }
+            }
+        }
+        if (@($results | Where-Object status -eq 'Failed').Count -gt 0) { return @($results) }
     }
     if ($json.ContainsKey('status') -and $statuses -notcontains $json.status) {
         $results.Add((New-ValidationResult -Status Failed -Message "Unknown status '$($json.status)'." -Path $Path))
@@ -376,12 +568,19 @@ function Test-GovernanceJsonDocument {
     }
 
     if ($Kind -eq 'governance-config') {
+        if ($json.schemaVersion -eq '1.2.0') {
+            foreach ($name in @('governanceVersion','governanceCommitSha','workflowInterfaceVersion','workflowProfile','workflowInterface','requiredCheckNames')) {
+                if (-not $json.ContainsKey($name)) { $results.Add((New-ValidationResult -Status Failed -Message "Missing required 1.2.0 property '$name'." -Path $Path)) }
+            }
+            if ($json.ContainsKey('workflowProfile') -and $json.workflowProfile -notin @('downstream','standards-maintainer')) { $results.Add((New-ValidationResult -Status Failed -Message "Unsupported workflowProfile '$($json.workflowProfile)'." -Path $Path)) }
+            if ($json.ContainsKey('governanceCommitSha') -and $json.governanceCommitSha -notmatch '^[A-Fa-f0-9]{40}$') { $results.Add((New-ValidationResult -Status Failed -Message 'governanceCommitSha must be a full 40-character commit SHA.' -Path $Path)) }
+        }
         foreach ($item in @(Test-RelativeRepositoryPath -Value $json.manifestPath -Name 'manifestPath' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
         foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidencePath -Name 'evidencePath' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.requiredDocumentationPaths) -Name 'requiredDocumentationPaths' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.applicableAgentStandards) -Name 'applicableAgentStandards' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.validationCategories) -Name 'validationCategories' -Path $Path)) { $results.Add($item) }
-        $supportedValidationCategories = @('Contract','JsonSchemas','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','WorkflowArchitecture')
+        $supportedValidationCategories = @('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')
         foreach ($category in @($json.validationCategories)) {
             if ($category -notin $supportedValidationCategories) {
                 $results.Add((New-ValidationResult -Status Failed -Message "validationCategories contains unsupported value '$category'." -Path $Path))
@@ -422,7 +621,7 @@ function Test-GovernanceJsonDocument {
             if (-not $disabled.exceptionReference -or $disabled.exceptionReference -notmatch '^GOV-[A-Z0-9-]+$') {
                 $results.Add((New-ValidationResult -Status Failed -Message "Mandatory control '$($disabled.control)' lacks a valid exception reference." -Path $Path))
             }
-            elseif (@($json.exceptions) -notcontains $disabled.exceptionReference) {
+            elseif (@($json.exceptions | ForEach-Object { if ($_ -is [string]) { $_ } else { $_.identifier } }) -notcontains $disabled.exceptionReference) {
                 $results.Add((New-ValidationResult -Status Failed -Message "Mandatory control '$($disabled.control)' references exception '$($disabled.exceptionReference)' that is not listed in exceptions." -Path $Path))
             }
         }
@@ -438,6 +637,13 @@ function Test-GovernanceJsonDocument {
     }
 
     if ($Kind -eq 'project-manifest') {
+        if ($json.schemaVersion -eq '1.2.0') {
+            foreach ($name in @('governanceCommitSha','workflowInterfaceVersion','repositoryOwnerType','standardsConsumption')) {
+                if (-not $json.ContainsKey($name)) { $results.Add((New-ValidationResult -Status Failed -Message "Missing required 1.2.0 property '$name'." -Path $Path)) }
+            }
+            if ($json.ContainsKey('governanceCommitSha') -and $json.governanceCommitSha -notmatch '^[A-Fa-f0-9]{40}$') { $results.Add((New-ValidationResult -Status Failed -Message 'governanceCommitSha must be a full 40-character commit SHA.' -Path $Path)) }
+            if ($json.ContainsKey('workflowInterfaceVersion') -and $json.workflowInterfaceVersion -notmatch '^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$') { $results.Add((New-ValidationResult -Status Failed -Message 'workflowInterfaceVersion must use semantic version format.' -Path $Path)) }
+        }
         if ($json.governanceVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$') {
             $results.Add((New-ValidationResult -Status Failed -Message 'Governance version must be semantic version format.' -Path $Path))
         }
@@ -448,9 +654,38 @@ function Test-GovernanceJsonDocument {
             $results.Add((New-ValidationResult -Status Failed -Message 'High and Critical project manifests must require production approval.' -Path $Path))
         }
         foreach ($item in @(Test-UniqueValues -Items @($json.technologies) -Name 'technologies' -Path $Path)) { $results.Add($item) }
-        foreach ($item in @(Test-UniqueValues -Items @($json.owners) -Name 'owners' -Path $Path)) { $results.Add($item) }
+        $ownerIdentifiers = @($json.owners | ForEach-Object { if ($_ -is [string]) { $_ } else { $_.identifier } })
+        foreach ($item in @(Test-UniqueValues -Items $ownerIdentifiers -Name 'owners' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.applicableStandards) -Name 'applicableStandards' -Path $Path)) { $results.Add($item) }
         foreach ($owner in @($json.owners)) {
+            if ($json.schemaVersion -eq '1.2.0') {
+                if ($owner -isnot [System.Collections.IDictionary]) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Version 1.2.0 owners must be structured records.' -Path $Path))
+                    continue
+                }
+                $ownerType = [string](Get-JsonMemberValue -InputObject $owner -Name 'type')
+                $ownerIdentifier = [string](Get-JsonMemberValue -InputObject $owner -Name 'identifier')
+                $supportedOwnerTypes = @('github-user', 'github-team', 'email-contact')
+                if ($supportedOwnerTypes -cnotcontains $ownerType) {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Owner '$ownerIdentifier' uses unsupported owner type '$ownerType'." -Path $Path))
+                }
+                elseif (-not (Test-StructuredOwnerIdentifier -Type $ownerType -Identifier $ownerIdentifier)) {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Owner '$ownerIdentifier' is malformed for owner type '$ownerType'." -Path $Path))
+                }
+                if ([string]::IsNullOrWhiteSpace([string]$owner.responsibility) -or ([string]$owner.responsibility).Length -lt 20) {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Owner '$($owner.identifier)' lacks substantive responsibility." -Path $Path))
+                }
+                if ([string]::IsNullOrWhiteSpace([string]$owner.escalation)) {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Owner '$($owner.identifier)' lacks escalation." -Path $Path))
+                }
+                if ([string]$owner.identifier -match '(?i)(?:placeholder|changeme|replace-me|todo)') {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Owner '$($owner.identifier)' is a placeholder and is not allowed." -Path $Path))
+                }
+                if ($owner.type -eq 'github-team' -and $json.repositoryOwnerType -ne 'Organization') {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'GitHub team ownership requires repositoryOwnerType Organization.' -Path $Path))
+                }
+                continue
+            }
             $isEmailOwner = $owner -match '^[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
             if ($owner -notmatch '^(@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?(?:/[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?)?|[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})$') {
                 $results.Add((New-ValidationResult -Status Failed -Message "Owner '$owner' must be a GitHub user handle, organization/team handle, or email address." -Path $Path))
@@ -468,8 +703,17 @@ function Test-GovernanceJsonDocument {
         foreach ($standard in @($json.applicableStandards)) {
             foreach ($item in @(Test-RelativeRepositoryPath -Value $standard -Name 'applicableStandards item' -Path $Path -RequiredExtension '.md')) { $results.Add($item) }
         }
-        foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.completionEvidencePath -Name 'completionEvidencePath' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
-        foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.testEvidencePath -Name 'testEvidencePath' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
+        if ($json.schemaVersion -eq '1.2.0') {
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.local.completion -Name 'local completion evidence' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.local.tests -Name 'local test evidence' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.hosted.workspace -Name 'hosted evidence workspace' -Path $Path)) { $results.Add($item) }
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.hosted.completion -Name 'hosted completion evidence' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.hosted.tests -Name 'hosted test evidence' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
+        }
+        else {
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.completionEvidencePath -Name 'completionEvidencePath' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $json.evidence.testEvidencePath -Name 'testEvidencePath' -Path $Path -RequiredExtension '.json')) { $results.Add($item) }
+        }
     }
 
     if ($Kind -eq 'standards-consistency') {
@@ -860,6 +1104,529 @@ function Write-GovernanceBootstrapFailureReport {
     $reportPath
 }
 
+function Test-GovernanceContractSemantics {
+    <#
+    .SYNOPSIS
+    Cross-validates the manifest, governance configuration, standards, workflow interface, evidence, and exceptions.
+    .DESCRIPTION
+    Performs deterministic offline validation. Trusted caller repository, standards repository, owner-type, commit, workflow, profile, check-name, and date values must be supplied by the caller rather than inferred from repository declarations.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Root,
+        [Parameter(Mandatory)][System.Collections.IDictionary]$Manifest,
+        [Parameter(Mandatory)][System.Collections.IDictionary]$Config,
+        [string]$ExpectedRepository,
+        [string]$ExpectedStandardsRepository,
+        [ValidateSet('Unknown','User','Organization')][string]$RepositoryOwnerType = 'Unknown',
+        [string]$ExpectedGovernanceCommitSha,
+        [string]$ExpectedWorkflowInterfaceVersion,
+        [string]$ExpectedWorkflowProfile,
+        [string]$ExpectedRequiredCheckName,
+        [datetime]$ValidationDateUtc = [datetime]::UtcNow
+    )
+
+    $results = [System.Collections.Generic.List[object]]::new()
+    $path = Join-Path $Root 'project-manifest.json'
+    function Add-Finding([string]$Id, [string]$Message, [string]$FindingPath = $path) {
+        $results.Add((New-ValidationResult -Status Failed -Message "$Id $Message" -Path $FindingPath))
+    }
+
+    if ($ExpectedRepository -and -not [string]::Equals([string]$Manifest.repository, $ExpectedRepository, [System.StringComparison]::OrdinalIgnoreCase)) {
+        Add-Finding 'GCS001' "Repository identity '$($Manifest.repository)' does not match trusted repository '$ExpectedRepository'."
+    }
+
+    foreach ($document in @($Manifest, $Config)) {
+        if ($document.Contains('governanceVersion') -and $document.governanceVersion -notmatch '^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$') {
+            Add-Finding 'GCS002' 'governanceVersion must contain a semantic release version, never a commit SHA.'
+        }
+        if ($document.Contains('governanceCommitSha') -and $document.governanceCommitSha -notmatch '^[A-Fa-f0-9]{40}$') {
+            Add-Finding 'GCS002' 'governanceCommitSha must contain exactly 40 hexadecimal characters.'
+        }
+    }
+    $usesSchemaVersion12 = $Manifest.schemaVersion -ceq '1.2.0' -or $Config.schemaVersion -ceq '1.2.0'
+    if ($usesSchemaVersion12 -and $Manifest.schemaVersion -cne $Config.schemaVersion) {
+        Add-Finding 'GCS002' 'Manifest and governance configuration schema versions must both be 1.2.0 when either document opts into schema version 1.2.0.'
+    }
+    if ($Manifest.Contains('governanceVersion') -and $Config.Contains('governanceVersion') -and $Manifest.governanceVersion -cne $Config.governanceVersion) {
+        Add-Finding 'GCS002' 'Manifest and governance configuration governance versions disagree.'
+    }
+    if ($Manifest.Contains('governanceCommitSha') -and $Config.Contains('governanceCommitSha') -and $Manifest.governanceCommitSha -ne $Config.governanceCommitSha) {
+        Add-Finding 'GCS002' 'Manifest and governance configuration governance commit SHAs disagree.'
+    }
+    if ($ExpectedGovernanceCommitSha -and $Manifest.schemaVersion -eq '1.2.0' -and $Manifest.governanceCommitSha -ne $ExpectedGovernanceCommitSha) {
+        Add-Finding 'GCS002' 'Declared governance commit SHA does not match the trusted workflow standards SHA.'
+    }
+
+    if ($Manifest.schemaVersion -ceq '1.2.0') {
+        $manifestRepositoryOwnerType = [string](Get-JsonMemberValue -InputObject $Manifest -Name 'repositoryOwnerType')
+        if (@('User', 'Organization') -cnotcontains $manifestRepositoryOwnerType) {
+            Add-Finding 'GCS003' "Manifest repositoryOwnerType '$manifestRepositoryOwnerType' is unsupported or noncanonical."
+        }
+        $seenOwners = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+        $enforceableOwners = 0
+        foreach ($owner in @($Manifest.owners)) {
+            if ($owner -isnot [System.Collections.IDictionary]) {
+                Add-Finding 'GCS003' 'Version 1.2.0 owners must be structured records.'
+                continue
+            }
+            $ownerType = [string](Get-JsonMemberValue -InputObject $owner -Name 'type')
+            $identifier = [string](Get-JsonMemberValue -InputObject $owner -Name 'identifier')
+            $supportedOwnerTypes = @('github-user', 'github-team', 'email-contact')
+            if (-not $seenOwners.Add($identifier)) { Add-Finding 'GCS003' "Duplicate owner identifier '$identifier'." }
+            if ($identifier -match '(?i)(?:placeholder|changeme|replace-me|todo)') { Add-Finding 'GCS003' "Owner '$identifier' is a placeholder." }
+            $validIdentifier = $false
+            if ($supportedOwnerTypes -cnotcontains $ownerType) {
+                Add-Finding 'GCS003' "Owner '$identifier' uses unsupported owner type '$ownerType'."
+            }
+            else {
+                $validIdentifier = Test-StructuredOwnerIdentifier -Type $ownerType -Identifier $identifier
+                if (-not $validIdentifier) { Add-Finding 'GCS003' "Owner '$identifier' is malformed for owner type '$ownerType'." }
+            }
+            if ($validIdentifier -and $ownerType -ceq 'github-user') { $enforceableOwners++ }
+            if ($validIdentifier -and $ownerType -ceq 'github-team') {
+                $enforceableOwners++
+                if ($manifestRepositoryOwnerType -cne 'Organization' -or $RepositoryOwnerType -ceq 'User') { Add-Finding 'GCS003' 'GitHub team ownership is invalid for a user-owned repository.' }
+            }
+            if ([string]::IsNullOrWhiteSpace([string]$owner.responsibility) -or ([string]$owner.responsibility).Length -lt 20) { Add-Finding 'GCS003' "Owner '$identifier' lacks substantive responsibility." }
+            if ([string]::IsNullOrWhiteSpace([string]$owner.escalation)) { Add-Finding 'GCS003' "Owner '$identifier' lacks escalation." }
+        }
+        if ($enforceableOwners -lt 1) { Add-Finding 'GCS003' 'At least one GitHub user or team owner is required.' }
+        if ($RepositoryOwnerType -cne 'Unknown' -and $manifestRepositoryOwnerType -cne $RepositoryOwnerType) { Add-Finding 'GCS003' 'Manifest repository owner type disagrees with trusted owner type.' }
+    }
+
+    $manifestStandards = @()
+    $configStandards = @()
+    if ($Manifest.schemaVersion -eq '1.2.0') {
+        $standardCollections = @(
+            @{ Label='Manifest applicableStandards'; Document=$Manifest; Member='applicableStandards'; Target='manifest' },
+            @{ Label='Governance configuration applicableAgentStandards'; Document=$Config; Member='applicableAgentStandards'; Target='config' }
+        )
+        foreach ($collection in $standardCollections) {
+            $value = Get-JsonMemberValue -InputObject $collection.Document -Name $collection.Member
+            $validValues = [System.Collections.Generic.List[string]]::new()
+            if ($null -eq $value -or $value -is [string] -or $value -isnot [System.Collections.IList] -or $value.Count -eq 0) {
+                Add-Finding 'GCS004' "$($collection.Label) must be a nonempty array of standards paths."
+            }
+            else {
+                $seenStandards = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+                for ($standardIndex = 0; $standardIndex -lt $value.Count; $standardIndex++) {
+                    $standardValue = $value[$standardIndex]
+                    if ($null -eq $standardValue -or $standardValue -isnot [string]) {
+                        Add-Finding 'GCS004' "$($collection.Label) entries must be non-null strings."
+                        continue
+                    }
+                    $standard = [string]$standardValue
+                    if ([string]::IsNullOrWhiteSpace($standard)) {
+                        Add-Finding 'GCS004' "$($collection.Label) entries must not be blank."
+                        continue
+                    }
+                    if ($standard -match '[\x00-\x1F\x7F]' -or [System.IO.Path]::IsPathRooted($standard) -or $standard -match '(^|[\\/])\.\.([\\/]|$)' -or $standard -cnotmatch '^agents/AGENTS_[A-Za-z]+\.md$') {
+                        Add-Finding 'GCS004' "$($collection.Label) entry '$standard' is not a canonical safe standards path."
+                        continue
+                    }
+                    if (-not $seenStandards.Add($standard)) {
+                        Add-Finding 'GCS004' "$($collection.Label) contains duplicate entry '$standard'."
+                        continue
+                    }
+                    $validValues.Add($standard)
+                }
+            }
+            if ($collection.Target -eq 'manifest') { $manifestStandards = @($validValues) }
+            else { $configStandards = @($validValues) }
+        }
+
+        $standardsConsumption = Get-JsonMemberValue -InputObject $Manifest -Name 'standardsConsumption'
+        if ($standardsConsumption -isnot [System.Collections.IDictionary]) {
+            Add-Finding 'GCS004' 'standardsConsumption must be an object with an explicit supported mode.'
+        }
+        else {
+            $allowedFields = @('mode', 'sourceRepository', 'sourceCommitSha', 'localPath')
+            foreach ($fieldName in @($standardsConsumption.Keys)) {
+                if ($allowedFields -cnotcontains [string]$fieldName) {
+                    Add-Finding 'GCS004' "standardsConsumption contains unsupported field '$fieldName'."
+                }
+            }
+
+            $modeValue = Get-JsonMemberValue -InputObject $standardsConsumption -Name 'mode'
+            $mode = if ($modeValue -is [string]) { [string]$modeValue } else { $null }
+            $supportedMode = $mode -cin @('central-reference', 'vendored', 'local')
+            if (-not $supportedMode) {
+                Add-Finding 'GCS004' 'Standards consumption mode is missing or unsupported.'
+            }
+            else {
+                $hasSourceRepository = Test-JsonMember -InputObject $standardsConsumption -Name 'sourceRepository'
+                $hasSourceCommitSha = Test-JsonMember -InputObject $standardsConsumption -Name 'sourceCommitSha'
+                $hasLocalPath = Test-JsonMember -InputObject $standardsConsumption -Name 'localPath'
+                $sourceRepositoryValue = Get-JsonMemberValue -InputObject $standardsConsumption -Name 'sourceRepository'
+                $sourceCommitShaValue = Get-JsonMemberValue -InputObject $standardsConsumption -Name 'sourceCommitSha'
+                $localPathValue = Get-JsonMemberValue -InputObject $standardsConsumption -Name 'localPath'
+                $sourceRepository = if ($sourceRepositoryValue -is [string]) { [string]$sourceRepositoryValue } else { $null }
+                $sourceCommitSha = if ($sourceCommitShaValue -is [string]) { [string]$sourceCommitShaValue } else { $null }
+
+                if ($mode -cin @('central-reference', 'vendored')) {
+                    if (-not $hasSourceRepository) {
+                        Add-Finding 'GCS004' "standardsConsumption.sourceRepository is required for $mode mode."
+                    }
+                    elseif ($null -eq $sourceRepository -or $sourceRepository -cnotmatch '^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/[A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}[A-Za-z0-9])?$') {
+                        Add-Finding 'GCS004' 'standardsConsumption.sourceRepository must use valid owner/repository syntax.'
+                    }
+                    if (-not $hasSourceCommitSha -or $null -eq $sourceCommitSha -or $sourceCommitSha -cnotmatch '^[A-Fa-f0-9]{40}$') {
+                        Add-Finding 'GCS004' "standardsConsumption.sourceCommitSha must contain exactly 40 hexadecimal characters for $mode mode."
+                    }
+                }
+
+                if ($mode -ceq 'central-reference') {
+                    if ($hasLocalPath) {
+                        Add-Finding 'GCS004' 'central-reference standards consumption forbids localPath.'
+                    }
+                    if ($ExpectedStandardsRepository -and -not [string]::Equals($sourceRepository, $ExpectedStandardsRepository, [System.StringComparison]::OrdinalIgnoreCase)) {
+                        Add-Finding 'GCS004' "Central standards source repository '$sourceRepository' does not match trusted standards repository '$ExpectedStandardsRepository'."
+                    }
+                    if ($ExpectedGovernanceCommitSha -and $sourceCommitSha -ne $ExpectedGovernanceCommitSha) {
+                        Add-Finding 'GCS004' 'Central standards source commit SHA does not match the trusted workflow standards SHA.'
+                    }
+                    if ($Manifest.Contains('governanceCommitSha') -and $sourceCommitSha -ne $Manifest.governanceCommitSha) {
+                        Add-Finding 'GCS004' 'Central standards source commit SHA disagrees with the declared governance commit SHA.'
+                    }
+                }
+                elseif ($mode -ceq 'local') {
+                    if ($hasSourceRepository) { Add-Finding 'GCS004' 'local standards consumption forbids sourceRepository.' }
+                    if ($hasSourceCommitSha) { Add-Finding 'GCS004' 'local standards consumption forbids sourceCommitSha.' }
+                }
+
+                if ($mode -cin @('vendored', 'local')) {
+                    if (-not $hasLocalPath -or $localPathValue -isnot [string] -or [string]::IsNullOrWhiteSpace([string]$localPathValue)) {
+                        Add-Finding 'GCS004' "standardsConsumption.localPath is required for $mode mode."
+                    }
+                    elseif ([System.IO.Path]::IsPathRooted([string]$localPathValue) -or [string]$localPathValue -match '(^|[\\/])\.\.([\\/]|$)' -or [string]$localPathValue -match '[\x00-\x1F\x7F]') {
+                        Add-Finding 'GCS004' "standardsConsumption.localPath must be a safe repository-relative path for $mode mode."
+                    }
+                    else {
+                        try {
+                            $authorityRoot = Resolve-SafePath -Root $Root -ChildPath ([string]$localPathValue)
+                            $authorityItem = Get-Item -LiteralPath $authorityRoot -Force -ErrorAction Stop
+                            if (-not $authorityItem.PSIsContainer) {
+                                Add-Finding 'GCS004' "The $mode authoritative standards root must be an existing physical directory."
+                            }
+                            else {
+                                foreach ($standard in $manifestStandards) {
+                                    try {
+                                        $standardTarget = Resolve-SafePath -Root $Root -ChildPath $standard
+                                        $relativeToAuthority = [System.IO.Path]::GetRelativePath($authorityRoot, $standardTarget)
+                                        if ([System.IO.Path]::IsPathRooted($relativeToAuthority) -or $relativeToAuthority -eq '..' -or $relativeToAuthority.StartsWith(('..' + [System.IO.Path]::DirectorySeparatorChar), [System.StringComparison]::Ordinal) -or $relativeToAuthority.StartsWith(('..' + [System.IO.Path]::AltDirectorySeparatorChar), [System.StringComparison]::Ordinal)) {
+                                            Add-Finding 'GCS004' "Applicable standard '$standard' is outside the $mode authoritative standards root."
+                                            continue
+                                        }
+                                        if (-not (Test-ExactRepositoryPathCasing -Root $Root -ChildPath $standard)) {
+                                            Add-Finding 'GCS004' "Applicable standard '$standard' does not match the authoritative filesystem path exactly."
+                                            continue
+                                        }
+                                        if (-not (Test-Path -LiteralPath $standardTarget -PathType Leaf)) {
+                                            Add-Finding 'GCS004' "Applicable standard '$standard' must exist as a regular file beneath the $mode authoritative standards root."
+                                        }
+                                    }
+                                    catch {
+                                        Add-Finding 'GCS004' "Applicable standard '$standard' must exist as a regular file beneath the $mode authoritative standards root. $($_.Exception.Message)"
+                                    }
+                                }
+                            }
+                        }
+                        catch { Add-Finding 'GCS004' $_.Exception.Message }
+                    }
+                }
+            }
+        }
+    }
+
+    $technologyStandards = @{
+        powershell='agents/AGENTS_PowerShell.md'; dotnet='agents/AGENTS_DotNet.md'; web='agents/AGENTS_WebFrontend.md'; database='agents/AGENTS_Database.md';
+        'worker-service'='agents/AGENTS_WorkerService.md'; integration='agents/AGENTS_Integration.md'; infrastructure='agents/AGENTS_Infrastructure.md'
+    }
+    if ($Manifest.schemaVersion -cne '1.2.0') {
+        $manifestStandards = @($Manifest.applicableStandards)
+        $configStandards = @($Config.applicableAgentStandards)
+    }
+    if ($Manifest.schemaVersion -ceq '1.2.0' -and @('powershell','dotnet','web','database','worker-service','integration','infrastructure','governance','mixed') -cnotcontains [string]$Manifest.projectType) {
+        Add-Finding 'GCS005' "Project type '$($Manifest.projectType)' is unsupported or noncanonical."
+    }
+    if ($manifestStandards -cnotcontains 'agents/AGENTS_Base.md') { Add-Finding 'GCS005' 'The base agent standard is required.' }
+    [object]$technologiesValue = $null
+    if ($Manifest.Contains('technologies')) { $technologiesValue = $Manifest['technologies'] }
+    $technologiesIsArray = $technologiesValue -is [System.Collections.IList] -and $technologiesValue -isnot [string]
+    [object[]]$technologies = @()
+    if ($Manifest.schemaVersion -ceq '1.2.0') {
+        if (-not $technologiesIsArray -or $technologiesValue.Count -eq 0) {
+            Add-Finding 'GCS005' 'Manifest technologies must be declared as a nonempty array.'
+        }
+        else {
+            $validTechnologies = [System.Collections.ArrayList]::new()
+            $seenTechnologies = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+            foreach ($technologyValue in $technologiesValue) {
+                if ($technologyValue -isnot [string] -or ([string]$technologyValue).Length -lt 2) {
+                    Add-Finding 'GCS005' 'Manifest technologies members must be strings containing at least two characters.'
+                    continue
+                }
+                if (-not $seenTechnologies.Add([string]$technologyValue)) {
+                    Add-Finding 'GCS005' "Manifest technologies contains duplicate member '$technologyValue' using ordinal comparison."
+                    continue
+                }
+                [void]$validTechnologies.Add($technologyValue)
+            }
+            $technologies = $validTechnologies.ToArray()
+        }
+    }
+    else {
+        $technologies = [object[]]@($technologiesValue)
+    }
+    foreach ($technology in $technologies) {
+        if ($technologyStandards.ContainsKey([string]$technology) -and $manifestStandards -cnotcontains $technologyStandards[[string]$technology]) { Add-Finding 'GCS005' "Technology '$technology' requires '$($technologyStandards[[string]$technology])'." }
+    }
+    if ($Manifest.projectType -ceq 'governance') {
+        foreach ($requiredStandard in @('agents/AGENTS_PowerShell.md','agents/AGENTS_Integration.md','agents/AGENTS_Infrastructure.md')) {
+            if ($manifestStandards -cnotcontains $requiredStandard) { Add-Finding 'GCS005' "Governance and GitHub Actions repositories require '$requiredStandard'." }
+        }
+    }
+    if (@(Compare-Object $manifestStandards $configStandards -CaseSensitive).Count -gt 0) { Add-Finding 'GCS006' 'Manifest and governance configuration applicable standards disagree.' }
+    $agentsPath = Join-Path $Root 'AGENTS.md'
+    if (Test-Path -LiteralPath $agentsPath -PathType Leaf) {
+        $agentsText = Get-Content -Raw -LiteralPath $agentsPath
+        foreach ($standard in $manifestStandards) { if ($agentsText -cnotmatch [regex]::Escape($standard)) { Add-Finding 'GCS006' "Root AGENTS.md does not declare '$standard'." $agentsPath } }
+    }
+
+    if ($Manifest.Contains('workflowInterfaceVersion') -and $Config.Contains('workflowInterfaceVersion') -and $Manifest.workflowInterfaceVersion -cne $Config.workflowInterfaceVersion) { Add-Finding 'GCS007' 'Manifest and configuration workflow interface versions disagree.' }
+    if ($ExpectedWorkflowInterfaceVersion -and $Manifest.schemaVersion -ceq '1.2.0' -and $Manifest.workflowInterfaceVersion -cne $ExpectedWorkflowInterfaceVersion) { Add-Finding 'GCS007' 'Workflow interface version does not match trusted context.' }
+    $workflowProfile = if ($Config.Contains('workflowProfile')) { [string]$Config.workflowProfile } else { $null }
+    if ($Config.schemaVersion -ceq '1.2.0' -and @('downstream', 'standards-maintainer') -cnotcontains $workflowProfile) { Add-Finding 'GCS007' "Workflow profile '$workflowProfile' is unsupported or noncanonical." }
+    if ($ExpectedWorkflowProfile -and $Config.schemaVersion -ceq '1.2.0' -and $workflowProfile -cne $ExpectedWorkflowProfile) { Add-Finding 'GCS007' 'Workflow profile does not match trusted context.' }
+    if ($Config.schemaVersion -ceq '1.2.0') {
+        $interface = $Config.workflowInterface
+        if ($interface.path -cne '.github/workflows/governance-ci-reusable.yml' -or $interface.jobId -cne 'governance' -or $interface.jobName -cne 'Governance validation' -or $interface.artifactNamePattern -cne 'governance-evidence-${run_id}') { Add-Finding 'GCS007' 'Workflow interface declaration conflicts with the supported interface.' }
+        $requiredInputs = @('project-path', 'governance-version', 'artifact-retention-days', 'controlled-failure-test')
+        $requiredOutputs = @('evidence-path', 'artifact-name')
+        if (-not (Test-ExactStringSet -Actual @($interface.inputs) -Expected $requiredInputs)) { Add-Finding 'GCS007' 'Workflow interface inputs do not exactly match the supported interface.' }
+        if (-not (Test-ExactStringSet -Actual @($interface.outputs) -Expected $requiredOutputs)) { Add-Finding 'GCS007' 'Workflow interface outputs do not exactly match the supported interface.' }
+    }
+
+    $supportedCategories = @('Contract','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','CodexSkills','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')
+    $maintainerOnlyCategories = @('JsonSchemas','YamlSyntax','WorkflowArchitecture','RepositoryHealth','Evidence','Examples','Pester','PSScriptAnalyzer','PowerShellParser')
+    [object]$validationCategoriesValue = $null
+    if ($Config.Contains('validationCategories')) { $validationCategoriesValue = $Config['validationCategories'] }
+    $validationCategoriesIsArray = $validationCategoriesValue -is [System.Collections.IList] -and $validationCategoriesValue -isnot [string]
+    [object[]]$declaredCategories = @()
+    if ($Config.schemaVersion -ceq '1.2.0') {
+        if ($validationCategoriesIsArray) { $declaredCategories = [object[]]$validationCategoriesValue }
+        if (-not $validationCategoriesIsArray -or $declaredCategories.Count -eq 0) {
+            Add-Finding 'GCS008' 'validationCategories must be declared as a nonempty array.'
+        }
+    }
+    else {
+        $declaredCategories = [object[]]@($validationCategoriesValue)
+    }
+    foreach ($category in $declaredCategories) { if ($category -cnotin $supportedCategories) { Add-Finding 'GCS008' "Unsupported validation category '$category'." } }
+    if ($workflowProfile -ceq 'standards-maintainer') {
+        foreach ($category in $supportedCategories) { if ($declaredCategories -cnotcontains $category) { Add-Finding 'GCS008' "Maintainer profile omits executed category '$category'." } }
+    }
+    elseif ($workflowProfile -ceq 'downstream') {
+        if ($Config.schemaVersion -ceq '1.2.0') {
+            if ($validationCategoriesIsArray -and $declaredCategories.Count -gt 0 -and $declaredCategories -cnotcontains 'Contract') {
+                Add-Finding 'GCS008' "Downstream profile validationCategories declaration must include mandatory category 'Contract'."
+            }
+        }
+        foreach ($category in $declaredCategories) {
+            if ($category -cin $maintainerOnlyCategories) { Add-Finding 'GCS008' "Downstream profile cannot declare maintainer-only validation category '$category'." }
+        }
+    }
+
+    if ($Manifest.schemaVersion -ceq '1.2.0') {
+        if ($Manifest.evidence.hosted.workspace -cne 'evidence' -or $Manifest.evidence.hosted.completion -cne 'completion-result.json' -or $Manifest.evidence.hosted.tests -cne 'ci-test-results.json' -or $Manifest.evidence.hosted.artifactNamePattern -cne 'governance-evidence-${run_id}') { Add-Finding 'GCS009' 'Hosted evidence declaration conflicts with reusable workflow outputs.' }
+        foreach ($localPath in @($Manifest.evidence.local.completion, $Manifest.evidence.local.tests)) {
+            if (
+                $localPath -isnot [string] -or
+                [string]::IsNullOrWhiteSpace([string]$localPath) -or
+                [System.IO.Path]::IsPathRooted([string]$localPath) -or
+                [string]$localPath -cmatch '^[A-Za-z]:' -or
+                [string]$localPath -cmatch '^[\\/]' -or
+                ([string]$localPath).Contains('..') -or
+                -not ([string]$localPath).EndsWith('.json', [System.StringComparison]::Ordinal)
+            ) {
+                Add-Finding 'GCS009' "Local evidence path '$localPath' must be a schema-valid repository-relative JSON path."
+                continue
+            }
+            try { Resolve-SafePath -Root $Root -ChildPath ([string]$localPath) -AllowMissingLeaf | Out-Null } catch { Add-Finding 'GCS009' $_.Exception.Message }
+        }
+    }
+
+    $exceptionById = [System.Collections.Generic.Dictionary[string,object]]::new([System.StringComparer]::Ordinal)
+    $activeExceptionIds = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    $exceptionRecords = @($Manifest.exceptions) + @($Config.exceptions)
+    $requiresStructuredExceptions = $Manifest.schemaVersion -eq '1.2.0' -or $Config.schemaVersion -eq '1.2.0'
+    $requiredExceptionFields = @('identifier','status','scope','owner','approver','approvalDate','expiration','affectedControl','compensatingControls','remediationPlan','evidenceReference')
+    foreach ($exception in $exceptionRecords) {
+        if ($exception -is [string]) {
+            if ($requiresStructuredExceptions) { Add-Finding 'GCS010' "Legacy exception reference '$exception' is not valid for schema version 1.2.0." }
+            continue
+        }
+        if ($exception -isnot [System.Collections.IDictionary]) {
+            Add-Finding 'GCS010' 'Exception record is malformed and must be a structured object.'
+            continue
+        }
+
+        $missingFields = @($requiredExceptionFields | Where-Object { -not $exception.Contains($_) })
+        $identifier = if ($exception.Contains('identifier')) { [string]$exception.identifier } else { '<missing>' }
+        $malformed = $missingFields.Count -gt 0
+        if ($missingFields.Count -gt 0) { Add-Finding 'GCS010' "Exception '$identifier' is missing required fields: $($missingFields -join ', ')." }
+        $unexpectedFields = @($exception.Keys | Where-Object { $requiredExceptionFields -cnotcontains [string]$_ })
+        if ($unexpectedFields.Count -gt 0) { Add-Finding 'GCS010' "Exception '$identifier' contains unsupported fields: $($unexpectedFields -join ', ')."; $malformed = $true }
+        if (-not $exception.Contains('identifier') -or $exception.identifier -isnot [string] -or $identifier -cnotmatch '^GOV-[A-Z0-9-]+$') { Add-Finding 'GCS010' "Exception identifier '$identifier' is malformed."; $malformed = $true }
+        if ($identifier -ne '<missing>') {
+            if ($exceptionById.ContainsKey($identifier)) { Add-Finding 'GCS010' "Duplicate exception identifier '$identifier'."; continue }
+            $exceptionById[$identifier] = $exception
+        }
+
+        $lengthRules = @{ scope=@(10,500); owner=@(2,254); approver=@(2,254); affectedControl=@(3,160); remediationPlan=@(20,1000) }
+        foreach ($field in $lengthRules.Keys) {
+            $value = if ($exception.Contains($field)) { [string]$exception[$field] } else { '' }
+            if (-not $exception.Contains($field) -or $exception[$field] -isnot [string] -or $value.Length -lt $lengthRules[$field][0] -or $value.Length -gt $lengthRules[$field][1]) { $malformed = $true }
+        }
+        $evidenceReference = if ($exception.Contains('evidenceReference')) { [string]$exception.evidenceReference } else { '' }
+        if (
+            -not $exception.Contains('evidenceReference') -or
+            $exception.evidenceReference -isnot [string] -or
+            [string]::IsNullOrWhiteSpace($evidenceReference) -or
+            [System.IO.Path]::IsPathRooted($evidenceReference) -or
+            $evidenceReference -cmatch '^[A-Za-z]:' -or
+            $evidenceReference -cmatch '^[\\/]' -or
+            $evidenceReference.Contains('..')
+        ) { $malformed = $true }
+        $compensatingControls = @()
+        $compensatingControlsValue = $null
+        if ($exception.Contains('compensatingControls')) { $compensatingControlsValue = $exception['compensatingControls'] }
+        $compensatingControlsIsArray = $compensatingControlsValue -is [System.Collections.IList] -and $compensatingControlsValue -isnot [string]
+        if ($compensatingControlsIsArray) { $compensatingControls = @($compensatingControlsValue) }
+        $seenCompensatingControls = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+        if (
+            -not $compensatingControlsIsArray -or
+            $compensatingControls.Count -eq 0 -or
+            @($compensatingControls | Where-Object { $_ -isnot [string] -or ([string]$_).Length -lt 10 }).Count -gt 0
+        ) { $malformed = $true }
+        foreach ($control in $compensatingControls) {
+            if ($control -is [string] -and -not $seenCompensatingControls.Add([string]$control)) { $malformed = $true }
+        }
+        if ($malformed) { Add-Finding 'GCS010' "Exception '$identifier' is malformed." }
+
+        $approvalDate = [datetime]::MinValue
+        $expiration = [datetime]::MinValue
+        $dateStyles = [System.Globalization.DateTimeStyles]::AssumeUniversal
+        $approvalDateValid = $exception.Contains('approvalDate') -and $exception.approvalDate -is [string] -and [datetime]::TryParseExact([string]$exception.approvalDate, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture, $dateStyles, [ref]$approvalDate)
+        $expirationValid = $exception.Contains('expiration') -and $exception.expiration -is [string] -and [datetime]::TryParseExact([string]$exception.expiration, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture, $dateStyles, [ref]$expiration)
+        $validationDate = $ValidationDateUtc.ToUniversalTime().Date
+        $status = if ($exception.Contains('status')) { [string]$exception.status } else { $null }
+        if (-not $exception.Contains('status') -or $exception.status -isnot [string] -or @('Approved', 'Rejected', 'Revoked', 'Expired') -cnotcontains $status) { Add-Finding 'GCS010' "Exception '$identifier' status '$status' is unsupported or noncanonical."; $malformed = $true }
+        $active = -not $malformed -and $status -ceq 'Approved' -and $approvalDateValid -and $expirationValid -and $approvalDate.Date -le $validationDate -and $expiration.Date -ge $validationDate -and $expiration.Date -ge $approvalDate.Date
+        if (-not $active) { Add-Finding 'GCS010' "Exception '$identifier' is not an active, approved, and unexpired record." }
+        elseif ($identifier -ne '<missing>') { [void]$activeExceptionIds.Add($identifier) }
+    }
+    [object]$disabledControlsValue = $null
+    $controlsObject = Get-JsonMemberValue -InputObject $Config -Name 'controls'
+    if ($controlsObject -is [System.Collections.IDictionary] -and $controlsObject.Contains('mandatoryControlsDisabled')) {
+        $disabledControlsValue = $controlsObject['mandatoryControlsDisabled']
+    }
+    $disabledControlsIsArray = $disabledControlsValue -is [System.Collections.IList] -and $disabledControlsValue -isnot [string]
+    [object[]]$disabledControls = @()
+    if ($Config.schemaVersion -ceq '1.2.0') {
+        if (-not $disabledControlsIsArray) {
+            Add-Finding 'GCS011' 'controls.mandatoryControlsDisabled must be declared as an array.'
+        }
+        else {
+            $disabledControls = [object[]]$disabledControlsValue
+        }
+    }
+    else {
+        $disabledControls = [object[]]@($disabledControlsValue)
+    }
+    foreach ($disabled in $disabledControls) {
+        if ($Config.schemaVersion -ceq '1.2.0') {
+            if ($disabled -isnot [System.Collections.IDictionary]) {
+                Add-Finding 'GCS011' 'Disabled mandatory control entries must be structured objects.'
+                continue
+            }
+            $unexpectedDisabledFields = @($disabled.Keys | Where-Object { @('control','exceptionReference') -cnotcontains [string]$_ })
+            $controlName = if ($disabled.Contains('control')) { [string]$disabled.control } else { '<missing>' }
+            $exceptionReference = if ($disabled.Contains('exceptionReference')) { [string]$disabled.exceptionReference } else { '<missing>' }
+            $disabledMalformed = $unexpectedDisabledFields.Count -gt 0 -or
+                -not $disabled.Contains('control') -or $disabled.control -isnot [string] -or $controlName.Length -lt 3 -or
+                -not $disabled.Contains('exceptionReference') -or $disabled.exceptionReference -isnot [string] -or $exceptionReference -cnotmatch '^GOV-[A-Z0-9-]+$'
+            if ($disabledMalformed) {
+                Add-Finding 'GCS011' "Disabled mandatory control '$controlName' has a malformed or noncanonical exception reference '$exceptionReference'."
+                continue
+            }
+        }
+        if (-not $exceptionById.ContainsKey([string]$disabled.exceptionReference) -or -not $activeExceptionIds.Contains([string]$disabled.exceptionReference) -or $exceptionById[[string]$disabled.exceptionReference].affectedControl -cne $disabled.control) { Add-Finding 'GCS011' "Disabled control '$($disabled.control)' lacks an applicable active exception." }
+    }
+
+    if ($Config.schemaVersion -eq '1.2.0') {
+        [object]$requiredCheckNamesValue = $null
+        if ($Config.Contains('requiredCheckNames')) { $requiredCheckNamesValue = $Config['requiredCheckNames'] }
+        $workflowInterfaceObject = Get-JsonMemberValue -InputObject $Config -Name 'workflowInterface'
+        [object]$interfaceRequiredCheckNamesValue = $null
+        if ($workflowInterfaceObject -is [System.Collections.IDictionary] -and $workflowInterfaceObject.Contains('requiredCheckNames')) {
+            $interfaceRequiredCheckNamesValue = $workflowInterfaceObject['requiredCheckNames']
+        }
+        $requiredCheckIssues = @(Get-RequiredCheckNameContractIssues -Wrapper @{ Value = $requiredCheckNamesValue } -Name 'Config.requiredCheckNames')
+        $interfaceRequiredCheckIssues = @(Get-RequiredCheckNameContractIssues -Wrapper @{ Value = $interfaceRequiredCheckNamesValue } -Name 'Config.workflowInterface.requiredCheckNames')
+        foreach ($issue in @($requiredCheckIssues + $interfaceRequiredCheckIssues)) { Add-Finding 'GCS012' $issue }
+
+        $requiredCheckNameList = [System.Collections.ArrayList]::new()
+        if ($requiredCheckNamesValue -is [System.Collections.IList]) {
+            for ($index = 0; $index -lt $requiredCheckNamesValue.Count; $index++) { [void]$requiredCheckNameList.Add($requiredCheckNamesValue[$index]) }
+        }
+        $interfaceRequiredCheckNameList = [System.Collections.ArrayList]::new()
+        if ($interfaceRequiredCheckNamesValue -is [System.Collections.IList]) {
+            for ($index = 0; $index -lt $interfaceRequiredCheckNamesValue.Count; $index++) { [void]$interfaceRequiredCheckNameList.Add($interfaceRequiredCheckNamesValue[$index]) }
+        }
+        [object[]]$requiredCheckNames = $requiredCheckNameList.ToArray()
+        [object[]]$interfaceRequiredCheckNames = $interfaceRequiredCheckNameList.ToArray()
+        $requiredCheckArraysValid = $requiredCheckIssues.Count -eq 0 -and $interfaceRequiredCheckIssues.Count -eq 0
+        if ($ExpectedRequiredCheckName -and $requiredCheckNames -cnotcontains $ExpectedRequiredCheckName) { Add-Finding 'GCS012' "Required check '$ExpectedRequiredCheckName' is absent from the workflow contract." }
+        if ($requiredCheckArraysValid -and -not (Test-ExactStringSet -Actual $requiredCheckNames -Expected ([string[]]$interfaceRequiredCheckNames))) { Add-Finding 'GCS012' 'Branch-protection and workflow-interface required check names must agree exactly as a case-sensitive set using ordinal comparison.' }
+
+        if ($requiredCheckArraysValid -and $workflowProfile -ceq 'downstream') {
+            $reusableJobName = [string](Get-JsonMemberValue -InputObject $workflowInterfaceObject -Name 'jobName')
+            $downstreamCheckSuffix = ' / ' + $reusableJobName
+            $hasDownstreamGovernanceCheck = @($requiredCheckNames | Where-Object {
+                $candidateCheckName = [string]$_
+                $candidateCheckName.EndsWith($downstreamCheckSuffix, [System.StringComparison]::Ordinal) -and
+                    -not [string]::IsNullOrWhiteSpace($candidateCheckName.Substring(0, $candidateCheckName.Length - $downstreamCheckSuffix.Length))
+            }).Count -gt 0
+            if (-not $hasDownstreamGovernanceCheck) {
+                Add-Finding 'GCS012' "Downstream required check names must include a caller check for workflow job '$reusableJobName'."
+            }
+        }
+
+        if ($workflowProfile -ceq 'standards-maintainer' -and $Config.workflowInterfaceVersion -ceq '1.0.0') {
+            foreach ($canonicalCheckName in @(Get-CanonicalMaintainerRequiredCheckNames)) {
+                if ($requiredCheckNames -cnotcontains $canonicalCheckName) { Add-Finding 'GCS012' "Maintainer branch-protection checks omit canonical check '$canonicalCheckName'." }
+                if ($interfaceRequiredCheckNames -cnotcontains $canonicalCheckName) { Add-Finding 'GCS012' "Maintainer workflow-interface checks omit canonical check '$canonicalCheckName'." }
+            }
+        }
+    }
+
+    $isTrustedStandardsMaintainer = $workflowProfile -ceq 'standards-maintainer' -and
+        -not [string]::IsNullOrWhiteSpace($ExpectedRepository) -and
+        -not [string]::IsNullOrWhiteSpace($ExpectedStandardsRepository) -and
+        [string]::Equals($ExpectedRepository, $ExpectedStandardsRepository, [System.StringComparison]::OrdinalIgnoreCase)
+    if ($Manifest.projectType -ceq 'governance' -and $isTrustedStandardsMaintainer) {
+        foreach ($schemaFile in @(Get-ChildItem -LiteralPath (Join-Path $Root 'schemas') -Filter '*.schema.json' -File -ErrorAction SilentlyContinue)) {
+            $schema = Read-JsonFile -Path $schemaFile.FullName
+            if (-not $schema.Contains('$id') -or $schema['$id'] -cnotmatch '^urn:aiallthethingz:engineering-standards:schema:[a-z0-9-]+$') { Add-Finding 'GCS013' "Schema '$($schemaFile.Name)' does not use the controlled namespace." $schemaFile.FullName }
+        }
+    }
+
+    if ($results.Count -eq 0) { $results.Add((New-ValidationResult -Status Passed -Message 'Governance contract semantics are coherent.' -Path $Root -Severity info)) }
+    @($results)
+}
+
 Export-ModuleMember -Function @(
     'New-ValidationResult',
     'New-ValidationReport',
@@ -871,6 +1638,7 @@ Export-ModuleMember -Function @(
     'Get-JsonMemberValue',
     'Read-JsonFile',
     'Test-GovernanceJsonDocument',
+    'Test-GovernanceContractSemantics',
     'Test-TestEvidenceObject',
     'Test-ArtifactRecordObject',
     'Test-VerifiedRunObject',

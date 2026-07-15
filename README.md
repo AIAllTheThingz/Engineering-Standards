@@ -143,13 +143,16 @@ Local rules may add stricter validation and repository-specific commands. Local 
 
 ```json
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.2.0",
   "projectName": "Example Service",
   "repository": "example-org/example-service",
   "description": "Example service used to demonstrate governance adoption.",
   "projectType": "dotnet",
   "technologies": ["dotnet", "github-actions"],
   "governanceVersion": "1.1.0",
+  "governanceCommitSha": "<full-40-character-workflow-commit-sha>",
+  "workflowInterfaceVersion": "1.0.0",
+  "repositoryOwnerType": "Organization",
   "riskClassification": "Moderate",
   "dataClassification": "Internal",
   "environments": [
@@ -164,14 +167,38 @@ Local rules may add stricter validation and repository-specific commands. Local 
   "externalIntegrations": [],
   "secretsProvider": "example-secrets-provider",
   "productionApprovalRequired": false,
-  "owners": ["@example-org/example-owners"],
+  "owners": [{
+    "type": "github-team",
+    "identifier": "@example-org/example-owners",
+    "responsibility": "Approves governance-sensitive changes for this repository.",
+    "escalation": "SECURITY.md"
+  }],
+  "standardsConsumption": {
+    "mode": "central-reference",
+    "sourceRepository": "AIAllTheThingz/Engineering-Standards",
+    "sourceCommitSha": "<full-40-character-workflow-commit-sha>"
+  },
   "evidence": {
-    "completionEvidencePath": "evidence/local-completion-result.json",
-    "testEvidencePath": "evidence/test-evidence.json"
+    "local": {
+      "completion": "evidence/local-completion-result.json",
+      "tests": "evidence/local-test-results.json"
+    },
+    "hosted": {
+      "workspace": "evidence",
+      "completion": "completion-result.json",
+      "tests": "ci-test-results.json",
+      "artifactNamePattern": "governance-evidence-${run_id}"
+    }
   },
   "exceptions": []
 }
 ```
+
+Schema versions `1.0.0` and `1.1.0` remain supported. Version `1.2.0` separates
+the semantic governance release from its immutable commit, makes workflow
+interface compatibility explicit, and uses structured ownership, standards
+consumption, evidence, and exception records. See the [Issue #21 compatibility
+proposal](docs/migrations/ISSUE_21_CONTRACT_COMPATIBILITY_PROPOSAL.md).
 
 ## Local Validation
 
@@ -182,7 +209,7 @@ pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/codex-skills-validation.json
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path .
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
 Invoke-Pester -Path tests -Output Detailed
 ```
 

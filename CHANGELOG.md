@@ -6,6 +6,8 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
+- Added governance contract schema `1.2.0`, controlled schema URNs, structured ownership, standards-consumption, workflow-interface, evidence-path, and exception records, plus deterministic `GCS001`-`GCS013` cross-document validation for Issue #21.
+
 - Added bounded deterministic Codex skill validation, safe metadata/reference parsing, prompt-behavior corpus structure, aggregate/candidate CI integration, and honest model-evaluation `NotRun` reporting for Issue #20.
 - Added deterministic pull-request body governance validation, canonical templates and fixtures, and a least-privilege trusted reusable workflow for Issue #19.
 - Added the governed `enterprise-powershell` Codex skill and its delivery guidance.
@@ -13,6 +15,8 @@ All notable changes to the Engineering Standards repository are recorded here. T
 - Added deterministic CODEOWNERS validation, explicit live-identity result classification, lockout-safe protection planning, and ownership fixtures.
 
 ### Changed
+
+- Rotated governance self-CI, repository templates, examples, and current `1.2.0` declarations to final immutable Issue #21 implementation commit `1ee830403569a7e59a5d193229cd19e210113c56`.
 
 - Reconciled repository ownership declarations with three verified GitHub user reviewers and documented safe CODEOWNERS, last-push, branch, tag, bypass, and rollback enforcement.
 - Repaired reusable-workflow trust boundaries so downstream repositories execute immutable central tooling while treating caller content as untrusted data.

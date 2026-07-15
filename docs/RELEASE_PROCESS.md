@@ -49,7 +49,7 @@ Before tagging, maintainers MUST confirm:
 Run the standard release validation:
 
 ```powershell
-pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
+pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User -Category JsonSchemas,MarkdownLinks,DocumentationCompleteness,Contract,ForbiddenPatterns,RepositoryHealth,Evidence,Examples
 ```
 
 Run Pester when scripts, actions, schemas, validators, or completion evidence behavior changed:
@@ -94,6 +94,13 @@ The reviewer MUST check for excessive permissions, untrusted input execution, un
 ## Release Approval
 
 Release approval requires passing mandatory checks or documented approved exceptions. A maintainer must verify that release notes, versioning, evidence, and migration guidance agree.
+
+When a release changes governance contract or reusable-workflow semantics,
+review `governanceVersion`, `governanceCommitSha`, and
+`workflowInterfaceVersion` independently. Rotate the central self-CI pin only
+after the implementation commit exists, validate the rotated commit through
+GitHub Actions, and preserve the prior supported schema versions until their
+separate major-version removal is approved.
 
 Do not approve a release when evidence contradicts the stated status, required files are missing, mandatory controls are disabled without exception, or a known secret exposure is unresolved.
 

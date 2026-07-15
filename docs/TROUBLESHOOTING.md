@@ -23,6 +23,12 @@ Contract validation usually fails because `project-manifest.json` or `governance
 
 Fix the manifest and config first. If the repository type is unusual, update the central schema rather than adding unsupported local fields.
 
+For `GCS001` through `GCS013`, compare the manifest and configuration as one
+contract. Common causes are a repository-name mismatch, release/SHA conflation,
+owner-type mismatch, missing technology standard, incompatible workflow profile,
+declared categories that are not executed, local/hosted evidence confusion,
+inactive exception, required-check drift, or an uncontrolled schema `$id`.
+
 ## Schema Validation Failures
 
 Schema failures mean the JSON does not match the declared contract. Common causes include missing required fields, invalid enum values, additional properties, incorrect path structure, or evidence statuses that contradict the schema.

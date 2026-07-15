@@ -1,6 +1,34 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.2.0",
   "manifestPath": "project-manifest.json",
+  "governanceVersion": "1.1.0",
+  "governanceCommitSha": "1ee830403569a7e59a5d193229cd19e210113c56",
+  "workflowInterfaceVersion": "1.0.0",
+  "workflowProfile": "standards-maintainer",
+  "workflowInterface": {
+    "path": ".github/workflows/governance-ci-reusable.yml",
+    "inputs": [
+      "project-path",
+      "governance-version",
+      "artifact-retention-days",
+      "controlled-failure-test"
+    ],
+    "outputs": [
+      "evidence-path",
+      "artifact-name"
+    ],
+    "jobId": "governance",
+    "jobName": "Governance validation",
+    "artifactNamePattern": "governance-evidence-${run_id}",
+    "requiredCheckNames": [
+      "Governance / Governance validation",
+      "Candidate implementation validation / Candidate implementation validation"
+    ]
+  },
+  "requiredCheckNames": [
+    "Governance / Governance validation",
+    "Candidate implementation validation / Candidate implementation validation"
+  ],
   "evidencePath": "evidence",
   "requiredDocumentationPaths": [
     "README.md",
@@ -17,11 +45,18 @@
   "validationCategories": [
     "Contract",
     "JsonSchemas",
+    "YamlSyntax",
+    "WorkflowArchitecture",
     "MarkdownLinks",
     "DocumentationCompleteness",
     "ForbiddenPatterns",
     "RepositoryHealth",
-    "CodexSkills"
+    "CodexSkills",
+    "Evidence",
+    "Examples",
+    "Pester",
+    "PSScriptAnalyzer",
+    "PowerShellParser"
   ],
   "ownership": {
     "requiredCodeownerPaths": [

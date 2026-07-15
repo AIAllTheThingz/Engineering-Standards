@@ -45,7 +45,12 @@ When changing a schema, update the schema file, at least one valid fixture, at l
 
 Schemas MUST reject ambiguous evidence. For example, overall Passed status cannot coexist with failed mandatory tests.
 
-Additive schema changes should prefer a minor schema version such as `1.1.0` with a documented compatibility window. During that window, validators may accept both `1.0.0` and `1.1.0` while generators move to the newer version.
+Additive schema changes should prefer a minor schema version with a documented
+compatibility window. Contract `1.2.0` retains `1.0.0` and `1.1.0` instance
+support while templates and examples move forward. Maintainers must keep schema,
+semantic validator, fixtures, templates, examples, workflow interface, and
+migration rationale synchronized; required fields must never be backported
+silently into an older document version.
 
 ## Validator Maintenance
 
@@ -112,9 +117,11 @@ pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Repositor
 pwsh -NoProfile -Command "Invoke-Pester -Path tests -Output Detailed"
 ```
 
-`User` is explicit because this repository is verified as user-owned. Generic
-downstream invocation retains the safe `Unknown` default; validation must not
-derive owner type from a repository-name string.
+`User` is explicit because this repository is verified as user-owned. Hosted
+schema `1.2.0` validation derives the trusted value from GitHub event metadata
+and fails closed if it is unavailable or unsupported. Legacy `1.0.0` and
+`1.1.0` downstream contracts may retain `Unknown`; validation must never derive
+owner type from a repository-name string or caller-controlled repository data.
 
 If Pester is unavailable, record `NotRun` with the reason, tool version context, and compensating review.
 

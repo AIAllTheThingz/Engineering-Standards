@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.2.0",
   "projectName": "Engineering Standards",
   "repository": "AIAllTheThingz/Engineering-Standards",
   "description": "Engineering Standards demonstrates adoption of the Engineering Standards repository with real validation commands.",
@@ -9,10 +9,25 @@
     "github-actions"
   ],
   "governanceVersion": "1.1.0",
+  "governanceCommitSha": "1ee830403569a7e59a5d193229cd19e210113c56",
+  "workflowInterfaceVersion": "1.0.0",
+  "repositoryOwnerType": "User",
   "riskClassification": "High",
   "dataClassification": "Internal",
   "owners": [
-    "@AIAllTheThingz"
+    {
+      "type": "github-user",
+      "identifier": "@AIAllTheThingz",
+      "responsibility": "Owns governance policy, workflow, schema, and release decisions.",
+      "escalation": "SECURITY.md",
+      "displayName": "Engineering Standards owner"
+    },
+    {
+      "type": "github-user",
+      "identifier": "@mezuccolini",
+      "responsibility": "Reviews governance-sensitive implementation and evidence changes.",
+      "escalation": "SECURITY.md"
+    }
   ],
   "environments": [
     {
@@ -27,6 +42,10 @@
     "agents/AGENTS_Integration.md",
     "agents/AGENTS_Infrastructure.md"
   ],
+  "standardsConsumption": {
+    "mode": "local",
+    "localPath": "agents"
+  },
   "requiredWorkflows": [
     "governance"
   ],
@@ -34,8 +53,16 @@
   "secretsProvider": "none-required-for-example",
   "productionApprovalRequired": true,
   "evidence": {
-    "completionEvidencePath": "evidence/local-completion-result.json",
-    "testEvidencePath": "evidence/test-evidence.json"
+    "local": {
+      "completion": "evidence/local-completion-result.json",
+      "tests": "evidence/local-test-results.json"
+    },
+    "hosted": {
+      "workspace": "evidence",
+      "completion": "completion-result.json",
+      "tests": "ci-test-results.json",
+      "artifactNamePattern": "governance-evidence-${run_id}"
+    }
   },
   "exceptions": []
 }

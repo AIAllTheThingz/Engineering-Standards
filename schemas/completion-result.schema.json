@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aiallthethingz.example/engineering-standards/completion-result.schema.json",
+  "$id": "urn:aiallthethingz:engineering-standards:schema:completion-result",
   "title": "Completion Result",
   "type": "object",
   "additionalProperties": false,
@@ -309,14 +309,14 @@
     "tests": {
       "type": "array",
       "items": {
-        "$ref": "test-evidence.schema.json"
+        "$ref": "urn:aiallthethingz:engineering-standards:schema:test-evidence"
       },
       "minItems": 1
     },
     "artifacts": {
       "type": "array",
       "items": {
-        "$ref": "artifact-record.schema.json"
+        "$ref": "urn:aiallthethingz:engineering-standards:schema:artifact-record"
       }
     },
     "warnings": {

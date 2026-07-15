@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aiallthethingz.example/engineering-standards/verified-run.schema.json",
+  "$id": "urn:aiallthethingz:engineering-standards:schema:verified-run",
   "title": "Verified Run",
   "type": "object",
   "additionalProperties": false,
