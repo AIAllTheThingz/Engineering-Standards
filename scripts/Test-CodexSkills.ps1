@@ -48,23 +48,6 @@ try {
         notRun=@($allValidationResults | Where-Object status -eq 'NotRun').Count
         warnings=@($allValidationResults | Where-Object severity -eq 'warning').Count
     }
-    if ($OutputJson) {
-        if ($AllowedOutputRoot) {
-            $outputRoot = (Resolve-Path -LiteralPath $AllowedOutputRoot).Path
-            $candidate = if ([System.IO.Path]::IsPathRooted($OutputJson)) { [System.IO.Path]::GetFullPath($OutputJson) } else { [System.IO.Path]::GetFullPath((Join-Path $outputRoot $OutputJson)) }
-            $relativeOutput = [System.IO.Path]::GetRelativePath($outputRoot, $candidate)
-            $resolvedOutput = Resolve-BoundedChildPath -Root $outputRoot -ChildPath $relativeOutput -AllowMissingLeaf
-        }
-        else {
-            $relativeOutput = if ([System.IO.Path]::IsPathRooted($OutputJson)) { [System.IO.Path]::GetRelativePath($root, [System.IO.Path]::GetFullPath($OutputJson)) } else { $OutputJson }
-            $resolvedOutput = Resolve-BoundedChildPath -Root $root -ChildPath $relativeOutput -AllowMissingLeaf
-        }
-        $parent = Split-Path -Parent $resolvedOutput
-        if ($parent) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
-        $report.repositoryRoot = '.'
-        $report.skillsRoot = @($reports | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.skillsRoot).Replace('\','/') })
-        $report | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $resolvedOutput -Encoding utf8
-    }
     "Codex skills: deterministic=$($report.deterministicStatus), modelEvaluation=$($report.modelEvaluationStatus), skills=$(@($report.skillsDiscovered).Count), failed=$($report.failed), blocked=$($report.blocked), notRun=$($report.notRun)."
     if ($report.deterministicStatus -in @('Failed','Blocked')) { exit 1 }
     $behaviorEvidence = Join-Path $root 'evidence/codex-skill-behavior.json'
@@ -90,6 +73,23 @@ try {
         elseif ($behavior.status -eq 'Passed') {
             if ($behavior.humanAdjudication.status -ne 'Passed' -or $behavior.humanAdjudication.decision -ne 'Approved' -or [string]::IsNullOrWhiteSpace([string]$behavior.humanAdjudication.reviewer) -or $null -eq $behavior.humanAdjudication.reviewedAtUtc) { Write-Error 'Passed behavior evidence requires an attributable Approved human adjudication before aggregate success.'; exit 1 }
         }
+    }
+    if ($OutputJson) {
+        if ($AllowedOutputRoot) {
+            $outputRoot = (Resolve-Path -LiteralPath $AllowedOutputRoot).Path
+            $candidate = if ([System.IO.Path]::IsPathRooted($OutputJson)) { [System.IO.Path]::GetFullPath($OutputJson) } else { [System.IO.Path]::GetFullPath((Join-Path $outputRoot $OutputJson)) }
+            $relativeOutput = [System.IO.Path]::GetRelativePath($outputRoot, $candidate)
+            $resolvedOutput = Resolve-BoundedChildPath -Root $outputRoot -ChildPath $relativeOutput -AllowMissingLeaf
+        }
+        else {
+            $relativeOutput = if ([System.IO.Path]::IsPathRooted($OutputJson)) { [System.IO.Path]::GetRelativePath($root, [System.IO.Path]::GetFullPath($OutputJson)) } else { $OutputJson }
+            $resolvedOutput = Resolve-BoundedChildPath -Root $root -ChildPath $relativeOutput -AllowMissingLeaf
+        }
+        $parent = Split-Path -Parent $resolvedOutput
+        if ($parent) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+        $report.repositoryRoot = '.'
+        $report.skillsRoot = @($reports | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.skillsRoot).Replace('\','/') })
+        $report | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $resolvedOutput -Encoding utf8
     }
     exit 0
 }
