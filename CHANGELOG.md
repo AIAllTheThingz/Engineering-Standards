@@ -18,6 +18,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 ### Changed
 
 - Made the default aggregate validator authoritative for all mandatory maintainer checks, made `-Category` filtering additive to mandatory controls, and reduced candidate CI to one isolated aggregate invocation.
+- Rotated governance self-CI and the root contract to immutable Issue #22 implementation commit `b14757f98e6a841c37e48ce023b692f529192f2d` using the two-commit bootstrap process.
 - Rotated governance self-CI, repository templates, examples, and current `1.2.0` declarations to final immutable Issue #21 implementation commit `1ee830403569a7e59a5d193229cd19e210113c56`.
 
 - Reconciled repository ownership declarations with three verified GitHub user reviewers and documented safe CODEOWNERS, last-push, branch, tag, bypass, and rollback enforcement.

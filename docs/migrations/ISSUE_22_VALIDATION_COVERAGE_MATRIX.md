@@ -45,6 +45,12 @@ categories and resolves the plan in registry order.
 | `standards-maintainer` | All 15 registered categories | None currently | Yes, only for the verified central repository; candidate code is isolated by the immutable candidate harness. |
 | `downstream` | `Contract` | `CodexSkills`, `MarkdownLinks`, `DocumentationCompleteness`, `ForbiddenPatterns` | No; caller content is inert input to trusted central validators. |
 
+Bootstrap uses two immutable commits. The first Issue #22 implementation commit
+`b14757f98e6a841c37e48ce023b692f529192f2d` contains the reviewed reusable and
+candidate workflows; a second commit rotates self-CI and the root contract to
+that SHA. The candidate workflow at the first commit then validates the second
+commit without trusting workflow definitions supplied by the pull-request head.
+
 An active structured exception may make an otherwise mandatory category
 `NotApplicable` only after contract validation approves the exact exception.
 `Contract` cannot be disabled because it establishes that authority. The
