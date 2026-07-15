@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "1.0.0",
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "updatedAtUtc": "2026-07-15T00:00:00Z",
+  "ownerRole": "Release Maintainers",
+  "supportPolicy": {
+    "currentMajor": 1,
+    "previousMajor": null,
+    "securityFixes": "The current major receives security and critical validator fixes while it remains supported.",
+    "removalNotice": "A supported contract is removed only through a separately reviewed major release with migration guidance."
+  },
+  "governanceReleases": [
+    {
+      "version": "1.1.0",
+      "lifecycle": "Published",
+      "supportStatus": "Supported",
+      "immutableRef": "v1.1.0",
+      "immutableSha": "2704049d7e826975d956611b194214dd79ea3686",
+      "workflowInterfaceVersions": ["1.0.0"],
+      "projectManifestSchemaVersions": ["1.0.0", "1.1.0"],
+      "testEvidenceSchemaVersions": ["1.0.0", "1.1.0"],
+      "completionResultSchemaVersions": ["1.0.0", "1.1.0"],
+      "migrationGuide": "docs/ADOPTION_GUIDE.md",
+      "deprecation": {
+        "status": "NotDeprecated",
+        "announcedAtUtc": null,
+        "removalVersion": null,
+        "replacement": null
+      }
+    }
+  ],
+  "unreleasedContract": {
+    "governanceVersion": "1.1.0",
+    "supportStatus": "Preview",
+    "workflowInterfaceVersions": ["1.0.0"],
+    "projectManifestSchemaVersions": ["1.0.0", "1.1.0", "1.2.0"],
+    "testEvidenceSchemaVersions": ["1.0.0", "1.1.0"],
+    "completionResultSchemaVersions": ["1.0.0", "1.1.0"],
+    "migrationGuide": "docs/migrations/ISSUE_21_CONTRACT_COMPATIBILITY_PROPOSAL.md",
+    "canaryValidatedWorkflowSha": "de32b77e2043f5336a54b92ab9ed867abe93ba7e"
+  }
+}

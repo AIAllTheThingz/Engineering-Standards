@@ -33,7 +33,7 @@ Only the selected scenario job runs during manual dispatch. Pull requests and pu
 
 ## Verified Baseline
 
-The corrected cross-repository proof used canary commit `a7671ec1b8b702fc7703e49a7819bbffffd04fc3` and Engineering Standards functional candidate `de32b77e2043f5336a54b92ab9ed867abe93ba7e`. Every run uploaded evidence, and each downloaded artifact passed independent verification with `scripts/Test-WorkflowEvidenceArtifact.ps1`. This table validates that functional candidate, not a later metadata-only documentation commit.
+The corrected cross-repository proof used canary commit `a7671ec1b8b702fc7703e49a7819bbffffd04fc3` and Engineering Standards functional candidate `de32b77e2043f5336a54b92ab9ed867abe93ba7e`. Every run uploaded evidence, and each downloaded artifact passed independent verification with `scripts/Test-WorkflowEvidenceArtifact.ps1`. This table validates that functional candidate, not a later metadata-only documentation commit. Release lifecycle records use the same five-scenario contract and bind it to the candidate declared in [Downstream Compatibility](DOWNSTREAM_COMPATIBILITY.md).
 
 | Scenario | Run | Governance job | Artifact ID | Artifact SHA-256 | Result |
 | --- | ---: | ---: | ---: | --- | --- |
@@ -83,3 +83,4 @@ The canary validates the reusable governance contract and its security boundary.
 - [Action Security](ACTION_SECURITY.md)
 - [Release Process](RELEASE_PROCESS.md)
 - [Troubleshooting](TROUBLESHOOTING.md)
+- [Downstream Compatibility](DOWNSTREAM_COMPATIBILITY.md)

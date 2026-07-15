@@ -33,6 +33,17 @@ Describe 'JSON schema validation' {
             (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/governance-config-1.2.0.json" -Raw | Test-Json -SchemaFile $configSchema) | Should -BeTrue
         }
 
+        It 'enforces the release lifecycle structure directly in JSON Schema' {
+            $schema = Resolve-Path "$PSScriptRoot/../../schemas/release-lifecycle.schema.json"
+            (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/release-lifecycle/valid/full-lifecycle.json" -Raw | Test-Json -SchemaFile $schema) | Should -BeTrue
+            (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/release-lifecycle/invalid/missing-canary.json" -Raw | Test-Json -SchemaFile $schema) | Should -BeFalse
+        }
+
+        It 'accepts the owned downstream compatibility matrix directly in JSON Schema' {
+            $schema = Resolve-Path "$PSScriptRoot/../../schemas/downstream-compatibility.schema.json"
+            (Get-Content -LiteralPath "$PSScriptRoot/../../governance/downstream-compatibility.json" -Raw | Test-Json -SchemaFile $schema) | Should -BeTrue
+        }
+
         It 'rejects a null workflow interface version for a 1.2.0 manifest' {
             $schema = Resolve-Path "$PSScriptRoot/../../schemas/project-manifest.schema.json"
             $manifest = Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/project-manifest-1.2.0-user.json" -Raw | ConvertFrom-Json

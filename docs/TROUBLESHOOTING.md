@@ -161,6 +161,22 @@ For a reusable-workflow candidate, use the public canary procedure in [Downstrea
 
 Download each artifact separately and verify its caller repository, exact caller commit or documented pull-request merge commit, branch, run ID, conclusion, and standards workflow identity. If verification fails, preserve the run reference, correct the owning workflow or fixture, and rerun all five scenarios. Do not rotate pins, weaken fixtures, or treat self-CI as a substitute.
 
+### Release Lifecycle Findings
+
+Run the exact requested gate and keep its JSON report:
+
+```powershell
+pwsh -NoProfile -File scripts/Test-ReleaseLifecycle.ps1 -Path . -EvidencePath <release-lifecycle-record.json> -Stage PreRelease -OutputJson .tmp/release-lifecycle-result.json
+```
+
+`RLG000`-`RLG004` identify unsafe paths, parse defects, or dishonest status/reason pairs. `RLG010`-`RLG014` identify missing artifact identity, digest, download, or independent verification. `RLG020` means one observation targets a different commit; replace stale Evidence and reapprove the final head rather than editing the SHA to look consistent.
+
+`RLG030`-`RLG038` identify incomplete canary coverage or an unexpected scenario conclusion. All five scenarios must target the same exact candidate and preserve their individual artifacts. `RLG040`-`RLG046` indicate that release metadata disagrees with `governance/downstream-compatibility.json`; update the owning schema, migration guidance, or matrix on the candidate branch.
+
+`RLG050`-`RLG091` cover top-level binding and pre-release controls, including release-note hashes, mandatory validation, hosted runs, approvals, and protection observations. `RLG100`-`RLG110` block publication for tag, GitHub Release, note, or provenance defects. `RLG120`-`RLG126` block post-release completion when re-fetch, canary, regression follow-up, post-release record, or compatibility updates are absent. `RLG130`-`RLG132` apply only to Live mode and require the recorded candidate to equal a clean Git HEAD.
+
+A `NotRun` or `Blocked` external check is useful honest Evidence but cannot pass a release gate. Perform the missing action or retain the non-passing state and reason. Do not use a synthetic fixture as release proof, rewrite a tag to repair a mismatch, or publish while the Publication gate fails.
+
 ## Pester Failures
 
 Pester failures indicate validator behavior changed or a regression was introduced. Read the failing test name before changing implementation. If a test is obsolete because governance policy changed, update the policy, validator, and test together.
@@ -230,6 +246,7 @@ When a tool was unavailable, include runtime context and mark the status honestl
 - `docs/BRANCH_PROTECTION.md`
 - `docs/ACTION_SECURITY.md`
 - `docs/DOWNSTREAM_CANARY.md`
+- `docs/DOWNSTREAM_COMPATIBILITY.md`
 - `docs/VALIDATOR_DEPENDENCIES.md`
 - `governance/COMPLETION_EVIDENCE.md`
 - `governance/EXCEPTION_PROCESS.md`

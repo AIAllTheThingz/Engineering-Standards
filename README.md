@@ -10,7 +10,7 @@ Copied governance files drift. A security requirement added to one repository is
 
 - Defines organization-wide engineering requirements.
 - Defines inherited AI-agent standards for common technology domains.
-- Provides schemas for project manifests, governance configuration, test evidence, artifact records, and completion results.
+- Provides schemas for project manifests, governance configuration, test evidence, artifact records, completion results, release lifecycle evidence, and downstream compatibility.
 - Provides composite actions and reusable workflows for pull-request and release validation.
 - Provides templates and examples that downstream repositories can adapt without copying central policy as the synchronization mechanism.
 - Records release evidence so maintainers can inspect what was validated and what was not run.
@@ -84,6 +84,7 @@ flowchart TD
 - [Adoption Guide](docs/ADOPTION_GUIDE.md)
 - [Downstream Configuration](docs/DOWNSTREAM_CONFIGURATION.md)
 - [Downstream Governance Canary](docs/DOWNSTREAM_CANARY.md)
+- [Downstream Compatibility](docs/DOWNSTREAM_COMPATIBILITY.md)
 - [Action Security](docs/ACTION_SECURITY.md)
 - [Validator Dependency Model](docs/VALIDATOR_DEPENDENCIES.md)
 - [Codex Skill Validation](docs/CODEX_SKILL_VALIDATION.md)
@@ -224,6 +225,7 @@ pwsh -NoProfile -File scripts/Test-YamlSyntax.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path .
 pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/codex-skills-validation.json
 pwsh -NoProfile -File scripts/Test-ValidatorDependencies.ps1 -Path . -OutputJson .tmp/validator-dependencies.json
+pwsh -NoProfile -File scripts/Test-ReleaseLifecycle.ps1 -Path . -EvidencePath <release-lifecycle-record.json> -Stage PreRelease
 ```
 
 See the [Issue #22 coverage matrix](docs/migrations/ISSUE_22_VALIDATION_COVERAGE_MATRIX.md)
@@ -253,6 +255,13 @@ The repository now separates example types explicitly:
 The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Downstream CI SHOULD pin commit SHAs for maximum supply-chain integrity. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md), and release procedure is defined in [Release Process](docs/RELEASE_PROCESS.md).
 
 Current published version: `1.1.0`. Annotated tag `v1.1.0` resolves to immutable commit `2704049d7e826975d956611b194214dd79ea3686`. Current `master` contains [unreleased changes](CHANGELOG.md#unreleased) beyond that release.
+
+Release candidates use the read-only lifecycle gate in
+`scripts/Test-ReleaseLifecycle.ps1`. Its PreRelease, Publication, and
+PostRelease stages bind validation, canary runs, human approvals, tag/release
+state, and compatibility updates to one immutable SHA. See [Downstream
+Compatibility](docs/DOWNSTREAM_COMPATIBILITY.md) for the supported release,
+schema, and workflow-interface matrix.
 
 Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `de32b77e2043f5336a54b92ab9ed867abe93ba7e`; the repair is not part of `v1.1.0`. See [Release Status](docs/RELEASE_STATUS.md).
 

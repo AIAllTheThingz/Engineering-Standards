@@ -74,15 +74,37 @@ Before release approval, maintainers MUST also confirm:
 - Controlled-failure proof run for the exact release target
 - Independent artifact download and verification
 - Verified `environment.json`, `runtime-bootstrap.json`, `dependencies.json`, and `validator-sbom.cdx.json` for the exact release target
-- For releases that modify the reusable governance workflow, its public downstream interface, or an authoritative reusable-workflow pin: external downstream canary success and four isolated expected-failure runs against the exact release candidate SHA
+- External downstream canary success and four isolated expected-failure runs against the exact release candidate SHA
 
-For releases that modify the reusable governance workflow, its public downstream interface, or an authoritative reusable-workflow pin, the external canary is mandatory even when self-CI passes. Follow [Downstream Governance Canary](DOWNSTREAM_CANARY.md), verify every downloaded artifact independently, and record the canary commit, candidate standards SHA, run IDs, artifact IDs, hashes, and expected failure reasons in the release review. Any missing or unexpected result blocks release approval and authoritative pin rotation. Documentation-, policy-, schema-, or metadata-only releases that do not change those workflow surfaces do not require a new external canary run.
+Every release candidate now requires the external canary success scenario at the exact candidate SHA. The complete lifecycle gate additionally requires the controlled failure and three contract-negative scenarios so publication evidence proves both compatibility and fail-closed behavior. Follow [Downstream Governance Canary](DOWNSTREAM_CANARY.md), verify every downloaded artifact independently, and record the canary commit, candidate standards SHA, run IDs, artifact IDs, hashes, and expected failure reasons in the release review. Any missing, stale, or unexpected result blocks release approval.
+
+## Machine-Checked Lifecycle Gates
+
+Release decisions are recorded with `schemas/release-lifecycle.schema.json` and enforced by `scripts/Test-ReleaseLifecycle.ps1`. The record binds every check, workflow run, artifact, canary scenario, approval, tag, and release observation to one lowercase full candidate SHA. `finalHeadSha` MUST remain equal to `candidateSha`; a new commit invalidates prior approval and exact-target evidence.
+
+Prepare the record in `DryRun` mode first. Synthetic fixtures belong under `tests/fixtures`; they prove validator behavior and MUST NOT be presented as release Evidence. Live mode additionally verifies the current Git HEAD and clean worktree.
+
+```powershell
+pwsh -NoProfile -File scripts/Test-ReleaseLifecycle.ps1 `
+  -Path . `
+  -EvidencePath .tmp/releases/<version>-lifecycle.json `
+  -Stage PreRelease `
+  -OutputJson .tmp/releases/<version>-pre-release-result.json
+```
+
+The pre-release stage cannot pass until repository validation, Pester, PSScriptAnalyzer, JSON schemas, workflow architecture, governed skills, documentation, evidence, and release consistency have all passed against the candidate. It also requires the exact-target hosted success and controlled-failure runs, independent artifact verification, all five downstream canary scenarios, matching release metadata, formal human approval on the unchanged head, and current branch/tag protection observations.
+
+After authorized publication, run `-Stage Publication`. This gate requires an annotated protected `v<version>` tag resolving to the candidate, `rewritten=false`, a published GitHub Release whose draft/prerelease state matches the version, reviewed-note hash agreement, and artifact hashes with provenance. Tag creation, release publication, and protection changes are external mutations and require explicit authorization; this validator never performs them.
+
+After re-fetching external state, run `-Stage PostRelease`. This gate requires tag and GitHub Release verification, all canary scenarios against the published immutable ref, regression disposition, defect follow-up issues, an owned post-release record, and a refreshed [Downstream Compatibility](DOWNSTREAM_COMPATIBILITY.md) matrix. `NotRun` and `Blocked` remain honest non-passing states with actionable reasons.
 
 ## Evidence Generation
 
 Generate completion evidence after validation. Evidence must include the validation commands, exit codes, status, timestamps, warnings, skipped checks, and artifact references.
 
 For release artifacts, include artifact hashes. For manual approvals, include reviewer identity, approval location, and approval date.
+
+Start the post-publication record from `templates/releases/POST_RELEASE_VERIFICATION.template.json`. The existing generated `evidence/releases/1.1.0-post-release-verification.json` remains historical Evidence in its original shape; new releases embed the equivalent observations in the lifecycle record and link the generated post-release record from `postRelease.recordPath`.
 
 For governance workflow releases, verify both the success path and controlled-failure path in GitHub Actions. The success run may be a `push` or `workflow_dispatch` run, but it MUST target the exact approved implementation commit with mandatory examples, Pester, and documentation validation enabled. The controlled-failure run must use `controlled-failure-test=true` against that same implementation state and must fail only after evidence validation and artifact upload.
 
@@ -136,11 +158,15 @@ If no tag exists yet, document that the release is prepared but unpublished. Do 
 
 Publish release notes that identify version, date, summary, breaking changes, new controls, fixed defects, workflow or action pin changes, schema changes, migration instructions, validation evidence, and known issues.
 
+Publication is not complete when a tag command returns successfully. Re-fetch the tag object and peeled target, query the GitHub Release, hash the published notes and artifacts, then pass the Publication lifecycle gate. A draft release, an unverified tag, or a notes mismatch MUST remain unpublished in repository status records.
+
 Downstream repositories should be told whether they must update immediately, may adopt at their normal cadence, or should wait for a follow-up fix.
 
 ## Post-Release Monitoring
 
 After release, monitor downstream CI failures, security reports, issue templates, and maintainer feedback. If a release causes unexpected failures, triage whether the release exposed real drift or introduced a defect.
+
+Run the canary at the published immutable reference, record every observed regression, and create one owned follow-up issue per defect before passing the PostRelease gate. Update support and deprecation state in `governance/downstream-compatibility.json`; do not leave compatibility decisions only in prose.
 
 Defects in the central repository should be corrected with a patch release and clear guidance.
 
@@ -171,4 +197,5 @@ Expired exceptions cannot justify a release.
 - `governance/EXCEPTION_PROCESS.md`
 - `docs/TROUBLESHOOTING.md`
 - `docs/DOWNSTREAM_CANARY.md`
+- `docs/DOWNSTREAM_COMPATIBILITY.md`
 - `docs/VALIDATOR_DEPENDENCIES.md`

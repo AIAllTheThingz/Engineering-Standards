@@ -1,0 +1,385 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordType": "release-lifecycle",
+  "mode": "DryRun",
+  "synthetic": true,
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "version": "1.1.0",
+  "candidateSha": "1111111111111111111111111111111111111111",
+  "finalHeadSha": "1111111111111111111111111111111111111111",
+  "createdAtUtc": "2026-07-15T12:00:00Z",
+  "createdBy": "Synthetic release lifecycle test fixture",
+  "releaseNotes": {
+    "path": "docs/releases/1.1.0.md",
+    "reviewedSha256": "460ba851b0611e4032e46242fc294a2dd819bb35e97abb069b54987fe1faf803"
+  },
+  "compatibilityMatrix": {
+    "path": "governance/downstream-compatibility.json",
+    "schemaVersion": "1.0.0"
+  },
+  "preRelease": {
+    "status": "Passed",
+    "reason": null,
+    "checks": [
+      {
+        "id": "clean-worktree",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Synthetic fixture records a clean candidate worktree.",
+        "targetSha": "1111111111111111111111111111111111111111",
+        "evidence": ["synthetic://git/status"]
+      },
+      {
+        "id": "repository-validation",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Synthetic aggregate repository validation completed successfully.",
+        "targetSha": "1111111111111111111111111111111111111111",
+        "evidence": ["synthetic://validation/aggregate"]
+      },
+      {
+        "id": "pester",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Synthetic Pester suite completed with no failed or skipped tests.",
+        "targetSha": "1111111111111111111111111111111111111111",
+        "evidence": ["synthetic://validation/pester"]
+      },
+      {
+        "id": "psscriptanalyzer",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Synthetic ScriptAnalyzer scan completed with no error findings.",
+        "targetSha": "1111111111111111111111111111111111111111",
+        "evidence": ["synthetic://validation/psscriptanalyzer"]
+      },
+      {
+        "id": "json-schemas",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Synthetic JSON schema and fixture checks completed successfully.",
+        "targetSha": "1111111111111111111111111111111111111111",
+        "evidence": ["synthetic://validation/json-schemas"]
+      },
+      {
+        "id": "workflow-architecture",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Synthetic workflow architecture validation completed successfully.",
+        "targetSha": "1111111111111111111111111111111111111111",
+        "evidence": ["synthetic://validation/workflow-architecture"]
+      },
+      {
+        "id": "codex-skills",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Synthetic governed skill validation completed successfully.",
+        "targetSha": "1111111111111111111111111111111111111111",
+        "evidence": ["synthetic://validation/codex-skills"]
+      },
+      {
+        "id": "documentation",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Synthetic documentation completeness and link checks passed.",
+        "targetSha": "1111111111111111111111111111111111111111",
+        "evidence": ["synthetic://validation/documentation"]
+      },
+      {
+        "id": "evidence",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Synthetic completion and workflow evidence checks passed.",
+        "targetSha": "1111111111111111111111111111111111111111",
+        "evidence": ["synthetic://validation/evidence"]
+      },
+      {
+        "id": "release-consistency",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Synthetic version, notes, changelog, and release metadata agree.",
+        "targetSha": "1111111111111111111111111111111111111111",
+        "evidence": ["synthetic://validation/release-consistency"]
+      }
+    ],
+    "successRun": {
+      "status": "Passed",
+      "reason": null,
+      "runId": 1001,
+      "conclusion": "success",
+      "targetSha": "1111111111111111111111111111111111111111",
+      "artifact": {
+        "name": "governance-evidence-1001",
+        "artifactId": 5001,
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "downloaded": true,
+        "verified": true
+      }
+    },
+    "controlledFailureRun": {
+      "status": "Passed",
+      "reason": null,
+      "runId": 1002,
+      "conclusion": "failure",
+      "targetSha": "1111111111111111111111111111111111111111",
+      "failedStep": "Enforce mandatory governance result",
+      "priorMandatoryStepsPassed": true,
+      "artifactUploadedBeforeFailure": true,
+      "artifact": {
+        "name": "governance-evidence-1002",
+        "artifactId": 5002,
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "downloaded": true,
+        "verified": true
+      }
+    },
+    "downstreamCanary": {
+      "status": "Passed",
+      "reason": null,
+      "repository": "AIAllTheThingz/Engineering-Standards-Canary",
+      "canaryCommitSha": "2222222222222222222222222222222222222222",
+      "standardsSha": "1111111111111111111111111111111111111111",
+      "scenarios": [
+        {
+          "name": "success",
+          "runId": 2001,
+          "conclusion": "success",
+          "expectedConclusion": "success",
+          "verified": true,
+          "artifact": {
+            "name": "canary-success-2001",
+            "artifactId": 6001,
+            "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "downloaded": true,
+            "verified": true
+          }
+        },
+        {
+          "name": "controlled-failure",
+          "runId": 2002,
+          "conclusion": "failure",
+          "expectedConclusion": "failure",
+          "verified": true,
+          "artifact": {
+            "name": "canary-controlled-failure-2002",
+            "artifactId": 6002,
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "downloaded": true,
+            "verified": true
+          }
+        },
+        {
+          "name": "governance-version-mismatch",
+          "runId": 2003,
+          "conclusion": "failure",
+          "expectedConclusion": "failure",
+          "verified": true,
+          "artifact": {
+            "name": "canary-version-mismatch-2003",
+            "artifactId": 6003,
+            "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "downloaded": true,
+            "verified": true
+          }
+        },
+        {
+          "name": "missing-required-file",
+          "runId": 2004,
+          "conclusion": "failure",
+          "expectedConclusion": "failure",
+          "verified": true,
+          "artifact": {
+            "name": "canary-missing-file-2004",
+            "artifactId": 6004,
+            "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "downloaded": true,
+            "verified": true
+          }
+        },
+        {
+          "name": "mandatory-control-disablement",
+          "runId": 2005,
+          "conclusion": "failure",
+          "expectedConclusion": "failure",
+          "verified": true,
+          "artifact": {
+            "name": "canary-control-disablement-2005",
+            "artifactId": 6005,
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "downloaded": true,
+            "verified": true
+          }
+        }
+      ]
+    },
+    "metadataConsistency": {
+      "status": "Passed",
+      "reason": null,
+      "versionFile": "1.1.0",
+      "changelogVersion": "1.1.0",
+      "releaseNotesVersion": "1.1.0",
+      "workflowInterfaceVersion": "1.0.0",
+      "supportedProjectManifestSchemaVersions": ["1.0.0", "1.1.0", "1.2.0"],
+      "migrationGuidance": "docs/migrations/ISSUE_21_CONTRACT_COMPATIBILITY_PROPOSAL.md"
+    },
+    "approvals": [
+      {
+        "reviewer": "synthetic-human-reviewer",
+        "isHuman": true,
+        "decision": "Approved",
+        "targetSha": "1111111111111111111111111111111111111111",
+        "location": "https://github.com/AIAllTheThingz/Engineering-Standards/pull/999",
+        "submittedAtUtc": "2026-07-15T12:30:00Z"
+      }
+    ],
+    "protection": {
+      "branch": {
+        "status": "Passed",
+        "reason": null,
+        "pattern": "master",
+        "verifiedAtUtc": "2026-07-15T12:35:00Z"
+      },
+      "tag": {
+        "status": "Passed",
+        "reason": null,
+        "pattern": "v*",
+        "verifiedAtUtc": "2026-07-15T12:35:00Z"
+      }
+    }
+  },
+  "publication": {
+    "status": "Passed",
+    "reason": null,
+    "tag": {
+      "status": "Passed",
+      "reason": null,
+      "name": "v1.1.0",
+      "kind": "annotated",
+      "objectSha": "3333333333333333333333333333333333333333",
+      "targetSha": "1111111111111111111111111111111111111111",
+      "protected": true,
+      "rewritten": false,
+      "verifiedAtUtc": "2026-07-15T13:00:00Z"
+    },
+    "githubRelease": {
+      "status": "Passed",
+      "reason": null,
+      "url": "https://github.com/AIAllTheThingz/Engineering-Standards/releases/tag/v1.1.0",
+      "targetSha": "1111111111111111111111111111111111111111",
+      "draft": false,
+      "prerelease": false,
+      "notesSha256": "460ba851b0611e4032e46242fc294a2dd819bb35e97abb069b54987fe1faf803",
+      "publishedAtUtc": "2026-07-15T13:05:00Z"
+    },
+    "artifacts": [
+      {
+        "name": "governance-evidence-1001.zip",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "provenance": "Synthetic fixture artifact generated by exact-target workflow run 1001."
+      }
+    ]
+  },
+  "postRelease": {
+    "status": "Passed",
+    "reason": null,
+    "refetchedTag": {
+      "status": "Passed",
+      "reason": null,
+      "targetSha": "1111111111111111111111111111111111111111",
+      "verifiedAtUtc": "2026-07-15T14:00:00Z"
+    },
+    "githubReleaseVerification": {
+      "status": "Passed",
+      "reason": null,
+      "targetSha": "1111111111111111111111111111111111111111",
+      "draft": false,
+      "prerelease": false,
+      "verifiedAtUtc": "2026-07-15T14:05:00Z"
+    },
+    "downstreamCanary": {
+      "status": "Passed",
+      "reason": null,
+      "repository": "AIAllTheThingz/Engineering-Standards-Canary",
+      "canaryCommitSha": "2222222222222222222222222222222222222222",
+      "standardsSha": "1111111111111111111111111111111111111111",
+      "publishedRef": "v1.1.0",
+      "scenarios": [
+        {
+          "name": "success",
+          "runId": 3001,
+          "conclusion": "success",
+          "expectedConclusion": "success",
+          "verified": true,
+          "artifact": {
+            "name": "post-canary-success-3001",
+            "artifactId": 7001,
+            "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "downloaded": true,
+            "verified": true
+          }
+        },
+        {
+          "name": "controlled-failure",
+          "runId": 3002,
+          "conclusion": "failure",
+          "expectedConclusion": "failure",
+          "verified": true,
+          "artifact": {
+            "name": "post-canary-controlled-failure-3002",
+            "artifactId": 7002,
+            "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+            "downloaded": true,
+            "verified": true
+          }
+        },
+        {
+          "name": "governance-version-mismatch",
+          "runId": 3003,
+          "conclusion": "failure",
+          "expectedConclusion": "failure",
+          "verified": true,
+          "artifact": {
+            "name": "post-canary-version-mismatch-3003",
+            "artifactId": 7003,
+            "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+            "downloaded": true,
+            "verified": true
+          }
+        },
+        {
+          "name": "missing-required-file",
+          "runId": 3004,
+          "conclusion": "failure",
+          "expectedConclusion": "failure",
+          "verified": true,
+          "artifact": {
+            "name": "post-canary-missing-file-3004",
+            "artifactId": 7004,
+            "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+            "downloaded": true,
+            "verified": true
+          }
+        },
+        {
+          "name": "mandatory-control-disablement",
+          "runId": 3005,
+          "conclusion": "failure",
+          "expectedConclusion": "failure",
+          "verified": true,
+          "artifact": {
+            "name": "post-canary-control-disablement-3005",
+            "artifactId": 7005,
+            "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "downloaded": true,
+            "verified": true
+          }
+        }
+      ]
+    },
+    "regressions": [],
+    "followUpIssues": [],
+    "recordPath": "evidence/releases/1.1.0-post-release-verification.json",
+    "compatibilityMatrixUpdated": true
+  },
+  "exceptions": []
+}

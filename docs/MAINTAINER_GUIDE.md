@@ -140,6 +140,19 @@ Before release, update `VERSION`, changelog or release notes, migration guidance
 
 Release candidates should be tested from a clean checkout. If local tooling is unavailable, record the missing tool as `NotRun` or `Blocked` and decide whether release can proceed based on risk.
 
+Release maintainers own `governance/downstream-compatibility.json` and the
+machine-readable lifecycle record. Start in `DryRun`, bind all observations to
+one full candidate SHA, and run `scripts/Test-ReleaseLifecycle.ps1 -Stage
+PreRelease`. Formal approvals, exact-target success and controlled-failure
+runs, downloaded artifacts, all five canary scenarios, and current branch/tag
+protection observations MUST be attached to the unchanged final head.
+
+Tag creation, release publication, and protection mutations require explicit
+authorization. After authorization, run the Publication gate; after re-fetching
+the tag and release, run PostRelease and create owned issues for every observed
+defect. Use `templates/releases/POST_RELEASE_VERIFICATION.template.json` and
+never turn an unperformed external action into Passed.
+
 ## Emergency Maintenance
 
 Emergency changes are allowed for security fixes, broken validation affecting many repositories, or incorrect standards that create production risk. Emergency changes still require evidence, reviewer sign-off after the fact when immediate review is impossible, and a follow-up issue for any skipped validation.
@@ -175,6 +188,15 @@ owner type from a repository-name string or caller-controlled repository data.
 
 If Pester is unavailable, record `NotRun` with the reason, tool version context, and compensating review.
 
+For a release candidate, follow aggregate validation with:
+
+```powershell
+pwsh -NoProfile -File scripts/Test-ReleaseLifecycle.ps1 -Path . -EvidencePath <release-lifecycle-record.json> -Stage PreRelease
+```
+
+Stable `RLG*` finding codes identify the failed invariant so reviewers do not
+have to reconstruct readiness from several prose documents.
+
 ## Evidence
 
 Maintainer evidence must include command output or structured reports for the validation set, Pester when applicable, manual review notes for policy-only changes, and artifact hashes when release artifacts are produced.
@@ -194,6 +216,7 @@ Expired exceptions must be removed, renewed, or converted into tracked remediati
 - `docs/ACTION_SECURITY.md`
 - `docs/VALIDATOR_DEPENDENCIES.md`
 - `docs/BACKLOG_MANAGEMENT.md`
+- `docs/DOWNSTREAM_COMPATIBILITY.md`
 - `governance/EXCEPTION_PROCESS.md`
 - `governance/COMPLETION_EVIDENCE.md`
 - `docs/TROUBLESHOOTING.md`

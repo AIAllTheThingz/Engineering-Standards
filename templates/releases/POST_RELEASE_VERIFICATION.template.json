@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordType": "post-release-verification",
+  "status": "NotRun",
+  "reason": "Populate this template only after publication and preserve unperformed checks as NotRun or Blocked.",
+  "repository": "owner/repository",
+  "version": "0.0.0",
+  "candidateSha": "0000000000000000000000000000000000000000",
+  "verifiedAtUtc": "1970-01-01T00:00:00Z",
+  "verifiedBy": "release-verifier",
+  "tagVerification": {
+    "status": "NotRun",
+    "reason": "Re-fetch the annotated tag and record its object and target before changing this status.",
+    "name": "v0.0.0",
+    "objectSha": "0000000000000000000000000000000000000000",
+    "targetSha": "0000000000000000000000000000000000000000",
+    "protected": false,
+    "rewritten": false,
+    "verifiedAtUtc": "1970-01-01T00:00:00Z"
+  },
+  "githubReleaseVerification": {
+    "status": "NotRun",
+    "reason": "Re-fetch the GitHub Release and record its immutable target and publication state.",
+    "url": "https://github.com/owner/repository/releases/tag/v0.0.0",
+    "targetSha": "0000000000000000000000000000000000000000",
+    "draft": true,
+    "prerelease": false,
+    "notesSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "verifiedAtUtc": "1970-01-01T00:00:00Z"
+  },
+  "downstreamCanary": {
+    "status": "NotRun",
+    "reason": "Run all required canary scenarios against the published immutable reference and verify every artifact.",
+    "repository": "owner/canary-repository",
+    "publishedRef": "v0.0.0",
+    "standardsSha": "0000000000000000000000000000000000000000",
+    "canaryCommitSha": "0000000000000000000000000000000000000000",
+    "scenarios": []
+  },
+  "regressions": [],
+  "followUpIssues": [],
+  "compatibilityMatrix": {
+    "path": "governance/downstream-compatibility.json",
+    "updated": false,
+    "supportAndDeprecationReviewed": false
+  },
+  "exceptions": []
+}

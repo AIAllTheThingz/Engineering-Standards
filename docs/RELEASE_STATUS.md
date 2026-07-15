@@ -45,3 +45,4 @@ Local deterministic validation compares repository-controlled records with the l
 - [Release Process](RELEASE_PROCESS.md)
 - [v1.1.0 release record](releases/1.1.0.md)
 - [Post-release verification evidence](../evidence/releases/1.1.0-post-release-verification.json)
+- [Downstream Compatibility](DOWNSTREAM_COMPATIBILITY.md)

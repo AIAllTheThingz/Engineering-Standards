@@ -1,0 +1,427 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:aiallthethingz:engineering-standards:schema:release-lifecycle",
+  "title": "Release Lifecycle Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "recordType",
+    "mode",
+    "synthetic",
+    "repository",
+    "version",
+    "candidateSha",
+    "finalHeadSha",
+    "createdAtUtc",
+    "createdBy",
+    "releaseNotes",
+    "compatibilityMatrix",
+    "preRelease",
+    "publication",
+    "postRelease",
+    "exceptions"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0.0" },
+    "recordType": { "type": "string", "const": "release-lifecycle" },
+    "mode": { "type": "string", "enum": ["DryRun", "Live"] },
+    "synthetic": { "type": "boolean" },
+    "repository": { "type": "string", "pattern": "^[^/\\s]+/[^/\\s]+$" },
+    "version": { "$ref": "#/$defs/version" },
+    "candidateSha": { "$ref": "#/$defs/commitSha" },
+    "finalHeadSha": { "$ref": "#/$defs/commitSha" },
+    "createdAtUtc": { "type": "string", "format": "date-time" },
+    "createdBy": { "type": "string", "minLength": 2, "maxLength": 160 },
+    "releaseNotes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "reviewedSha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/relativePath" },
+        "reviewedSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "compatibilityMatrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "schemaVersion"],
+      "properties": {
+        "path": { "$ref": "#/$defs/relativeJsonPath" },
+        "schemaVersion": { "type": "string", "const": "1.0.0" }
+      }
+    },
+    "preRelease": { "$ref": "#/$defs/preRelease" },
+    "publication": { "$ref": "#/$defs/publication" },
+    "postRelease": { "$ref": "#/$defs/postRelease" },
+    "exceptions": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^GOV-[A-Z0-9-]+$" },
+      "uniqueItems": true
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "mode": { "const": "DryRun" } }, "required": ["mode"] },
+      "then": { "properties": { "synthetic": { "const": true } } }
+    },
+    {
+      "if": { "properties": { "mode": { "const": "Live" } }, "required": ["mode"] },
+      "then": { "properties": { "synthetic": { "const": false } } }
+    }
+  ],
+  "$defs": {
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "commitSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "relativePath": {
+      "type": "string",
+      "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?![A-Za-z]:)(?!/)(?!\\\\).+"
+    },
+    "relativeJsonPath": {
+      "type": "string",
+      "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?![A-Za-z]:)(?!/)(?!\\\\).+\\.json$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["Passed", "Failed", "Blocked", "NotRun", "NotApplicable"]
+    },
+    "reason": { "type": ["string", "null"], "minLength": 10, "maxLength": 2000 },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "artifactId", "sha256", "downloaded", "verified"],
+      "properties": {
+        "name": { "type": "string", "minLength": 3, "maxLength": 200 },
+        "artifactId": { "type": "integer", "minimum": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "downloaded": { "type": "boolean" },
+        "verified": { "type": "boolean" }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "reason", "summary", "targetSha", "evidence"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "enum": [
+            "clean-worktree",
+            "repository-validation",
+            "pester",
+            "psscriptanalyzer",
+            "json-schemas",
+            "workflow-architecture",
+            "codex-skills",
+            "documentation",
+            "evidence",
+            "release-consistency"
+          ]
+        },
+        "status": { "$ref": "#/$defs/status" },
+        "reason": { "$ref": "#/$defs/reason" },
+        "summary": { "type": "string", "minLength": 10, "maxLength": 2000 },
+        "targetSha": { "$ref": "#/$defs/commitSha" },
+        "evidence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 3, "maxLength": 2000 },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "successRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason", "runId", "conclusion", "targetSha", "artifact"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "reason": { "$ref": "#/$defs/reason" },
+        "runId": { "type": "integer", "minimum": 1 },
+        "conclusion": { "type": "string", "const": "success" },
+        "targetSha": { "$ref": "#/$defs/commitSha" },
+        "artifact": { "$ref": "#/$defs/artifact" }
+      }
+    },
+    "controlledFailureRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason",
+        "runId",
+        "conclusion",
+        "targetSha",
+        "failedStep",
+        "priorMandatoryStepsPassed",
+        "artifactUploadedBeforeFailure",
+        "artifact"
+      ],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "reason": { "$ref": "#/$defs/reason" },
+        "runId": { "type": "integer", "minimum": 1 },
+        "conclusion": { "type": "string", "const": "failure" },
+        "targetSha": { "$ref": "#/$defs/commitSha" },
+        "failedStep": { "type": "string", "const": "Enforce mandatory governance result" },
+        "priorMandatoryStepsPassed": { "type": "boolean", "const": true },
+        "artifactUploadedBeforeFailure": { "type": "boolean", "const": true },
+        "artifact": { "$ref": "#/$defs/artifact" }
+      }
+    },
+    "canaryScenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "runId", "conclusion", "expectedConclusion", "verified", "artifact"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "enum": [
+            "success",
+            "controlled-failure",
+            "governance-version-mismatch",
+            "missing-required-file",
+            "mandatory-control-disablement"
+          ]
+        },
+        "runId": { "type": "integer", "minimum": 1 },
+        "conclusion": { "type": "string", "enum": ["success", "failure"] },
+        "expectedConclusion": { "type": "string", "enum": ["success", "failure"] },
+        "verified": { "type": "boolean" },
+        "artifact": { "$ref": "#/$defs/artifact" }
+      }
+    },
+    "canary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason", "repository", "canaryCommitSha", "standardsSha", "scenarios"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "reason": { "$ref": "#/$defs/reason" },
+        "repository": { "type": "string", "pattern": "^[^/\\s]+/[^/\\s]+$" },
+        "canaryCommitSha": { "$ref": "#/$defs/commitSha" },
+        "standardsSha": { "$ref": "#/$defs/commitSha" },
+        "publishedRef": { "type": "string", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+        "scenarios": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/canaryScenario" },
+          "minItems": 5,
+          "maxItems": 5
+        }
+      }
+    },
+    "metadataConsistency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason",
+        "versionFile",
+        "changelogVersion",
+        "releaseNotesVersion",
+        "workflowInterfaceVersion",
+        "supportedProjectManifestSchemaVersions",
+        "migrationGuidance"
+      ],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "reason": { "$ref": "#/$defs/reason" },
+        "versionFile": { "$ref": "#/$defs/version" },
+        "changelogVersion": { "$ref": "#/$defs/version" },
+        "releaseNotesVersion": { "$ref": "#/$defs/version" },
+        "workflowInterfaceVersion": { "$ref": "#/$defs/version" },
+        "supportedProjectManifestSchemaVersions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/version" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "migrationGuidance": { "$ref": "#/$defs/relativePath" }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewer", "isHuman", "decision", "targetSha", "location", "submittedAtUtc"],
+      "properties": {
+        "reviewer": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "isHuman": { "type": "boolean", "const": true },
+        "decision": { "type": "string", "const": "Approved" },
+        "targetSha": { "$ref": "#/$defs/commitSha" },
+        "location": { "type": "string", "format": "uri", "pattern": "^https://github\\.com/" },
+        "submittedAtUtc": { "type": "string", "format": "date-time" }
+      }
+    },
+    "protectionState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason", "pattern", "verifiedAtUtc"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "reason": { "$ref": "#/$defs/reason" },
+        "pattern": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "verifiedAtUtc": { "type": "string", "format": "date-time" }
+      }
+    },
+    "preRelease": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason",
+        "checks",
+        "successRun",
+        "controlledFailureRun",
+        "downstreamCanary",
+        "metadataConsistency",
+        "approvals",
+        "protection"
+      ],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "reason": { "$ref": "#/$defs/reason" },
+        "checks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/check" },
+          "minItems": 10,
+          "maxItems": 10
+        },
+        "successRun": { "$ref": "#/$defs/successRun" },
+        "controlledFailureRun": { "$ref": "#/$defs/controlledFailureRun" },
+        "downstreamCanary": { "$ref": "#/$defs/canary" },
+        "metadataConsistency": { "$ref": "#/$defs/metadataConsistency" },
+        "approvals": { "type": "array", "items": { "$ref": "#/$defs/approval" }, "minItems": 1 },
+        "protection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["branch", "tag"],
+          "properties": {
+            "branch": { "$ref": "#/$defs/protectionState" },
+            "tag": { "$ref": "#/$defs/protectionState" }
+          }
+        }
+      }
+    },
+    "tagPublication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason", "name", "kind", "objectSha", "targetSha", "protected", "rewritten", "verifiedAtUtc"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "reason": { "$ref": "#/$defs/reason" },
+        "name": { "type": "string", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+        "kind": { "type": "string", "const": "annotated" },
+        "objectSha": { "$ref": "#/$defs/commitSha" },
+        "targetSha": { "$ref": "#/$defs/commitSha" },
+        "protected": { "type": "boolean" },
+        "rewritten": { "type": "boolean" },
+        "verifiedAtUtc": { "type": "string", "format": "date-time" }
+      }
+    },
+    "githubRelease": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason", "url", "targetSha", "draft", "prerelease", "notesSha256", "publishedAtUtc"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "reason": { "$ref": "#/$defs/reason" },
+        "url": { "type": "string", "format": "uri", "pattern": "^https://github\\.com/" },
+        "targetSha": { "$ref": "#/$defs/commitSha" },
+        "draft": { "type": "boolean" },
+        "prerelease": { "type": "boolean" },
+        "notesSha256": { "$ref": "#/$defs/sha256" },
+        "publishedAtUtc": { "type": "string", "format": "date-time" }
+      }
+    },
+    "publishedArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "sha256", "provenance"],
+      "properties": {
+        "name": { "type": "string", "minLength": 3, "maxLength": 200 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "provenance": { "type": "string", "minLength": 10, "maxLength": 2000 }
+      }
+    },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason", "tag", "githubRelease", "artifacts"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "reason": { "$ref": "#/$defs/reason" },
+        "tag": { "$ref": "#/$defs/tagPublication" },
+        "githubRelease": { "$ref": "#/$defs/githubRelease" },
+        "artifacts": { "type": "array", "items": { "$ref": "#/$defs/publishedArtifact" } }
+      }
+    },
+    "verificationState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason", "targetSha", "verifiedAtUtc"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "reason": { "$ref": "#/$defs/reason" },
+        "targetSha": { "$ref": "#/$defs/commitSha" },
+        "verifiedAtUtc": { "type": "string", "format": "date-time" }
+      }
+    },
+    "releaseVerification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason", "targetSha", "draft", "prerelease", "verifiedAtUtc"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "reason": { "$ref": "#/$defs/reason" },
+        "targetSha": { "$ref": "#/$defs/commitSha" },
+        "draft": { "type": "boolean" },
+        "prerelease": { "type": "boolean" },
+        "verifiedAtUtc": { "type": "string", "format": "date-time" }
+      }
+    },
+    "regression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "summary", "disposition"],
+      "properties": {
+        "repository": { "type": "string", "pattern": "^[^/\\s]+/[^/\\s]+$" },
+        "summary": { "type": "string", "minLength": 10, "maxLength": 2000 },
+        "disposition": { "type": "string", "enum": ["ExpectedDrift", "Defect", "Monitoring"] }
+      }
+    },
+    "postRelease": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason",
+        "refetchedTag",
+        "githubReleaseVerification",
+        "downstreamCanary",
+        "regressions",
+        "followUpIssues",
+        "recordPath",
+        "compatibilityMatrixUpdated"
+      ],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "reason": { "$ref": "#/$defs/reason" },
+        "refetchedTag": { "$ref": "#/$defs/verificationState" },
+        "githubReleaseVerification": { "$ref": "#/$defs/releaseVerification" },
+        "downstreamCanary": { "$ref": "#/$defs/canary" },
+        "regressions": { "type": "array", "items": { "$ref": "#/$defs/regression" } },
+        "followUpIssues": {
+          "type": "array",
+          "items": { "type": "string", "format": "uri", "pattern": "^https://github\\.com/.+/issues/[0-9]+$" },
+          "uniqueItems": true
+        },
+        "recordPath": { "$ref": "#/$defs/relativeJsonPath" },
+        "compatibilityMatrixUpdated": { "type": "boolean" }
+      }
+    }
+  }
+}

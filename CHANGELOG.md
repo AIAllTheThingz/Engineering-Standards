@@ -6,6 +6,13 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
+- Added the Issue #25 machine-readable release lifecycle schema and read-only
+  PreRelease, Publication, and PostRelease validator with immutable-head,
+  exact-target workflow, artifact, canary, approval, tag, release, regression,
+  and compatibility findings.
+- Added the owned downstream compatibility matrix, support/deprecation guidance,
+  post-release verification template, and positive plus controlled-failure
+  lifecycle regression coverage.
 - Added the Issue #24 owned remediation backlog model, periodic review
   checklist, known-limitation dispositions, and normalized issues #42 through
   #49 for controlled skill evaluation and the seven remaining planned skills.
@@ -49,6 +56,11 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Migration Notes
 
+- Future release candidates must populate the release lifecycle record in
+  `DryRun` mode, pass the exact-candidate canary and hosted proof runs, then pass
+  Publication and PostRelease only after authorized external actions are
+  independently verified. Existing `v1.1.0` historical evidence is retained in
+  its original schema.
 - Existing aggregate commands with `-Category` remain accepted, but the option now filters optional profile categories only. Maintainers should remove hand-maintained category lists and use the complete default command documented in the Issue #22 coverage matrix.
 - `v1.1.0` remains the latest published release and does not contain these changes. Consumers needing that control set may use tag `v1.1.0` at `2704049d7e826975d956611b194214dd79ea3686`.
 - Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `de32b77e2043f5336a54b92ab9ed867abe93ba7e`.
