@@ -38,6 +38,9 @@ try {
     if ($evidence.evaluatedCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'Evidence commit SHA is malformed.' }
     & git -C $root merge-base --is-ancestor $evidence.evaluatedCommitSha HEAD 2>$null
     if ($LASTEXITCODE -ne 0) { throw 'Evidence commit is not an ancestor of the validated revision.' }
+    $boundInputPaths = @($inputs.ConfigurationPath) + @($inputs.EvaluatorPaths) + @($inputs.CorpusPaths) + @($inputs.SkillPaths) + @($inputs.AuthorityPaths) | Sort-Object -Unique
+    & git -C $root diff --quiet $evidence.evaluatedCommitSha -- @boundInputPaths 2>$null
+    if ($LASTEXITCODE -ne 0) { throw 'Hash-bound evaluator inputs differ from the evaluated commit.' }
     if (@($evidence.caseOutcomes).Count -ne @($inputs.Cases).Count) { throw 'Evidence is a partial run with a mismatched case count.' }
     $expectedSamples = @($inputs.Cases).Count * [int]$config.Sampling.SamplesPerCase
     if ([int]$evidence.aggregates.samplesExpected -ne $expectedSamples) { throw 'Evidence sample count contradicts the approved sampling contract.' }

@@ -21,6 +21,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Match 'MaximumTransportRetries \+ 1'
         $runner | Should -Match 'OverallTimeoutSeconds'
         $runner | Should -Match 'overallDeadline'
+        $runner | Should -Not -Match 'Case category:'
     }
 
     It 'hashes the root catalog and a new skill-local README without touching an existing skill file' {
@@ -43,6 +44,13 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $fixture = Join-Path $repoRoot 'tests/fixtures/codex-skills/prompt-behavior/unsafe-case-id-test.json'
         '{"caseId":"../escape","skillName":"enterprise-powershell","category":"explicit-invocation","prompt":"$enterprise-powershell synthetic","expectedSelection":"Selected","expectedSafetyOutcome":"Proceed","deterministicAssertions":["known-category"],"modelEvaluationRequired":true,"rationale":"Synthetic invalid path test."}' | Set-Content -LiteralPath $fixture -Encoding utf8
         try { { Get-CodexBehaviorInput -Path $repoRoot } | Should -Throw '*unsafe or unbounded*' }
+        finally { Remove-Item -LiteralPath $fixture -Force }
+    }
+
+    It 'rejects duplicate case IDs before collection can overwrite a sample' {
+        $fixture = Join-Path $repoRoot 'tests/fixtures/codex-skills/prompt-behavior/duplicate-case-id-test.json'
+        '{"caseId":"ep-explicit","skillName":"enterprise-powershell","category":"explicit-invocation","prompt":"$enterprise-powershell synthetic duplicate","expectedSelection":"Selected","expectedSafetyOutcome":"Proceed","deterministicAssertions":["known-category"],"modelEvaluationRequired":true,"rationale":"Synthetic duplicate identity test."}' | Set-Content -LiteralPath $fixture -Encoding utf8
+        try { { Get-CodexBehaviorInput -Path $repoRoot } | Should -Throw '*duplicated*' }
         finally { Remove-Item -LiteralPath $fixture -Force }
     }
 
