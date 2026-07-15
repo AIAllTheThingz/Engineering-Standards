@@ -3,7 +3,7 @@
 | Status | Active |
 | Version | 1.1.0 |
 | Owner role | Release Maintainers |
-| Last reviewed | 2026-07-12 |
+| Last reviewed | 2026-07-15 |
 
 ## Purpose
 
@@ -41,6 +41,8 @@ Before tagging, maintainers MUST confirm:
 - Templates reflect current required evidence and branch behavior.
 - Reusable workflows call the correct scripts and upload evidence.
 - Third-party actions are pinned by commit SHA.
+- Release-critical runners and runtimes match the reviewed validator dependency lock.
+- Dependency provenance evidence and the CycloneDX validator inventory match the intended release candidate.
 - Examples validate against the current schemas and standards.
 - Known warnings are reviewed.
 
@@ -50,6 +52,7 @@ Run the standard release validation:
 
 ```powershell
 pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
+pwsh -NoProfile -File scripts/Test-ValidatorDependencies.ps1 -Path . -OutputJson .tmp/validator-dependencies.json
 ```
 
 The aggregate includes the complete maintainer Pester suite. A focused rerun is
@@ -70,6 +73,7 @@ Before release approval, maintainers MUST also confirm:
 - Success GitHub run for the exact release target
 - Controlled-failure proof run for the exact release target
 - Independent artifact download and verification
+- Verified `environment.json`, `runtime-bootstrap.json`, `dependencies.json`, and `validator-sbom.cdx.json` for the exact release target
 - For releases that modify the reusable governance workflow, its public downstream interface, or an authoritative reusable-workflow pin: external downstream canary success and four isolated expected-failure runs against the exact release candidate SHA
 
 For releases that modify the reusable governance workflow, its public downstream interface, or an authoritative reusable-workflow pin, the external canary is mandatory even when self-CI passes. Follow [Downstream Governance Canary](DOWNSTREAM_CANARY.md), verify every downloaded artifact independently, and record the canary commit, candidate standards SHA, run IDs, artifact IDs, hashes, and expected failure reasons in the release review. Any missing or unexpected result blocks release approval and authoritative pin rotation. Documentation-, policy-, schema-, or metadata-only releases that do not change those workflow surfaces do not require a new external canary run.
@@ -90,7 +94,13 @@ Download both evidence artifacts into isolated temporary directories, verify the
 
 Security review is mandatory when the release changes GitHub Actions, PowerShell scripts, secret scanning, dependency controls, branch protection, authentication standards, infrastructure standards, database standards, or AI-generated code policy.
 
-The reviewer MUST check for excessive permissions, untrusted input execution, unsafe `pull_request_target` use, shell injection, token exposure, unsanitized logs, and dependency pin drift.
+The reviewer MUST check for excessive permissions, untrusted input execution, unsafe `pull_request_target` use, shell injection, token exposure, unsanitized logs, dependency pin drift, moving runner labels, mismatched runtime versions, unverified package content, missing source provenance, and incomplete SBOM evidence.
+
+Validator environment changes follow [Validator Dependency Model](VALIDATOR_DEPENDENCIES.md).
+The release reviewer must confirm the lock, workflows, hashes, actual hosted
+inventory, failure tests, and update rationale agree. Package or container
+publication requires separate explicit authorization; a release PR must not
+silently create a new distribution channel.
 
 ## Release Approval
 
@@ -161,3 +171,4 @@ Expired exceptions cannot justify a release.
 - `governance/EXCEPTION_PROCESS.md`
 - `docs/TROUBLESHOOTING.md`
 - `docs/DOWNSTREAM_CANARY.md`
+- `docs/VALIDATOR_DEPENDENCIES.md`

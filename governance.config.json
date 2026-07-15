@@ -2,7 +2,7 @@
   "schemaVersion": "1.2.0",
   "manifestPath": "project-manifest.json",
   "governanceVersion": "1.1.0",
-  "governanceCommitSha": "b14757f98e6a841c37e48ce023b692f529192f2d",
+  "governanceCommitSha": "a8c600601c73aaadb6e3fa776d0b4aac13f37a04",
   "workflowInterfaceVersion": "1.0.0",
   "workflowProfile": "standards-maintainer",
   "workflowInterface": {
@@ -70,6 +70,7 @@
       "/scripts/",
       "/tests/",
       "/.github/workflows/",
+      "/.github/dependencies/",
       "/workflows/",
       "/SECURITY.md",
       "/CODEOWNERS",

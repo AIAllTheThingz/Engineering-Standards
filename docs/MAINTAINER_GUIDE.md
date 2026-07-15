@@ -3,7 +3,7 @@
 | Status | Active |
 | Version | 1.0.0 |
 | Owner role | Engineering Standards Maintainers |
-| Last reviewed | 2026-07-12 |
+| Last reviewed | 2026-07-15 |
 
 ## Purpose
 
@@ -74,6 +74,29 @@ Entry workflows should call reusable workflows. Reusable workflows must not call
 
 Final enforcement MUST run after final test evidence, final completion evidence, final evidence validation, and artifact upload. A controlled failure must still upload evidence before enforcement fails the job.
 
+## Validator Dependency Maintenance
+
+Maintainers MUST treat runner labels, setup actions, runtimes, parsers, test
+frameworks, analyzers, and their package sources as security-sensitive validator
+code. The supported environment is declared in
+`.github/dependencies/validator-dependencies.psd1`; duplicate workflow values
+must match that lock and may not drift independently.
+
+Dependabot action and pip pull requests are review signals. Maintainers must
+verify the official source, publisher, support lifecycle, release notes,
+vulnerability status, full action SHA, exact artifact, and SHA-256 before
+updating the lock. Pester and PSScriptAnalyzer updates are manual because the
+PSGallery package hash and extracted manifest are reviewed together. A remote
+source is never trusted merely because TLS or PSGallery/PyPI supplied the file.
+
+Run `scripts/Test-ValidatorDependencies.ps1`, missing-cache and tamper tests,
+Pester, PSScriptAnalyzer, aggregate validation, exact-SHA GitHub success and
+controlled-failure runs, artifact verification, and the external canary before
+rotating an authoritative workflow pin. Review `environment.json`,
+`runtime-bootstrap.json`, `dependencies.json`, and
+`validator-sbom.cdx.json`. Follow the complete update and offline procedure in
+[Validator Dependency Model](VALIDATOR_DEPENDENCIES.md).
+
 ## Template Maintenance
 
 Templates must be usable as starting points, not decorative examples. Repository templates must prompt for owners, risk, evidence, validation commands, rollback, security reporting, and exceptions. Issue and pull request templates must collect enough information for maintainers to triage without asking for secrets.
@@ -120,6 +143,7 @@ Run the maintainer validation set before merging substantive changes:
 
 ```powershell
 pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
+pwsh -NoProfile -File scripts/Test-ValidatorDependencies.ps1 -Path . -OutputJson .tmp/validator-dependencies.json
 ```
 
 The aggregate report is non-passing when a mandatory category is `Failed`,
@@ -151,6 +175,7 @@ Expired exceptions must be removed, renewed, or converted into tracked remediati
 - `docs/VERSIONING.md`
 - `docs/RELEASE_PROCESS.md`
 - `docs/ACTION_SECURITY.md`
+- `docs/VALIDATOR_DEPENDENCIES.md`
 - `governance/EXCEPTION_PROCESS.md`
 - `governance/COMPLETION_EVIDENCE.md`
 - `docs/TROUBLESHOOTING.md`

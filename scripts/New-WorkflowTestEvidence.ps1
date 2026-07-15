@@ -20,7 +20,7 @@ param(
     [switch]$RunDocumentation,
     [switch]$RunExamples,
     [switch]$AllowControlledFailure,
-    [string]$Runtime = 'GitHub Actions ubuntu-latest / pwsh',
+    [string]$Runtime = 'GitHub Actions ubuntu-24.04 / pinned pwsh',
     [string]$ToolVersion = 'pwsh'
 )
 

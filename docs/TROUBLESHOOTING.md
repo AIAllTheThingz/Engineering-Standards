@@ -3,7 +3,7 @@
 | Status | Active |
 | Version | 1.0.0 |
 | Owner role | Support Maintainers |
-| Last reviewed | 2026-06-19 |
+| Last reviewed | 2026-07-15 |
 
 ## Purpose
 
@@ -109,6 +109,31 @@ If `project-path` fails validation, use a normal relative directory below the ca
 
 If validation names `additionalForbiddenPatterns` or `reviewedAllowlist` as unsupported, leave that array empty for the central downstream workflow. These repository-provided scanner extensions are rejected rather than silently ignored until the reviewed configuration model in Issue #21 is implemented.
 
+## Validator Dependency and Runtime Failures
+
+Run the dependency validator before changing a workflow or installing a
+replacement package:
+
+```powershell
+pwsh -NoProfile -File scripts/Test-ValidatorDependencies.ps1 -Path . -OutputJson .tmp/validator-dependencies.json
+```
+
+`DEP001` through `DEP010` identify malformed or drifting lock, runtime, source,
+action, package, and Python-requirement declarations. `DEP011` means an exact
+package is unavailable; offline execution is `Blocked` until the reviewed cache
+is restored. `DEP012` means content is mismatched or tampered and is always
+`Failed`; delete the isolated cache copy, independently obtain the official
+artifact, verify the reviewed digest, and investigate unexpected content before
+rerunning. Do not update a digest merely to match what a package source returned.
+
+Compare `runtime-bootstrap.json` and `dependencies.json` with
+`.github/dependencies/validator-dependencies.psd1`. A setup-action success does
+not override an actual-version mismatch. An unavailable PyPI, PSGallery, GitHub
+release, or setup-action source remains `Blocked`, never an implied pass. Use the
+offline procedure in [Validator Dependency Model](VALIDATOR_DEPENDENCIES.md)
+when a reviewed cache is available. If the CycloneDX file is missing, the
+environment evidence is incomplete and release approval remains blocked.
+
 For final evidence verification, trigger a success run with:
 
 ```powershell
@@ -205,5 +230,6 @@ When a tool was unavailable, include runtime context and mark the status honestl
 - `docs/BRANCH_PROTECTION.md`
 - `docs/ACTION_SECURITY.md`
 - `docs/DOWNSTREAM_CANARY.md`
+- `docs/VALIDATOR_DEPENDENCIES.md`
 - `governance/COMPLETION_EVIDENCE.md`
 - `governance/EXCEPTION_PROCESS.md`

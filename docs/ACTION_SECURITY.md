@@ -5,7 +5,7 @@
 | Status | Active |
 | Version | 1.0.0 |
 | Owner role | Action Security Maintainers |
-| Last reviewed | 2026-06-19 |
+| Last reviewed | 2026-07-15 |
 
 ## Purpose
 
@@ -110,11 +110,34 @@ Third-party actions in reusable workflows MUST be pinned by immutable commit SHA
 Pinned actions currently used by this repository:
 
 - `actions/checkout`: `34e114876b0b11c390a56381ad16ebd13914f8d5`
-- `actions/setup-node`: `49933ea5288caeca8642d1e84afbd3f7d6820020`
-- `actions/setup-dotnet`: `67a3573c9a986a3f9c594539f4ab511d57bb3ce9`
+- `actions/setup-python`: `ece7cb06caefa5fff74198d8649806c4678c61a1`
+- `actions/setup-node`: `820762786026740c76f36085b0efc47a31fe5020`
+- `actions/setup-dotnet`: `26b0ec14cb23fa6904739307f278c14f94c95bf1`
 - `actions/upload-artifact`: `ea165f8d65b6e75b540449e92b4886f43607fa02`
 
 Changing these pins requires review of release notes, permissions, and supply-chain risk.
+
+## Validator Runtime and Dependency Integrity
+
+Release-critical jobs MUST use `ubuntu-24.04`; moving `ubuntu-latest` labels are
+prohibited. Python, Node, and .NET setup actions MUST match the full SHAs and
+exact versions in `.github/dependencies/validator-dependencies.psd1`.
+PowerShell validation MUST run with the locked release archive after its
+SHA-256 is verified. PyYAML, Pester, and PSScriptAnalyzer MUST be installed only
+from the exact hash-verified package files declared in that lock.
+
+The candidate workflow MUST obtain bootstrap scripts and dependency data from a
+separate immutable harness checkout at `job.workflow_sha`; it must not use the
+candidate checkout to define its own supposedly trusted environment. Missing
+offline packages and unavailable reviewed sources are `Blocked`. Hash
+mismatches, runtime drift, unsafe archives, and malformed locks are `Failed`.
+Neither condition may be treated as success or bypassed by using a convenient
+preinstalled runner package.
+
+Hosted artifacts MUST contain actual runner-image metadata, runtime versions,
+executable hashes, dependency source and hash evidence, and the CycloneDX
+validator inventory. See [Validator Dependency Model](VALIDATOR_DEPENDENCIES.md)
+for online, offline, update, SBOM, signed-bundle, and rollback procedures.
 
 ## Artifact And Evidence Safety
 
@@ -168,6 +191,7 @@ pwsh -NoProfile -File scripts/Test-DocumentationCompleteness.ps1 -Path .
 pwsh -NoProfile -File actions/forbidden-pattern-scan/Invoke-ForbiddenPatternScan.ps1 -Path .
 pwsh -NoProfile -File actions/repository-health/Invoke-RepositoryHealth.ps1 -Path . -RepositoryOwnerType User
 pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/codex-skills-validation.json
+pwsh -NoProfile -File scripts/Test-ValidatorDependencies.ps1 -Path . -OutputJson .tmp/validator-dependencies.json
 Invoke-Pester -Path tests/actions -Output Detailed
 ```
 
@@ -188,3 +212,4 @@ Exceptions MUST follow [../governance/EXCEPTION_PROCESS.md](../governance/EXCEPT
 - [../actions/forbidden-pattern-scan/README.md](../actions/forbidden-pattern-scan/README.md)
 - [../actions/repository-health/README.md](../actions/repository-health/README.md)
 - [Downstream Governance Canary](DOWNSTREAM_CANARY.md)
+- [Validator Dependency Model](VALIDATOR_DEPENDENCIES.md)

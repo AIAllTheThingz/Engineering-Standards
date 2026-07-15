@@ -670,6 +670,32 @@ if ($workflows.ContainsKey($prEntry)) {
 }
 elseif ($requiresPrGovernance) { $results.Add((New-ValidationResult -Status Failed -Message 'PR governance entry workflow is missing.' -Path $prEntry)) }
 
+$dependencyLockPath = Join-Path $root '.github/dependencies/validator-dependencies.psd1'
+if (Test-Path -LiteralPath $dependencyLockPath -PathType Leaf) {
+    $dependencyReportRelative = ".tmp/validator-dependencies-$([guid]::NewGuid().ToString('N')).json"
+    $dependencyReportPath = Join-Path $root $dependencyReportRelative
+    try {
+        $currentPowerShell = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
+        & $currentPowerShell -NoProfile -File (Join-Path $PSScriptRoot 'Test-ValidatorDependencies.ps1') -Path $root -OutputJson $dependencyReportRelative | Out-Null
+        $dependencyExitCode = $LASTEXITCODE
+        if (-not (Test-Path -LiteralPath $dependencyReportPath -PathType Leaf)) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Validator dependency validation did not produce its required report.' -Path '.github/dependencies/validator-dependencies.psd1'))
+        }
+        else {
+            $dependencyReport = Get-Content -LiteralPath $dependencyReportPath -Raw | ConvertFrom-Json
+            foreach ($dependencyResult in @($dependencyReport.results | Where-Object status -in @('Failed','Blocked'))) {
+                $results.Add((New-ValidationResult -Status Failed -Message "$($dependencyResult.ruleId): $($dependencyResult.message)" -Path ([string]$dependencyResult.path)))
+            }
+            if ($dependencyExitCode -ne 0 -and -not @($dependencyReport.results | Where-Object status -in @('Failed','Blocked'))) {
+                $results.Add((New-ValidationResult -Status Failed -Message "Validator dependency validation exited $dependencyExitCode without a structured failure." -Path '.github/dependencies/validator-dependencies.psd1'))
+            }
+        }
+    }
+    finally {
+        Remove-Item -LiteralPath $dependencyReportPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
 if (-not @($results | Where-Object status -eq 'Failed')) {
     $results.Add((New-ValidationResult -Status Passed -Message 'GitHub workflow architecture validation passed.' -Path $root -Severity info -Data @{ callGraph = $callGraph }))
 }

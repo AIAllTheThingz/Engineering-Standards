@@ -9,7 +9,7 @@ permissions:
 jobs:
   candidate:
     name: Candidate implementation validation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
       contents: read
@@ -22,6 +22,15 @@ jobs:
           path: candidate
           persist-credentials: false
           fetch-depth: 0
+
+      - name: Checkout immutable candidate harness
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: harness
+          persist-credentials: false
+          fetch-depth: 1
 
       - name: Validate candidate harness identity
         shell: pwsh
@@ -38,41 +47,45 @@ jobs:
           if ($env:CANDIDATE_SHA -notmatch '^[a-fA-F0-9]{40}$') { throw 'Candidate checkout must use an immutable full SHA.' }
           $head = (& git -C candidate rev-parse HEAD).Trim()
           if ($LASTEXITCODE -ne 0 -or $head -ne $env:CANDIDATE_SHA) { throw 'Candidate checkout HEAD does not match github.sha.' }
+          $harnessHead = (& git -C harness rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $harnessHead -ne $env:HARNESS_SHA) { throw 'Candidate harness checkout HEAD does not match job.workflow_sha.' }
 
-      - name: Install immutable candidate-validation dependencies
+      - name: Set up pinned Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: 3.12.11
+
+      - name: Set up pinned Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22.17.0
+
+      - name: Set up pinned .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1
+        with:
+          dotnet-version: 8.0.411
+
+      - name: Install hash-verified PowerShell runtime
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          $requirements = Join-Path $env:RUNNER_TEMP 'candidate-validation-requirements.txt'
-          'PyYAML==6.0.2 --hash=sha256:80bab7bfc629882493af4aa31a4cfa43a4c57c83813253626916b8c7ada83476' | Set-Content -LiteralPath $requirements -Encoding utf8
-          python -m pip install --disable-pip-version-check --no-input --require-hashes -r $requirements
-          if ($LASTEXITCODE -ne 0) { throw 'Pinned PyYAML installation failed.' }
+          pwsh -NoProfile -File harness/scripts/Install-ValidatorRuntime.ps1 `
+            -RepositoryPath harness `
+            -PackageCachePath (Join-Path $env:RUNNER_TEMP 'candidate-runtime-cache') `
+            -InstallRoot (Join-Path $env:RUNNER_TEMP 'candidate-pwsh-7.4.11') `
+            -EvidencePath (Join-Path $env:RUNNER_TEMP 'candidate-validator-evidence/runtime-bootstrap.json')
 
-          $packagePath = Join-Path $env:RUNNER_TEMP 'PSScriptAnalyzer.1.22.0.nupkg'
-          $expectedHash = '71bfb9eb58e19d4b662f4494a7d572a724b60e0588848dcff34195a0e08ae1be'
-          Invoke-WebRequest -Uri 'https://www.powershellgallery.com/api/v2/package/PSScriptAnalyzer/1.22.0' -OutFile $packagePath -UseBasicParsing
-          $actualHash = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actualHash -ne $expectedHash) { throw "PSScriptAnalyzer package hash mismatch. Expected $expectedHash but received $actualHash." }
-          $moduleParent = Join-Path $env:RUNNER_TEMP 'candidate-psmodules'
-          $moduleRoot = Join-Path $moduleParent 'PSScriptAnalyzer/1.22.0'
-          New-Item -ItemType Directory -Path $moduleRoot -Force | Out-Null
-          Add-Type -AssemblyName System.IO.Compression.FileSystem
-          [System.IO.Compression.ZipFile]::ExtractToDirectory($packagePath, $moduleRoot, $true)
-          $env:PSModulePath = $moduleParent + [System.IO.Path]::PathSeparator + $env:PSModulePath
-          "PSModulePath=$($env:PSModulePath)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          $module = Import-Module (Join-Path $moduleRoot 'PSScriptAnalyzer.psd1') -Force -PassThru
-          if (-not $module -or $module.Version.ToString() -ne '1.22.0') { throw 'Required PSScriptAnalyzer 1.22.0 was not installed.' }
-
-          $pesterPackagePath = Join-Path $env:RUNNER_TEMP 'Pester.5.7.1.nupkg'
-          $pesterExpectedHash = '4a27904c6814a5fbe4758f8e49861f6a1994aee77b71165a5c43c0371ba6c580'
-          Invoke-WebRequest -Uri 'https://www.powershellgallery.com/api/v2/package/Pester/5.7.1' -OutFile $pesterPackagePath -UseBasicParsing
-          $pesterActualHash = (Get-FileHash -LiteralPath $pesterPackagePath -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($pesterActualHash -ne $pesterExpectedHash) { throw "Pester package hash mismatch. Expected $pesterExpectedHash but received $pesterActualHash." }
-          $pesterRoot = Join-Path $moduleParent 'Pester/5.7.1'
-          New-Item -ItemType Directory -Path $pesterRoot -Force | Out-Null
-          [System.IO.Compression.ZipFile]::ExtractToDirectory($pesterPackagePath, $pesterRoot, $true)
-          $pesterModule = Import-Module (Join-Path $pesterRoot 'Pester.psd1') -Force -PassThru
-          if (-not $pesterModule -or $pesterModule.Version.ToString() -ne '5.7.1') { throw 'Required Pester 5.7.1 was not installed.' }
+      - name: Install immutable candidate-validation dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$VALIDATOR_PWSH" -NoProfile -File harness/scripts/Install-ValidatorDependencies.ps1 \
+            -RepositoryPath harness \
+            -PackageCachePath "$RUNNER_TEMP/candidate-package-cache" \
+            -ModuleRoot "$RUNNER_TEMP/candidate-psmodules" \
+            -PythonPackageRoot "$RUNNER_TEMP/candidate-python" \
+            -EvidencePath "$RUNNER_TEMP/candidate-validator-evidence/dependencies.json" \
+            -SbomPath "$RUNNER_TEMP/candidate-validator-evidence/validator-sbom.cdx.json" \
+            -RuntimeEvidencePath "$RUNNER_TEMP/candidate-validator-evidence/runtime-bootstrap.json"
 
       - name: Run candidate implementation validation
         shell: pwsh
@@ -93,7 +106,7 @@ jobs:
 
             function Invoke-CandidateScript {
               param([Parameter(Mandatory)][string]$RelativePath, [string[]]$Arguments = @())
-              & pwsh -NoProfile -File (Join-Path $root $RelativePath) @Arguments
+              & $env:VALIDATOR_PWSH -NoProfile -File (Join-Path $root $RelativePath) @Arguments
               if ($LASTEXITCODE -ne 0) { throw "Candidate command '$RelativePath' failed with exit code $LASTEXITCODE." }
             }
 

@@ -113,6 +113,10 @@ pwsh -NoProfile -File scripts/Test-GitHubWorkflowArchitecture.ps1 -Path . -Defau
 ```
 
 ```powershell
+pwsh -NoProfile -File scripts/Test-ValidatorDependencies.ps1 -Path . -OutputJson .tmp/validator-dependencies.json
+```
+
+```powershell
 pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/codex-skills-validation.json
 ```
 
@@ -162,6 +166,10 @@ git ls-files
 ## Change-Specific Validation Matrix
 
 Changes under `.github/workflows/` require YAML validation, workflow call-graph validation, immutable action pin review, least-privilege permission review, and a real GitHub run when behavior changes.
+
+Changes under `.github/dependencies/` or validator runtime/bootstrap scripts
+require lock validation, package hash verification, missing/offline and tamper
+tests, SBOM review, and a real GitHub run when behavior changes.
 
 Changes under `schemas/` require valid fixtures, invalid fixtures, semantic tests, and backward-compatibility review.
 
