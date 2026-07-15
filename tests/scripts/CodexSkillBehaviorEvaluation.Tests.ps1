@@ -187,6 +187,9 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $wrapper | Should -Match "decision\.action -ne 'Suspend'"
         $wrapper | Should -Match 'not physically suspended'
         $wrapper | Should -Match 'Passed behavior evidence requires attributable human adjudication'
+        $aggregate = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-GovernanceValidation.ps1') -Raw
+        $aggregate | Should -Match "\.agents/suspended-skills"
+        $aggregate | Should -Match 'No governed active or suspended Codex skills directory'
     }
 
     It 'rejects fabricated checked evidence and partial checked evidence' {

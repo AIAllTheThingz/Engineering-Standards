@@ -258,8 +258,10 @@ function Get-CategoryNonApplicabilityReason {
     switch -CaseSensitive ([string]$PlanEntry.applicability) {
         'Always' { return $null }
         'WhenSkillsPresent' {
-            if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot '.agents/skills') -PathType Container)) {
-                return 'No governed .agents/skills directory is present.'
+            $activeSkills = Test-Path -LiteralPath (Join-Path $ProjectRoot '.agents/skills') -PathType Container
+            $suspendedSkills = Test-Path -LiteralPath (Join-Path $ProjectRoot '.agents/suspended-skills') -PathType Container
+            if (-not $activeSkills -and -not $suspendedSkills) {
+                return 'No governed active or suspended Codex skills directory is present.'
             }
             return $null
         }
