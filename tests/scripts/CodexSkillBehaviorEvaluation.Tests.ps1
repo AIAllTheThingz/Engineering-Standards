@@ -18,6 +18,17 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Match "agents/AGENTS_PowerShell\.md"
         $runner | Should -Match 'Codex omitted the required structured response.'
         $runner | Should -Match 'MaximumTransportRetries \+ 1'
+        $runner | Should -Match 'OverallTimeoutSeconds'
+        $runner | Should -Match 'overallDeadline'
+    }
+
+    It 'hashes skill-local README inputs while excluding only the root catalog README' {
+        $inputs = Get-CodexBehaviorInput -Path $repoRoot
+        $inputs.SkillPaths | Should -Not -Contain '.agents/skills/README.md'
+        $skillReadme = Join-Path $repoRoot '.agents/skills/enterprise-powershell/README.md'
+        New-Item -ItemType File -Path $skillReadme -Force | Out-Null
+        try { (Get-CodexBehaviorInput -Path $repoRoot).SkillPaths | Should -Contain '.agents/skills/enterprise-powershell/README.md' }
+        finally { Remove-Item -LiteralPath $skillReadme -Force }
     }
 
     It 'passes a complete live run while identifying it as probabilistic evidence' {
@@ -108,6 +119,13 @@ Describe 'Controlled Codex skill behavior evaluation' {
             $fabricated = Join-Path $testRoot 'fabricated.json'
             $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $fabricated -Encoding utf8
             & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/fabricated.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+
+            $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
+            $evidence.model.modelId = 'unapproved-model'
+            $contractMismatch = Join-Path $testRoot 'contract-mismatch.json'
+            $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $contractMismatch -Encoding utf8
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/contract-mismatch.json' 2>$null
             $LASTEXITCODE | Should -Be 1
 
             $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json

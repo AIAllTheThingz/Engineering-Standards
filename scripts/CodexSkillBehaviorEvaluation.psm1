@@ -29,7 +29,9 @@ function Get-CodexBehaviorInput {
     $corpus = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests/fixtures/codex-skills/prompt-behavior') -Filter '*.json' -File | Sort-Object Name)
     if ($corpus.Count -lt 1) { throw 'The governed prompt corpus is empty.' }
     $cases = foreach ($file in $corpus) { Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json }
-    $skillFiles = @(Get-ChildItem -LiteralPath (Join-Path $root '.agents/skills') -File -Recurse | Where-Object Name -ne 'README.md' | Sort-Object FullName)
+    $skillRoot = Join-Path $root '.agents/skills'
+    $catalogReadme = Join-Path $skillRoot 'README.md'
+    $skillFiles = @(Get-ChildItem -LiteralPath $skillRoot -File -Recurse | Where-Object FullName -ne $catalogReadme | Sort-Object FullName)
     [pscustomobject]@{
         Root = $root
         Cases = @($cases)

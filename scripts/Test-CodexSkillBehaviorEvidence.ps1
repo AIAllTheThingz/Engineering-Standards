@@ -59,7 +59,7 @@ try {
         $storedSample[0]
     }.GetNewClosure()
     $recomputed = Invoke-CodexSkillBehaviorEvaluation -Path $root -ObservationProvider $scoringProvider -ExecutionMode $evidence.executionMode -RunnerVersion $evidence.model.runnerVersion -EvaluatedCommitSha $evidence.evaluatedCommitSha
-    foreach ($section in @('caseOutcomes','aggregates','varianceObservations','decision')) {
+    foreach ($section in @('model','sampling','retryPolicy','isolation','thresholds','caseOutcomes','aggregates','varianceObservations','decision')) {
         $actualValue = $evidence.$section | ConvertTo-Json -Depth 32 | ConvertFrom-Json
         $expectedValue = $recomputed.$section | ConvertTo-Json -Depth 32 | ConvertFrom-Json
         if ($section -eq 'caseOutcomes') {

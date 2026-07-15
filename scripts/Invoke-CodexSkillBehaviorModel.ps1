@@ -39,9 +39,14 @@ try {
         Copy-Item -LiteralPath (Join-Path $root $authority) -Destination $destination
     }
     $schema = Join-Path $root 'schemas/codex-skill-behavior-observation.schema.json'
+    $overallDeadline = [DateTime]::UtcNow.AddSeconds([int]$config.Limits.OverallTimeoutSeconds)
     foreach ($case in $inputs.Cases) {
         for ($sample = 1; $sample -le [int]$config.Sampling.SamplesPerCase; $sample++) {
             $destination = Join-Path $output ("{0}.{1}.json" -f $case.caseId, $sample)
+            if ([DateTime]::UtcNow -ge $overallDeadline) {
+                [pscustomobject]@{ status = 'Blocked'; attemptCount = 0; failureReason = 'OverallTimeout: the governed evaluation deadline was exhausted before this sample could run.'; selection = $null; safetyOutcome = $null; quality = $null; responseSummary = $null; toolEvents = @(); unsafeToolAccess = $false } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $destination -Encoding utf8
+                continue
+            }
             $attempt = 0
             $completed = $false
             while (-not $completed -and $attempt -le [int]$config.RetryPolicy.MaximumTransportRetries) {
@@ -61,7 +66,9 @@ User request: $($case.prompt)
                 $psi.Environment.Clear(); $psi.Environment['CODEX_API_KEY'] = $credential; $psi.Environment['CODEX_HOME'] = $codexHome; $psi.Environment['HOME'] = $scratch; $psi.Environment['PATH'] = [Environment]::GetEnvironmentVariable('PATH')
                 $process = [Diagnostics.Process]::new(); $process.StartInfo = $psi; [void]$process.Start()
                 $stdoutTask = $process.StandardOutput.ReadToEndAsync(); $stderrTask = $process.StandardError.ReadToEndAsync()
-                if (-not $process.WaitForExit([int]$config.Limits.PerSampleTimeoutSeconds * 1000)) {
+                $remainingMilliseconds = [Math]::Max(1, [Math]::Floor(($overallDeadline - [DateTime]::UtcNow).TotalMilliseconds))
+                $attemptTimeoutMilliseconds = [Math]::Min([int]$config.Limits.PerSampleTimeoutSeconds * 1000, $remainingMilliseconds)
+                if (-not $process.WaitForExit($attemptTimeoutMilliseconds)) {
                     $process.Kill($true); $process.WaitForExit(); $reason = 'TransportTimeout: the bounded Codex request timed out.'
                 }
                 elseif ($process.ExitCode -ne 0) { $reason = 'ModelUnavailable: Codex did not return a successful structured response.' }
@@ -81,7 +88,11 @@ User request: $($case.prompt)
                 if (-not $completed -and $attempt -gt [int]$config.RetryPolicy.MaximumTransportRetries) {
                     [pscustomobject]@{ status = 'Blocked'; attemptCount = $attempt; failureReason = $reason; selection = $null; safetyOutcome = $null; quality = $null; responseSummary = $null; toolEvents = @(); unsafeToolAccess = $false } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $destination -Encoding utf8
                 }
-                elseif (-not $completed) { Start-Sleep -Seconds ([int]$config.RetryPolicy.RetryDelaySeconds) }
+                elseif (-not $completed) {
+                    $remainingDelaySeconds = [Math]::Max(0, [Math]::Floor(($overallDeadline - [DateTime]::UtcNow).TotalSeconds))
+                    if ($remainingDelaySeconds -le 0) { $attempt = [int]$config.RetryPolicy.MaximumTransportRetries + 1 }
+                    else { Start-Sleep -Seconds ([Math]::Min([int]$config.RetryPolicy.RetryDelaySeconds, $remainingDelaySeconds)) }
+                }
             }
         }
     }
