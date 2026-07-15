@@ -26,7 +26,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
   review signals.
 - Rotated governance, candidate, and pull-request self-CI plus the root contract
   to immutable Issue #23 implementation commit
-  `47bec976e782a01057deeafc6f18c52960f34c7f` using the two-commit bootstrap
+  `ec1b5ee2081b14f4c619110b469d2fb772d417bc` using the two-commit bootstrap
   process.
 - Made the default aggregate validator authoritative for all mandatory maintainer checks, made `-Category` filtering additive to mandatory controls, and reduced candidate CI to one isolated aggregate invocation.
 - Rotated governance self-CI and the root contract to immutable Issue #22 implementation commit `b14757f98e6a841c37e48ce023b692f529192f2d` using the two-commit bootstrap process.

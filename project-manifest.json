@@ -9,7 +9,7 @@
     "github-actions"
   ],
   "governanceVersion": "1.1.0",
-  "governanceCommitSha": "47bec976e782a01057deeafc6f18c52960f34c7f",
+  "governanceCommitSha": "ec1b5ee2081b14f4c619110b469d2fb772d417bc",
   "workflowInterfaceVersion": "1.0.0",
   "repositoryOwnerType": "User",
   "riskClassification": "High",
