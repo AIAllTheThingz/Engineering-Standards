@@ -92,7 +92,16 @@ pwsh -NoProfile -File scripts/Test-ReleaseLifecycle.ps1 `
   -OutputJson .tmp/releases/<version>-pre-release-result.json
 ```
 
-The pre-release stage cannot pass until repository validation, Pester, PSScriptAnalyzer, JSON schemas, workflow architecture, governed skills, documentation, evidence, and release consistency have all passed against the candidate. It also requires the exact-target hosted success and controlled-failure runs, independent artifact verification, all five downstream canary scenarios, matching release metadata, formal human approval on the unchanged head, and current branch/tag protection observations.
+The pre-release stage cannot pass until repository validation, Pester,
+PSScriptAnalyzer, JSON schemas, workflow architecture, deterministic governed
+skill validation, the controlled skill behavior evidence contract,
+documentation, evidence, and release consistency have all passed against the
+candidate. An underlying probabilistic behavior result must be read honestly:
+`Blocked` or `NotRun` does not become a passing promotion decision merely
+because its evidence is well formed. The stage also requires the exact-target
+hosted success and controlled-failure runs, independent artifact verification,
+all five downstream canary scenarios, matching release metadata, formal human
+approval on the unchanged head, and current branch/tag protection observations.
 
 After authorized publication, run `-Stage Publication`. This gate requires an annotated protected `v<version>` tag resolving to the candidate, `rewritten=false`, a published GitHub Release whose draft/prerelease state matches the version, reviewed-note hash agreement, and artifact hashes with provenance. Tag creation, release publication, and protection changes are external mutations and require explicit authorization; this validator never performs them.
 

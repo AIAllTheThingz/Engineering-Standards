@@ -62,7 +62,7 @@ param(
     [string]$ProjectPath = '.',
     [string]$EvidenceRoot,
     [string]$OutputJson,
-    [ValidateSet('Contract','AgentStandards','CodexSkills','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','Evidence','PowerShellParser','Pester','PSScriptAnalyzer','Examples')]
+    [ValidateSet('Contract','AgentStandards','CodexSkills','CodexSkillBehavior','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','Evidence','PowerShellParser','Pester','PSScriptAnalyzer','Examples')]
     [string[]]$Category,
     [string]$ExpectedGovernanceVersion,
     [string]$CallerRepository,
@@ -415,6 +415,7 @@ $toolArguments = @{
     Contract = @('-Path',$projectRoot,'-ExpectedRepository',$CallerRepository,'-ExpectedStandardsRepository',$StandardsRepository,'-RepositoryOwnerType',$RepositoryOwnerType,'-ExpectedWorkflowInterfaceVersion','1.0.0','-ExpectedWorkflowProfile',$validationProfile) + $(if ($StandardsWorkflowSha) { @('-ExpectedGovernanceCommitSha',$StandardsWorkflowSha) } else { @() }) + $(if ($isMaintainerProfile) { @('-ExpectedRequiredCheckName','Governance / Governance validation') } else { @() })
     AgentStandards = @('-Path',$projectRoot)
     CodexSkills = @('-Path',$projectRoot,'-OutputJson',(Join-Path $evidenceFull 'codex-skills.json'),'-AllowedOutputRoot',$evidenceFull)
+    CodexSkillBehavior = @('-Path',$projectRoot)
     JsonSchemas = @('-Path',$projectRoot)
     YamlSyntax = @('-Path',$projectRoot)
     WorkflowArchitecture = @('-Path',$projectRoot,'-DefaultBranch','master') + $(if ($workflowArchitectureSha) { @('-ExpectedReusableWorkflowSha',$workflowArchitectureSha) } else { @() }) + $(if ($isMaintainerProfile) { @('-RequireCandidateValidation') } else { @() })

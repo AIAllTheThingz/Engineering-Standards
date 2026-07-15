@@ -46,6 +46,7 @@
     "Contract",
     "AgentStandards",
     "CodexSkills",
+    "CodexSkillBehavior",
     "JsonSchemas",
     "YamlSyntax",
     "WorkflowArchitecture",

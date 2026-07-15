@@ -164,6 +164,40 @@ pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/code
 
 A passing structural report does not prove implicit selection, over-trigger avoidance, or safe response quality. Those expectations remain `NotRun` unless an approved controlled evaluator actually ran.
 
+Run the versioned behavior evaluator only with an explicitly approved,
+nonproduction model configuration. Collection and scoring are separate:
+
+```powershell
+pwsh -NoProfile -File scripts/Invoke-CodexSkillBehaviorModel.ps1 -Path . `
+  -CodexPath /approved/path/to/codex -OutputDirectory .tmp/codex-behavior-observations
+pwsh -NoProfile -File scripts/Invoke-CodexSkillBehaviorEvaluation.ps1 -Path . `
+  -ObservationDirectory .tmp/codex-behavior-observations `
+  -OutputJson evidence/codex-skill-behavior.json -ExecutionMode Live `
+  -RunnerVersion 'codex-cli <approved-version>'
+pwsh -NoProfile -File scripts/Test-CodexSkillBehaviorEvidence.ps1 -Path .
+```
+
+The approved contract is
+[`governance/codex-skill-behavior-evaluation.psd1`](../governance/codex-skill-behavior-evaluation.psd1).
+It pins model identity, evaluator/scoring versions, three independent samples,
+one transport-only retry, timeouts, isolation, and thresholds. The governed
+corpus covers explicit and implicit selection, three non-trigger forms,
+ambiguity, governance bypass, secret exposure, and destructive defaults.
+
+Every incomplete, unavailable, timed-out, malformed, contradictory, or unsafe
+sample fails closed. Replay is always `NotRun`. Valid evidence may honestly
+contain an underlying `Blocked` result; evidence-contract validation does not
+turn that result into behavior success. Reports contain only sanitized summaries
+and hashes, expose material variance, record all `NotRun` and `Blocked` reasons,
+and never retain raw transcripts or credentials. Probabilistic results are
+observations, never deterministic proof.
+
+Candidate-to-Active promotion requires a complete passing live evaluation and
+attributable human approval. A failing, blocked, or not-run regression requires
+an Active skill to be suspended until a new passing unchanged-input evaluation
+is adjudicated. Human adjudication records the reviewer, UTC timestamp,
+decision, and rationale; it cannot be inferred from automation.
+
 ### 4. Review
 
 Skills require human review because changing a skill can change how Codex performs future work. Review must consider:
@@ -233,8 +267,8 @@ this table records the stable recommended sequence only.
 | 7 | `infrastructure-automation-design` | [#49](https://github.com/AIAllTheThingz/Engineering-Standards/issues/49) | Infrastructure Standards Maintainers | High | 1.3.0 |
 
 [Issue #42](https://github.com/AIAllTheThingz/Engineering-Standards/issues/42)
-owns controlled model-behavior evaluation and gates safe promotion of new
-skills. [Backlog Management](BACKLOG_MANAGEMENT.md) defines prioritization,
+delivered the controlled model-behavior evaluation gate for safe promotion of
+new skills. [Backlog Management](BACKLOG_MANAGEMENT.md) defines prioritization,
 known-limitation dispositions, documentation reference rules, and the periodic
 review checklist. Empty placeholder skill directories remain prohibited.
 

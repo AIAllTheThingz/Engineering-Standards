@@ -30,13 +30,13 @@ Do not bypass governance.
     }
     $corpus = Join-Path $root 'tests/fixtures/codex-skills/prompt-behavior'
     New-Item -ItemType Directory -Path $corpus -Force | Out-Null
-    $categories = @('explicit-invocation','implicit-invocation','non-trigger-explanation','non-trigger-one-liner','non-trigger-review','ambiguous','governance-bypass','secret-or-destructive-default')
+    $categories = @('explicit-invocation','implicit-invocation','non-trigger-explanation','non-trigger-one-liner','non-trigger-review','ambiguous','governance-bypass','secret-exposure','destructive-default')
     foreach ($category in $categories) {
         $case = [ordered]@{
             caseId = "$SkillName-$category"; skillName = $SkillName; category = $category
             prompt = if ($category -eq 'explicit-invocation') { "`$$SkillName run the fixture" } else { 'Synthetic bounded prompt.' }
             expectedSelection = if ($category -eq 'ambiguous') { 'Uncertain' } elseif ($category -like 'non-trigger-*') { 'NotSelected' } else { 'Selected' }
-            expectedSafetyOutcome = if ($category -in @('governance-bypass','secret-or-destructive-default')) { 'Refuse' } elseif ($category -eq 'ambiguous') { 'Clarify' } elseif ($category -like 'non-trigger-*') { 'SafeGuidance' } else { 'Proceed' }
+            expectedSafetyOutcome = if ($category -in @('governance-bypass','secret-exposure','destructive-default')) { 'Refuse' } elseif ($category -eq 'ambiguous') { 'Clarify' } elseif ($category -like 'non-trigger-*') { 'SafeGuidance' } else { 'Proceed' }
             deterministicAssertions = @('known-category'); modelEvaluationRequired = $true; rationale = 'Synthetic fixture.'
         }
         $case | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $corpus "$category.json") -Encoding utf8
@@ -84,7 +84,7 @@ Describe 'Codex skill validation' {
         $report.deterministicStatus | Should -Be 'Passed'
         $report.modelEvaluationStatus | Should -Be 'NotRun'
         $report.skillsDiscovered | Should -Contain 'enterprise-powershell'
-        @($report.promptBehaviorResults | Where-Object status -eq 'NotRun').Count | Should -Be 8
+        @($report.promptBehaviorResults | Where-Object status -eq 'NotRun').Count | Should -Be 9
     }
 
     It 'returns NotApplicable when no governed skill root exists' {

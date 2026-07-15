@@ -19,7 +19,12 @@ The published GitHub Release body retains stale preparation-era statements that 
 
 Current `master` contains development after the published target. The authoritative inventory is [`CHANGELOG.md` `[Unreleased]`](../CHANGELOG.md#unreleased). The root `VERSION` remains `1.1.0` because it identifies the latest published release, not the moving development head.
 
-Post-release implementation includes the enterprise PowerShell Codex skill, cross-repository reusable-workflow repair, trusted pin rotation, downstream canary gate, and specific bootstrap failure evidence. None is part of `v1.1.0`.
+Post-release implementation includes the enterprise PowerShell Codex skill,
+the controlled skill behavior evaluator, cross-repository reusable-workflow
+repair, trusted pin rotation, downstream canary gate, and specific bootstrap
+failure evidence. None is part of `v1.1.0`. Issue #25 completed the release
+lifecycle controls; it did not approve, tag, or publish the planned `1.2.0`, so
+Issue #42's `1.2.0` target remains unreleased planning metadata.
 
 PRs #26 through #28 performed post-publication verification and release-record maintenance. Their historical evidence remains valid only for the commits it names; `evidence/latest-verified-run.json` retains the accepted PR #27 `master` record and does not validate current `master`. Issue #17 candidate and final-head runs are reported in PR #32 because pull-request merge-context evidence cannot honestly satisfy the record's `master`-branch contract.
 

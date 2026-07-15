@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:aiallthethingz:engineering-standards:schema:codex-skill-behavior-evaluation",
+  "title": "Codex Skill Behavior Evaluation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "evidenceKind", "evaluatorVersion", "scoringContractVersion",
+    "configurationId", "configurationHash", "evaluatorHash", "corpusHash", "skillInputHash",
+    "evaluatedCommitSha", "executionMode", "probabilistic", "deterministicStructureStatus",
+    "status", "startedAtUtc", "completedAtUtc", "model", "sampling", "retryPolicy",
+    "isolation", "thresholds", "caseOutcomes", "aggregates", "varianceObservations",
+    "humanAdjudication", "decision", "notRunReason", "blockedReason", "warnings", "limitations"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "evidenceKind": { "const": "ProbabilisticCodexSkillBehaviorEvaluation" },
+    "evaluatorVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "scoringContractVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "configurationId": { "type": "string", "pattern": "^[a-z0-9]+(?:[a-z0-9.-]*[a-z0-9])$", "maxLength": 160 },
+    "configurationHash": { "$ref": "#/$defs/sha256" },
+    "evaluatorHash": { "$ref": "#/$defs/sha256" },
+    "corpusHash": { "$ref": "#/$defs/sha256" },
+    "skillInputHash": { "$ref": "#/$defs/sha256" },
+    "evaluatedCommitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "executionMode": { "enum": ["Live", "Replay"] },
+    "probabilistic": { "const": true },
+    "deterministicStructureStatus": { "$ref": "#/$defs/status" },
+    "status": { "$ref": "#/$defs/status" },
+    "startedAtUtc": { "type": "string", "format": "date-time" },
+    "completedAtUtc": { "type": "string", "format": "date-time" },
+    "model": {
+      "type": "object", "additionalProperties": false,
+      "required": ["provider", "surface", "modelId", "reasoningEffort", "runnerVersion"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "surface": { "const": "CodexExec" },
+        "modelId": { "type": "string", "minLength": 3, "maxLength": 120 },
+        "reasoningEffort": { "enum": ["low", "medium", "high", "xhigh"] },
+        "runnerVersion": { "type": ["string", "null"], "maxLength": 160 }
+      }
+    },
+    "sampling": {
+      "type": "object", "additionalProperties": false,
+      "required": ["samplesPerCase", "temperature", "topP", "seed", "unsupportedParameterReason"],
+      "properties": {
+        "samplesPerCase": { "type": "integer", "minimum": 2, "maximum": 10 },
+        "temperature": { "type": ["number", "null"], "minimum": 0, "maximum": 2 },
+        "topP": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "seed": { "type": ["integer", "null"] },
+        "unsupportedParameterReason": { "type": ["string", "null"], "minLength": 20, "maxLength": 1000 }
+      }
+    },
+    "retryPolicy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["maximumTransportRetries", "retryableReasons", "retryDelaySeconds", "preserveEveryAttempt", "retryMalformedOutput", "retryThresholdFailure"],
+      "properties": {
+        "maximumTransportRetries": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "retryableReasons": { "type": "array", "items": { "enum": ["ModelUnavailable", "TransportTimeout"] }, "uniqueItems": true },
+        "retryDelaySeconds": { "type": "integer", "minimum": 0, "maximum": 30 },
+        "preserveEveryAttempt": { "const": true },
+        "retryMalformedOutput": { "const": false },
+        "retryThresholdFailure": { "const": false }
+      }
+    },
+    "isolation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["production", "sandboxMode", "approvalPolicy", "ephemeralSession", "mcpEnabled", "externalWriteAuthority", "productionCredentialsAllowed", "rawTranscriptRetention"],
+      "properties": {
+        "production": { "const": false },
+        "sandboxMode": { "const": "read-only" },
+        "approvalPolicy": { "const": "never" },
+        "ephemeralSession": { "const": true },
+        "mcpEnabled": { "const": false },
+        "externalWriteAuthority": { "const": false },
+        "productionCredentialsAllowed": { "const": false },
+        "rawTranscriptRetention": { "const": false }
+      }
+    },
+    "thresholds": { "type": "object", "additionalProperties": { "type": ["number", "integer", "boolean"] }, "minProperties": 8 },
+    "caseOutcomes": { "type": "array", "items": { "$ref": "#/$defs/caseOutcome" }, "maxItems": 64 },
+    "aggregates": {
+      "type": "object", "additionalProperties": false,
+      "required": ["casesExpected", "casesCompleted", "samplesExpected", "samplesCompleted", "triggerRate", "nonTriggerRate", "safetyRate", "ambiguityRate", "qualityAverage", "materialVarianceCases", "thresholdsPassed"],
+      "properties": {
+        "casesExpected": { "type": "integer", "minimum": 0 },
+        "casesCompleted": { "type": "integer", "minimum": 0 },
+        "samplesExpected": { "type": "integer", "minimum": 0 },
+        "samplesCompleted": { "type": "integer", "minimum": 0 },
+        "triggerRate": { "$ref": "#/$defs/rate" },
+        "nonTriggerRate": { "$ref": "#/$defs/rate" },
+        "safetyRate": { "$ref": "#/$defs/rate" },
+        "ambiguityRate": { "$ref": "#/$defs/rate" },
+        "qualityAverage": { "type": ["number", "null"], "minimum": 0, "maximum": 4 },
+        "materialVarianceCases": { "type": "integer", "minimum": 0 },
+        "thresholdsPassed": { "type": "boolean" }
+      }
+    },
+    "varianceObservations": { "type": "array", "items": { "type": "string", "minLength": 10, "maxLength": 1000 }, "uniqueItems": true },
+    "humanAdjudication": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "reviewer", "reviewedAtUtc", "decision", "rationale"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "reviewer": { "type": ["string", "null"], "maxLength": 160 },
+        "reviewedAtUtc": { "type": ["string", "null"], "format": "date-time" },
+        "decision": { "enum": ["Approved", "Rejected", "NeedsChanges", "NotApplicable", "Pending"] },
+        "rationale": { "type": "string", "minLength": 10, "maxLength": 2000 }
+      }
+    },
+    "decision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["skillStatus", "action", "status", "humanApprovalRequired", "reason"],
+      "properties": {
+        "skillStatus": { "enum": ["Candidate", "Active"] },
+        "action": { "enum": ["Continue", "Promote", "Suspend", "BlockPromotion", "None"] },
+        "status": { "$ref": "#/$defs/status" },
+        "humanApprovalRequired": { "type": "boolean" },
+        "reason": { "type": "string", "minLength": 10, "maxLength": 2000 }
+      }
+    },
+    "notRunReason": { "type": ["string", "null"], "minLength": 10, "maxLength": 2000 },
+    "blockedReason": { "type": ["string", "null"], "minLength": 10, "maxLength": 2000 },
+    "warnings": { "type": "array", "items": { "type": "string", "minLength": 10, "maxLength": 1000 }, "uniqueItems": true },
+    "limitations": { "type": "array", "items": { "type": "string", "minLength": 10, "maxLength": 1000 }, "minItems": 1, "uniqueItems": true }
+  },
+  "$defs": {
+    "status": { "type": "string", "enum": ["Passed", "Failed", "NotRun", "Blocked", "NotApplicable"] },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+    "quality": {
+      "type": "object", "additionalProperties": false,
+      "required": ["relevance", "completeness", "actionability", "governanceAlignment"],
+      "properties": {
+        "relevance": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "completeness": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "actionability": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "governanceAlignment": { "type": "integer", "minimum": 0, "maximum": 4 }
+      }
+    },
+    "sanitizedSample": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sampleIndex", "attemptCount", "status", "selection", "safetyOutcome", "quality", "responseSummary", "responseSha256", "toolEvents", "unsafeToolAccess", "failureReason", "startedAtUtc", "completedAtUtc"],
+      "properties": {
+        "sampleIndex": { "type": "integer", "minimum": 1, "maximum": 10 },
+        "attemptCount": { "type": "integer", "minimum": 1, "maximum": 4 },
+        "status": { "$ref": "#/$defs/status" },
+        "selection": { "type": ["string", "null"], "enum": ["Selected", "NotSelected", "Uncertain", null] },
+        "safetyOutcome": { "type": ["string", "null"], "enum": ["Proceed", "Refuse", "Clarify", "SafeGuidance", null] },
+        "quality": { "oneOf": [{ "$ref": "#/$defs/quality" }, { "type": "null" }] },
+        "responseSummary": { "type": ["string", "null"], "maxLength": 600 },
+        "responseSha256": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+        "toolEvents": { "type": "array", "items": { "type": "string", "minLength": 3, "maxLength": 200 }, "maxItems": 32 },
+        "unsafeToolAccess": { "type": "boolean" },
+        "failureReason": { "type": ["string", "null"], "minLength": 10, "maxLength": 1000 },
+        "startedAtUtc": { "type": "string", "format": "date-time" },
+        "completedAtUtc": { "type": "string", "format": "date-time" }
+      }
+    },
+    "caseOutcome": {
+      "type": "object", "additionalProperties": false,
+      "required": ["caseId", "skillName", "category", "status", "reason", "samplesExpected", "samplesCompleted", "selectionMatchRate", "safetyMatchRate", "qualityAverage", "materialVariance", "samples"],
+      "properties": {
+        "caseId": { "type": "string", "pattern": "^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])$", "maxLength": 120 },
+        "skillName": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "category": { "enum": ["explicit-invocation", "implicit-invocation", "non-trigger-explanation", "non-trigger-one-liner", "non-trigger-review", "ambiguous", "governance-bypass", "secret-exposure", "destructive-default"] },
+        "status": { "$ref": "#/$defs/status" },
+        "reason": { "type": ["string", "null"], "minLength": 10, "maxLength": 1000 },
+        "samplesExpected": { "type": "integer", "minimum": 2, "maximum": 10 },
+        "samplesCompleted": { "type": "integer", "minimum": 0, "maximum": 10 },
+        "selectionMatchRate": { "$ref": "#/$defs/rate" },
+        "safetyMatchRate": { "$ref": "#/$defs/rate" },
+        "qualityAverage": { "type": ["number", "null"], "minimum": 0, "maximum": 4 },
+        "materialVariance": { "type": "boolean" },
+        "samples": { "type": "array", "items": { "$ref": "#/$defs/sanitizedSample" }, "maxItems": 10 }
+      }
+    }
+  },
+  "allOf": [
+    { "if": { "properties": { "status": { "const": "NotRun" } } }, "then": { "properties": { "notRunReason": { "type": "string", "minLength": 10 } } } },
+    { "if": { "properties": { "status": { "const": "Blocked" } } }, "then": { "properties": { "blockedReason": { "type": "string", "minLength": 10 } } } }
+  ]
+}

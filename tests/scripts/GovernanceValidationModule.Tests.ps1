@@ -16,10 +16,10 @@ Describe 'GovernanceValidation module' {
             $repoRoot = (Resolve-Path "$PSScriptRoot/../..").Path
             $registry = @(Get-GovernanceValidationCategoryRegistry)
 
-            $registry.Count | Should -Be 15
+            $registry.Count | Should -Be 16
             @($registry.Name | Sort-Object -Unique).Count | Should -Be $registry.Count
             @($registry.Order | Sort-Object -Unique).Count | Should -Be $registry.Count
-            ($registry.Name -join ',') | Should -BeExactly 'Contract,AgentStandards,CodexSkills,JsonSchemas,YamlSyntax,WorkflowArchitecture,MarkdownLinks,DocumentationCompleteness,ForbiddenPatterns,RepositoryHealth,Evidence,PowerShellParser,Pester,PSScriptAnalyzer,Examples'
+            ($registry.Name -join ',') | Should -BeExactly 'Contract,AgentStandards,CodexSkills,CodexSkillBehavior,JsonSchemas,YamlSyntax,WorkflowArchitecture,MarkdownLinks,DocumentationCompleteness,ForbiddenPatterns,RepositoryHealth,Evidence,PowerShellParser,Pester,PSScriptAnalyzer,Examples'
             foreach ($entry in $registry | Where-Object Runner -eq 'Script') {
                 Test-Path -LiteralPath (Join-Path $repoRoot $entry.Path) -PathType Leaf | Should -BeTrue -Because $entry.Name
             }

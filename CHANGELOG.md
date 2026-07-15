@@ -6,6 +6,11 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
+- Added the Issue #42 versioned controlled Codex skill behavior evaluator,
+  approved model and sampling contract, sanitized portable evidence schema,
+  fail-closed evidence verifier, aggregate registry gate, governed secret and
+  destructive cases, and positive plus failure-path regression coverage.
+
 - Added the Issue #25 machine-readable release lifecycle schema and read-only
   PreRelease, Publication, and PostRelease validator with immutable-head,
   exact-target workflow, artifact, canary, approval, tag, release, regression,
