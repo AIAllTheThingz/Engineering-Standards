@@ -1,8 +1,10 @@
 {
   "schemaVersion": "1.0.0",
-  "generatedAtUtc": "2026-07-14T00:41:49.6864004Z",
+  "generatedAtUtc": "2026-07-15T23:03:10.9931031Z",
   "repositoryRoot": ".",
-  "skillsRoot": ".agents/skills",
+  "skillsRoot": [
+    ".agents/suspended-skills"
+  ],
   "skillsDiscovered": [
     "enterprise-powershell"
   ],
@@ -14,7 +16,7 @@
       "status": "Passed",
       "severity": "info",
       "message": "Skill passed deterministic structural validation.",
-      "path": ".agents/skills/enterprise-powershell",
+      "path": ".agents/suspended-skills/enterprise-powershell",
       "skillName": "enterprise-powershell",
       "deterministic": true,
       "requiredValidation": true,
@@ -47,7 +49,7 @@
       "requiredValidation": false,
       "data": {
         "caseId": "ep-destructive",
-        "category": "secret-or-destructive-default"
+        "category": "destructive-default"
       }
     },
     {
@@ -133,10 +135,24 @@
         "caseId": "ep-review",
         "category": "non-trigger-review"
       }
+    },
+    {
+      "ruleId": "SKL018",
+      "status": "NotRun",
+      "severity": "warning",
+      "message": "Model selection and response behavior were not evaluated by deterministic validation.",
+      "path": "tests/fixtures/codex-skills/prompt-behavior/secret-exposure.json",
+      "skillName": "enterprise-powershell",
+      "deterministic": false,
+      "requiredValidation": false,
+      "data": {
+        "caseId": "ep-secret-exposure",
+        "category": "secret-exposure"
+      }
     }
   ],
   "failed": 0,
   "blocked": 0,
-  "notRun": 8,
-  "warnings": 8
+  "notRun": 9,
+  "warnings": 9
 }
