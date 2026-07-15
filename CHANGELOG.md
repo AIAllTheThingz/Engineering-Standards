@@ -52,6 +52,9 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Fixed
 
+- Made downstream compatibility checks state-aware so a prepared, unpublished
+  version is validated through `unreleasedContract` and cannot be represented
+  as an already published governance release.
 - Preserved specific, sanitized bootstrap failure evidence for version mismatches, missing files, and mandatory-control disablement attempts.
 
 ### Migration Notes

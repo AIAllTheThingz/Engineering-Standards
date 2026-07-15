@@ -119,23 +119,33 @@ if (Test-Path -LiteralPath $compatibilityMatrixPath -PathType Leaf) {
             $failures.Add("Downstream compatibility schemaVersion '$($compatibilityMatrix.schemaVersion)' is unsupported.")
         }
         $matchingRelease = @($compatibilityMatrix.governanceReleases | Where-Object version -CEQ $version)
-        if ($matchingRelease.Count -ne 1) {
-            $failures.Add("Downstream compatibility matrix must contain exactly one published entry for VERSION '$version'.")
+        if ($isPublished) {
+            if ($matchingRelease.Count -ne 1) {
+                $failures.Add("Downstream compatibility matrix must contain exactly one published entry for VERSION '$version'.")
+            }
+            else {
+                $releaseCompatibility = $matchingRelease[0]
+                if ($releaseCompatibility.lifecycle -cne 'Published' -or $releaseCompatibility.supportStatus -cnotin @('Supported', 'SecurityFixesOnly')) {
+                    $failures.Add("Published VERSION '$version' must have an active supported lifecycle in the compatibility matrix.")
+                }
+                if ($releaseCompatibility.immutableRef -cne "v$version") {
+                    $failures.Add("Compatibility matrix immutableRef must be 'v$version'.")
+                }
+                if ($targetMatch.Success -and $releaseCompatibility.immutableSha -cne $targetMatch.Groups[1].Value) {
+                    $failures.Add('Compatibility matrix release SHA does not match release status.')
+                }
+            }
+            if ($compatibilityMatrix.unreleasedContract.governanceVersion -cne $version) {
+                $failures.Add('Unreleased compatibility contract must retain the root governance VERSION until a later release is prepared.')
+            }
         }
-        else {
-            $releaseCompatibility = $matchingRelease[0]
-            if ($releaseCompatibility.lifecycle -cne 'Published' -or $releaseCompatibility.supportStatus -cnotin @('Supported', 'SecurityFixesOnly')) {
-                $failures.Add("Published VERSION '$version' must have an active supported lifecycle in the compatibility matrix.")
+        elseif ($isPrepared) {
+            if ($matchingRelease.Count -ne 0) {
+                $failures.Add("VERSION '$version' is prepared and unpublished and must not appear in governanceReleases.")
             }
-            if ($releaseCompatibility.immutableRef -cne "v$version") {
-                $failures.Add("Compatibility matrix immutableRef must be 'v$version'.")
+            if ($compatibilityMatrix.unreleasedContract.governanceVersion -cne $version) {
+                $failures.Add("Prepared VERSION '$version' must match the unreleased compatibility contract governanceVersion.")
             }
-            if ($targetMatch.Success -and $releaseCompatibility.immutableSha -cne $targetMatch.Groups[1].Value) {
-                $failures.Add('Compatibility matrix release SHA does not match release status.')
-            }
-        }
-        if ($compatibilityMatrix.unreleasedContract.governanceVersion -cne $version) {
-            $failures.Add('Unreleased compatibility contract must retain the root governance VERSION until a later release is published.')
         }
 
         $projectManifestSchemaPath = Join-Path $root 'schemas/project-manifest.schema.json'

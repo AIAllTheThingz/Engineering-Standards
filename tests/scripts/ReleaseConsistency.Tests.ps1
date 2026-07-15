@@ -5,6 +5,31 @@ Describe 'Release consistency validation' {
             $script:output = @(& pwsh -NoProfile -File $script:validator -Path $script:fixture 2>&1)
             return $LASTEXITCODE
         }
+
+        function script:Set-PreparedReleaseState {
+            param([Parameter(Mandatory)][string]$Fixture)
+
+            Set-Content (Join-Path $Fixture 'README.md') @'
+# Repository
+
+The prepared version is `1.1.0` and is unpublished. See [Release Status](docs/RELEASE_STATUS.md), [Downstream Compatibility](docs/DOWNSTREAM_COMPATIBILITY.md), and [Unreleased](CHANGELOG.md#unreleased).
+
+Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`.
+'@
+            Set-Content (Join-Path $Fixture 'docs/RELEASE_STATUS.md') @'
+# Release Status
+
+The prepared version is `1.1.0` and is unpublished.
+
+Tag state: Not created.
+
+GitHub Release state: Not published.
+
+Current `master` contains development after the published target. Historical evidence does not validate current `master`.
+
+Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`.
+'@
+        }
     }
 
     BeforeEach {
@@ -129,29 +154,33 @@ The machine-readable contract is `governance/downstream-compatibility.json`.
     }
 
     It 'accepts an explicitly prepared and unpublished version before tag creation' {
-        Set-Content (Join-Path $script:fixture 'README.md') @'
-# Repository
-
-The prepared version is `1.1.0` and is unpublished. See [Release Status](docs/RELEASE_STATUS.md), [Downstream Compatibility](docs/DOWNSTREAM_COMPATIBILITY.md), and [Unreleased](CHANGELOG.md#unreleased).
-
-Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`.
-'@
-        Set-Content (Join-Path $script:fixture 'docs/RELEASE_STATUS.md') @'
-# Release Status
-
-The prepared version is `1.1.0` and is unpublished.
-
-Tag state: Not created.
-
-GitHub Release state: Not published.
-
-Current `master` contains development after the published target. Historical evidence does not validate current `master`.
-
-Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`.
-'@
+        Set-PreparedReleaseState -Fixture $script:fixture
+        $matrixPath = Join-Path $script:fixture 'governance/downstream-compatibility.json'
+        $matrix = Get-Content -LiteralPath $matrixPath -Raw | ConvertFrom-Json
+        $matrix.governanceReleases[0].version = '1.0.0'
+        $matrix.governanceReleases[0].immutableRef = 'v1.0.0'
+        $matrix | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $matrixPath
         $output = @(& pwsh -NoProfile -File $script:validator -Path $script:fixture 2>&1)
         $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
         $output -join "`n" | Should -Match 'passed for prepared unpublished version 1\.1\.0'
+    }
+
+    It 'rejects a prepared version that is already marked as published' {
+        Set-PreparedReleaseState -Fixture $script:fixture
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match 'prepared and unpublished.*must not appear in governanceReleases'
+    }
+
+    It 'rejects a prepared version that differs from the unreleased contract' {
+        Set-PreparedReleaseState -Fixture $script:fixture
+        $matrixPath = Join-Path $script:fixture 'governance/downstream-compatibility.json'
+        $matrix = Get-Content -LiteralPath $matrixPath -Raw | ConvertFrom-Json
+        $matrix.governanceReleases[0].version = '1.0.0'
+        $matrix.governanceReleases[0].immutableRef = 'v1.0.0'
+        $matrix.unreleasedContract.governanceVersion = '1.0.0'
+        $matrix | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $matrixPath
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match 'Prepared VERSION.*must match the unreleased compatibility contract'
     }
 
     It 'rejects a prepared and unpublished state after its tag exists' {
