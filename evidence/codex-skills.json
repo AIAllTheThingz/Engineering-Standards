@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "generatedAtUtc": "2026-07-15T23:03:10.9931031Z",
+  "generatedAtUtc": "2026-07-15T23:20:09.5234314Z",
   "repositoryRoot": ".",
   "skillsRoot": [
     ".agents/suspended-skills"
@@ -9,7 +9,7 @@
     "enterprise-powershell"
   ],
   "deterministicStatus": "Passed",
-  "modelEvaluationStatus": "NotRun",
+  "modelEvaluationStatus": "Blocked",
   "results": [
     {
       "ruleId": "SKL001",
@@ -21,6 +21,20 @@
       "deterministic": true,
       "requiredValidation": true,
       "data": null
+    },
+    {
+      "ruleId": "SKL020",
+      "status": "Blocked",
+      "severity": "warning",
+      "message": "Verified controlled behavior evidence reported 'Blocked'; lifecycle enforcement was applied.",
+      "path": "evidence/codex-skill-behavior.json",
+      "skillName": "enterprise-powershell",
+      "deterministic": false,
+      "requiredValidation": false,
+      "data": {
+        "decisionAction": "Suspend",
+        "executionMode": "Live"
+      }
     }
   ],
   "promptBehaviorResults": [
@@ -152,7 +166,7 @@
     }
   ],
   "failed": 0,
-  "blocked": 0,
+  "blocked": 1,
   "notRun": 9,
   "warnings": 9
 }
