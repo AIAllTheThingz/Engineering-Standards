@@ -88,6 +88,12 @@ try {
         if ($LASTEXITCODE -ne 0) { Stop-CodexSkillsBehaviorGate 'Controlled behavior evidence verification failed.' -Status Blocked }
         $behavior = Get-Content -LiteralPath $behaviorEvidence -Raw | ConvertFrom-Json
         $approvedBehavior = Import-PowerShellDataFile -LiteralPath $behaviorConfiguration
+        $report.modelEvaluationStatus = $behavior.status
+        $verifiedBehaviorResult = [ordered]@{ ruleId='SKL020'; status=$behavior.status; severity=if($behavior.status -eq 'Passed'){'info'}else{'warning'}; message="Verified controlled behavior evidence reported '$($behavior.status)'; lifecycle enforcement was applied."; path='evidence/codex-skill-behavior.json'; skillName=[string]$approvedBehavior.Skill.Name; deterministic=$false; requiredValidation=$false; data=[ordered]@{ decisionAction=$behavior.decision.action; executionMode=$behavior.executionMode } }
+        $report.results = @($report.results) + @($verifiedBehaviorResult)
+        if ($behavior.status -eq 'Blocked') { $report.blocked = [int]$report.blocked + 1 }
+        elseif ($behavior.status -eq 'Failed') { $report.failed = [int]$report.failed + 1 }
+        elseif ($behavior.status -eq 'NotRun') { $report.notRun = [int]$report.notRun + 1 }
         if ($behavior.status -in @('Failed','Blocked','NotRun')) {
             if ($behavior.decision.skillStatus -eq 'Active') {
                 if ($behavior.decision.action -ne 'Suspend') { Stop-CodexSkillsBehaviorGate 'Nonpassing Active-skill evidence must require suspension.' }
@@ -96,6 +102,7 @@ try {
                 if ((Test-Path -LiteralPath $activeInstruction -PathType Leaf) -or -not (Test-Path -LiteralPath $suspendedInstruction -PathType Leaf)) { Stop-CodexSkillsBehaviorGate "Active skill '$($approvedBehavior.Skill.Name)' has nonpassing behavior evidence but its discoverable SKILL.md is not physically suspended." }
             }
             elseif ($behavior.decision.action -ne 'BlockPromotion') { Stop-CodexSkillsBehaviorGate 'Nonpassing Candidate evidence must block promotion.' }
+            else { Stop-CodexSkillsBehaviorGate "Candidate skill '$($approvedBehavior.Skill.Name)' has nonpassing behavior evidence and promotion is blocked." -Status $(if($behavior.status -eq 'Blocked' -or $behavior.status -eq 'NotRun'){'Blocked'}else{'Failed'}) }
         }
         elseif ($behavior.status -eq 'Passed') {
             if ($behavior.humanAdjudication.status -ne 'Passed' -or $behavior.humanAdjudication.decision -ne 'Approved' -or [string]::IsNullOrWhiteSpace([string]$behavior.humanAdjudication.reviewer) -or $null -eq $behavior.humanAdjudication.reviewedAtUtc) { Stop-CodexSkillsBehaviorGate 'Passed behavior evidence requires an attributable Approved human adjudication before aggregate success.' }

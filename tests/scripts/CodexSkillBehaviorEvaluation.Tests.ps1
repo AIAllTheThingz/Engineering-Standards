@@ -235,6 +235,9 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $wrapper | Should -Match "humanAdjudication\.decision -ne 'Approved'"
         $wrapper | Should -Match 'Stop-CodexSkillsBehaviorGate'
         $wrapper | Should -Match 'Publish-CodexSkillsReport; exit 1'
+        $wrapper | Should -Match 'Candidate skill.*promotion is blocked'
+        $wrapper | Should -Match 'modelEvaluationStatus = \$behavior\.status'
+        $wrapper | Should -Match 'ruleId=''SKL020''; status=\$behavior\.status'
         $aggregate = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-GovernanceValidation.ps1') -Raw
         $aggregate | Should -Match "\.agents/suspended-skills"
         $aggregate | Should -Match 'No governed active or suspended Codex skills directory'
