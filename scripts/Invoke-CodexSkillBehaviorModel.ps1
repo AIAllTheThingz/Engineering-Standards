@@ -24,14 +24,20 @@ $config = Import-PowerShellDataFile -LiteralPath (Join-Path $root $inputs.Config
 $credential = [Environment]::GetEnvironmentVariable($ApiKeyEnvironmentVariable)
 if ([string]::IsNullOrWhiteSpace($credential)) { throw "Approved nonproduction key is unavailable in $ApiKeyEnvironmentVariable." }
 $output = if ([IO.Path]::IsPathRooted($OutputDirectory)) { [IO.Path]::GetFullPath($OutputDirectory) } else { [IO.Path]::GetFullPath((Join-Path $root $OutputDirectory)) }
-if ([IO.Path]::GetRelativePath($root, $output).StartsWith('..')) { throw 'OutputDirectory must be beneath the repository root.' }
+$pathComparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+$rootBoundary = $root.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+if (-not $output.StartsWith($rootBoundary, $pathComparison)) { throw 'OutputDirectory must be beneath the repository root.' }
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $scratch = Join-Path ([IO.Path]::GetTempPath()) ("codex-skill-behavior-{0}" -f [guid]::NewGuid().ToString('N'))
 $workspace = Join-Path $scratch 'workspace'
 $codexHome = Join-Path $scratch 'codex-home'
 New-Item -ItemType Directory -Path $workspace,$codexHome -Force | Out-Null
 try {
-    Copy-Item -LiteralPath (Join-Path $root '.agents') -Destination $workspace -Recurse
+    foreach ($skillInput in $inputs.SkillPaths) {
+        $destination = Join-Path $workspace $skillInput
+        New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $root $skillInput) -Destination $destination
+    }
     foreach ($authority in $inputs.AuthorityPaths) {
         $destination = Join-Path $workspace $authority
         New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
@@ -48,6 +54,7 @@ try {
             }
             $attempt = 0
             $completed = $false
+            $retrySuppressed = $false
             while (-not $completed -and $attempt -le [int]$config.RetryPolicy.MaximumTransportRetries) {
                 $attempt++
                 $lastMessage = Join-Path $scratch ("last-{0}-{1}-{2}.json" -f $case.caseId, $sample, $attempt)
@@ -70,7 +77,7 @@ User request: $($case.prompt)
                     $process.Kill($true); $process.WaitForExit(); $reason = 'TransportTimeout: the bounded Codex request timed out.'
                 }
                 elseif ($process.ExitCode -ne 0) { $reason = 'ModelUnavailable: Codex did not return a successful structured response.' }
-                elseif (-not (Test-Path -LiteralPath $lastMessage -PathType Leaf)) { $reason = 'MalformedOutput: Codex omitted the required structured response.'; $attempt = [int]$config.RetryPolicy.MaximumTransportRetries + 1 }
+                elseif (-not (Test-Path -LiteralPath $lastMessage -PathType Leaf)) { $reason = 'MalformedOutput: Codex omitted the required structured response.'; $retrySuppressed = $true }
                 else {
                     try {
                         $observation = Get-Content -LiteralPath $lastMessage -Raw | ConvertFrom-Json
@@ -80,15 +87,19 @@ User request: $($case.prompt)
                         $observation | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $destination -Encoding utf8
                         $completed = $true
                     }
-                    catch { $reason = 'MalformedOutput: Codex returned JSON that did not satisfy the observation contract.'; $attempt = [int]$config.RetryPolicy.MaximumTransportRetries + 1 }
+                    catch { $reason = 'MalformedOutput: Codex returned JSON that did not satisfy the observation contract.'; $retrySuppressed = $true }
                 }
                 [void]$stdoutTask.Result; [void]$stderrTask.Result
-                if (-not $completed -and $attempt -gt [int]$config.RetryPolicy.MaximumTransportRetries) {
+                if (-not $completed -and ($retrySuppressed -or $attempt -gt [int]$config.RetryPolicy.MaximumTransportRetries)) {
                     [pscustomobject]@{ status = 'Blocked'; attemptCount = $attempt; failureReason = $reason; selection = $null; safetyOutcome = $null; quality = $null; responseSummary = $null; toolEvents = @(); unsafeToolAccess = $false } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $destination -Encoding utf8
+                    $completed = $true
                 }
                 elseif (-not $completed) {
                     $remainingDelaySeconds = [Math]::Max(0, [Math]::Floor(($overallDeadline - [DateTime]::UtcNow).TotalSeconds))
-                    if ($remainingDelaySeconds -le 0) { $attempt = [int]$config.RetryPolicy.MaximumTransportRetries + 1 }
+                    if ($remainingDelaySeconds -le 0) {
+                        [pscustomobject]@{ status = 'Blocked'; attemptCount = $attempt; failureReason = 'OverallTimeout: the governed evaluation deadline was exhausted before a retry could run.'; selection = $null; safetyOutcome = $null; quality = $null; responseSummary = $null; toolEvents = @(); unsafeToolAccess = $false } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $destination -Encoding utf8
+                        $completed = $true
+                    }
                     else { Start-Sleep -Seconds ([Math]::Min([int]$config.RetryPolicy.RetryDelaySeconds, $remainingDelaySeconds)) }
                 }
             }

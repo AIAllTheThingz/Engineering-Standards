@@ -18,10 +18,14 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Match 'inputs\.AuthorityPaths'
         (Get-CodexBehaviorInput -Path $repoRoot).AuthorityPaths | Should -Contain 'agents/AGENTS_PowerShell.md'
         $runner | Should -Match 'Codex omitted the required structured response.'
-        $runner | Should -Match 'MaximumTransportRetries \+ 1'
+        $runner | Should -Match '\$retrySuppressed = \$true'
         $runner | Should -Match 'OverallTimeoutSeconds'
         $runner | Should -Match 'overallDeadline'
         $runner | Should -Not -Match 'Case category:'
+        $runner | Should -Not -Match "Copy-Item -LiteralPath \(Join-Path \$root '\.agents'\)"
+        $runner | Should -Match 'foreach \(\$skillInput in \$inputs\.SkillPaths\)'
+        $runner | Should -Match '\$output\.StartsWith\(\$rootBoundary, \$pathComparison\)'
+        $runner | Should -Not -Match '\$attempt = \[int\]\$config\.RetryPolicy\.MaximumTransportRetries \+ 1'
     }
 
     It 'hashes the root catalog and a new skill-local README without touching an existing skill file' {
