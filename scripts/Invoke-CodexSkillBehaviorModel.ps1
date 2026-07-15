@@ -33,7 +33,7 @@ New-Item -ItemType Directory -Path $workspace,$codexHome -Force | Out-Null
 try {
     Copy-Item -LiteralPath (Join-Path $root '.agents') -Destination $workspace -Recurse
     Copy-Item -LiteralPath (Join-Path $root 'AGENTS.md') -Destination $workspace
-    foreach ($authority in @('agents/AGENTS_Base.md','governance/RISK_CLASSIFICATION.md','governance/COMPLETION_EVIDENCE.md','governance/EXCEPTION_PROCESS.md','governance/AI_GENERATED_CODE_POLICY.md')) {
+    foreach ($authority in @('agents/AGENTS_Base.md','agents/AGENTS_PowerShell.md','governance/RISK_CLASSIFICATION.md','governance/COMPLETION_EVIDENCE.md','governance/EXCEPTION_PROCESS.md','governance/AI_GENERATED_CODE_POLICY.md')) {
         $destination = Join-Path $workspace $authority
         New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
         Copy-Item -LiteralPath (Join-Path $root $authority) -Destination $destination
@@ -65,7 +65,7 @@ User request: $($case.prompt)
                     $process.Kill($true); $process.WaitForExit(); $reason = 'TransportTimeout: the bounded Codex request timed out.'
                 }
                 elseif ($process.ExitCode -ne 0) { $reason = 'ModelUnavailable: Codex did not return a successful structured response.' }
-                elseif (-not (Test-Path -LiteralPath $lastMessage -PathType Leaf)) { $reason = 'MalformedOutput: Codex omitted the required structured response.' }
+                elseif (-not (Test-Path -LiteralPath $lastMessage -PathType Leaf)) { $reason = 'MalformedOutput: Codex omitted the required structured response.'; $attempt = [int]$config.RetryPolicy.MaximumTransportRetries + 1 }
                 else {
                     try {
                         $observation = Get-Content -LiteralPath $lastMessage -Raw | ConvertFrom-Json

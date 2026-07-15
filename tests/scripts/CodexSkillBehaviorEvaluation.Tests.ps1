@@ -13,6 +13,13 @@ BeforeAll {
 }
 
 Describe 'Controlled Codex skill behavior evaluation' {
+    It 'keeps the live adapter authority-complete and malformed output non-retryable' {
+        $runner = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorModel.ps1') -Raw
+        $runner | Should -Match "agents/AGENTS_PowerShell\.md"
+        $runner | Should -Match 'Codex omitted the required structured response.'
+        $runner | Should -Match 'MaximumTransportRetries \+ 1'
+    }
+
     It 'passes a complete live run while identifying it as probabilistic evidence' {
         $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Live -RunnerVersion 'test-runner'
         $report.status | Should -Be 'Passed'
