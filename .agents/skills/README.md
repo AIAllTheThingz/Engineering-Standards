@@ -8,7 +8,7 @@ Skills package repeatable engineering workflows. They do not replace governance,
 
 | Skill | Purpose | Status | Behavior gate |
 | --- | --- | --- | --- |
-| [`enterprise-powershell`](enterprise-powershell/SKILL.md) | Create or substantially modify governed enterprise PowerShell automation and its supporting project files. | Active | Controlled evaluator available; current checked evidence may be `Passed`, `Failed`, `NotRun`, or `Blocked` and must be read directly. |
+| [`enterprise-powershell`](enterprise-powershell/SKILL.md) | Create or substantially modify governed enterprise PowerShell automation and its supporting project files. | Suspended | Current controlled evaluation is `Blocked`; implicit and explicit invocation remain suspended until a passing unchanged-input live run and attributable human approval. |
 
 ## Planned Skills
 

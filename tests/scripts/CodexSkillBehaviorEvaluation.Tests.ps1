@@ -176,6 +176,13 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $sanitized.caseOutcomes[0].samples[0].failureReason | Should -Match '^ModelUnavailable:'
     }
 
+    It 'enforces the checked Active-skill suspension through the aggregate wrapper' {
+        (Get-Content -LiteralPath (Join-Path $repoRoot '.agents/skills/README.md') -Raw) | Should -Match '(?m)^\|.*enterprise-powershell.*\|\s*Suspended\s*\|'
+        $wrapper = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1') -Raw
+        $wrapper | Should -Match "decision\.action -ne 'Suspend'"
+        $wrapper | Should -Match 'not marked Suspended'
+    }
+
     It 'rejects fabricated checked evidence and partial checked evidence' {
         $testRoot = Join-Path $repoRoot '.tmp/behavior-evidence-test'
         New-Item -ItemType Directory -Path $testRoot -Force | Out-Null

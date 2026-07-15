@@ -251,7 +251,9 @@ A skill installed without its governing context is incomplete. If central standa
 
 ## Planned Skill Sequence
 
-`enterprise-powershell` is Active. The remaining planned skills are owned by
+`enterprise-powershell` is implemented but currently Suspended by the checked
+`Blocked` controlled behavior result. It may return to Active only after a
+passing unchanged-input live evaluation and attributable human approval. The remaining planned skills are owned by
 GitHub issues rather than prose-only checklist entries. Live issue state,
 acceptance criteria, dependencies, and delivery decisions are authoritative;
 this table records the stable recommended sequence only.

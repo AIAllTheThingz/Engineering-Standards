@@ -53,6 +53,17 @@ try {
         }
         & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $PSScriptRoot 'Test-CodexSkillBehaviorEvidence.ps1') -Path $root
         if ($LASTEXITCODE -ne 0) { exit 1 }
+        $behavior = Get-Content -LiteralPath $behaviorEvidence -Raw | ConvertFrom-Json
+        $approvedBehavior = Import-PowerShellDataFile -LiteralPath $behaviorConfiguration
+        if ($behavior.status -in @('Failed','Blocked','NotRun')) {
+            if ($behavior.decision.skillStatus -eq 'Active') {
+                if ($behavior.decision.action -ne 'Suspend') { Write-Error 'Nonpassing Active-skill evidence must require suspension.'; exit 1 }
+                $catalog = Get-Content -LiteralPath (Join-Path $root '.agents/skills/README.md') -Raw
+                $escapedSkill = [regex]::Escape([string]$approvedBehavior.Skill.Name)
+                if ($catalog -notmatch "(?m)^\|[^|]*$escapedSkill[^|]*\|[^|]*\|\s*Suspended\s*\|") { Write-Error "Active skill '$($approvedBehavior.Skill.Name)' has nonpassing behavior evidence but is not marked Suspended in the catalog."; exit 1 }
+            }
+            elseif ($behavior.decision.action -ne 'BlockPromotion') { Write-Error 'Nonpassing Candidate evidence must block promotion.'; exit 1 }
+        }
     }
     exit 0
 }
