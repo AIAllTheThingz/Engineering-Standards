@@ -115,6 +115,17 @@ Describe 'Codex skill validation' {
         $LASTEXITCODE | Should -Be 0
     }
 
+    It 'rejects a skill present in both active and suspended lifecycle roots' {
+        $root = New-TestRepository -Name duplicate-lifecycle-root
+        New-Item -ItemType Directory -Path (Join-Path $root '.agents/suspended-skills') -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $root '.agents/skills/sample-skill') -Destination (Join-Path $root '.agents/suspended-skills/sample-skill') -Recurse
+        $output = Join-Path $root '.tmp/codex-skills-duplicate-lifecycle.json'
+        & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1') -Path $root -OutputJson $output 2>$null
+        $LASTEXITCODE | Should -Be 1
+        $report = Get-Content -LiteralPath $output -Raw | ConvertFrom-Json
+        ($report.results | Where-Object ruleId -eq 'SKL021').status | Should -Be 'Failed'
+    }
+
     It 'returns NotApplicable when no governed skill root exists' {
         $root = Join-Path $TestDrive 'no-skills'
         New-Item -ItemType Directory -Path $root -Force | Out-Null
