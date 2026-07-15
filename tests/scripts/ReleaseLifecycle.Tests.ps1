@@ -89,6 +89,29 @@ Describe 'Release lifecycle gates' {
         $result.Output | Should -Match 'RLG036'
     }
 
+    It 'requires an isolated run and artifact for every canary scenario' {
+        $result = Invoke-ReleaseFixture -Name 'reused-canary-evidence' -Stage PreRelease -Mutate {
+            param($fixture)
+            $fixture.preRelease.downstreamCanary.scenarios[1].runId = $fixture.preRelease.downstreamCanary.scenarios[0].runId
+            $fixture.preRelease.downstreamCanary.scenarios[1].artifact.artifactId = $fixture.preRelease.downstreamCanary.scenarios[0].artifact.artifactId
+        }
+        $result.ExitCode | Should -Be 1
+        $result.Output | Should -Match 'RLG039'
+        $result.Output | Should -Match 'RLG048'
+    }
+
+    It 'rejects an alternate compatibility matrix in place of the owned source of truth' {
+        $alternateMatrix = Join-Path $script:tempRoot 'alternate-compatibility.json'
+        Copy-Item -LiteralPath (Join-Path $script:root 'governance/downstream-compatibility.json') -Destination $alternateMatrix
+        $relativeAlternate = [System.IO.Path]::GetRelativePath($script:root, $alternateMatrix).Replace('\', '/')
+        $result = Invoke-ReleaseFixture -Name 'alternate-compatibility-matrix' -Stage PreRelease -Mutate {
+            param($fixture)
+            $fixture.compatibilityMatrix.path = $relativeAlternate
+        }
+        $result.ExitCode | Should -Be 1
+        $result.Output | Should -Match 'RLG047'
+    }
+
     It 'rejects publication when the release tag was rewritten' {
         $result = Invoke-ReleaseFixture -Name 'rewritten-tag' -Stage Publication -Mutate {
             param($fixture)

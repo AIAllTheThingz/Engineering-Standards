@@ -201,6 +201,8 @@ function Test-CanaryProof {
 
     $scenarios = @(Get-Member -Object $Canary -Name 'scenarios')
     $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    $seenRunIds = [System.Collections.Generic.HashSet[int64]]::new()
+    $seenArtifactIds = [System.Collections.Generic.HashSet[int64]]::new()
     foreach ($scenario in $scenarios) {
         if (-not (Test-RequiredMembers -Object $scenario -Names @('name', 'runId', 'conclusion', 'expectedConclusion', 'verified', 'artifact') -Context "$Context scenario")) { continue }
         $name = [string](Get-Member -Object $scenario -Name 'name')
@@ -213,8 +215,12 @@ function Test-CanaryProof {
             continue
         }
         $expected = [string]$requiredCanaryScenarios[$name]
-        if ([int64](Get-Member -Object $scenario -Name 'runId') -lt 1) {
+        $runId = [int64](Get-Member -Object $scenario -Name 'runId')
+        if ($runId -lt 1) {
             Add-ReleaseFinding -Code 'RLG035' -Message "$Context scenario '$name' runId must be positive."
+        }
+        elseif (-not $seenRunIds.Add($runId)) {
+            Add-ReleaseFinding -Code 'RLG039' -Message "$Context scenario '$name' reuses runId '$runId'; every scenario requires an isolated workflow run."
         }
         if ([string](Get-Member -Object $scenario -Name 'expectedConclusion') -cne $expected -or [string](Get-Member -Object $scenario -Name 'conclusion') -cne $expected) {
             Add-ReleaseFinding -Code 'RLG036' -Message "$Context scenario '$name' must conclude '$expected' exactly."
@@ -222,7 +228,12 @@ function Test-CanaryProof {
         if ((Get-Member -Object $scenario -Name 'verified') -isnot [bool] -or -not [bool](Get-Member -Object $scenario -Name 'verified')) {
             Add-ReleaseFinding -Code 'RLG037' -Message "$Context scenario '$name' must be independently verified."
         }
-        Test-ArtifactProof -Artifact (Get-Member -Object $scenario -Name 'artifact') -Context "$Context scenario '$name' artifact"
+        $scenarioArtifact = Get-Member -Object $scenario -Name 'artifact'
+        $artifactId = [int64](Get-Member -Object $scenarioArtifact -Name 'artifactId')
+        if ($artifactId -gt 0 -and -not $seenArtifactIds.Add($artifactId)) {
+            Add-ReleaseFinding -Code 'RLG048' -Message "$Context scenario '$name' reuses artifactId '$artifactId'; every scenario requires independent artifact evidence."
+        }
+        Test-ArtifactProof -Artifact $scenarioArtifact -Context "$Context scenario '$name' artifact"
     }
     foreach ($requiredName in $requiredCanaryScenarios.Keys) {
         if (-not $seen.Contains([string]$requiredName)) {
@@ -240,6 +251,11 @@ function Test-CompatibilityMatrix {
 
     if (-not (Test-RequiredMembers -Object $Reference -Names @('path', 'schemaVersion') -Context 'compatibilityMatrix')) { return }
     $relativePath = [string](Get-Member -Object $Reference -Name 'path')
+    $ownedMatrixPath = 'governance/downstream-compatibility.json'
+    if ($relativePath -cne $ownedMatrixPath) {
+        Add-ReleaseFinding -Code 'RLG047' -Message "compatibilityMatrix.path must identify the owned source of truth '$ownedMatrixPath'; found '$relativePath'."
+        return
+    }
     try {
         $matrixPath = Resolve-SafePath -Root $root -ChildPath $relativePath
     }
