@@ -177,6 +177,7 @@ function Test-CanaryProof {
         [AllowNull()][object]$Canary,
         [Parameter(Mandatory)][string]$Context,
         [Parameter(Mandatory)][string]$CandidateSha,
+        [string]$ReleaseVersion,
         [switch]$PublishedReferenceRequired
     )
 
@@ -192,8 +193,9 @@ function Test-CanaryProof {
     Test-ExactTarget -Object $Canary -Context $Context -CandidateSha $CandidateSha -Member 'standardsSha'
     if ($PublishedReferenceRequired) {
         $publishedRef = [string](Get-Member -Object $Canary -Name 'publishedRef')
-        if ($publishedRef -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$') {
-            Add-ReleaseFinding -Code 'RLG032' -Message "$Context must identify the published immutable version ref."
+        $expectedPublishedRef = "v$ReleaseVersion"
+        if ([string]::IsNullOrWhiteSpace($ReleaseVersion) -or $publishedRef -cne $expectedPublishedRef) {
+            Add-ReleaseFinding -Code 'RLG032' -Message "$Context publishedRef '$publishedRef' must equal the release's immutable version ref '$expectedPublishedRef'."
         }
     }
 
@@ -534,8 +536,13 @@ if ($topLevelComplete) {
                 [void](Test-StatusRecord -Object $releaseVerification -Context 'postRelease.githubReleaseVerification' -RequirePassed)
                 Test-ExactTarget -Object $releaseVerification -Context 'postRelease.githubReleaseVerification' -CandidateSha $candidateSha
                 if ([bool](Get-Member -Object $releaseVerification -Name 'draft')) { Add-ReleaseFinding -Code 'RLG121' -Message 'Post-release verification found a draft GitHub Release.' }
+                $postReleasePrerelease = Get-Member -Object $releaseVerification -Name 'prerelease'
+                $expectedPrerelease = $version -match '-'
+                if ($postReleasePrerelease -isnot [bool] -or [bool]$postReleasePrerelease -ne $expectedPrerelease) {
+                    Add-ReleaseFinding -Code 'RLG127' -Message 'Post-release GitHub Release prerelease state does not match the semantic version.'
+                }
             }
-            Test-CanaryProof -Canary (Get-Member -Object $postRelease -Name 'downstreamCanary') -Context 'postRelease.downstreamCanary' -CandidateSha $candidateSha -PublishedReferenceRequired
+            Test-CanaryProof -Canary (Get-Member -Object $postRelease -Name 'downstreamCanary') -Context 'postRelease.downstreamCanary' -CandidateSha $candidateSha -ReleaseVersion $version -PublishedReferenceRequired
             $regressions = @(Get-Member -Object $postRelease -Name 'regressions')
             $followUps = @(Get-Member -Object $postRelease -Name 'followUpIssues')
             $defects = @($regressions | Where-Object { [string](Get-Member -Object $_ -Name 'disposition') -ceq 'Defect' })

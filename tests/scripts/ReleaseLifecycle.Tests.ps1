@@ -122,6 +122,24 @@ Describe 'Release lifecycle gates' {
         $result.Output | Should -Match 'RLG122'
     }
 
+    It 'rejects a post-release canary bound to a different published version' {
+        $result = Invoke-ReleaseFixture -Name 'wrong-published-canary-ref' -Stage PostRelease -Mutate {
+            param($fixture)
+            $fixture.postRelease.downstreamCanary.publishedRef = 'v1.0.0'
+        }
+        $result.ExitCode | Should -Be 1
+        $result.Output | Should -Match 'RLG032'
+    }
+
+    It 'rejects post-release prerelease state that contradicts a stable version' {
+        $result = Invoke-ReleaseFixture -Name 'wrong-post-release-prerelease-state' -Stage PostRelease -Mutate {
+            param($fixture)
+            $fixture.postRelease.githubReleaseVerification.prerelease = $true
+        }
+        $result.ExitCode | Should -Be 1
+        $result.Output | Should -Match 'RLG127'
+    }
+
     It 'writes machine-readable actionable findings' {
         $reportPath = Join-Path $script:tempRoot 'finding-report.json'
         $result = Invoke-ReleaseFixture -Name 'report-output' -Stage PreRelease -Mutate {
