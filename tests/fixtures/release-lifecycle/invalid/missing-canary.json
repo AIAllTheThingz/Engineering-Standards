@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordType": "release-lifecycle",
+  "mode": "DryRun",
+  "synthetic": true,
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "version": "1.1.0",
+  "candidateSha": "1111111111111111111111111111111111111111",
+  "finalHeadSha": "1111111111111111111111111111111111111111",
+  "createdAtUtc": "2026-07-15T12:00:00Z",
+  "createdBy": "Synthetic invalid release lifecycle fixture",
+  "releaseNotes": {
+    "path": "docs/releases/1.1.0.md",
+    "reviewedSha256": "460ba851b0611e4032e46242fc294a2dd819bb35e97abb069b54987fe1faf803"
+  },
+  "compatibilityMatrix": {
+    "path": "governance/downstream-compatibility.json",
+    "schemaVersion": "1.0.0"
+  },
+  "preRelease": {
+    "status": "Passed",
+    "reason": null,
+    "checks": [],
+    "successRun": {},
+    "controlledFailureRun": {},
+    "metadataConsistency": {},
+    "approvals": [],
+    "protection": {}
+  },
+  "publication": {
+    "status": "NotRun",
+    "reason": "Publication is intentionally not run in this invalid pre-release fixture."
+  },
+  "postRelease": {
+    "status": "NotRun",
+    "reason": "Post-release verification is intentionally not run in this invalid fixture."
+  },
+  "exceptions": []
+}

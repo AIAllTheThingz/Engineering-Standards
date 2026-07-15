@@ -36,6 +36,7 @@ $authoritative = @(
     'agents/AGENTS_Infrastructure.md',
     'docs/ADOPTION_GUIDE.md',
     'docs/DOWNSTREAM_CANARY.md',
+    'docs/DOWNSTREAM_COMPATIBILITY.md',
     'docs/DOWNSTREAM_CONFIGURATION.md',
     'docs/GOVERNANCE_ARCHITECTURE.md',
     'docs/ACTION_SECURITY.md',

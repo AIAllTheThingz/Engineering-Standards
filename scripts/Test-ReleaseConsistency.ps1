@@ -28,6 +28,20 @@ $changelog = Get-RequiredText 'CHANGELOG.md'
 $readme = Get-RequiredText 'README.md'
 $status = Get-RequiredText 'docs/RELEASE_STATUS.md'
 $canary = Get-RequiredText 'docs/DOWNSTREAM_CANARY.md'
+$compatibilityGuide = Get-RequiredText 'docs/DOWNSTREAM_COMPATIBILITY.md'
+
+$releaseLifecycleAssets = @(
+    'scripts/Test-ReleaseLifecycle.ps1',
+    'schemas/release-lifecycle.schema.json',
+    'schemas/downstream-compatibility.schema.json',
+    'governance/downstream-compatibility.json',
+    'templates/releases/POST_RELEASE_VERIFICATION.template.json'
+)
+foreach ($asset in $releaseLifecycleAssets) {
+    if (-not (Test-Path -LiteralPath (Join-Path $root $asset) -PathType Leaf)) {
+        $failures.Add("Release lifecycle asset '$asset' is missing.")
+    }
+}
 
 if ($version -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$') {
     $failures.Add("VERSION '$version' is not canonical semantic version syntax.")
@@ -92,6 +106,51 @@ if ($version) {
 
 if ($readme -notmatch 'docs/RELEASE_STATUS\.md' -or $readme -notmatch 'CHANGELOG\.md#unreleased') {
     $failures.Add('README.md must link to release status and [Unreleased].')
+}
+if ($readme -notmatch 'docs/DOWNSTREAM_COMPATIBILITY\.md' -or $compatibilityGuide -notmatch 'governance/downstream-compatibility\.json') {
+    $failures.Add('README and downstream compatibility guidance must link the compatibility contract.')
+}
+
+$compatibilityMatrixPath = Join-Path $root 'governance/downstream-compatibility.json'
+if (Test-Path -LiteralPath $compatibilityMatrixPath -PathType Leaf) {
+    try {
+        $compatibilityMatrix = Get-Content -LiteralPath $compatibilityMatrixPath -Raw | ConvertFrom-Json
+        if ($compatibilityMatrix.schemaVersion -cne '1.0.0') {
+            $failures.Add("Downstream compatibility schemaVersion '$($compatibilityMatrix.schemaVersion)' is unsupported.")
+        }
+        $matchingRelease = @($compatibilityMatrix.governanceReleases | Where-Object version -CEQ $version)
+        if ($matchingRelease.Count -ne 1) {
+            $failures.Add("Downstream compatibility matrix must contain exactly one published entry for VERSION '$version'.")
+        }
+        else {
+            $releaseCompatibility = $matchingRelease[0]
+            if ($releaseCompatibility.lifecycle -cne 'Published' -or $releaseCompatibility.supportStatus -cnotin @('Supported', 'SecurityFixesOnly')) {
+                $failures.Add("Published VERSION '$version' must have an active supported lifecycle in the compatibility matrix.")
+            }
+            if ($releaseCompatibility.immutableRef -cne "v$version") {
+                $failures.Add("Compatibility matrix immutableRef must be 'v$version'.")
+            }
+            if ($targetMatch.Success -and $releaseCompatibility.immutableSha -cne $targetMatch.Groups[1].Value) {
+                $failures.Add('Compatibility matrix release SHA does not match release status.')
+            }
+        }
+        if ($compatibilityMatrix.unreleasedContract.governanceVersion -cne $version) {
+            $failures.Add('Unreleased compatibility contract must retain the root governance VERSION until a later release is published.')
+        }
+
+        $projectManifestSchemaPath = Join-Path $root 'schemas/project-manifest.schema.json'
+        if (Test-Path -LiteralPath $projectManifestSchemaPath -PathType Leaf) {
+            $projectManifestSchema = Get-Content -LiteralPath $projectManifestSchemaPath -Raw | ConvertFrom-Json
+            $declaredVersions = @($projectManifestSchema.properties.schemaVersion.enum)
+            $matrixVersions = @($compatibilityMatrix.unreleasedContract.projectManifestSchemaVersions)
+            if (($declaredVersions.Count -ne $matrixVersions.Count) -or @($declaredVersions | Where-Object { $matrixVersions -cnotcontains $_ }).Count -gt 0) {
+                $failures.Add('Unreleased project-manifest schema versions do not match the downstream compatibility matrix.')
+            }
+        }
+    }
+    catch {
+        $failures.Add("Downstream compatibility matrix could not be parsed: $($_.Exception.Message)")
+    }
 }
 
 $canaryShaRow = [regex]::Match($canary, '(?m)^\|\s*Validated standards SHA\s*\|\s*`([^`]+)`\s*\|\s*$')
@@ -203,7 +262,7 @@ foreach ($line in ($status -split '\r?\n')) {
 }
 
 if ($failures.Count -gt 0) {
-    foreach ($failure in $failures) { Write-Error $failure }
+    foreach ($failure in $failures) { [Console]::Error.WriteLine($failure) }
     exit 1
 }
 

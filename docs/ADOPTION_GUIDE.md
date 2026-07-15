@@ -105,6 +105,20 @@ The supported reusable workflow path is `.github/workflows/governance-ci-reusabl
 
 The public `AIAllTheThingz/Engineering-Standards-Canary` repository demonstrates the supported minimal cross-repository integration and verifies release candidates across success and four isolated failure paths. See [Downstream Governance Canary](DOWNSTREAM_CANARY.md). Consumers may compare their workflow boundary and configuration with that canary, but must still run their own builds, tests, security checks, and deployment validation.
 
+## Compatibility Selection
+
+Before choosing a pin, inspect [Downstream Compatibility](DOWNSTREAM_COMPATIBILITY.md)
+and its machine-readable matrix. Match the repository's governance version,
+project-manifest schema, evidence schemas, and workflow interface as separate
+contracts. A published tag and a later canary-validated workflow repair can
+have different immutable SHAs; consumers MUST NOT assume that a post-release
+repair is contained in the earlier release.
+
+Record the selected matrix entry and exact SHA in adoption Evidence. `Preview`
+contracts require explicit migration review and are not published support
+promises. If the required combination is absent, stop and open a compatibility
+issue rather than changing versions until validation happens to pass.
+
 ## Advisory Mode
 
 Advisory mode is used to discover gaps before enforcement. Findings in advisory mode MUST be triaged into remediation, approved exception, or documented non-applicability. Advisory mode is time-bound; High and Critical repositories SHOULD define an enforcement date before merging the adoption branch.
@@ -170,5 +184,6 @@ Expired exceptions, missing owners, missing evidence, unpinned workflows, and di
 - `governance/RISK_CLASSIFICATION.md`
 - `governance/EXCEPTION_PROCESS.md`
 - `docs/DOWNSTREAM_CONFIGURATION.md`
+- `docs/DOWNSTREAM_COMPATIBILITY.md`
 - `docs/BRANCH_PROTECTION.md`
 - `docs/TROUBLESHOOTING.md`

@@ -54,6 +54,15 @@ Evidence templates must match the active schema. They may show example values, b
 
 Evidence must be generated from actual validation whenever possible. Manual evidence requires reviewer context and limitations.
 
+## Release Verification Template
+
+`templates/releases/POST_RELEASE_VERIFICATION.template.json` starts a truthful
+post-publication observation record with external work set to `NotRun`. Replace
+its identities, timestamps, hashes, and reasons only after re-fetching the tag,
+GitHub Release, and downstream canary Evidence. The template complements the
+full release-lifecycle schema; it does not authorize tag creation, release
+publication, or protection changes and is not Passed evidence by itself.
+
 ## Threat Model Template
 
 Threat-model templates must prompt for system overview, trust boundaries, assets, actors, entry points, data flows, dependencies, threats, mitigations, residual risk, assumptions, abuse cases, and review history.
@@ -97,5 +106,6 @@ Template exceptions cannot approve missing security reporting instructions, miss
 - `templates/pull-request/pull_request_template.md`
 - `templates/test-plans/TEST_PLAN.template.md`
 - `templates/threat-models/THREAT_MODEL.template.md`
+- `templates/releases/POST_RELEASE_VERIFICATION.template.json`
 - `docs/ADOPTION_GUIDE.md`
 - `docs/DOWNSTREAM_CONFIGURATION.md`

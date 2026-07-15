@@ -41,6 +41,15 @@ Maintainers SHOULD support the current major version and one previous major vers
 
 If a security incident requires ending support early, the release process must document the reason, affected versions, and required downstream action.
 
+The authoritative support and deprecation inventory is
+[`governance/downstream-compatibility.json`](../governance/downstream-compatibility.json),
+explained in [Downstream Compatibility](DOWNSTREAM_COMPATIBILITY.md). It records
+published immutable releases separately from the preview contract on `master`
+and distinguishes governance version, workflow interface, and each evidence or
+manifest schema family. Release notes, `VERSION`, schema enums, workflow
+interface, migration guidance, and this matrix MUST agree on the unchanged
+candidate head before approval.
+
 ## Schema Compatibility
 
 Adding optional fields is usually compatible. Adding required fields, narrowing enums, changing field meaning, or changing evidence status semantics is breaking unless a compatibility bridge is implemented.
@@ -98,6 +107,11 @@ If no downstream action is required, state that explicitly.
 
 The changelog MUST agree with `VERSION`, release evidence, and the release tag. If a release is prepared but not tagged, the changelog should state that it is prepared for review rather than published.
 
+`scripts/Test-ReleaseLifecycle.ps1 -Stage PreRelease` enforces that agreement
+and rejects a candidate whose declared schema or workflow interface is absent
+from the compatibility matrix. Publication and post-release stages preserve the
+same candidate SHA; a tag or release cannot repair inconsistent version data.
+
 ## Version File
 
 The root `VERSION` file contains the latest published version without a leading `v`. Development after that release remains under `CHANGELOG.md` `[Unreleased]`; post-release commits do not by themselves change `VERSION`. Release tags SHOULD add the `v` prefix. For example, `VERSION` contains `1.1.0` and the release tag is `v1.1.0`.
@@ -115,6 +129,16 @@ pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -Repositor
 The authoritative default includes schema semantics, Pester, ScriptAnalyzer,
 and functional examples. Release evidence must show every mandatory category;
 an explicit category list cannot narrow the maintainer plan.
+
+Then validate the machine-readable release record:
+
+```powershell
+pwsh -NoProfile -File scripts/Test-ReleaseLifecycle.ps1 -Path . -EvidencePath <release-lifecycle-record.json> -Stage PreRelease
+```
+
+The validator is read-only. Use `DryRun` while preparing evidence; do not create
+tags, publish releases, or modify protection settings without explicit
+authorization. External checks not performed remain `NotRun` or `Blocked`.
 
 ## Evidence
 
@@ -135,3 +159,4 @@ All such exceptions must include a `GOV-*` reference and a post-incident cleanup
 - `governance/COMPLETION_EVIDENCE.md`
 - `governance/EXCEPTION_PROCESS.md`
 - `docs/ADOPTION_GUIDE.md`
+- `docs/DOWNSTREAM_COMPATIBILITY.md`

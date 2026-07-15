@@ -11,7 +11,9 @@ Describe 'Release consistency validation' {
         $script:canarySha = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
         $script:historicalSha = '091841c94fba6039443a40b7c4a28e5b9a3af2d2'
         $script:fixture = Join-Path ([System.IO.Path]::GetTempPath()) ('release-consistency-' + [guid]::NewGuid())
-        New-Item -ItemType Directory -Path (Join-Path $script:fixture 'docs/releases') -Force | Out-Null
+        foreach ($directory in @('docs/releases', 'scripts', 'schemas', 'governance', 'templates/releases')) {
+            New-Item -ItemType Directory -Path (Join-Path $script:fixture $directory) -Force | Out-Null
+        }
         Set-Content -LiteralPath (Join-Path $script:fixture 'VERSION') -Value '1.1.0'
         Set-Content -LiteralPath (Join-Path $script:fixture 'CHANGELOG.md') -Value @'
 # Changelog
@@ -29,7 +31,7 @@ Describe 'Release consistency validation' {
         Set-Content -LiteralPath (Join-Path $script:fixture 'README.md') -Value @'
 # Repository
 
-Current published version: `1.1.0`. Annotated tag `v1.1.0` resolves to immutable commit `1111111111111111111111111111111111111111`. See [Release Status](docs/RELEASE_STATUS.md) and [Unreleased](CHANGELOG.md#unreleased).
+Current published version: `1.1.0`. Annotated tag `v1.1.0` resolves to immutable commit `1111111111111111111111111111111111111111`. See [Release Status](docs/RELEASE_STATUS.md), [Downstream Compatibility](docs/DOWNSTREAM_COMPATIBILITY.md), and [Unreleased](CHANGELOG.md#unreleased).
 
 Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`.
 '@
@@ -49,6 +51,38 @@ Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-S
 | --- | --- |
 | Validated standards SHA | `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` |
 '@
+        Set-Content -LiteralPath (Join-Path $script:fixture 'docs/DOWNSTREAM_COMPATIBILITY.md') -Value @'
+# Downstream Compatibility
+
+The machine-readable contract is `governance/downstream-compatibility.json`.
+'@
+        Set-Content -LiteralPath (Join-Path $script:fixture 'governance/downstream-compatibility.json') -Value @'
+{
+  "schemaVersion": "1.0.0",
+  "governanceReleases": [{
+    "version": "1.1.0",
+    "lifecycle": "Published",
+    "supportStatus": "Supported",
+    "immutableRef": "v1.1.0",
+    "immutableSha": "1111111111111111111111111111111111111111"
+  }],
+  "unreleasedContract": {
+    "governanceVersion": "1.1.0",
+    "projectManifestSchemaVersions": ["1.0.0", "1.1.0", "1.2.0"]
+  }
+}
+'@
+        Set-Content -LiteralPath (Join-Path $script:fixture 'schemas/project-manifest.schema.json') -Value @'
+{"properties":{"schemaVersion":{"enum":["1.0.0","1.1.0","1.2.0"]}}}
+'@
+        foreach ($asset in @(
+            'scripts/Test-ReleaseLifecycle.ps1',
+            'schemas/release-lifecycle.schema.json',
+            'schemas/downstream-compatibility.schema.json',
+            'templates/releases/POST_RELEASE_VERIFICATION.template.json'
+        )) {
+            Set-Content -LiteralPath (Join-Path $script:fixture $asset) -Value '{}'
+        }
         Set-Content -LiteralPath (Join-Path $script:fixture 'docs/releases/1.1.0.md') -Value '# Release 1.1.0'
     }
 
@@ -72,6 +106,7 @@ Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-S
             $text = (Get-Content docs/RELEASE_STATUS.md -Raw).Replace('tag-object SHA `1111111111111111111111111111111111111111`', "tag-object SHA ``$tagObject``").Replace('resolves to immutable commit `1111111111111111111111111111111111111111`', "resolves to immutable commit ``$target``").Replace('Current `master` contains development after the published target. ', '')
             Set-Content docs/RELEASE_STATUS.md $text
             (Get-Content README.md -Raw).Replace('1111111111111111111111111111111111111111', $target) | Set-Content README.md
+            (Get-Content governance/downstream-compatibility.json -Raw).Replace('1111111111111111111111111111111111111111', $target) | Set-Content governance/downstream-compatibility.json
             Set-Content CHANGELOG.md "# Changelog`n`n## [Unreleased]`n`nNo unreleased changes are currently recorded.`n`n## [1.1.0] - 2026-07-11`n`nConsumers requiring the final canary-validated repaired reusable workflow should pin .github/workflows/governance-ci-reusable.yml to immutable post-release commit aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
         } finally { Pop-Location }
         & $script:invokeFixtureValidation | Should -Be 0
@@ -97,7 +132,7 @@ Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-S
         Set-Content (Join-Path $script:fixture 'README.md') @'
 # Repository
 
-The prepared version is `1.1.0` and is unpublished. See [Release Status](docs/RELEASE_STATUS.md) and [Unreleased](CHANGELOG.md#unreleased).
+The prepared version is `1.1.0` and is unpublished. See [Release Status](docs/RELEASE_STATUS.md), [Downstream Compatibility](docs/DOWNSTREAM_COMPATIBILITY.md), and [Unreleased](CHANGELOG.md#unreleased).
 
 Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`.
 '@
@@ -362,5 +397,18 @@ Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-S
         Add-Content (Join-Path $script:fixture 'README.md') 'A canary-proven repaired reusable workflow should pin bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.'
         & $script:invokeFixtureValidation | Should -Not -Be 0
         $script:output -join "`n" | Should -Match 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+    }
+
+    It 'fails when a mandatory release lifecycle asset is missing' {
+        Remove-Item -LiteralPath (Join-Path $script:fixture 'schemas/release-lifecycle.schema.json')
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match 'release-lifecycle\.schema\.json.*missing'
+    }
+
+    It 'fails when current project-manifest schema support drifts from the compatibility matrix' {
+        $matrixPath = Join-Path $script:fixture 'governance/downstream-compatibility.json'
+        (Get-Content -LiteralPath $matrixPath -Raw).Replace(', "1.2.0"', '') | Set-Content -LiteralPath $matrixPath
+        & $script:invokeFixtureValidation | Should -Not -Be 0
+        $script:output -join "`n" | Should -Match 'schema versions do not match the downstream compatibility matrix'
     }
 }
