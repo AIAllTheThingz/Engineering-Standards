@@ -33,18 +33,20 @@ try {
     if ($reports.Count -eq 0) { $reports.Add((Invoke-CodexSkillValidation -Path $root)) }
     $allResults = @($reports | ForEach-Object { $_.results })
     $allSkills = @($reports | ForEach-Object { $_.skillsDiscovered } | Sort-Object -Unique)
-    $allPromptResults = if ($allSkills.Count -gt 0) { @(Test-PromptBehaviorCorpus -RepositoryRoot $root -SkillNames $allSkills) } else { @() }
-    $requiredFailures = @($allResults + $allPromptResults | Where-Object { $_.requiredValidation -and $_.status -in @('Failed','Blocked') })
+    [object[]]$allPromptResults = @()
+    if ($allSkills.Count -gt 0) { $allPromptResults = @(Test-PromptBehaviorCorpus -RepositoryRoot $root -SkillNames $allSkills) }
+    $allValidationResults = @($allResults) + @($allPromptResults) | Where-Object { $null -ne $_ }
+    $requiredFailures = @($allValidationResults | Where-Object { $_.requiredValidation -and $_.status -in @('Failed','Blocked') })
     $report = [ordered]@{
         schemaVersion='1.0.0'; generatedAtUtc=[DateTime]::UtcNow.ToString('o'); repositoryRoot=$root
         skillsRoot=@($reports | ForEach-Object { $_.skillsRoot }); skillsDiscovered=$allSkills
         deterministicStatus=if($requiredFailures.Count -gt 0){if(@($requiredFailures | Where-Object status -eq 'Blocked').Count -gt 0){'Blocked'}else{'Failed'}}else{'Passed'}
         modelEvaluationStatus=if($allSkills.Count -eq 0){'NotApplicable'}else{'NotRun'}
         results=$allResults; promptBehaviorResults=$allPromptResults
-        failed=@($allResults + $allPromptResults | Where-Object status -eq 'Failed').Count
-        blocked=@($allResults + $allPromptResults | Where-Object status -eq 'Blocked').Count
-        notRun=@($allResults + $allPromptResults | Where-Object status -eq 'NotRun').Count
-        warnings=@($allResults + $allPromptResults | Where-Object severity -eq 'warning').Count
+        failed=@($allValidationResults | Where-Object status -eq 'Failed').Count
+        blocked=@($allValidationResults | Where-Object status -eq 'Blocked').Count
+        notRun=@($allValidationResults | Where-Object status -eq 'NotRun').Count
+        warnings=@($allValidationResults | Where-Object severity -eq 'warning').Count
     }
     if ($OutputJson) {
         if ($AllowedOutputRoot) {

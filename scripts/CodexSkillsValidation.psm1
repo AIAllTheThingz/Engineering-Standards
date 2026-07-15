@@ -481,7 +481,8 @@ function Invoke-CodexSkillValidation {
         foreach ($item in @(Test-OpenAiMetadata -Path (Join-Path $directory.FullName 'agents/openai.yaml') -SkillName $name -SkillRoot $directory.FullName -RepositoryRoot $repositoryRoot)) { $results.Add($item) }
         if (@($results | Where-Object { $_.skillName -eq $name -and $_.status -in @('Failed','Blocked') }).Count -eq 0) { $results.Add((New-SkillValidationResult -RuleId SKL001 -Status Passed -Severity info -Message 'Skill passed deterministic structural validation.' -Path $relativeDirectory -SkillName $name)) }
     }
-    $promptResults = if ($SkipPromptBehavior) { @() } else { @(Test-PromptBehaviorCorpus -RepositoryRoot $repositoryRoot -SkillNames @($skillNames) -PromptBehaviorPath $PromptBehaviorPath) }
+    [object[]]$promptResults = @()
+    if (-not $SkipPromptBehavior) { $promptResults = @(Test-PromptBehaviorCorpus -RepositoryRoot $repositoryRoot -SkillNames @($skillNames) -PromptBehaviorPath $PromptBehaviorPath) }
     New-CodexSkillValidationReport -RepositoryRoot $repositoryRoot -SkillsRoot $skillsRoot -SkillNames @($skillNames) -Results @($results) -PromptResults $promptResults
 }
 
