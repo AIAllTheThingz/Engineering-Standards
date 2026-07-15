@@ -22,13 +22,16 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Match 'overallDeadline'
     }
 
-    It 'hashes skill-local README inputs while excluding only the root catalog README' {
+    It 'hashes the root catalog and a new skill-local README without touching an existing skill file' {
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
-        $inputs.SkillPaths | Should -Not -Contain '.agents/skills/README.md'
-        $skillReadme = Join-Path $repoRoot '.agents/skills/enterprise-powershell/README.md'
-        New-Item -ItemType File -Path $skillReadme -Force | Out-Null
-        try { (Get-CodexBehaviorInput -Path $repoRoot).SkillPaths | Should -Contain '.agents/skills/enterprise-powershell/README.md' }
-        finally { Remove-Item -LiteralPath $skillReadme -Force }
+        $inputs.SkillPaths | Should -Contain '.agents/skills/README.md'
+        $fixtureName = 'behavior-readme-fixture-' + [guid]::NewGuid().ToString('N')
+        $fixtureDirectory = Join-Path $repoRoot ".agents/skills/$fixtureName"
+        $skillReadme = Join-Path $fixtureDirectory 'README.md'
+        New-Item -ItemType Directory -Path $fixtureDirectory | Out-Null
+        New-Item -ItemType File -Path $skillReadme | Out-Null
+        try { (Get-CodexBehaviorInput -Path $repoRoot).SkillPaths | Should -Contain ".agents/skills/$fixtureName/README.md" }
+        finally { Remove-Item -LiteralPath $fixtureDirectory -Recurse -Force }
     }
 
     It 'passes a complete live run while identifying it as probabilistic evidence' {
@@ -57,6 +60,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $provider = { param($case, $index, $config) [pscustomobject]@{ status = 'Blocked'; failureReason = $reason } }.GetNewClosure()
         $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider $provider -ExecutionMode Live
         $report.status | Should -Be 'Blocked'
+        $report.decision.skillStatus | Should -Be 'Active'
+        $report.decision.action | Should -Be 'Suspend'
         $report.aggregates.samplesCompleted | Should -Be 0
         $report.blockedReason | Should -Match 'failed closed'
         @($report.caseOutcomes | Where-Object status -eq 'Blocked').Count | Should -Be 9

@@ -11,6 +11,11 @@
         Scope = 'Issue #42 nonproduction controlled Codex skill behavior evaluation'
     }
 
+    Skill = @{
+        Name = 'enterprise-powershell'
+        Status = 'Active'
+    }
+
     Model = @{
         Provider = 'OpenAI'
         Surface = 'CodexExec'

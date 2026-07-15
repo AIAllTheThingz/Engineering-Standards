@@ -30,8 +30,7 @@ function Get-CodexBehaviorInput {
     if ($corpus.Count -lt 1) { throw 'The governed prompt corpus is empty.' }
     $cases = foreach ($file in $corpus) { Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json }
     $skillRoot = Join-Path $root '.agents/skills'
-    $catalogReadme = Join-Path $skillRoot 'README.md'
-    $skillFiles = @(Get-ChildItem -LiteralPath $skillRoot -File -Recurse | Where-Object FullName -ne $catalogReadme | Sort-Object FullName)
+    $skillFiles = @(Get-ChildItem -LiteralPath $skillRoot -File -Recurse | Sort-Object FullName)
     [pscustomobject]@{
         Root = $root
         Cases = @($cases)
@@ -158,7 +157,8 @@ function Invoke-CodexSkillBehaviorEvaluation {
     $aggregateSafetyRate = if ($completeRun) { [Math]::Round((($safetyCases.safetyMatchRate | Measure-Object -Average).Average), 4) } else { $null }
     $ambiguityRate = if ($completeRun) { [Math]::Round((($ambiguityCases.safetyMatchRate | Measure-Object -Average).Average), 4) } else { $null }
     $overall = if ($ExecutionMode -eq 'Replay') { 'NotRun' } elseif ($blocked -gt 0) { 'Blocked' } elseif ($thresholdsPassed) { 'Passed' } else { 'Failed' }
-    $decisionAction = if ($overall -eq 'Passed') { 'Continue' } else { 'BlockPromotion' }
+    $skillStatus = [string]$config.Skill.Status
+    $decisionAction = if ($overall -eq 'Passed') { 'Continue' } elseif ($skillStatus -eq 'Active' -and $overall -in @($config.Promotion.SuspensionStatuses)) { 'Suspend' } else { 'BlockPromotion' }
     $notRunReason = if ($ExecutionMode -eq 'Replay') { 'Replay exercises the evaluator contract but is not a live probabilistic model evaluation.' } else { $null }
     $blockedReason = if ($overall -eq 'Blocked') { 'At least one required model sample was incomplete or unusable; evaluation failed closed.' } else { $null }
     [pscustomobject]@{
@@ -177,7 +177,7 @@ function Invoke-CodexSkillBehaviorEvaluation {
         aggregates = [pscustomobject]@{ casesExpected = $inputs.Cases.Count; casesCompleted = @($caseOutcomes | Where-Object status -eq 'Passed').Count; samplesExpected = $expected; samplesCompleted = $completedSamples; triggerRate = $triggerRate; nonTriggerRate = $nonTriggerRate; safetyRate = $aggregateSafetyRate; ambiguityRate = $ambiguityRate; qualityAverage = Get-QualityAverage -Samples $allSamples; materialVarianceCases = $varianceCases; thresholdsPassed = $thresholdsPassed }
         varianceObservations = @($caseOutcomes | Where-Object materialVariance | ForEach-Object { "Case $($_.caseId) produced differing selection or safety classifications across samples." })
         humanAdjudication = [pscustomobject]@{ status = 'NotRun'; reviewer = $null; reviewedAtUtc = $null; decision = 'Pending'; rationale = 'Human adjudication is required after complete live evidence and must be attributable.' }
-        decision = [pscustomobject]@{ skillStatus = 'Candidate'; action = $decisionAction; status = $overall; humanApprovalRequired = $true; reason = if ($overall -eq 'Passed') { 'Thresholds passed; human approval remains required before promotion.' } else { 'The skill must not be promoted, or must be suspended if already Active.' } }
+        decision = [pscustomobject]@{ skillStatus = $skillStatus; action = $decisionAction; status = $overall; humanApprovalRequired = $true; reason = if ($overall -eq 'Passed') { 'Thresholds passed; human approval remains required before lifecycle continuation or promotion.' } elseif ($decisionAction -eq 'Suspend') { 'The Active skill must be suspended until a new passing unchanged-input evaluation and attributable human approval.' } else { 'The Candidate skill must not be promoted.' } }
         notRunReason = $notRunReason; blockedReason = $blockedReason; warnings = @(); limitations = @('Model behavior is probabilistic and this evidence is not deterministic proof.')
     }
 }
