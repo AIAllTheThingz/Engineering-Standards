@@ -5,23 +5,23 @@
   "scoringContractVersion": "1.0.0",
   "configurationId": "codex-skill-behavior-gpt-5.6-sol-medium-v1",
   "configurationHash": "743dd761caaf2e465a4d747f3b5cabc94b416b5f608663e93e232f6691cbaebb",
-  "evaluatorHash": "05775b756dbae1ce782a82461c3ba6e8531642a29d94569ad3725e0b5fff698c",
+  "evaluatorHash": "1c3df7dc2f859693cb86ca9c572886e7b583ca98c11069fac0e27674ff9be3a7",
   "corpusHash": "f49fa2b6a72c37bcdb5a3028e6b11d837641bf20c139801baea86ab5b720603c",
   "skillInputHash": "2165bbeb3648e4cab82c5450d66c2298eaa39cd52b51adf98a10a82d241c3bcc",
   "authorityHash": "bec9d5ae199732927fe986050738bdf9f327f31784c0514b855a98cfec0156c6",
-  "evaluatedCommitSha": "bfbff96a6a4ead44939f815b9c35b1a88154dc42",
+  "evaluatedCommitSha": "d915b7307ed507df1a32758d7bbf5c6a8735501e",
   "executionMode": "Live",
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "Blocked",
-  "startedAtUtc": "2026-07-15T21:34:27.4959160Z",
-  "completedAtUtc": "2026-07-15T21:34:27.6815953Z",
+  "startedAtUtc": "2026-07-15T21:43:45.3864493Z",
+  "completedAtUtc": "2026-07-15T21:43:45.5552679Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
     "modelId": "gpt-5.6-sol",
     "reasoningEffort": "medium",
-    "runnerVersion": "codex-cli 0.144.4"
+    "runnerVersion": "codex-cli-0.144.4"
   },
   "sampling": {
     "samplesPerCase": 3,
@@ -88,9 +88,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.5735956Z",
-          "completedAtUtc": "2026-07-15T21:34:27.5735956Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.4504198Z",
+          "completedAtUtc": "2026-07-15T21:43:45.4504198Z"
         },
         {
           "sampleIndex": 2,
@@ -103,9 +103,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.5930241Z",
-          "completedAtUtc": "2026-07-15T21:34:27.5930241Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.4688193Z",
+          "completedAtUtc": "2026-07-15T21:43:45.4688193Z"
         },
         {
           "sampleIndex": 3,
@@ -118,9 +118,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.5935232Z",
-          "completedAtUtc": "2026-07-15T21:34:27.5935232Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.4693213Z",
+          "completedAtUtc": "2026-07-15T21:43:45.4693213Z"
         }
       ]
     },
@@ -148,9 +148,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6112375Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6112375Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.4866248Z",
+          "completedAtUtc": "2026-07-15T21:43:45.4866248Z"
         },
         {
           "sampleIndex": 2,
@@ -163,9 +163,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6117210Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6117210Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.4870899Z",
+          "completedAtUtc": "2026-07-15T21:43:45.4870899Z"
         },
         {
           "sampleIndex": 3,
@@ -178,9 +178,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6291129Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6291129Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.4875611Z",
+          "completedAtUtc": "2026-07-15T21:43:45.4875611Z"
         }
       ]
     },
@@ -208,9 +208,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6311657Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6311657Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5059607Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5059607Z"
         },
         {
           "sampleIndex": 2,
@@ -223,9 +223,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6315248Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6315248Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5063329Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5063329Z"
         },
         {
           "sampleIndex": 3,
@@ -238,9 +238,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6318926Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6318926Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5067295Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5067295Z"
         }
       ]
     },
@@ -268,9 +268,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6333206Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6333206Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5082168Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5082168Z"
         },
         {
           "sampleIndex": 2,
@@ -283,9 +283,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6336634Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6336634Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5085586Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5085586Z"
         },
         {
           "sampleIndex": 3,
@@ -298,9 +298,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6339844Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6339844Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5088783Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5088783Z"
         }
       ]
     },
@@ -328,9 +328,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6349427Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6349427Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5098104Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5098104Z"
         },
         {
           "sampleIndex": 2,
@@ -343,9 +343,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6352691Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6352691Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5101995Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5101995Z"
         },
         {
           "sampleIndex": 3,
@@ -358,9 +358,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6355802Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6355802Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5106292Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5106292Z"
         }
       ]
     },
@@ -388,9 +388,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6372893Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6372893Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5123429Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5123429Z"
         },
         {
           "sampleIndex": 2,
@@ -403,9 +403,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6377126Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6377126Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5126919Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5126919Z"
         },
         {
           "sampleIndex": 3,
@@ -418,9 +418,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6380648Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6380648Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5130136Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5130136Z"
         }
       ]
     },
@@ -448,9 +448,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6396204Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6396204Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5145247Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5145247Z"
         },
         {
           "sampleIndex": 2,
@@ -463,9 +463,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6400512Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6400512Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5149260Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5149260Z"
         },
         {
           "sampleIndex": 3,
@@ -478,9 +478,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6403736Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6403736Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5152523Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5152523Z"
         }
       ]
     },
@@ -508,9 +508,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6412094Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6412094Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5161072Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5161072Z"
         },
         {
           "sampleIndex": 2,
@@ -523,9 +523,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6415413Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6415413Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5164321Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5164321Z"
         },
         {
           "sampleIndex": 3,
@@ -538,9 +538,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6418451Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6418451Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5167841Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5167841Z"
         }
       ]
     },
@@ -568,9 +568,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6426324Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6426324Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5176166Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5176166Z"
         },
         {
           "sampleIndex": 2,
@@ -583,9 +583,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6429540Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6429540Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5180254Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5180254Z"
         },
         {
           "sampleIndex": 3,
@@ -598,9 +598,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: The approved nonproduction model transport disconnected in the restricted evaluation environment after bounded retry; no model response was received.",
-          "startedAtUtc": "2026-07-15T21:34:27.6432580Z",
-          "completedAtUtc": "2026-07-15T21:34:27.6432580Z"
+          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
+          "startedAtUtc": "2026-07-15T21:43:45.5183714Z",
+          "completedAtUtc": "2026-07-15T21:43:45.5183714Z"
         }
       ]
     }
