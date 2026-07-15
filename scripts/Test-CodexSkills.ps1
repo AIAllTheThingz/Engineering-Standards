@@ -33,6 +33,12 @@ try {
     if ($reports.Count -eq 0) { $reports.Add((Invoke-CodexSkillValidation -Path $root)) }
     $allResults = @($reports | ForEach-Object { $_.results })
     $allSkills = @($reports | ForEach-Object { $_.skillsDiscovered } | Sort-Object -Unique)
+    $activeSkills = @($reports | Where-Object { $_.skillsRoot -eq (Join-Path $root '.agents/skills') } | ForEach-Object { $_.skillsDiscovered })
+    $suspendedSkills = @($reports | Where-Object { $_.skillsRoot -eq (Join-Path $root '.agents/suspended-skills') } | ForEach-Object { $_.skillsDiscovered })
+    $duplicateLifecycleSkills = @($activeSkills | Where-Object { $_ -in $suspendedSkills } | Sort-Object -Unique)
+    if ($duplicateLifecycleSkills.Count -gt 0) {
+        $allResults += [pscustomobject]@{ ruleId='SKL021'; status='Failed'; severity='error'; message="Skills must not exist in both active and suspended lifecycle roots: $($duplicateLifecycleSkills -join ', ')."; path='.agents'; skillName=($duplicateLifecycleSkills -join ','); deterministic=$true; requiredValidation=$true; data=$null }
+    }
     [object[]]$allPromptResults = @()
     if ($allSkills.Count -gt 0) { $allPromptResults = @(Test-PromptBehaviorCorpus -RepositoryRoot $root -SkillNames $allSkills) }
     $allValidationResults = @($allResults) + @($allPromptResults) | Where-Object { $null -ne $_ }
