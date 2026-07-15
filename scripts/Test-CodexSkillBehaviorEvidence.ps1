@@ -38,7 +38,15 @@ try {
     if ($evidence.evaluatedCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'Evidence commit SHA is malformed.' }
     & git -C $root merge-base --is-ancestor $evidence.evaluatedCommitSha HEAD 2>$null
     if ($LASTEXITCODE -ne 0) { throw 'Evidence commit is not an ancestor of the validated revision.' }
-    $boundInputPaths = @($inputs.ConfigurationPath) + @($inputs.EvaluatorPaths) + @($inputs.CorpusPaths) + @($inputs.SkillPaths) + @($inputs.AuthorityPaths) | Sort-Object -Unique
+    # Compare dynamic input roots so files present only in the evaluated commit
+    # (for example, a subsequently deleted case or skill file) remain visible.
+    # Static inputs stay individually bounded; changing the module that declares
+    # those sets is itself an evaluator change.
+    $boundInputPaths = @($inputs.ConfigurationPath) + @($inputs.EvaluatorPaths) + @($inputs.AuthorityPaths) + @(
+        'tests/fixtures/codex-skills/prompt-behavior',
+        '.agents/skills',
+        '.agents/suspended-skills'
+    ) | Sort-Object -Unique
     & git -C $root diff --quiet $evidence.evaluatedCommitSha -- @boundInputPaths 2>$null
     if ($LASTEXITCODE -ne 0) { throw 'Hash-bound evaluator inputs differ from the evaluated commit.' }
     if (@($evidence.caseOutcomes).Count -ne @($inputs.Cases).Count) { throw 'Evidence is a partial run with a mismatched case count.' }

@@ -79,12 +79,25 @@ function Set-AggregateFixtureIdentity {
 }
 
 Describe 'Codex skill validation' {
-    It 'keeps the suspended repository skill outside deterministic active discovery' {
+    It 'validates the suspended repository skill without making it actively discoverable' {
         $report = Invoke-CodexSkillValidation -Path $repoRoot
         $report.deterministicStatus | Should -Be 'Passed'
         $report.modelEvaluationStatus | Should -Be 'NotApplicable'
         $report.skillsDiscovered | Should -Not -Contain 'enterprise-powershell'
         Test-Path -LiteralPath (Join-Path $repoRoot '.agents/suspended-skills/enterprise-powershell/SKILL.md') | Should -BeTrue
+        $suspendedReport = Invoke-CodexSkillValidation -Path $repoRoot -SkillsRootRelative '.agents/suspended-skills'
+        $suspendedReport.deterministicStatus | Should -Be 'Passed'
+        $suspendedReport.skillsDiscovered | Should -Contain 'enterprise-powershell'
+    }
+
+    It 'fails malformed suspended skill structure through the aggregate wrapper' {
+        $root = New-TestRepository -Name malformed-suspended
+        $active = Join-Path $root '.agents/skills'
+        $suspended = Join-Path $root '.agents/suspended-skills'
+        Move-Item -LiteralPath $active -Destination $suspended
+        Remove-Item -LiteralPath (Join-Path $suspended 'sample-skill/SKILL.md') -Force
+        & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1') -Path $root 2>$null
+        $LASTEXITCODE | Should -Be 1
     }
 
     It 'returns NotApplicable when no governed skill root exists' {

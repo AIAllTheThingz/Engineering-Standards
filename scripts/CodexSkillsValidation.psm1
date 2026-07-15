@@ -359,21 +359,25 @@ function Test-PromptBehaviorCorpus {
 
 function Invoke-CodexSkillValidation {
     [CmdletBinding()]
-    param([string]$Path = '.', [string]$PromptBehaviorPath)
+    param(
+        [string]$Path = '.',
+        [string]$PromptBehaviorPath,
+        [ValidateSet('.agents/skills','.agents/suspended-skills')][string]$SkillsRootRelative = '.agents/skills'
+    )
     $repositoryRoot = (Resolve-Path -LiteralPath $Path).Path
-    $skillsRoot = Join-Path $repositoryRoot '.agents/skills'
+    $skillsRoot = Join-Path $repositoryRoot $SkillsRootRelative
     $results = [System.Collections.Generic.List[object]]::new()
     if (-not (Test-Path -LiteralPath $skillsRoot)) {
-        $results.Add((New-SkillValidationResult -RuleId SKL001 -Status NotApplicable -Severity info -Message 'No governed skills root exists.' -Path '.agents/skills'))
+        $results.Add((New-SkillValidationResult -RuleId SKL001 -Status NotApplicable -Severity info -Message 'No governed skills root exists.' -Path $SkillsRootRelative))
         return New-CodexSkillValidationReport -RepositoryRoot $repositoryRoot -SkillsRoot $skillsRoot -SkillNames @() -Results @($results) -PromptResults @()
     }
-    try { Resolve-BoundedChildPath -Root $repositoryRoot -ChildPath '.agents/skills' | Out-Null }
-    catch { $results.Add((New-SkillValidationResult -RuleId SKL001 -Status Blocked -Severity error -Message $_.Exception.Message -Path '.agents/skills')); return New-CodexSkillValidationReport -RepositoryRoot $repositoryRoot -SkillsRoot $skillsRoot -SkillNames @() -Results @($results) -PromptResults @() }
+    try { Resolve-BoundedChildPath -Root $repositoryRoot -ChildPath $SkillsRootRelative | Out-Null }
+    catch { $results.Add((New-SkillValidationResult -RuleId SKL001 -Status Blocked -Severity error -Message $_.Exception.Message -Path $SkillsRootRelative)); return New-CodexSkillValidationReport -RepositoryRoot $repositoryRoot -SkillsRoot $skillsRoot -SkillNames @() -Results @($results) -PromptResults @() }
     $directories = @(Get-ChildItem -LiteralPath $skillsRoot -Directory -Force | Sort-Object Name)
     if ($directories.Count -eq 0) {
-        $results.Add((New-SkillValidationResult -RuleId SKL001 -Status Failed -Severity error -Message 'An existing skills root must contain one or more governed skill directories.' -Path '.agents/skills'))
+        $results.Add((New-SkillValidationResult -RuleId SKL001 -Status Failed -Severity error -Message 'An existing skills root must contain one or more governed skill directories.' -Path $SkillsRootRelative))
     }
-    if ($directories.Count -gt $script:Limits.MaxSkills) { $results.Add((New-SkillValidationResult -RuleId SKL019 -Status Failed -Severity error -Message 'Skill count exceeds the configured limit.' -Path '.agents/skills')); return New-CodexSkillValidationReport -RepositoryRoot $repositoryRoot -SkillsRoot $skillsRoot -SkillNames @() -Results @($results) -PromptResults @() }
+    if ($directories.Count -gt $script:Limits.MaxSkills) { $results.Add((New-SkillValidationResult -RuleId SKL019 -Status Failed -Severity error -Message 'Skill count exceeds the configured limit.' -Path $SkillsRootRelative)); return New-CodexSkillValidationReport -RepositoryRoot $repositoryRoot -SkillsRoot $skillsRoot -SkillNames @() -Results @($results) -PromptResults @() }
     $skillNames = [System.Collections.Generic.List[string]]::new()
     $declaredNames = @{}
     $plannedSkillNames = @('powershell-review','build-pester-tests','safe-automation','governance-validation','completion-evidence','vendor-documentation-analysis','infrastructure-automation-design')

@@ -207,6 +207,13 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $aggregate | Should -Match 'No governed active or suspended Codex skills directory'
     }
 
+    It 'compares complete dynamic input roots to detect deletions after evaluation' {
+        $verifier = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Raw
+        $verifier | Should -Match "'tests/fixtures/codex-skills/prompt-behavior'"
+        $verifier | Should -Match "'\.agents/suspended-skills'"
+        $verifier | Should -Not -Match 'boundInputPaths = @\(\$inputs\.ConfigurationPath\) \+ @\(\$inputs\.EvaluatorPaths\) \+ @\(\$inputs\.CorpusPaths\)'
+    }
+
     It 'rejects fabricated checked evidence and partial checked evidence' {
         $testRoot = Join-Path $repoRoot '.tmp/behavior-evidence-test'
         New-Item -ItemType Directory -Path $testRoot -Force | Out-Null

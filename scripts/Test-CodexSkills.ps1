@@ -24,7 +24,28 @@ Import-Module (Join-Path $PSScriptRoot 'CodexSkillsValidation.psm1') -Force
 
 $root = (Resolve-Path -LiteralPath $Path).Path
 try {
-    $report = Invoke-CodexSkillValidation -Path $root
+    $reports = [Collections.Generic.List[object]]::new()
+    foreach ($skillRoot in @('.agents/skills','.agents/suspended-skills')) {
+        if (Test-Path -LiteralPath (Join-Path $root $skillRoot) -PathType Container) {
+            $reports.Add((Invoke-CodexSkillValidation -Path $root -SkillsRootRelative $skillRoot))
+        }
+    }
+    if ($reports.Count -eq 0) { $reports.Add((Invoke-CodexSkillValidation -Path $root)) }
+    $allResults = @($reports | ForEach-Object { $_.results })
+    $allPromptResults = @($reports | ForEach-Object { $_.promptBehaviorResults })
+    $allSkills = @($reports | ForEach-Object { $_.skillsDiscovered } | Sort-Object -Unique)
+    $requiredFailures = @($allResults + $allPromptResults | Where-Object { $_.requiredValidation -and $_.status -in @('Failed','Blocked') })
+    $report = [ordered]@{
+        schemaVersion='1.0.0'; generatedAtUtc=[DateTime]::UtcNow.ToString('o'); repositoryRoot=$root
+        skillsRoot=@($reports | ForEach-Object { $_.skillsRoot }); skillsDiscovered=$allSkills
+        deterministicStatus=if($requiredFailures.Count -gt 0){if(@($requiredFailures | Where-Object status -eq 'Blocked').Count -gt 0){'Blocked'}else{'Failed'}}else{'Passed'}
+        modelEvaluationStatus=if($allSkills.Count -eq 0){'NotApplicable'}else{'NotRun'}
+        results=$allResults; promptBehaviorResults=$allPromptResults
+        failed=@($allResults + $allPromptResults | Where-Object status -eq 'Failed').Count
+        blocked=@($allResults + $allPromptResults | Where-Object status -eq 'Blocked').Count
+        notRun=@($allResults + $allPromptResults | Where-Object status -eq 'NotRun').Count
+        warnings=@($allResults + $allPromptResults | Where-Object severity -eq 'warning').Count
+    }
     if ($OutputJson) {
         if ($AllowedOutputRoot) {
             $outputRoot = (Resolve-Path -LiteralPath $AllowedOutputRoot).Path
@@ -39,7 +60,7 @@ try {
         $parent = Split-Path -Parent $resolvedOutput
         if ($parent) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
         $report.repositoryRoot = '.'
-        $report.skillsRoot = '.agents/skills'
+        $report.skillsRoot = @($reports | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.skillsRoot).Replace('\','/') })
         $report | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $resolvedOutput -Encoding utf8
     }
     "Codex skills: deterministic=$($report.deterministicStatus), modelEvaluation=$($report.modelEvaluationStatus), skills=$(@($report.skillsDiscovered).Count), failed=$($report.failed), blocked=$($report.blocked), notRun=$($report.notRun)."
