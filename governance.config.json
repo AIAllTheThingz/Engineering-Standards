@@ -62,7 +62,6 @@
   "ownership": {
     "requiredCodeownerPaths": [
       "/AGENTS.md",
-      "/.agents/skills/",
       "/.agents/suspended-skills/",
       "/agents/",
       "/governance/",
