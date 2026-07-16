@@ -17,17 +17,56 @@ $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path -LiteralPath $Path).Path
 $rootSlash = $root.Replace('\','/')
 
+function ConvertTo-NormalizedEvidenceText {
+    param([Parameter(Mandatory)][string]$Value)
+
+    $normalized = $Value.Replace($root, '.').Replace($rootSlash, '.')
+    if ($normalized.StartsWith('.\') -or $normalized.StartsWith('./')) {
+        return $normalized.Substring(2)
+    }
+    if ($normalized.StartsWith('\') -and -not $normalized.StartsWith('\\')) {
+        return $normalized.Substring(1)
+    }
+    $normalized
+}
+
+function Update-NormalizedEvidenceNode {
+    param([AllowNull()]$Node)
+
+    if ($Node -is [System.Collections.IDictionary]) {
+        foreach ($key in @($Node.Keys)) {
+            if ($Node[$key] -is [string]) {
+                $Node[$key] = ConvertTo-NormalizedEvidenceText -Value $Node[$key]
+            }
+            elseif ($null -ne $Node[$key]) {
+                Update-NormalizedEvidenceNode -Node $Node[$key]
+            }
+        }
+    }
+    elseif ($Node -is [System.Collections.IList]) {
+        for ($index = 0; $index -lt $Node.Count; $index++) {
+            if ($Node[$index] -is [string]) {
+                $Node[$index] = ConvertTo-NormalizedEvidenceText -Value $Node[$index]
+            }
+            elseif ($null -ne $Node[$index]) {
+                Update-NormalizedEvidenceNode -Node $Node[$index]
+            }
+        }
+    }
+}
+
 foreach ($item in $EvidencePath) {
     $base = if ([System.IO.Path]::IsPathRooted($item)) { $item } else { Join-Path $root $item }
     if (-not (Test-Path -LiteralPath $base)) { continue }
     foreach ($file in Get-ChildItem -LiteralPath $base -Recurse -File -Filter *.json) {
-        $content = Get-Content -LiteralPath $file.FullName -Raw
-        $content = $content.Replace($root.Replace('\','\\'), '.').Replace($root, '.')
-        $content = $content.Replace($rootSlash, '.')
-        $content = $content.Replace('.\\', '')
-        $content = $content -replace '"\./', '"'
-        $content = $content -replace '"\\', '"'
-        Set-Content -LiteralPath $file.FullName -Value $content -Encoding utf8
+        try {
+            $document = Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json -AsHashtable
+        }
+        catch {
+            throw "Evidence JSON '$($file.FullName)' is malformed: $($_.Exception.Message)"
+        }
+        Update-NormalizedEvidenceNode -Node $document
+        $document | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $file.FullName -Encoding utf8
     }
 }
 

@@ -44,6 +44,10 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Changed
 
+- Rotated governance, candidate, and pull-request self-CI plus the root contract
+  to immutable lifecycle-aware validator commit
+  `bf54167e26fb2aa41eccb653ad25b85d77bb584f` using the two-commit bootstrap
+  process.
 - Added an isolated trusted Actions evaluator with a reviewed configuration
   hash allowlist, immutable evaluator-policy binding, pre-parse candidate input
   bounds, non-regular Git mode rejection, a non-secret fail-closed dispatch
@@ -75,6 +79,13 @@ All notable changes to the Engineering Standards repository are recorded here. T
 - Routed aggregate Codex skill validation through the trusted Actions evidence
   verifier so secret-backed behavior artifacts are checked against the same
   evaluator hash contract that produced them.
+- Normalized evidence paths through parsed JSON values so escaped parameterized
+  Pester test names remain valid JSON, and made malformed evidence fail closed
+  before artifact publication.
+- Selected controlled behavior evidence verifiers by exact governed skill name,
+  preserving legacy `enterprise-powershell` evidence while routing
+  `powershell-review` to the isolated Actions verifier and blocking unknown
+  skills without a fallback.
 - Scoped trusted Actions behavior evaluation to the skill selected by the
   approved configuration while continuing to bound and validate every prompt
   file in a mixed-skill corpus.

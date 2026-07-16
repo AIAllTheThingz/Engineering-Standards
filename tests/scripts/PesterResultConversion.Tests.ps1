@@ -63,4 +63,25 @@ Describe 'Pester result conversion' {
         & pwsh -NoProfile -File $script:converter -RepositoryPath $repositoryRoot -EvidenceRoot $evidenceRoot -InputPath (Join-Path $evidenceRoot 'pester.xml') -OutputPath (Join-Path $repositoryRoot 'outside.json') 2>$null
         $LASTEXITCODE | Should -Not -Be 0
     }
+
+    It 'preserves valid JSON when a parameterized test name contains embedded JSON and periods' {
+        $xml = @'
+<test-results>
+  <test-suite>
+    <results>
+      <test-case name="Outer.parameterized(&quot;category&quot;,&quot;{&quot;caseId&quot;:&quot;sample&quot;,&quot;rationale&quot;:&quot;Synthetic case.&quot;}&quot;)" result="Success" time="0.1" />
+    </results>
+  </test-suite>
+</test-results>
+'@
+        New-Item -ItemType Directory -Path (Join-Path $script:tempRoot '.tmp'),(Join-Path $script:tempRoot 'evidence') -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $script:tempRoot '.tmp/parameterized.xml') -Value $xml
+
+        & pwsh -NoProfile -File $script:converter -RepositoryPath $script:tempRoot -InputPath '.tmp/parameterized.xml' -OutputPath 'evidence/parameterized.json'
+
+        $LASTEXITCODE | Should -Be 0
+        $raw = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/parameterized.json') -Raw
+        { $raw | ConvertFrom-Json } | Should -Not -Throw
+        ($raw | ConvertFrom-Json).tests[0].name | Should -BeExactly '"}")'
+    }
 }
