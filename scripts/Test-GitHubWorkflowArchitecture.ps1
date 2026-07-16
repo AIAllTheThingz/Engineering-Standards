@@ -654,7 +654,7 @@ if ($workflows.ContainsKey($behaviorWorkflowPath)) {
         $secretReferences = [regex]::Matches($behaviorText, '\$\{\{\s*secrets\.OPENAI_API_KEY\s*\}\}')
         if ($collector.Count -ne 1 -or $collector[0].env -isnot [hashtable] -or $collector[0].env.Count -ne 1 -or
             [string]$collector[0].env.OPENAI_API_KEY -ne '${{ secrets.OPENAI_API_KEY }}' -or $secretReferences.Count -ne 1 -or
-            [string]$collector[0].run -notmatch 'trusted/scripts/Invoke-CodexSkillBehaviorModel\.ps1' -or
+            [string]$collector[0].run -notmatch 'trusted/scripts/Invoke-CodexSkillBehaviorActionsModel\.ps1' -or
             [string]$collector[0].run -notmatch '-TrustedOutputRoot\s+\$env:CODEX_BEHAVIOR_OUTPUT_ROOT' -or
             [string]$collector[0].run -notmatch '-OutputDirectory\s+\$env:CODEX_BEHAVIOR_OBSERVATION_ROOT') {
             $results.Add((New-ValidationResult -Status Failed -Message 'Only the trusted model collector step may receive OPENAI_API_KEY.' -Path $behaviorWorkflowPath))

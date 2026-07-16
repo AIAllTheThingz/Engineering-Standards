@@ -25,11 +25,12 @@ GitHub Actions bootstrap, cross-repository reusable-workflow repair, trusted pin
 rotation, downstream canary gate, and specific bootstrap failure evidence. None
 is part of `v1.1.0`. The trusted evaluator workflow must first merge to protected
 `master`; no hosted behavior run or artifact is claimed by this source change.
-The evaluator source now also separates reviewed candidate configuration hashes
-from immutable evaluator code, bounds candidate data before parsing, fails
-invalid dispatches in a non-secret guard, and keeps all generated output in a
-new trusted runner-temporary boundary; these controls likewise have no hosted
-run claim until merged and executed.
+The isolated hosted evaluator source separates reviewed candidate configuration
+hashes from immutable evaluator code, bounds candidate data before parsing,
+fails invalid dispatches in a non-secret guard, and keeps generated output in a
+new trusted runner-temporary boundary without changing the existing governed
+evaluator hash contract during bootstrap; these controls likewise have no
+hosted run claim until merged and executed.
 Issue #25 completed the release lifecycle controls; it did not approve, tag, or
 publish the planned `1.2.0`, so Issue #42's `1.2.0` target remains unreleased
 planning metadata.

@@ -9,6 +9,7 @@ model transcripts. Replay mode validates mechanics but is always reported NotRun
 [CmdletBinding()]
 param(
     [string]$Path = '.',
+    [Parameter(Mandatory)][string]$TrustedOutputRoot,
     [Parameter(Mandatory)][string]$ObservationDirectory,
     [Parameter(Mandatory)][string]$OutputJson,
     [ValidateSet('Live', 'Replay')][string]$ExecutionMode = 'Replay',
@@ -19,25 +20,10 @@ param(
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-Import-Module (Join-Path $PSScriptRoot 'CodexSkillBehaviorEvaluation.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'CodexSkillBehaviorActionsEvaluation.psm1') -Force
 $root = (Resolve-Path -LiteralPath $Path).Path
-function Resolve-BehaviorRepositoryPath {
-    param([Parameter(Mandatory)][string]$Candidate, [switch]$MustExist, [Parameter(Mandatory)][string]$Name)
-    $full = if ([IO.Path]::IsPathRooted($Candidate)) { [IO.Path]::GetFullPath($Candidate) } else { [IO.Path]::GetFullPath((Join-Path $root $Candidate)) }
-    $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
-    $boundary = $root.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
-    if (-not $full.StartsWith($boundary, $comparison)) { throw "$Name must be beneath the repository root." }
-    $current = $root
-    foreach ($segment in @([IO.Path]::GetRelativePath($root, $full) -split '[\\/]' | Where-Object { $_ -and $_ -ne '.' })) {
-        $current = Join-Path $current $segment
-        if (-not (Test-Path -LiteralPath $current)) { break }
-        $item = Get-Item -LiteralPath $current -Force
-        if ($item.LinkType -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw "$Name must not traverse a symbolic link, junction, or reparse point." }
-    }
-    if ($MustExist -and -not (Test-Path -LiteralPath $full)) { throw "$Name does not exist." }
-    $full
-}
-$observations = Resolve-BehaviorRepositoryPath -Candidate $ObservationDirectory -MustExist -Name ObservationDirectory
+$trustedOutput = (Resolve-Path -LiteralPath $TrustedOutputRoot).Path
+$observations = Resolve-CodexBehaviorOutputPath -Root $trustedOutput -Candidate $ObservationDirectory -MustExist -ExpectedType Directory
 $declaredUnavailableReason = $UnavailableReason
 $declaredUnavailableDetail = $UnavailableDetail
 $observationSchema = Join-Path $root 'schemas/codex-skill-behavior-observation.schema.json'
@@ -62,9 +48,10 @@ $provider = {
     $observation
 }
 $report = Invoke-CodexSkillBehaviorEvaluation -Path $root -ObservationProvider $provider -ExecutionMode $ExecutionMode -RunnerVersion $RunnerVersion -EvaluatedCommitSha $EvaluatedCommitSha
-$output = Resolve-BehaviorRepositoryPath -Candidate $OutputJson -Name OutputJson
-New-Item -ItemType Directory -Path (Split-Path -Parent $output) -Force | Out-Null
-$output = Resolve-BehaviorRepositoryPath -Candidate $output -Name OutputJson
+$output = Resolve-CodexBehaviorOutputPath -Root $trustedOutput -Candidate $OutputJson
+[void](Resolve-CodexBehaviorOutputPath -Root $trustedOutput -Candidate (Split-Path -Parent $output) -MustExist -ExpectedType Directory -AllowRoot)
+if (Test-Path -LiteralPath $output) { throw 'Behavior evidence output must not exist before trusted evaluation.' }
+$output = Resolve-CodexBehaviorOutputPath -Root $trustedOutput -Candidate $output
 $report | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $output -Encoding utf8
 "Codex skill behavior: status=$($report.status), cases=$($report.aggregates.casesCompleted)/$($report.aggregates.casesExpected), samples=$($report.aggregates.samplesCompleted)/$($report.aggregates.samplesExpected), variance=$($report.aggregates.materialVarianceCases)."
 if ($report.status -eq 'Passed') { exit 0 }

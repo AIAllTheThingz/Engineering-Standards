@@ -1178,7 +1178,7 @@ Describe 'Trusted Codex behavior workflow isolation' {
     It 'rejects candidate code execution' {
         $root = New-CurrentWorkflowFixture -Name 'codex-candidate-execution'
         $path = Join-Path $root '.github/workflows/codex-skill-behavior.yml'
-        $content = (Get-Content -LiteralPath $path -Raw).Replace("          `$ErrorActionPreference = 'Stop'`n          Import-Module ./trusted/scripts/CodexSkillBehaviorEvaluation.psm1 -Force", "          `$ErrorActionPreference = 'Stop'`n          & ./candidate/scripts/Test-CodexSkills.ps1`n          Import-Module ./trusted/scripts/CodexSkillBehaviorEvaluation.psm1 -Force")
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("          `$ErrorActionPreference = 'Stop'`n          Import-Module ./trusted/scripts/CodexSkillBehaviorActionsEvaluation.psm1 -Force", "          `$ErrorActionPreference = 'Stop'`n          & ./candidate/scripts/Test-CodexSkills.ps1`n          Import-Module ./trusted/scripts/CodexSkillBehaviorActionsEvaluation.psm1 -Force")
         Set-Content -LiteralPath $path -Value $content -Encoding utf8
         $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
         $LASTEXITCODE | Should -Not -Be 0
@@ -1195,8 +1195,8 @@ Describe 'Trusted Codex behavior workflow isolation' {
         $root = New-CurrentWorkflowFixture -Name "codex-candidate-$($CaseName.Replace(' ', '-'))"
         $path = Join-Path $root '.github/workflows/codex-skill-behavior.yml'
         $content = (Get-Content -LiteralPath $path -Raw).Replace(
-            "          `$ErrorActionPreference = 'Stop'`n          Import-Module ./trusted/scripts/CodexSkillBehaviorEvaluation.psm1 -Force",
-            "          `$ErrorActionPreference = 'Stop'`n          $Command`n          Import-Module ./trusted/scripts/CodexSkillBehaviorEvaluation.psm1 -Force"
+            "          `$ErrorActionPreference = 'Stop'`n          Import-Module ./trusted/scripts/CodexSkillBehaviorActionsEvaluation.psm1 -Force",
+            "          `$ErrorActionPreference = 'Stop'`n          $Command`n          Import-Module ./trusted/scripts/CodexSkillBehaviorActionsEvaluation.psm1 -Force"
         )
         Set-Content -LiteralPath $path -Value $content -Encoding utf8
         $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)

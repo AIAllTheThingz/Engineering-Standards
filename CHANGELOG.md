@@ -40,11 +40,12 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Changed
 
-- Hardened the trusted Codex behavior evaluator with a reviewed configuration
+- Added an isolated trusted Actions evaluator with a reviewed configuration
   hash allowlist, immutable evaluator-policy binding, pre-parse candidate input
   bounds, non-regular Git mode rejection, a non-secret fail-closed dispatch
   guard, read-only candidate checkout, and run-specific trusted temporary output
-  plus explicit artifact-file boundaries.
+  plus explicit artifact-file boundaries, without changing the existing
+  governed evaluator hash contract during workflow bootstrap.
 - Replaced the prose-only planned Codex skill sequence with authoritative issue
   links, accountable roles, risk classifications, dependency guidance, and
   target release guidance.

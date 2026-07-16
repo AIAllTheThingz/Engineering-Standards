@@ -53,6 +53,11 @@ Describe 'Validator dependency integrity controls' {
         $hashes = @($policy.ApprovedConfigurations | ForEach-Object Sha256)
 
         $policy.EvaluatorPaths | Should -Contain '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
+        $policy.EvaluatorPaths | Should -Contain 'scripts/CodexSkillBehaviorActionsEvaluation.psm1'
+        $policy.EvaluatorPaths | Should -Contain 'scripts/Invoke-CodexSkillBehaviorActionsEvaluation.ps1'
+        $policy.EvaluatorPaths | Should -Contain 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1'
+        $policy.EvaluatorPaths | Should -Contain 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1'
+        $policy.EvaluatorPaths | Should -Not -Contain 'scripts/CodexSkillBehaviorEvaluation.psm1'
         $policy.EvaluatorPaths | Should -Not -Contain $policy.ConfigurationPath
         $hashes | Should -Contain '26edd6a335bfcc359e32f35959cf1a5bd514125f0fd94d88b688083c782f1515'
         $hashes | Should -Contain '9a24ce3d74448b2787e3470dbb9cace027aa5ae9fddbeff507a0019ccd700de6'

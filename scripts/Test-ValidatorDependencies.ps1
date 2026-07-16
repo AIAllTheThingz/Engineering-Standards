@@ -146,6 +146,15 @@ try {
         try {
             $policy = Import-PowerShellDataFile -LiteralPath $codexPolicyPath
             $approvedHashes = @($policy.ApprovedConfigurations | ForEach-Object { [string]$_.Sha256 })
+            $requiredEvaluatorPaths = @(
+                $codexPolicyRelativePath,
+                'scripts/CodexSkillBehaviorActionsEvaluation.psm1',
+                'scripts/Invoke-CodexSkillBehaviorActionsEvaluation.ps1',
+                'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1',
+                'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1',
+                'schemas/codex-skill-behavior-evaluation.schema.json',
+                'schemas/codex-skill-behavior-observation.schema.json'
+            )
             $requiredLimits = @(
                 'MaximumConfigurationBytes','MaximumPromptFileCount','MaximumPromptBytesPerFile','MaximumPromptCharacters',
                 'MaximumSkillFileCount','MaximumSkillBytesPerFile','MaximumAggregateSkillBytes','MaximumAuthorityFileBytes',
@@ -154,7 +163,8 @@ try {
             )
             if ([string]$policy.SchemaVersion -cne '1.0.0' -or
                 [string]$policy.ConfigurationPath -cne 'governance/codex-skill-behavior-evaluation.psd1' -or
-                $codexPolicyRelativePath -notin @($policy.EvaluatorPaths) -or
+                @($requiredEvaluatorPaths | Where-Object { $_ -notin @($policy.EvaluatorPaths) }).Count -gt 0 -or
+                @($policy.EvaluatorPaths).Count -ne $requiredEvaluatorPaths.Count -or
                 [string]$policy.ConfigurationPath -in @($policy.EvaluatorPaths) -or
                 @($policy.ApprovedConfigurations).Count -ne 2 -or
                 '26edd6a335bfcc359e32f35959cf1a5bd514125f0fd94d88b688083c782f1515' -notin $approvedHashes -or

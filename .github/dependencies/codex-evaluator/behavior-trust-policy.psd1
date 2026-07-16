@@ -4,10 +4,10 @@
     ConfigurationPath = 'governance/codex-skill-behavior-evaluation.psd1'
     EvaluatorPaths = @(
         '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
-        'scripts/CodexSkillBehaviorEvaluation.psm1'
-        'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1'
-        'scripts/Invoke-CodexSkillBehaviorModel.ps1'
-        'scripts/Test-CodexSkillBehaviorEvidence.ps1'
+        'scripts/CodexSkillBehaviorActionsEvaluation.psm1'
+        'scripts/Invoke-CodexSkillBehaviorActionsEvaluation.ps1'
+        'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1'
+        'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1'
         'schemas/codex-skill-behavior-evaluation.schema.json'
         'schemas/codex-skill-behavior-observation.schema.json'
     )

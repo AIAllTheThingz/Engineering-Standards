@@ -69,7 +69,7 @@ jobs:
           TRUSTED_SHA: ${{ github.sha }}
         run: |
           $ErrorActionPreference = 'Stop'
-          Import-Module ./trusted/scripts/CodexSkillBehaviorEvaluation.psm1 -Force
+          Import-Module ./trusted/scripts/CodexSkillBehaviorActionsEvaluation.psm1 -Force
           $output = New-CodexBehaviorOutputRoot -RunnerTemp $env:RUNNER_TEMP -RunId $env:RUN_ID -RunAttempt $env:RUN_ATTEMPT
           "run-root=$($output.RunRoot)" | Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding utf8
           "artifact-root=$($output.ArtifactRoot)" | Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding utf8
@@ -218,7 +218,7 @@ jobs:
           CANDIDATE_SHA: ${{ inputs.candidate_sha }}
         run: |
           $ErrorActionPreference = 'Stop'
-          Import-Module ./trusted/scripts/CodexSkillBehaviorEvaluation.psm1 -Force
+          Import-Module ./trusted/scripts/CodexSkillBehaviorActionsEvaluation.psm1 -Force
           $result = Test-CodexBehaviorCandidateTrust `
             -TrustedPath ./trusted `
             -CandidatePath ./candidate `
@@ -242,7 +242,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           $ErrorActionPreference = 'Stop'
-          & $env:VALIDATOR_PWSH -NoProfile -File ./trusted/scripts/Invoke-CodexSkillBehaviorModel.ps1 `
+          & $env:VALIDATOR_PWSH -NoProfile -File ./trusted/scripts/Invoke-CodexSkillBehaviorActionsModel.ps1 `
             -Path ./candidate `
             -CodexPath ./trusted/.github/dependencies/codex-evaluator/node_modules/.bin/codex `
             -TrustedOutputRoot $env:CODEX_BEHAVIOR_OUTPUT_ROOT `
@@ -256,7 +256,7 @@ jobs:
           CANDIDATE_SHA: ${{ inputs.candidate_sha }}
         run: |
           $ErrorActionPreference = 'Stop'
-          & $env:VALIDATOR_PWSH -NoProfile -File ./trusted/scripts/Invoke-CodexSkillBehaviorEvaluation.ps1 `
+          & $env:VALIDATOR_PWSH -NoProfile -File ./trusted/scripts/Invoke-CodexSkillBehaviorActionsEvaluation.ps1 `
             -Path ./candidate `
             -TrustedOutputRoot $env:CODEX_BEHAVIOR_OUTPUT_ROOT `
             -ObservationDirectory $env:CODEX_BEHAVIOR_OBSERVATION_ROOT `

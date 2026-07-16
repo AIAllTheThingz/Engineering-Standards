@@ -168,21 +168,18 @@ Run the versioned behavior evaluator only with an explicitly approved,
 nonproduction model configuration. Collection and scoring are separate:
 
 ```powershell
-$outputRoot = Join-Path ([IO.Path]::GetTempPath()) ("codex-behavior-{0}" -f [guid]::NewGuid().ToString('N'))
-New-Item -ItemType Directory -Path $outputRoot | Out-Null
 pwsh -NoProfile -File scripts/Invoke-CodexSkillBehaviorModel.ps1 -Path . `
-  -CodexPath /approved/path/to/codex -TrustedOutputRoot $outputRoot `
-  -OutputDirectory (Join-Path $outputRoot 'observations')
+  -CodexPath /approved/path/to/codex -OutputDirectory .tmp/codex-behavior-observations
 pwsh -NoProfile -File scripts/Invoke-CodexSkillBehaviorEvaluation.ps1 -Path . `
-  -TrustedOutputRoot $outputRoot -ObservationDirectory (Join-Path $outputRoot 'observations') `
-  -OutputJson (Join-Path $outputRoot 'codex-skill-behavior.json') -ExecutionMode Live `
+  -ObservationDirectory .tmp/codex-behavior-observations `
+  -OutputJson evidence/codex-skill-behavior.json -ExecutionMode Live `
   -RunnerVersion 'codex-cli <approved-version>'
 pwsh -NoProfile -File scripts/Test-CodexSkillBehaviorEvidence.ps1 -Path .
 ```
 
 The approved contract is
 [`governance/codex-skill-behavior-evaluation.psd1`](../governance/codex-skill-behavior-evaluation.psd1).
-The trusted
+The isolated hosted evaluator uses the trusted
 [`behavior-trust-policy.psd1`](../.github/dependencies/codex-evaluator/behavior-trust-policy.psd1)
 hash-approves exact candidate configurations separately from immutable evaluator
 code and declares prompt, skill, authority, identifier, and field bounds. Files
