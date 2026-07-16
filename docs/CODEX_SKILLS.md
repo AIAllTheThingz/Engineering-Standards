@@ -179,12 +179,53 @@ pwsh -NoProfile -File scripts/Test-CodexSkillBehaviorEvidence.ps1 -Path .
 
 The approved contract is
 [`governance/codex-skill-behavior-evaluation.psd1`](../governance/codex-skill-behavior-evaluation.psd1).
+The isolated hosted evaluator uses the trusted
+[`behavior-trust-policy.psd1`](../.github/dependencies/codex-evaluator/behavior-trust-policy.psd1)
+hash-approves exact candidate configurations separately from immutable evaluator
+code and declares prompt, skill, authority, identifier, and field bounds. Files
+are size- and type-checked before candidate content is parsed or supplied to the
+model.
 It pins model identity, evaluator/scoring versions, three independent samples,
 one transport-only retry, timeouts, isolation, and thresholds. The governed
 corpus covers explicit and implicit selection, three non-trigger forms,
 ambiguity, governance bypass, secret exposure, and destructive defaults.
 Evidence retains the final sanitized sample outcome, attempt count, and failure
 reason; transient raw attempt output is not retained or claimed as preserved.
+
+The trusted hosted path is the manual
+[`Codex Skill Behavior Evaluation`](../.github/workflows/codex-skill-behavior.yml)
+workflow. A non-secret guard job fails explicitly unless the dispatch is for the
+expected repository, `workflow_dispatch` event, `master` default branch,
+`refs/heads/master`, and an exact lowercase candidate commit SHA. Only after the
+guard succeeds can the environment-protected evaluation job run. The workflow
+checks out trusted evaluator code at the dispatched `github.sha`, checks out the
+candidate separately as read-only untrusted data, rejects links, submodules, and
+other non-regular Git modes, requires immutable evaluator files to match by
+SHA-256, and permits configuration differences only through the trusted hash
+allowlist. It never executes candidate scripts, actions, package hooks, tests,
+or workflows.
+
+The `codex-skill-evaluation` environment must contain `OPENAI_API_KEY`; enter or
+rotate it locally without displaying it:
+
+```powershell
+gh secret set OPENAI_API_KEY --env codex-skill-evaluation
+gh workflow run codex-skill-behavior.yml --ref master `
+  -f candidate_sha=<lowercase-40-character-sha>
+```
+
+Only the trusted collector step receives the secret. Dependencies are installed
+from the committed lock with `npm ci --ignore-scripts --no-audit --no-fund`.
+All observations, evidence, and artifact inputs are created under a new
+run-ID/run-attempt-specific directory in `runner.temp`; pre-existing, linked,
+reparsed, device-backed, traversing, or candidate-owned output paths fail closed.
+The upload action receives an explicit allowlist of trusted regular files rather
+than a directory. The uploaded artifact contains the sanitized evaluation, evaluator hashes,
+runtime bootstrap metadata, exact Node and Codex package/file-hash provenance,
+a CycloneDX dependency inventory, and the workflow identity record; it excludes
+prompts, raw observations, model transcripts, environment dumps, and credentials. The
+artifact uploads before final fail-closed enforcement. Automation leaves human
+adjudication `Pending` and cannot manufacture approval.
 
 Every incomplete, unavailable, timed-out, malformed, contradictory, or unsafe
 sample fails closed. Replay is always `NotRun`. Valid evidence may honestly

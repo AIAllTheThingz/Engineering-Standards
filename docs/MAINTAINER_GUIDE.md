@@ -91,6 +91,31 @@ Entry workflows should call reusable workflows. Reusable workflows must not call
 
 Final enforcement MUST run after final test evidence, final completion evidence, final evidence validation, and artifact upload. A controlled failure must still upload evidence before enforcement fails the job.
 
+The manual `codex-skill-behavior.yml` evaluator is a separate trusted workflow,
+not a pull-request check. Dispatch it only from protected `master` against an
+exact lowercase candidate SHA. Keep the `codex-skill-evaluation` environment
+restricted to protected `master` and configure required reviewers where the
+repository plan supports them. Check whether the environment secret exists
+without reading its value; if it is absent, stop and have an authorized operator
+run `gh secret set OPENAI_API_KEY --env codex-skill-evaluation` locally.
+
+Review every update for manual-only triggering, exact read permissions, a
+non-secret fail-closed guard job for repository/event/default-branch/ref/SHA,
+environment access only after guard success, credential-free separate checkouts,
+read-only candidate data, rejection of every non-regular Git mode, immutable
+evaluator SHA-256 equality, exact configuration-hash allowlisting, bounded input
+metadata before parsing, non-execution of candidate content, step-only secret
+scope, lifecycle-disabled npm installation,
+exact Node and Codex version verification, installed-package file hashes,
+CycloneDX inventory, new run-specific `runner.temp` output roots, explicit
+regular-file artifact allowlisting, and upload-before-enforcement ordering. The pinned
+Codex package and integrity-bearing lock live under
+`.github/dependencies/codex-evaluator/`, alongside the evaluator trust policy.
+Never upload candidate-owned files, raw observations, or alter
+the generated `Pending` human-adjudication record. A hosted result is usable only
+after its artifact, run metadata, candidate SHA, schemas, evaluator and
+dependency provenance hashes, CycloneDX inventory, and conclusion are independently verified.
+
 ## Validator Dependency Maintenance
 
 Maintainers MUST treat runner labels, setup actions, runtimes, parsers, test

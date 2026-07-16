@@ -94,6 +94,92 @@ try {
             }
         }
     }
+
+    $codexDependencyRoot = Join-Path $root '.github/dependencies/codex-evaluator'
+    $codexPackagePath = Join-Path $codexDependencyRoot 'package.json'
+    $codexLockPath = Join-Path $codexDependencyRoot 'package-lock.json'
+    $codexWorkflowPath = Join-Path $root '.github/workflows/codex-skill-behavior.yml'
+    if (-not (Test-Path -LiteralPath $codexPackagePath -PathType Leaf) -or -not (Test-Path -LiteralPath $codexLockPath -PathType Leaf)) {
+        $results.Add([ordered]@{ ruleId='DEP020'; status='Failed'; message='Trusted Codex evaluator package.json and package-lock.json are required.'; path='.github/dependencies/codex-evaluator' })
+    }
+    else {
+        try {
+            $codexPackage = Get-Content -LiteralPath $codexPackagePath -Raw | ConvertFrom-Json -AsHashtable
+            $codexLock = Get-Content -LiteralPath $codexLockPath -Raw | ConvertFrom-Json -AsHashtable
+            $rootLockPackage = $codexLock.packages['']
+            $codexLockPackage = $codexLock.packages['node_modules/@openai/codex']
+            if ([string]$codexPackage.dependencies['@openai/codex'] -cne '0.144.0-alpha.4' -or
+                [string]$rootLockPackage.dependencies['@openai/codex'] -cne '0.144.0-alpha.4' -or
+                [string]$codexLockPackage.version -cne '0.144.0-alpha.4' -or
+                [string]$codexLockPackage.resolved -cne 'https://registry.npmjs.org/@openai/codex/-/codex-0.144.0-alpha.4.tgz' -or
+                [string]$codexLockPackage.integrity -cne 'sha512-Uf915avv7ETTv5PFLPf+Bw2KICFXgW8M+5vMzoUlrJkcRlCOTs5FgzjLZPvawWOJqZEgFsrQuJeLMRog0XSxxQ==' -or
+                [int]$codexLock.lockfileVersion -ne 3 -or $codexPackage.ContainsKey('scripts')) {
+                $results.Add([ordered]@{ ruleId='DEP021'; status='Failed'; message='Trusted Codex evaluator dependency must use the exact reviewed package, registry artifact, integrity hash, lockfile version, and no package scripts.'; path='.github/dependencies/codex-evaluator/package-lock.json' })
+            }
+        }
+        catch {
+            $results.Add([ordered]@{ ruleId='DEP021'; status='Failed'; message="Trusted Codex evaluator dependency metadata is malformed: $($_.Exception.Message)"; path='.github/dependencies/codex-evaluator/package-lock.json' })
+        }
+    }
+    if (-not (Test-Path -LiteralPath $codexWorkflowPath -PathType Leaf)) {
+        $results.Add([ordered]@{ ruleId='DEP022'; status='Failed'; message='Trusted Codex evaluator workflow is missing.'; path='.github/workflows/codex-skill-behavior.yml' })
+    }
+    else {
+        $codexWorkflowText = Get-Content -LiteralPath $codexWorkflowPath -Raw
+        if ($codexWorkflowText -notmatch 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020' -or
+            $codexWorkflowText -notmatch 'node-version:\s*22\.17\.0' -or
+            $codexWorkflowText -notmatch 'Install-ValidatorRuntime\.ps1' -or
+            $codexWorkflowText -notmatch 'npm ci --ignore-scripts --no-audit --no-fund' -or
+            $codexWorkflowText -notmatch "codexVersion\s+-cne\s+'codex-cli 0\.144\.0-alpha\.4'" -or
+            $codexWorkflowText -notmatch 'codex-evaluator-provenance\.json' -or
+            $codexWorkflowText -notmatch 'codex-evaluator-sbom\.cdx\.json' -or
+            $codexWorkflowText -notmatch "bomFormat\s*=\s*'CycloneDX'") {
+            $results.Add([ordered]@{ ruleId='DEP022'; status='Failed'; message='Trusted Codex evaluator workflow must use locked runtimes, lifecycle-disabled npm install, exact CLI verification, file-hash provenance, and CycloneDX inventory.'; path='.github/workflows/codex-skill-behavior.yml' })
+        }
+    }
+    $codexPolicyRelativePath = '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
+    $codexPolicyPath = Join-Path $root $codexPolicyRelativePath
+    if (-not (Test-Path -LiteralPath $codexPolicyPath -PathType Leaf)) {
+        $results.Add([ordered]@{ ruleId='DEP023'; status='Failed'; message='Trusted Codex evaluator trust policy is missing.'; path=$codexPolicyRelativePath })
+    }
+    else {
+        try {
+            $policy = Import-PowerShellDataFile -LiteralPath $codexPolicyPath
+            $approvedHashes = @($policy.ApprovedConfigurations | ForEach-Object { [string]$_.Sha256 })
+            $requiredEvaluatorPaths = @(
+                $codexPolicyRelativePath,
+                'scripts/CodexSkillBehaviorActionsEvaluation.psm1',
+                'scripts/Invoke-CodexSkillBehaviorActionsEvaluation.ps1',
+                'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1',
+                'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1',
+                'schemas/codex-skill-behavior-evaluation.schema.json',
+                'schemas/codex-skill-behavior-observation.schema.json'
+            )
+            $requiredLimits = @(
+                'MaximumConfigurationBytes','MaximumPromptFileCount','MaximumPromptBytesPerFile','MaximumPromptCharacters',
+                'MaximumSkillFileCount','MaximumSkillBytesPerFile','MaximumAggregateSkillBytes','MaximumAuthorityFileBytes',
+                'MaximumAggregateAuthorityBytes','MaximumCaseIdLength','MaximumSkillNameLength','MaximumCategoryLength',
+                'MaximumRationaleCharacters','MaximumDeterministicAssertions','MaximumDeterministicAssertionLength'
+            )
+            if ([string]$policy.SchemaVersion -cne '1.0.0' -or
+                [string]$policy.ConfigurationPath -cne 'governance/codex-skill-behavior-evaluation.psd1' -or
+                @($requiredEvaluatorPaths | Where-Object { $_ -notin @($policy.EvaluatorPaths) }).Count -gt 0 -or
+                @($policy.EvaluatorPaths).Count -ne $requiredEvaluatorPaths.Count -or
+                [string]$policy.ConfigurationPath -in @($policy.EvaluatorPaths) -or
+                @($policy.ApprovedConfigurations).Count -ne 2 -or
+                '26edd6a335bfcc359e32f35959cf1a5bd514125f0fd94d88b688083c782f1515' -notin $approvedHashes -or
+                '9a24ce3d74448b2787e3470dbb9cace027aa5ae9fddbeff507a0019ccd700de6' -notin $approvedHashes -or
+                @($approvedHashes | Where-Object { $_ -cnotmatch '^[0-9a-f]{64}$' }).Count -gt 0 -or
+                @($requiredLimits | Where-Object { -not $policy.InputLimits.ContainsKey($_) -or [long]$policy.InputLimits[$_] -lt 1 }).Count -gt 0 -or
+                @($policy.InputLimits.ApprovedCategories).Count -lt 1 -or
+                @($policy.InputLimits.ApprovedDeterministicAssertions).Count -lt 1) {
+                $results.Add([ordered]@{ ruleId='DEP023'; status='Failed'; message='Trusted Codex evaluator policy must separate approved configuration hashes from immutable evaluator paths and declare all positive input bounds.'; path=$codexPolicyRelativePath })
+            }
+        }
+        catch {
+            $results.Add([ordered]@{ ruleId='DEP023'; status='Failed'; message="Trusted Codex evaluator policy is malformed: $($_.Exception.Message)"; path=$codexPolicyRelativePath })
+        }
+    }
 }
 catch {
     $results.Add([ordered]@{ ruleId='DEP001'; status='Failed'; message=$_.Exception.Message; path=$LockFile })

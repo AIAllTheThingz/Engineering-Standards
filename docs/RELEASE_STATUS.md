@@ -20,11 +20,20 @@ The published GitHub Release body retains stale preparation-era statements that 
 Current `master` contains development after the published target. The authoritative inventory is [`CHANGELOG.md` `[Unreleased]`](../CHANGELOG.md#unreleased). The root `VERSION` remains `1.1.0` because it identifies the latest published release, not the moving development head.
 
 Post-release implementation includes the enterprise PowerShell Codex skill,
-the controlled skill behavior evaluator, cross-repository reusable-workflow
-repair, trusted pin rotation, downstream canary gate, and specific bootstrap
-failure evidence. None is part of `v1.1.0`. Issue #25 completed the release
-lifecycle controls; it did not approve, tag, or publish the planned `1.2.0`, so
-Issue #42's `1.2.0` target remains unreleased planning metadata.
+the controlled skill behavior evaluator, its manual trusted secret-backed
+GitHub Actions bootstrap, cross-repository reusable-workflow repair, trusted pin
+rotation, downstream canary gate, and specific bootstrap failure evidence. None
+is part of `v1.1.0`. The trusted evaluator workflow must first merge to protected
+`master`; no hosted behavior run or artifact is claimed by this source change.
+The isolated hosted evaluator source separates reviewed candidate configuration
+hashes from immutable evaluator code, bounds candidate data before parsing,
+fails invalid dispatches in a non-secret guard, and keeps generated output in a
+new trusted runner-temporary boundary without changing the existing governed
+evaluator hash contract during bootstrap; these controls likewise have no
+hosted run claim until merged and executed.
+Issue #25 completed the release lifecycle controls; it did not approve, tag, or
+publish the planned `1.2.0`, so Issue #42's `1.2.0` target remains unreleased
+planning metadata.
 
 PRs #26 through #28 performed post-publication verification and release-record maintenance. Their historical evidence remains valid only for the commits it names; `evidence/latest-verified-run.json` retains the accepted PR #27 `master` record and does not validate current `master`. Issue #17 candidate and final-head runs are reported in PR #32 because pull-request merge-context evidence cannot honestly satisfy the record's `master`-branch contract.
 

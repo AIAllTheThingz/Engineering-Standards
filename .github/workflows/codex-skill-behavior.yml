@@ -1,0 +1,398 @@
+name: Codex Skill Behavior Evaluation
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Exact lowercase 40-character candidate commit SHA
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codex-skill-behavior-${{ inputs.candidate_sha }}
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Validate trusted dispatch context
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Reject invalid dispatch context
+        shell: pwsh
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EVENT_NAME: ${{ github.event_name }}
+          REPOSITORY: ${{ github.repository }}
+          WORKFLOW_REF: ${{ github.ref }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:REPOSITORY -cne 'AIAllTheThingz/Engineering-Standards') { throw 'Evaluation is restricted to the trusted repository.' }
+          if ($env:EVENT_NAME -cne 'workflow_dispatch') { throw 'Evaluation requires workflow_dispatch.' }
+          if ($env:DEFAULT_BRANCH -cne 'master') { throw 'The trusted default branch must be master.' }
+          if ($env:WORKFLOW_REF -cne 'refs/heads/master') { throw 'Evaluation must be dispatched from refs/heads/master.' }
+          if ($env:CANDIDATE_SHA -cnotmatch '^[0-9a-f]{40}$') { throw 'candidate_sha must be an exact lowercase 40-character commit SHA.' }
+
+  evaluate:
+    name: Evaluate trusted Codex skill behavior
+    needs: guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    environment: codex-skill-evaluation
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout trusted evaluator code
+        id: trusted_checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          path: trusted
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Initialize fail-closed trusted output boundary
+        id: initialize
+        shell: pwsh
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          RUN_ID: ${{ github.run_id }}
+          TRUSTED_SHA: ${{ github.sha }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Import-Module ./trusted/scripts/CodexSkillBehaviorActionsEvaluation.psm1 -Force
+          $output = New-CodexBehaviorOutputRoot -RunnerTemp $env:RUNNER_TEMP -RunId $env:RUN_ID -RunAttempt $env:RUN_ATTEMPT
+          "run-root=$($output.RunRoot)" | Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding utf8
+          "artifact-root=$($output.ArtifactRoot)" | Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding utf8
+          "CODEX_BEHAVIOR_OUTPUT_ROOT=$($output.RunRoot)" | Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
+          "CODEX_BEHAVIOR_ARTIFACT_ROOT=$($output.ArtifactRoot)" | Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
+          "CODEX_BEHAVIOR_OBSERVATION_ROOT=$(Join-Path $output.RunRoot 'observations')" | Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
+          [ordered]@{
+            schemaVersion = '1.0.0'
+            status = 'Blocked'
+            repository = $env:REPOSITORY
+            trustedSha = $env:TRUSTED_SHA
+            candidateSha = $env:CANDIDATE_SHA
+            runId = [int64]$env:RUN_ID
+            runAttempt = [int]$env:RUN_ATTEMPT
+            artifactName = "codex-skill-behavior-$($env:CANDIDATE_SHA)-$($env:RUN_ID)"
+            evaluatorPackage = '@openai/codex@0.144.0-alpha.4'
+            configurationHash = $null
+            evaluatorHash = $null
+            evidenceStatus = 'NotRun'
+            humanAdjudication = 'Pending'
+          } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $output.ArtifactRoot 'workflow-result.json') -Encoding utf8
+
+      - name: Checkout candidate as untrusted data
+        id: candidate_checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ inputs.candidate_sha }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Make candidate checkout read-only
+        id: readonly
+        shell: bash
+        run: chmod -R a-w ./candidate
+
+      - name: Install hash-verified PowerShell runtime
+        id: runtime
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File trusted/scripts/Install-ValidatorRuntime.ps1 `
+            -RepositoryPath trusted `
+            -PackageCachePath (Join-Path $env:RUNNER_TEMP 'codex-behavior-runtime-cache') `
+            -InstallRoot (Join-Path $env:RUNNER_TEMP 'codex-behavior-pwsh-7.4.11') `
+            -EvidencePath (Join-Path $env:CODEX_BEHAVIOR_ARTIFACT_ROOT 'runtime-bootstrap.json')
+
+      - name: Set up pinned Node
+        id: node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22.17.0
+
+      - name: Install pinned trusted evaluator dependency
+        id: dependencies
+        shell: bash
+        working-directory: trusted/.github/dependencies/codex-evaluator
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Verify pinned evaluator provenance
+        id: provenance
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dependencyRoot = (Resolve-Path ./trusted/.github/dependencies/codex-evaluator).Path
+          $artifactRoot = $env:CODEX_BEHAVIOR_ARTIFACT_ROOT
+          $packagePath = Join-Path $dependencyRoot 'package.json'
+          $lockPath = Join-Path $dependencyRoot 'package-lock.json'
+          $installedPackagePath = Join-Path $dependencyRoot 'node_modules/@openai/codex/package.json'
+          $codexLauncher = (Resolve-Path (Join-Path $dependencyRoot 'node_modules/.bin/codex')).Path
+          $nodeCommand = Get-Command node -CommandType Application | Select-Object -First 1
+          $nodeVersion = (& $nodeCommand.Source --version).Trim()
+          $codexVersion = (& $codexLauncher --version).Trim()
+          $lock = Get-Content -LiteralPath $lockPath -Raw | ConvertFrom-Json -AsHashtable
+          $installedPackage = Get-Content -LiteralPath $installedPackagePath -Raw | ConvertFrom-Json -AsHashtable
+          $lockedPackage = $lock.packages['node_modules/@openai/codex']
+          if ($nodeVersion -cne 'v22.17.0') { throw 'The installed Node runtime does not match v22.17.0.' }
+          if ($codexVersion -cne 'codex-cli 0.144.0-alpha.4' -or [string]$installedPackage.version -cne '0.144.0-alpha.4') {
+            throw 'The installed Codex CLI does not match 0.144.0-alpha.4.'
+          }
+          if ([string]$lockedPackage.resolved -cne 'https://registry.npmjs.org/@openai/codex/-/codex-0.144.0-alpha.4.tgz' -or
+              [string]$lockedPackage.integrity -cne 'sha512-Uf915avv7ETTv5PFLPf+Bw2KICFXgW8M+5vMzoUlrJkcRlCOTs5FgzjLZPvawWOJqZEgFsrQuJeLMRog0XSxxQ==') {
+            throw 'The installed Codex dependency provenance does not match the reviewed registry artifact.'
+          }
+          $installedFiles = @(
+            Get-ChildItem -LiteralPath (Join-Path $dependencyRoot 'node_modules/@openai') -File -Recurse |
+              Sort-Object FullName |
+              ForEach-Object {
+                [ordered]@{
+                  path = [IO.Path]::GetRelativePath($dependencyRoot, $_.FullName).Replace('\', '/')
+                  sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+                }
+              }
+          )
+          if ($installedFiles.Count -lt 2) { throw 'Installed Codex package file inventory is incomplete.' }
+          [ordered]@{
+            schemaVersion = '1.0.0'
+            status = 'Passed'
+            node = [ordered]@{
+              version = $nodeVersion
+              executableSha256 = (Get-FileHash -LiteralPath $nodeCommand.Source -Algorithm SHA256).Hash.ToLowerInvariant()
+            }
+            package = [ordered]@{
+              name = '@openai/codex'
+              version = [string]$installedPackage.version
+              source = [string]$lockedPackage.resolved
+              integrity = [string]$lockedPackage.integrity
+              packageJsonSha256 = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
+              packageLockSha256 = (Get-FileHash -LiteralPath $lockPath -Algorithm SHA256).Hash.ToLowerInvariant()
+              launcherSha256 = (Get-FileHash -LiteralPath $codexLauncher -Algorithm SHA256).Hash.ToLowerInvariant()
+            }
+            installedFiles = $installedFiles
+          } | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $artifactRoot 'codex-evaluator-provenance.json') -Encoding utf8
+          $components = @(
+            foreach ($entry in @($lock.packages.GetEnumerator() | Where-Object Key | Sort-Object Key)) {
+              $componentName = $entry.Key.Substring('node_modules/'.Length)
+              [ordered]@{
+                type = 'library'
+                name = $componentName
+                version = [string]$entry.Value.version
+                purl = "pkg:npm/$($componentName.Replace('@','%40'))@$($entry.Value.version)"
+                properties = @(
+                  [ordered]@{ name = 'npm:resolved'; value = [string]$entry.Value.resolved }
+                  [ordered]@{ name = 'npm:integrity'; value = [string]$entry.Value.integrity }
+                )
+              }
+            }
+          )
+          [ordered]@{
+            bomFormat = 'CycloneDX'
+            specVersion = '1.5'
+            serialNumber = "urn:uuid:$([guid]::NewGuid())"
+            version = 1
+            metadata = [ordered]@{
+              timestamp = (Get-Date).ToUniversalTime().ToString('o')
+              tools = @([ordered]@{ vendor = 'AIAllTheThingz'; name = 'Trusted Codex evaluator workflow'; version = '1.0.0' })
+              component = [ordered]@{ type = 'application'; name = 'Node.js'; version = $nodeVersion.TrimStart('v') }
+            }
+            components = $components
+          } | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $artifactRoot 'codex-evaluator-sbom.cdx.json') -Encoding utf8
+
+      - name: Validate candidate identity, file modes, configuration, and evaluator hashes
+        id: trust
+        shell: pwsh
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Import-Module ./trusted/scripts/CodexSkillBehaviorActionsEvaluation.psm1 -Force
+          $result = Test-CodexBehaviorCandidateTrust `
+            -TrustedPath ./trusted `
+            -CandidatePath ./candidate `
+            -CandidateSha $env:CANDIDATE_SHA
+          $result | ConvertTo-Json -Depth 8 |
+            Set-Content -LiteralPath (Join-Path $env:CODEX_BEHAVIOR_ARTIFACT_ROOT 'evaluator-hashes.json') -Encoding utf8
+
+      - name: Verify trusted Codex CLI version
+        id: codex_version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $codex = (Resolve-Path ./trusted/.github/dependencies/codex-evaluator/node_modules/.bin/codex).Path
+          $version = (& $codex --version).Trim()
+          if ($LASTEXITCODE -ne 0 -or $version -cne 'codex-cli 0.144.0-alpha.4') { throw 'The installed Codex CLI version does not match the reviewed package.' }
+
+      - name: Collect trusted model observations
+        id: collect
+        shell: pwsh
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & $env:VALIDATOR_PWSH -NoProfile -File ./trusted/scripts/Invoke-CodexSkillBehaviorActionsModel.ps1 `
+            -Path ./candidate `
+            -CodexPath ./trusted/.github/dependencies/codex-evaluator/node_modules/.bin/codex `
+            -TrustedOutputRoot $env:CODEX_BEHAVIOR_OUTPUT_ROOT `
+            -OutputDirectory $env:CODEX_BEHAVIOR_OBSERVATION_ROOT
+          if ($LASTEXITCODE -ne 0) { throw "Trusted observation collection failed with exit code $LASTEXITCODE." }
+
+      - name: Create sanitized behavior evidence
+        id: evaluate
+        shell: pwsh
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & $env:VALIDATOR_PWSH -NoProfile -File ./trusted/scripts/Invoke-CodexSkillBehaviorActionsEvaluation.ps1 `
+            -Path ./candidate `
+            -TrustedOutputRoot $env:CODEX_BEHAVIOR_OUTPUT_ROOT `
+            -ObservationDirectory $env:CODEX_BEHAVIOR_OBSERVATION_ROOT `
+            -OutputJson (Join-Path $env:CODEX_BEHAVIOR_ARTIFACT_ROOT 'codex-skill-behavior.json') `
+            -ExecutionMode Live `
+            -RunnerVersion '@openai/codex 0.144.0-alpha.4' `
+            -EvaluatedCommitSha $env:CANDIDATE_SHA
+          if ($LASTEXITCODE -ne 0) { throw "Trusted behavior evaluation failed closed with exit code $LASTEXITCODE." }
+
+      - name: Stage sanitized artifact only
+        id: stage
+        if: always() && steps.initialize.outcome == 'success'
+        shell: pwsh
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          CANDIDATE_CHECKOUT_OUTCOME: ${{ steps.candidate_checkout.outcome }}
+          CODEX_VERSION_OUTCOME: ${{ steps.codex_version.outcome }}
+          COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+          DEPENDENCIES_OUTCOME: ${{ steps.dependencies.outcome }}
+          EVALUATE_OUTCOME: ${{ steps.evaluate.outcome }}
+          NODE_OUTCOME: ${{ steps.node.outcome }}
+          PROVENANCE_OUTCOME: ${{ steps.provenance.outcome }}
+          READONLY_OUTCOME: ${{ steps.readonly.outcome }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          RUN_ID: ${{ github.run_id }}
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+          TRUSTED_CHECKOUT_OUTCOME: ${{ steps.trusted_checkout.outcome }}
+          TRUSTED_SHA: ${{ github.sha }}
+          TRUST_OUTCOME: ${{ steps.trust.outcome }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $artifactRoot = $env:CODEX_BEHAVIOR_ARTIFACT_ROOT
+          $allowedNames = @(
+            'codex-evaluator-provenance.json',
+            'codex-evaluator-sbom.cdx.json',
+            'codex-skill-behavior.json',
+            'evaluator-hashes.json',
+            'runtime-bootstrap.json',
+            'workflow-result.json'
+          )
+          $workflowResultPath = Join-Path $artifactRoot 'workflow-result.json'
+          $workflowResult = Get-Content -LiteralPath $workflowResultPath -Raw | ConvertFrom-Json
+          if ($workflowResult.repository -cne $env:REPOSITORY -or
+              $workflowResult.trustedSha -cne $env:TRUSTED_SHA -or
+              $workflowResult.candidateSha -cne $env:CANDIDATE_SHA -or
+              [int64]$workflowResult.runId -ne [int64]$env:RUN_ID -or
+              [int]$workflowResult.runAttempt -ne [int]$env:RUN_ATTEMPT) {
+            throw 'The trusted workflow-result envelope identity is invalid.'
+          }
+          $trustPath = Join-Path $artifactRoot 'evaluator-hashes.json'
+          $trust = $null
+          if (Test-Path -LiteralPath $trustPath -PathType Leaf) {
+            $trust = Get-Content -LiteralPath $trustPath -Raw | ConvertFrom-Json
+            if ($trust.trustedSha -cne $env:TRUSTED_SHA -or $trust.candidateSha -cne $env:CANDIDATE_SHA) {
+              throw 'The trust result identity does not match the workflow envelope.'
+            }
+            $workflowResult.configurationHash = [string]$trust.configurationHash
+            $workflowResult.evaluatorHash = [string]$trust.evaluatorHash
+          }
+          $evidencePath = Join-Path $artifactRoot 'codex-skill-behavior.json'
+          $evidenceStatus = 'NotRun'
+          if (Test-Path -LiteralPath $evidencePath -PathType Leaf) {
+            if ($null -eq $trust) { throw 'Behavior evidence exists without a validated trust result.' }
+            $schemaPath = (Resolve-Path ./trusted/schemas/codex-skill-behavior-evaluation.schema.json).Path
+            $rawEvidence = Get-Content -LiteralPath $evidencePath -Raw
+            if (-not ($rawEvidence | Test-Json -SchemaFile $schemaPath)) { throw 'Behavior evidence does not satisfy the trusted schema.' }
+            $evidence = $rawEvidence | ConvertFrom-Json
+            if ($evidence.evaluatedCommitSha -cne $env:CANDIDATE_SHA -or
+                $evidence.configurationHash -cne $trust.configurationHash -or
+                $evidence.evaluatorHash -cne $trust.evaluatorHash) {
+              throw 'Behavior evidence identity or trust hashes are invalid.'
+            }
+            if ($evidence.humanAdjudication.decision -cne 'Pending' -or $evidence.humanAdjudication.status -cne 'NotRun') {
+              throw 'Automated evaluation must leave human adjudication Pending and NotRun.'
+            }
+            $evidenceStatus = [string]$evidence.status
+          }
+          $outcomes = @(
+            $env:TRUSTED_CHECKOUT_OUTCOME, $env:CANDIDATE_CHECKOUT_OUTCOME, $env:READONLY_OUTCOME,
+            $env:RUNTIME_OUTCOME, $env:NODE_OUTCOME, $env:DEPENDENCIES_OUTCOME, $env:PROVENANCE_OUTCOME,
+            $env:TRUST_OUTCOME, $env:CODEX_VERSION_OUTCOME, $env:COLLECT_OUTCOME, $env:EVALUATE_OUTCOME
+          )
+          $workflowResult.evidenceStatus = $evidenceStatus
+          $workflowResult.status = if (@($outcomes | Where-Object { $_ -cne 'success' }).Count -eq 0 -and $evidenceStatus -ceq 'Passed') { 'Passed' } else { 'Blocked' }
+          $workflowResult | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $workflowResultPath -Encoding utf8
+          $unexpected = @(Get-ChildItem -LiteralPath $artifactRoot -Force | Where-Object { $_.Name -cnotin $allowedNames })
+          if ($unexpected.Count -gt 0) { throw "The artifact root contains unapproved entries: $($unexpected.Name -join ', ')." }
+          foreach ($item in @(Get-ChildItem -LiteralPath $artifactRoot -Force)) {
+            if ($item.PSIsContainer -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+              throw "The artifact entry '$($item.Name)' is not a regular file."
+            }
+          }
+
+      - name: Upload sanitized behavior evidence
+        id: upload
+        if: always() && steps.initialize.outcome == 'success' && steps.stage.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: codex-skill-behavior-${{ inputs.candidate_sha }}-${{ github.run_id }}
+          path: |
+            ${{ steps.initialize.outputs.artifact-root }}/workflow-result.json
+            ${{ steps.initialize.outputs.artifact-root }}/runtime-bootstrap.json
+            ${{ steps.initialize.outputs.artifact-root }}/codex-evaluator-provenance.json
+            ${{ steps.initialize.outputs.artifact-root }}/codex-evaluator-sbom.cdx.json
+            ${{ steps.initialize.outputs.artifact-root }}/evaluator-hashes.json
+            ${{ steps.initialize.outputs.artifact-root }}/codex-skill-behavior.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce trusted evaluation result
+        if: always()
+        shell: pwsh
+        env:
+          CANDIDATE_CHECKOUT_OUTCOME: ${{ steps.candidate_checkout.outcome }}
+          CODEX_VERSION_OUTCOME: ${{ steps.codex_version.outcome }}
+          COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+          DEPENDENCIES_OUTCOME: ${{ steps.dependencies.outcome }}
+          EVALUATE_OUTCOME: ${{ steps.evaluate.outcome }}
+          INITIALIZE_OUTCOME: ${{ steps.initialize.outcome }}
+          NODE_OUTCOME: ${{ steps.node.outcome }}
+          PROVENANCE_OUTCOME: ${{ steps.provenance.outcome }}
+          READONLY_OUTCOME: ${{ steps.readonly.outcome }}
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+          STAGE_OUTCOME: ${{ steps.stage.outcome }}
+          TRUSTED_CHECKOUT_OUTCOME: ${{ steps.trusted_checkout.outcome }}
+          TRUST_OUTCOME: ${{ steps.trust.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $outcomes = @(
+            $env:TRUSTED_CHECKOUT_OUTCOME, $env:INITIALIZE_OUTCOME, $env:CANDIDATE_CHECKOUT_OUTCOME,
+            $env:READONLY_OUTCOME, $env:RUNTIME_OUTCOME, $env:NODE_OUTCOME, $env:DEPENDENCIES_OUTCOME,
+            $env:PROVENANCE_OUTCOME, $env:TRUST_OUTCOME, $env:CODEX_VERSION_OUTCOME, $env:COLLECT_OUTCOME,
+            $env:EVALUATE_OUTCOME, $env:STAGE_OUTCOME, $env:UPLOAD_OUTCOME
+          )
+          if (@($outcomes | Where-Object { $_ -cne 'success' }).Count -gt 0) { throw 'Trusted Codex behavior evaluation did not complete successfully.' }
+          $result = Get-Content -LiteralPath (Join-Path $env:CODEX_BEHAVIOR_ARTIFACT_ROOT 'workflow-result.json') -Raw | ConvertFrom-Json
+          if ($result.status -cne 'Passed' -or $result.evidenceStatus -cne 'Passed') { throw 'Trusted Codex behavior evaluation failed closed.' }
