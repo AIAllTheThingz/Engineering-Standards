@@ -51,6 +51,28 @@ Describe 'Normalize-EvidencePaths' {
         $result.tests[0].path | Should -BeExactly 'tests/Synthetic.Tests.ps1'
     }
 
+    It 'preserves empty strings while normalizing nested evidence values' {
+        $evidenceRoot = Join-Path $script:tempRoot 'empty-string-evidence'
+        New-Item -ItemType Directory -Path $evidenceRoot -Force | Out-Null
+        [ordered]@{
+            failureReason = ''
+            results = @(
+                [ordered]@{
+                    path = (Join-Path $script:tempRoot 'scripts/Synthetic.ps1')
+                    message = ''
+                }
+            )
+        } | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'failure.json') -Encoding utf8
+
+        & pwsh -NoProfile -File $script:normalizer -Path $script:tempRoot -EvidencePath $evidenceRoot
+
+        $LASTEXITCODE | Should -Be 0
+        $result = Get-Content -LiteralPath (Join-Path $evidenceRoot 'failure.json') -Raw | ConvertFrom-Json
+        $result.failureReason | Should -BeExactly ''
+        $result.results[0].message | Should -BeExactly ''
+        $result.results[0].path | Should -BeExactly 'scripts/Synthetic.ps1'
+    }
+
     It 'fails closed for malformed evidence JSON' {
         $evidenceRoot = Join-Path $script:tempRoot 'malformed-evidence'
         New-Item -ItemType Directory -Path $evidenceRoot -Force | Out-Null
