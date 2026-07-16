@@ -72,6 +72,9 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Fixed
 
+- Normalized evidence paths through parsed JSON values so escaped parameterized
+  Pester test names remain valid JSON, and made malformed evidence fail closed
+  before artifact publication.
 - Selected controlled behavior evidence verifiers by exact governed skill name,
   preserving legacy `enterprise-powershell` evidence while routing
   `powershell-review` to the isolated Actions verifier and blocking unknown
