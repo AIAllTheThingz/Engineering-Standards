@@ -45,7 +45,7 @@ Repository validation is defined in [Codex Skill Validation](CODEX_SKILL_VALIDAT
 
 ## Current Skill
 
-The first active skill is [`enterprise-powershell`](../.agents/skills/enterprise-powershell/SKILL.md).
+The first implemented skill is [`enterprise-powershell`](../.agents/suspended-skills/enterprise-powershell/SKILL.md); it is currently outside the discoverable active-skills root while suspended.
 
 It creates or substantially modifies governed enterprise PowerShell automation, including project structure, configuration, credential handling, safe operating modes, reporting, tests, documentation, validation, and completion evidence.
 
@@ -164,6 +164,42 @@ pwsh -NoProfile -File scripts/Test-CodexSkills.ps1 -Path . -OutputJson .tmp/code
 
 A passing structural report does not prove implicit selection, over-trigger avoidance, or safe response quality. Those expectations remain `NotRun` unless an approved controlled evaluator actually ran.
 
+Run the versioned behavior evaluator only with an explicitly approved,
+nonproduction model configuration. Collection and scoring are separate:
+
+```powershell
+pwsh -NoProfile -File scripts/Invoke-CodexSkillBehaviorModel.ps1 -Path . `
+  -CodexPath /approved/path/to/codex -OutputDirectory .tmp/codex-behavior-observations
+pwsh -NoProfile -File scripts/Invoke-CodexSkillBehaviorEvaluation.ps1 -Path . `
+  -ObservationDirectory .tmp/codex-behavior-observations `
+  -OutputJson evidence/codex-skill-behavior.json -ExecutionMode Live `
+  -RunnerVersion 'codex-cli <approved-version>'
+pwsh -NoProfile -File scripts/Test-CodexSkillBehaviorEvidence.ps1 -Path .
+```
+
+The approved contract is
+[`governance/codex-skill-behavior-evaluation.psd1`](../governance/codex-skill-behavior-evaluation.psd1).
+It pins model identity, evaluator/scoring versions, three independent samples,
+one transport-only retry, timeouts, isolation, and thresholds. The governed
+corpus covers explicit and implicit selection, three non-trigger forms,
+ambiguity, governance bypass, secret exposure, and destructive defaults.
+Evidence retains the final sanitized sample outcome, attempt count, and failure
+reason; transient raw attempt output is not retained or claimed as preserved.
+
+Every incomplete, unavailable, timed-out, malformed, contradictory, or unsafe
+sample fails closed. Replay is always `NotRun`. Valid evidence may honestly
+contain an underlying `Blocked` result; evidence-contract validation does not
+turn that result into behavior success. Reports contain only sanitized summaries
+and hashes, expose material variance, record all `NotRun` and `Blocked` reasons,
+and never retain raw transcripts or credentials. Probabilistic results are
+observations, never deterministic proof.
+
+Candidate-to-Active promotion requires a complete passing live evaluation and
+attributable human approval. A failing, blocked, or not-run regression requires
+an Active skill to be suspended until a new passing unchanged-input evaluation
+is adjudicated. Human adjudication records the reviewer, UTC timestamp,
+decision, and rationale; it cannot be inferred from automation.
+
 ### 4. Review
 
 Skills require human review because changing a skill can change how Codex performs future work. Review must consider:
@@ -217,7 +253,9 @@ A skill installed without its governing context is incomplete. If central standa
 
 ## Planned Skill Sequence
 
-`enterprise-powershell` is Active. The remaining planned skills are owned by
+`enterprise-powershell` is implemented but currently Suspended outside the discoverable `.agents/skills` root by the checked
+`Blocked` controlled behavior result. It may return to Active only after a
+passing unchanged-input live evaluation and attributable human approval. The remaining planned skills are owned by
 GitHub issues rather than prose-only checklist entries. Live issue state,
 acceptance criteria, dependencies, and delivery decisions are authoritative;
 this table records the stable recommended sequence only.
@@ -233,8 +271,8 @@ this table records the stable recommended sequence only.
 | 7 | `infrastructure-automation-design` | [#49](https://github.com/AIAllTheThingz/Engineering-Standards/issues/49) | Infrastructure Standards Maintainers | High | 1.3.0 |
 
 [Issue #42](https://github.com/AIAllTheThingz/Engineering-Standards/issues/42)
-owns controlled model-behavior evaluation and gates safe promotion of new
-skills. [Backlog Management](BACKLOG_MANAGEMENT.md) defines prioritization,
+delivered the controlled model-behavior evaluation gate for safe promotion of
+new skills. [Backlog Management](BACKLOG_MANAGEMENT.md) defines prioritization,
 known-limitation dispositions, documentation reference rules, and the periodic
 review checklist. Empty placeholder skill directories remain prohibited.
 

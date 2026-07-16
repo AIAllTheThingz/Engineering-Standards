@@ -1,4 +1,4 @@
-# Codex Skills Catalog
+# Suspended Codex Skills Catalog
 
 This directory contains repository-scoped Codex skills maintained by `AIAllTheThingz/Engineering-Standards`.
 
@@ -6,23 +6,25 @@ Skills package repeatable engineering workflows. They do not replace governance,
 
 ## Current Skills
 
-| Skill | Purpose | Status |
-| --- | --- | --- |
-| [`enterprise-powershell`](enterprise-powershell/SKILL.md) | Create or substantially modify governed enterprise PowerShell automation and its supporting project files. | Active |
+| Skill | Purpose | Status | Behavior gate |
+| --- | --- | --- | --- |
+| [`enterprise-powershell`](enterprise-powershell/SKILL.md) | Create or substantially modify governed enterprise PowerShell automation and its supporting project files. | Suspended | Current controlled evaluation is `Blocked`; implicit and explicit invocation remain suspended until a passing unchanged-input live run and attributable human approval. |
 
 ## Planned Skills
 
 The following skills are planned but are not represented by placeholder directories or incomplete `SKILL.md` files:
 
-1. `powershell-review`
-2. `build-pester-tests`
-3. `safe-automation`
-4. `governance-validation`
-5. `completion-evidence`
-6. `vendor-documentation-analysis`
-7. `infrastructure-automation-design`
+1. [`powershell-review` (#43)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/43)
+2. [`build-pester-tests` (#44)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/44)
+3. [`safe-automation` (#45)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/45)
+4. [`governance-validation` (#46)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/46)
+5. [`completion-evidence` (#47)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/47)
+6. [`vendor-documentation-analysis` (#48)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/48)
+7. [`infrastructure-automation-design` (#49)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/49)
 
-A planned skill becomes active only after its instructions, references, validation, documentation, and review are complete.
+A planned skill becomes active only after its instructions, references,
+deterministic validation, passing controlled behavior evaluation, attributable
+human adjudication, documentation, and review are complete.
 
 ## Authority
 

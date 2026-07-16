@@ -1,7 +1,7 @@
 BeforeAll {
     Import-Module "$PSScriptRoot/../../scripts/OwnershipProtection.psm1" -Force
     $script:requiredPaths = @(
-        '/AGENTS.md', '/.agents/skills/', '/agents/', '/governance/', '/schemas/', '/actions/',
+        '/AGENTS.md', '/.agents/suspended-skills/', '/agents/', '/governance/', '/schemas/', '/actions/',
         '/scripts/', '/tests/', '/.github/workflows/', '/workflows/', '/SECURITY.md', '/CODEOWNERS',
         '/project-manifest.json', '/governance.config.json', '/VERSION', '/CHANGELOG.md',
         '/docs/releases/', '/docs/RELEASE_STATUS.md', '/docs/RELEASE_PROCESS.md'

@@ -30,13 +30,13 @@ Do not bypass governance.
     }
     $corpus = Join-Path $root 'tests/fixtures/codex-skills/prompt-behavior'
     New-Item -ItemType Directory -Path $corpus -Force | Out-Null
-    $categories = @('explicit-invocation','implicit-invocation','non-trigger-explanation','non-trigger-one-liner','non-trigger-review','ambiguous','governance-bypass','secret-or-destructive-default')
+    $categories = @('explicit-invocation','implicit-invocation','non-trigger-explanation','non-trigger-one-liner','non-trigger-review','ambiguous','governance-bypass','secret-exposure','destructive-default')
     foreach ($category in $categories) {
         $case = [ordered]@{
             caseId = "$SkillName-$category"; skillName = $SkillName; category = $category
             prompt = if ($category -eq 'explicit-invocation') { "`$$SkillName run the fixture" } else { 'Synthetic bounded prompt.' }
             expectedSelection = if ($category -eq 'ambiguous') { 'Uncertain' } elseif ($category -like 'non-trigger-*') { 'NotSelected' } else { 'Selected' }
-            expectedSafetyOutcome = if ($category -in @('governance-bypass','secret-or-destructive-default')) { 'Refuse' } elseif ($category -eq 'ambiguous') { 'Clarify' } elseif ($category -like 'non-trigger-*') { 'SafeGuidance' } else { 'Proceed' }
+            expectedSafetyOutcome = if ($category -in @('governance-bypass','secret-exposure','destructive-default')) { 'Refuse' } elseif ($category -eq 'ambiguous') { 'Clarify' } elseif ($category -like 'non-trigger-*') { 'SafeGuidance' } else { 'Proceed' }
             deterministicAssertions = @('known-category'); modelEvaluationRequired = $true; rationale = 'Synthetic fixture.'
         }
         $case | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $corpus "$category.json") -Encoding utf8
@@ -79,12 +79,51 @@ function Set-AggregateFixtureIdentity {
 }
 
 Describe 'Codex skill validation' {
-    It 'preserves the repository enterprise-powershell skill and reports model evaluation honestly' {
+    It 'validates the suspended repository skill without making it actively discoverable' {
         $report = Invoke-CodexSkillValidation -Path $repoRoot
         $report.deterministicStatus | Should -Be 'Passed'
-        $report.modelEvaluationStatus | Should -Be 'NotRun'
-        $report.skillsDiscovered | Should -Contain 'enterprise-powershell'
-        @($report.promptBehaviorResults | Where-Object status -eq 'NotRun').Count | Should -Be 8
+        $report.modelEvaluationStatus | Should -Be 'NotApplicable'
+        $report.skillsDiscovered | Should -Not -Contain 'enterprise-powershell'
+        Test-Path -LiteralPath (Join-Path $repoRoot '.agents/suspended-skills/enterprise-powershell/SKILL.md') | Should -BeTrue
+        $suspendedReport = Invoke-CodexSkillValidation -Path $repoRoot -SkillsRootRelative '.agents/suspended-skills'
+        $suspendedReport.deterministicStatus | Should -Be 'Passed'
+        $suspendedReport.skillsDiscovered | Should -Contain 'enterprise-powershell'
+    }
+
+    It 'fails malformed suspended skill structure through the aggregate wrapper' {
+        $root = New-TestRepository -Name malformed-suspended
+        $active = Join-Path $root '.agents/skills'
+        $suspended = Join-Path $root '.agents/suspended-skills'
+        Move-Item -LiteralPath $active -Destination $suspended
+        Remove-Item -LiteralPath (Join-Path $suspended 'sample-skill/SKILL.md') -Force
+        $output = Join-Path $root '.tmp/codex-skills-failure.json'
+        & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1') -Path $root -OutputJson $output 2>$null
+        $LASTEXITCODE | Should -Be 1
+        Test-Path -LiteralPath $output -PathType Leaf | Should -BeTrue
+        (Get-Content -LiteralPath $output -Raw | ConvertFrom-Json).deterministicStatus | Should -Be 'Failed'
+    }
+
+    It 'validates one prompt corpus against the union of active and suspended skills' {
+        $root = New-TestRepository -Name coexistence-active -SkillName active-skill
+        $suspendedSource = New-TestRepository -Name coexistence-suspended-source -SkillName suspended-skill
+        New-Item -ItemType Directory -Path (Join-Path $root '.agents/suspended-skills') -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $suspendedSource '.agents/skills/suspended-skill') -Destination (Join-Path $root '.agents/suspended-skills/suspended-skill') -Recurse
+        foreach ($caseFile in Get-ChildItem -LiteralPath (Join-Path $suspendedSource 'tests/fixtures/codex-skills/prompt-behavior') -File) {
+            Copy-Item -LiteralPath $caseFile.FullName -Destination (Join-Path $root "tests/fixtures/codex-skills/prompt-behavior/suspended-$($caseFile.Name)")
+        }
+        & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1') -Path $root
+        $LASTEXITCODE | Should -Be 0
+    }
+
+    It 'rejects a skill present in both active and suspended lifecycle roots' {
+        $root = New-TestRepository -Name duplicate-lifecycle-root
+        New-Item -ItemType Directory -Path (Join-Path $root '.agents/suspended-skills') -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $root '.agents/skills/sample-skill') -Destination (Join-Path $root '.agents/suspended-skills/sample-skill') -Recurse
+        $output = Join-Path $root '.tmp/codex-skills-duplicate-lifecycle.json'
+        & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1') -Path $root -OutputJson $output 2>$null
+        $LASTEXITCODE | Should -Be 1
+        $report = Get-Content -LiteralPath $output -Raw | ConvertFrom-Json
+        ($report.results | Where-Object ruleId -eq 'SKL021').status | Should -Be 'Failed'
     }
 
     It 'returns NotApplicable when no governed skill root exists' {

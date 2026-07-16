@@ -316,7 +316,7 @@ function Test-PromptBehaviorCorpus {
     [CmdletBinding()]
     param([string]$RepositoryRoot, [string[]]$SkillNames, [string]$PromptBehaviorPath)
     $results = [System.Collections.Generic.List[object]]::new()
-    $requiredCategories = @('explicit-invocation','implicit-invocation','non-trigger-explanation','non-trigger-one-liner','non-trigger-review','ambiguous','governance-bypass','secret-or-destructive-default')
+    $requiredCategories = @('explicit-invocation','implicit-invocation','non-trigger-explanation','non-trigger-one-liner','non-trigger-review','ambiguous','governance-bypass','secret-exposure','destructive-default')
     if (-not $PromptBehaviorPath) { $PromptBehaviorPath = Join-Path $RepositoryRoot 'tests/fixtures/codex-skills/prompt-behavior' }
     if (-not (Test-Path -LiteralPath $PromptBehaviorPath -PathType Container)) {
         return @(New-SkillValidationResult -RuleId SKL017 -Status Failed -Severity error -Message 'Prompt-behavior corpus directory is missing.' -Path (Get-SafeRelativePath $RepositoryRoot $PromptBehaviorPath))
@@ -332,6 +332,7 @@ function Test-PromptBehaviorCorpus {
         $required = @('caseId','skillName','category','prompt','expectedSelection','expectedSafetyOutcome','deterministicAssertions','modelEvaluationRequired','rationale')
         if (@($required | Where-Object { $_ -notin $case.PSObject.Properties.Name }).Count -gt 0) { $results.Add((New-SkillValidationResult -RuleId SKL017 -Status Failed -Severity error -Message 'Prompt fixture is missing required properties.' -Path (Get-SafeRelativePath $RepositoryRoot $file.FullName))); continue }
         if ($ids.ContainsKey([string]$case.caseId)) { $results.Add((New-SkillValidationResult -RuleId SKL017 -Status Failed -Severity error -Message 'Prompt case IDs must be unique.' -Path (Get-SafeRelativePath $RepositoryRoot $file.FullName) -SkillName $case.skillName)) } else { $ids[[string]$case.caseId] = $true }
+        if ([string]$case.caseId -cnotmatch '^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])$' -or ([string]$case.caseId).Length -gt 120) { $results.Add((New-SkillValidationResult -RuleId SKL017 -Status Failed -Severity error -Message 'Prompt case ID must be bounded lowercase kebab-case.' -Path (Get-SafeRelativePath $RepositoryRoot $file.FullName) -SkillName $case.skillName)) }
         if ($case.skillName -notin $SkillNames -or $case.category -notin $requiredCategories -or $case.expectedSelection -notin @('Selected','NotSelected','Uncertain') -or $case.expectedSafetyOutcome -notin @('Proceed','Refuse','Clarify','SafeGuidance')) {
             $results.Add((New-SkillValidationResult -RuleId SKL017 -Status Failed -Severity error -Message 'Prompt fixture uses an unknown skill, category, or expectation.' -Path (Get-SafeRelativePath $RepositoryRoot $file.FullName) -SkillName $case.skillName))
         }
@@ -358,21 +359,26 @@ function Test-PromptBehaviorCorpus {
 
 function Invoke-CodexSkillValidation {
     [CmdletBinding()]
-    param([string]$Path = '.', [string]$PromptBehaviorPath)
+    param(
+        [string]$Path = '.',
+        [string]$PromptBehaviorPath,
+        [ValidateSet('.agents/skills','.agents/suspended-skills')][string]$SkillsRootRelative = '.agents/skills',
+        [switch]$SkipPromptBehavior
+    )
     $repositoryRoot = (Resolve-Path -LiteralPath $Path).Path
-    $skillsRoot = Join-Path $repositoryRoot '.agents/skills'
+    $skillsRoot = Join-Path $repositoryRoot $SkillsRootRelative
     $results = [System.Collections.Generic.List[object]]::new()
     if (-not (Test-Path -LiteralPath $skillsRoot)) {
-        $results.Add((New-SkillValidationResult -RuleId SKL001 -Status NotApplicable -Severity info -Message 'No governed skills root exists.' -Path '.agents/skills'))
+        $results.Add((New-SkillValidationResult -RuleId SKL001 -Status NotApplicable -Severity info -Message 'No governed skills root exists.' -Path $SkillsRootRelative))
         return New-CodexSkillValidationReport -RepositoryRoot $repositoryRoot -SkillsRoot $skillsRoot -SkillNames @() -Results @($results) -PromptResults @()
     }
-    try { Resolve-BoundedChildPath -Root $repositoryRoot -ChildPath '.agents/skills' | Out-Null }
-    catch { $results.Add((New-SkillValidationResult -RuleId SKL001 -Status Blocked -Severity error -Message $_.Exception.Message -Path '.agents/skills')); return New-CodexSkillValidationReport -RepositoryRoot $repositoryRoot -SkillsRoot $skillsRoot -SkillNames @() -Results @($results) -PromptResults @() }
+    try { Resolve-BoundedChildPath -Root $repositoryRoot -ChildPath $SkillsRootRelative | Out-Null }
+    catch { $results.Add((New-SkillValidationResult -RuleId SKL001 -Status Blocked -Severity error -Message $_.Exception.Message -Path $SkillsRootRelative)); return New-CodexSkillValidationReport -RepositoryRoot $repositoryRoot -SkillsRoot $skillsRoot -SkillNames @() -Results @($results) -PromptResults @() }
     $directories = @(Get-ChildItem -LiteralPath $skillsRoot -Directory -Force | Sort-Object Name)
     if ($directories.Count -eq 0) {
-        $results.Add((New-SkillValidationResult -RuleId SKL001 -Status Failed -Severity error -Message 'An existing skills root must contain one or more governed skill directories.' -Path '.agents/skills'))
+        $results.Add((New-SkillValidationResult -RuleId SKL001 -Status Failed -Severity error -Message 'An existing skills root must contain one or more governed skill directories.' -Path $SkillsRootRelative))
     }
-    if ($directories.Count -gt $script:Limits.MaxSkills) { $results.Add((New-SkillValidationResult -RuleId SKL019 -Status Failed -Severity error -Message 'Skill count exceeds the configured limit.' -Path '.agents/skills')); return New-CodexSkillValidationReport -RepositoryRoot $repositoryRoot -SkillsRoot $skillsRoot -SkillNames @() -Results @($results) -PromptResults @() }
+    if ($directories.Count -gt $script:Limits.MaxSkills) { $results.Add((New-SkillValidationResult -RuleId SKL019 -Status Failed -Severity error -Message 'Skill count exceeds the configured limit.' -Path $SkillsRootRelative)); return New-CodexSkillValidationReport -RepositoryRoot $repositoryRoot -SkillsRoot $skillsRoot -SkillNames @() -Results @($results) -PromptResults @() }
     $skillNames = [System.Collections.Generic.List[string]]::new()
     $declaredNames = @{}
     $plannedSkillNames = @('powershell-review','build-pester-tests','safe-automation','governance-validation','completion-evidence','vendor-documentation-analysis','infrastructure-automation-design')
@@ -475,7 +481,8 @@ function Invoke-CodexSkillValidation {
         foreach ($item in @(Test-OpenAiMetadata -Path (Join-Path $directory.FullName 'agents/openai.yaml') -SkillName $name -SkillRoot $directory.FullName -RepositoryRoot $repositoryRoot)) { $results.Add($item) }
         if (@($results | Where-Object { $_.skillName -eq $name -and $_.status -in @('Failed','Blocked') }).Count -eq 0) { $results.Add((New-SkillValidationResult -RuleId SKL001 -Status Passed -Severity info -Message 'Skill passed deterministic structural validation.' -Path $relativeDirectory -SkillName $name)) }
     }
-    $promptResults = @(Test-PromptBehaviorCorpus -RepositoryRoot $repositoryRoot -SkillNames @($skillNames) -PromptBehaviorPath $PromptBehaviorPath)
+    [object[]]$promptResults = @()
+    if (-not $SkipPromptBehavior) { $promptResults = @(Test-PromptBehaviorCorpus -RepositoryRoot $repositoryRoot -SkillNames @($skillNames) -PromptBehaviorPath $PromptBehaviorPath) }
     New-CodexSkillValidationReport -RepositoryRoot $repositoryRoot -SkillsRoot $skillsRoot -SkillNames @($skillNames) -Results @($results) -PromptResults $promptResults
 }
 

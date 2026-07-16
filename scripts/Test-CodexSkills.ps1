@@ -24,8 +24,38 @@ Import-Module (Join-Path $PSScriptRoot 'CodexSkillsValidation.psm1') -Force
 
 $root = (Resolve-Path -LiteralPath $Path).Path
 try {
-    $report = Invoke-CodexSkillValidation -Path $root
-    if ($OutputJson) {
+    $reports = [Collections.Generic.List[object]]::new()
+    foreach ($skillRoot in @('.agents/skills','.agents/suspended-skills')) {
+        if (Test-Path -LiteralPath (Join-Path $root $skillRoot) -PathType Container) {
+            $reports.Add((Invoke-CodexSkillValidation -Path $root -SkillsRootRelative $skillRoot -SkipPromptBehavior))
+        }
+    }
+    if ($reports.Count -eq 0) { $reports.Add((Invoke-CodexSkillValidation -Path $root)) }
+    $allResults = @($reports | ForEach-Object { $_.results })
+    $allSkills = @($reports | ForEach-Object { $_.skillsDiscovered } | Sort-Object -Unique)
+    $activeSkills = @($reports | Where-Object { $_.skillsRoot -eq (Join-Path $root '.agents/skills') } | ForEach-Object { $_.skillsDiscovered })
+    $suspendedSkills = @($reports | Where-Object { $_.skillsRoot -eq (Join-Path $root '.agents/suspended-skills') } | ForEach-Object { $_.skillsDiscovered })
+    $duplicateLifecycleSkills = @($activeSkills | Where-Object { $_ -in $suspendedSkills } | Sort-Object -Unique)
+    if ($duplicateLifecycleSkills.Count -gt 0) {
+        $allResults += [pscustomobject]@{ ruleId='SKL021'; status='Failed'; severity='error'; message="Skills must not exist in both active and suspended lifecycle roots: $($duplicateLifecycleSkills -join ', ')."; path='.agents'; skillName=($duplicateLifecycleSkills -join ','); deterministic=$true; requiredValidation=$true; data=$null }
+    }
+    [object[]]$allPromptResults = @()
+    if ($allSkills.Count -gt 0) { $allPromptResults = @(Test-PromptBehaviorCorpus -RepositoryRoot $root -SkillNames $allSkills) }
+    $allValidationResults = @($allResults) + @($allPromptResults) | Where-Object { $null -ne $_ }
+    $requiredFailures = @($allValidationResults | Where-Object { $_.requiredValidation -and $_.status -in @('Failed','Blocked') })
+    $report = [ordered]@{
+        schemaVersion='1.0.0'; generatedAtUtc=[DateTime]::UtcNow.ToString('o'); repositoryRoot=$root
+        skillsRoot=@($reports | ForEach-Object { $_.skillsRoot }); skillsDiscovered=$allSkills
+        deterministicStatus=if($requiredFailures.Count -gt 0){if(@($requiredFailures | Where-Object status -eq 'Blocked').Count -gt 0){'Blocked'}else{'Failed'}}else{'Passed'}
+        modelEvaluationStatus=if($allSkills.Count -eq 0){'NotApplicable'}else{'NotRun'}
+        results=$allResults; promptBehaviorResults=$allPromptResults
+        failed=@($allValidationResults | Where-Object status -eq 'Failed').Count
+        blocked=@($allValidationResults | Where-Object status -eq 'Blocked').Count
+        notRun=@($allValidationResults | Where-Object status -eq 'NotRun').Count
+        warnings=@($allValidationResults | Where-Object severity -eq 'warning').Count
+    }
+    function Publish-CodexSkillsReport {
+        if (-not $OutputJson) { return }
         if ($AllowedOutputRoot) {
             $outputRoot = (Resolve-Path -LiteralPath $AllowedOutputRoot).Path
             $candidate = if ([System.IO.Path]::IsPathRooted($OutputJson)) { [System.IO.Path]::GetFullPath($OutputJson) } else { [System.IO.Path]::GetFullPath((Join-Path $outputRoot $OutputJson)) }
@@ -39,11 +69,52 @@ try {
         $parent = Split-Path -Parent $resolvedOutput
         if ($parent) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
         $report.repositoryRoot = '.'
-        $report.skillsRoot = '.agents/skills'
+        $report.skillsRoot = @($reports | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.skillsRoot).Replace('\','/') })
         $report | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $resolvedOutput -Encoding utf8
     }
+    function Stop-CodexSkillsBehaviorGate {
+        param([Parameter(Mandatory)][string]$Message, [ValidateSet('Failed','Blocked')][string]$Status = 'Failed')
+        $behaviorResult = [ordered]@{ ruleId='SKL020'; status=$Status; severity='error'; message=$Message; path='evidence/codex-skill-behavior.json'; skillName=''; deterministic=$false; requiredValidation=$true; data=$null }
+        $report.results = @($report.results) + @($behaviorResult)
+        if ($Status -eq 'Blocked') { $report.blocked = [int]$report.blocked + 1 } else { $report.failed = [int]$report.failed + 1 }
+        $report.modelEvaluationStatus = $Status
+        Publish-CodexSkillsReport
+        Write-Error $Message
+        exit 1
+    }
     "Codex skills: deterministic=$($report.deterministicStatus), modelEvaluation=$($report.modelEvaluationStatus), skills=$(@($report.skillsDiscovered).Count), failed=$($report.failed), blocked=$($report.blocked), notRun=$($report.notRun)."
-    if ($report.deterministicStatus -in @('Failed','Blocked')) { exit 1 }
+    if ($report.deterministicStatus -in @('Failed','Blocked')) { Publish-CodexSkillsReport; exit 1 }
+    $behaviorEvidence = Join-Path $root 'evidence/codex-skill-behavior.json'
+    $behaviorConfiguration = Join-Path $root 'governance/codex-skill-behavior-evaluation.psd1'
+    if ((Test-Path -LiteralPath $behaviorEvidence -PathType Leaf) -or (Test-Path -LiteralPath $behaviorConfiguration -PathType Leaf)) {
+        if (-not (Test-Path -LiteralPath $behaviorEvidence -PathType Leaf) -or -not (Test-Path -LiteralPath $behaviorConfiguration -PathType Leaf)) {
+            Stop-CodexSkillsBehaviorGate 'Controlled behavior evidence and its approved configuration must be present together.' -Status Blocked
+        }
+        & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $PSScriptRoot 'Test-CodexSkillBehaviorEvidence.ps1') -Path $root
+        if ($LASTEXITCODE -ne 0) { Stop-CodexSkillsBehaviorGate 'Controlled behavior evidence verification failed.' -Status Blocked }
+        $behavior = Get-Content -LiteralPath $behaviorEvidence -Raw | ConvertFrom-Json
+        $approvedBehavior = Import-PowerShellDataFile -LiteralPath $behaviorConfiguration
+        $report.modelEvaluationStatus = $behavior.status
+        $verifiedBehaviorResult = [ordered]@{ ruleId='SKL020'; status=$behavior.status; severity=if($behavior.status -eq 'Passed'){'info'}else{'warning'}; message="Verified controlled behavior evidence reported '$($behavior.status)'; lifecycle enforcement was applied."; path='evidence/codex-skill-behavior.json'; skillName=[string]$approvedBehavior.Skill.Name; deterministic=$false; requiredValidation=$false; data=[ordered]@{ decisionAction=$behavior.decision.action; executionMode=$behavior.executionMode } }
+        $report.results = @($report.results) + @($verifiedBehaviorResult)
+        if ($behavior.status -eq 'Blocked') { $report.blocked = [int]$report.blocked + 1 }
+        elseif ($behavior.status -eq 'Failed') { $report.failed = [int]$report.failed + 1 }
+        elseif ($behavior.status -eq 'NotRun') { $report.notRun = [int]$report.notRun + 1 }
+        if ($behavior.status -in @('Failed','Blocked','NotRun')) {
+            if ($behavior.decision.skillStatus -eq 'Active') {
+                if ($behavior.decision.action -ne 'Suspend') { Stop-CodexSkillsBehaviorGate 'Nonpassing Active-skill evidence must require suspension.' }
+                $activeInstruction = Join-Path $root $approvedBehavior.Skill.ActiveInstructionPath
+                $suspendedInstruction = Join-Path $root $approvedBehavior.Skill.SuspendedInstructionPath
+                if ((Test-Path -LiteralPath $activeInstruction -PathType Leaf) -or -not (Test-Path -LiteralPath $suspendedInstruction -PathType Leaf)) { Stop-CodexSkillsBehaviorGate "Active skill '$($approvedBehavior.Skill.Name)' has nonpassing behavior evidence but its discoverable SKILL.md is not physically suspended." }
+            }
+            elseif ($behavior.decision.action -ne 'BlockPromotion') { Stop-CodexSkillsBehaviorGate 'Nonpassing Candidate evidence must block promotion.' }
+            else { Stop-CodexSkillsBehaviorGate "Candidate skill '$($approvedBehavior.Skill.Name)' has nonpassing behavior evidence and promotion is blocked." -Status $(if($behavior.status -eq 'Blocked' -or $behavior.status -eq 'NotRun'){'Blocked'}else{'Failed'}) }
+        }
+        elseif ($behavior.status -eq 'Passed') {
+            if ($behavior.humanAdjudication.status -ne 'Passed' -or $behavior.humanAdjudication.decision -ne 'Approved' -or [string]::IsNullOrWhiteSpace([string]$behavior.humanAdjudication.reviewer) -or $null -eq $behavior.humanAdjudication.reviewedAtUtc) { Stop-CodexSkillsBehaviorGate 'Passed behavior evidence requires an attributable Approved human adjudication before aggregate success.' }
+        }
+    }
+    Publish-CodexSkillsReport
     exit 0
 }
 catch {
