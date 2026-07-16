@@ -11,6 +11,7 @@ sanitized observations. This script does not score or approve evidence.
 param(
     [string]$Path = '.',
     [Parameter(Mandatory)][string]$CodexPath,
+    [Parameter(Mandatory)][string]$TrustedOutputRoot,
     [Parameter(Mandatory)][string]$OutputDirectory,
     [string]$ApiKeyEnvironmentVariable = 'OPENAI_API_KEY'
 )
@@ -20,27 +21,18 @@ Import-Module (Join-Path $PSScriptRoot 'CodexSkillBehaviorEvaluation.psm1') -For
 $root = (Resolve-Path -LiteralPath $Path).Path
 $codex = (Resolve-Path -LiteralPath $CodexPath).Path
 $inputs = Get-CodexBehaviorInput -Path $root
-$config = Import-PowerShellDataFile -LiteralPath (Join-Path $root $inputs.ConfigurationPath)
+$config = $inputs.Configuration
 $credential = [Environment]::GetEnvironmentVariable($ApiKeyEnvironmentVariable)
 if ([string]::IsNullOrWhiteSpace($credential)) { throw "Approved nonproduction key is unavailable in $ApiKeyEnvironmentVariable." }
-$output = if ([IO.Path]::IsPathRooted($OutputDirectory)) { [IO.Path]::GetFullPath($OutputDirectory) } else { [IO.Path]::GetFullPath((Join-Path $root $OutputDirectory)) }
-$pathComparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
-$rootBoundary = $root.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
-if (-not $output.StartsWith($rootBoundary, $pathComparison)) { throw 'OutputDirectory must be beneath the repository root.' }
-$currentOutputPath = $root
-foreach ($segment in @([IO.Path]::GetRelativePath($root, $output) -split '[\\/]' | Where-Object { $_ -and $_ -ne '.' })) {
-    $currentOutputPath = Join-Path $currentOutputPath $segment
-    if (-not (Test-Path -LiteralPath $currentOutputPath)) { break }
-    $outputItem = Get-Item -LiteralPath $currentOutputPath -Force
-    if ($outputItem.LinkType -or ($outputItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'OutputDirectory must not traverse a symbolic link, junction, or reparse point.' }
-}
-New-Item -ItemType Directory -Path $output -Force | Out-Null
-$outputItem = Get-Item -LiteralPath $output -Force
-if ($outputItem.LinkType -or ($outputItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'OutputDirectory must not be a symbolic link, junction, or reparse point.' }
-$scratch = Join-Path ([IO.Path]::GetTempPath()) ("codex-skill-behavior-{0}" -f [guid]::NewGuid().ToString('N'))
+$trustedOutput = (Resolve-Path -LiteralPath $TrustedOutputRoot).Path
+$output = Resolve-CodexBehaviorOutputPath -Root $trustedOutput -Candidate $OutputDirectory
+if (Test-Path -LiteralPath $output) { throw 'Observation output directory must not exist before trusted collection.' }
+New-Item -ItemType Directory -Path $output | Out-Null
+$output = Resolve-CodexBehaviorOutputPath -Root $trustedOutput -Candidate $output -MustExist -ExpectedType Directory
+$scratch = Resolve-CodexBehaviorOutputPath -Root $trustedOutput -Candidate ("scratch-{0}" -f [guid]::NewGuid().ToString('N'))
 $workspace = Join-Path $scratch 'workspace'
 $codexHome = Join-Path $scratch 'codex-home'
-New-Item -ItemType Directory -Path $workspace,$codexHome -Force | Out-Null
+New-Item -ItemType Directory -Path $workspace,$codexHome | Out-Null
 try {
     $suspendedSkillPrefix = ".agents/suspended-skills/$($config.Skill.Name)/"
     foreach ($skillInput in $inputs.SkillPaths) {

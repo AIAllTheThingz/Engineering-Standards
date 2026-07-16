@@ -168,17 +168,26 @@ Run the versioned behavior evaluator only with an explicitly approved,
 nonproduction model configuration. Collection and scoring are separate:
 
 ```powershell
+$outputRoot = Join-Path ([IO.Path]::GetTempPath()) ("codex-behavior-{0}" -f [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $outputRoot | Out-Null
 pwsh -NoProfile -File scripts/Invoke-CodexSkillBehaviorModel.ps1 -Path . `
-  -CodexPath /approved/path/to/codex -OutputDirectory .tmp/codex-behavior-observations
+  -CodexPath /approved/path/to/codex -TrustedOutputRoot $outputRoot `
+  -OutputDirectory (Join-Path $outputRoot 'observations')
 pwsh -NoProfile -File scripts/Invoke-CodexSkillBehaviorEvaluation.ps1 -Path . `
-  -ObservationDirectory .tmp/codex-behavior-observations `
-  -OutputJson evidence/codex-skill-behavior.json -ExecutionMode Live `
+  -TrustedOutputRoot $outputRoot -ObservationDirectory (Join-Path $outputRoot 'observations') `
+  -OutputJson (Join-Path $outputRoot 'codex-skill-behavior.json') -ExecutionMode Live `
   -RunnerVersion 'codex-cli <approved-version>'
 pwsh -NoProfile -File scripts/Test-CodexSkillBehaviorEvidence.ps1 -Path .
 ```
 
 The approved contract is
 [`governance/codex-skill-behavior-evaluation.psd1`](../governance/codex-skill-behavior-evaluation.psd1).
+The trusted
+[`behavior-trust-policy.psd1`](../.github/dependencies/codex-evaluator/behavior-trust-policy.psd1)
+hash-approves exact candidate configurations separately from immutable evaluator
+code and declares prompt, skill, authority, identifier, and field bounds. Files
+are size- and type-checked before candidate content is parsed or supplied to the
+model.
 It pins model identity, evaluator/scoring versions, three independent samples,
 one transport-only retry, timeouts, isolation, and thresholds. The governed
 corpus covers explicit and implicit selection, three non-trigger forms,
@@ -188,12 +197,16 @@ reason; transient raw attempt output is not retained or claimed as preserved.
 
 The trusted hosted path is the manual
 [`Codex Skill Behavior Evaluation`](../.github/workflows/codex-skill-behavior.yml)
-workflow. It can be dispatched only from protected `master` with an exact
-lowercase candidate commit SHA. The workflow checks out trusted evaluator code
-at the dispatched `github.sha`, checks out the candidate separately as
-untrusted data, rejects candidate symlinks, and requires every candidate
-evaluator file to match the trusted evaluator by SHA-256. It never executes
-candidate scripts, actions, package hooks, tests, or workflows.
+workflow. A non-secret guard job fails explicitly unless the dispatch is for the
+expected repository, `workflow_dispatch` event, `master` default branch,
+`refs/heads/master`, and an exact lowercase candidate commit SHA. Only after the
+guard succeeds can the environment-protected evaluation job run. The workflow
+checks out trusted evaluator code at the dispatched `github.sha`, checks out the
+candidate separately as read-only untrusted data, rejects links, submodules, and
+other non-regular Git modes, requires immutable evaluator files to match by
+SHA-256, and permits configuration differences only through the trusted hash
+allowlist. It never executes candidate scripts, actions, package hooks, tests,
+or workflows.
 
 The `codex-skill-evaluation` environment must contain `OPENAI_API_KEY`; enter or
 rotate it locally without displaying it:
@@ -206,7 +219,11 @@ gh workflow run codex-skill-behavior.yml --ref master `
 
 Only the trusted collector step receives the secret. Dependencies are installed
 from the committed lock with `npm ci --ignore-scripts --no-audit --no-fund`.
-The uploaded artifact contains the sanitized evaluation, evaluator hashes,
+All observations, evidence, and artifact inputs are created under a new
+run-ID/run-attempt-specific directory in `runner.temp`; pre-existing, linked,
+reparsed, device-backed, traversing, or candidate-owned output paths fail closed.
+The upload action receives an explicit allowlist of trusted regular files rather
+than a directory. The uploaded artifact contains the sanitized evaluation, evaluator hashes,
 runtime bootstrap metadata, exact Node and Codex package/file-hash provenance,
 a CycloneDX dependency inventory, and the workflow identity record; it excludes
 prompts, raw observations, model transcripts, environment dumps, and credentials. The

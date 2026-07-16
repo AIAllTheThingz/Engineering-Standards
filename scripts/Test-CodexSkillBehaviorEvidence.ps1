@@ -38,14 +38,14 @@ try {
     if (-not ($raw | Test-Json -SchemaFile $schemaPath -ErrorAction Stop)) { throw 'Evidence does not satisfy the behavior evidence JSON schema.' }
     $evidence = $raw | ConvertFrom-Json
     $inputs = Get-CodexBehaviorInput -Path $root
-    $config = Import-PowerShellDataFile -LiteralPath (Join-Path $root $inputs.ConfigurationPath)
+    $config = $inputs.Configuration
     foreach ($property in @('schemaVersion','evidenceKind','evaluatorVersion','scoringContractVersion','configurationId','configurationHash','evaluatorHash','corpusHash','skillInputHash','authorityHash','evaluatedCommitSha','executionMode','probabilistic','deterministicStructureStatus','status','caseOutcomes','aggregates','humanAdjudication','decision','notRunReason','blockedReason','limitations')) {
         if ($evidence.PSObject.Properties.Name -notcontains $property) { throw "Evidence is missing required property '$property'." }
     }
     if ($evidence.status -notin @('Passed','Failed','NotRun','Blocked','NotApplicable')) { throw 'Evidence uses a noncanonical status.' }
     if (-not $evidence.probabilistic -or ($evidence.limitations -join ' ') -notmatch 'not deterministic proof') { throw 'Evidence must explicitly identify probabilistic limitations.' }
     if ($evidence.configurationId -ne $config.ConfigurationId -or $evidence.evaluatorVersion -ne $config.EvaluatorVersion -or $evidence.scoringContractVersion -ne $config.ScoringContractVersion) { throw 'Evidence version or approved configuration identity is stale.' }
-    if ($evidence.configurationHash -ne (Get-BoundedInputHash -Root $root -RelativePaths @($inputs.ConfigurationPath))) { throw 'Evidence configuration hash is stale or fabricated.' }
+    if ($evidence.configurationHash -ne $inputs.ConfigurationHash) { throw 'Evidence configuration hash is stale or fabricated.' }
     if ($evidence.evaluatorHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.EvaluatorPaths)) { throw 'Evidence evaluator hash is stale or fabricated.' }
     if ($evidence.corpusHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.CorpusPaths)) { throw 'Evidence corpus hash is stale or fabricated.' }
     if ($evidence.skillInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.SkillPaths)) { throw 'Evidence skill input hash is stale or fabricated.' }

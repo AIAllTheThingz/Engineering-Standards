@@ -99,14 +99,19 @@ repository plan supports them. Check whether the environment secret exists
 without reading its value; if it is absent, stop and have an authorized operator
 run `gh secret set OPENAI_API_KEY --env codex-skill-evaluation` locally.
 
-Review every update for manual-only triggering, exact read permissions,
-default-branch and repository guards, credential-free separate checkouts,
-candidate symlink rejection, evaluator SHA-256 equality, non-execution of
-candidate content, step-only secret scope, lifecycle-disabled npm installation,
+Review every update for manual-only triggering, exact read permissions, a
+non-secret fail-closed guard job for repository/event/default-branch/ref/SHA,
+environment access only after guard success, credential-free separate checkouts,
+read-only candidate data, rejection of every non-regular Git mode, immutable
+evaluator SHA-256 equality, exact configuration-hash allowlisting, bounded input
+metadata before parsing, non-execution of candidate content, step-only secret
+scope, lifecycle-disabled npm installation,
 exact Node and Codex version verification, installed-package file hashes,
-CycloneDX inventory, sanitized artifact contents, and upload-before-enforcement ordering. The pinned
+CycloneDX inventory, new run-specific `runner.temp` output roots, explicit
+regular-file artifact allowlisting, and upload-before-enforcement ordering. The pinned
 Codex package and integrity-bearing lock live under
-`.github/dependencies/codex-evaluator/`. Never upload raw observations or alter
+`.github/dependencies/codex-evaluator/`, alongside the evaluator trust policy.
+Never upload candidate-owned files, raw observations, or alter
 the generated `Pending` human-adjudication record. A hosted result is usable only
 after its artifact, run metadata, candidate SHA, schemas, evaluator and
 dependency provenance hashes, CycloneDX inventory, and conclusion are independently verified.

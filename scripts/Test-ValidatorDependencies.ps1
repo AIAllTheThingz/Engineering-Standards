@@ -137,6 +137,39 @@ try {
             $results.Add([ordered]@{ ruleId='DEP022'; status='Failed'; message='Trusted Codex evaluator workflow must use locked runtimes, lifecycle-disabled npm install, exact CLI verification, file-hash provenance, and CycloneDX inventory.'; path='.github/workflows/codex-skill-behavior.yml' })
         }
     }
+    $codexPolicyRelativePath = '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
+    $codexPolicyPath = Join-Path $root $codexPolicyRelativePath
+    if (-not (Test-Path -LiteralPath $codexPolicyPath -PathType Leaf)) {
+        $results.Add([ordered]@{ ruleId='DEP023'; status='Failed'; message='Trusted Codex evaluator trust policy is missing.'; path=$codexPolicyRelativePath })
+    }
+    else {
+        try {
+            $policy = Import-PowerShellDataFile -LiteralPath $codexPolicyPath
+            $approvedHashes = @($policy.ApprovedConfigurations | ForEach-Object { [string]$_.Sha256 })
+            $requiredLimits = @(
+                'MaximumConfigurationBytes','MaximumPromptFileCount','MaximumPromptBytesPerFile','MaximumPromptCharacters',
+                'MaximumSkillFileCount','MaximumSkillBytesPerFile','MaximumAggregateSkillBytes','MaximumAuthorityFileBytes',
+                'MaximumAggregateAuthorityBytes','MaximumCaseIdLength','MaximumSkillNameLength','MaximumCategoryLength',
+                'MaximumRationaleCharacters','MaximumDeterministicAssertions','MaximumDeterministicAssertionLength'
+            )
+            if ([string]$policy.SchemaVersion -cne '1.0.0' -or
+                [string]$policy.ConfigurationPath -cne 'governance/codex-skill-behavior-evaluation.psd1' -or
+                $codexPolicyRelativePath -notin @($policy.EvaluatorPaths) -or
+                [string]$policy.ConfigurationPath -in @($policy.EvaluatorPaths) -or
+                @($policy.ApprovedConfigurations).Count -ne 2 -or
+                '26edd6a335bfcc359e32f35959cf1a5bd514125f0fd94d88b688083c782f1515' -notin $approvedHashes -or
+                '9a24ce3d74448b2787e3470dbb9cace027aa5ae9fddbeff507a0019ccd700de6' -notin $approvedHashes -or
+                @($approvedHashes | Where-Object { $_ -cnotmatch '^[0-9a-f]{64}$' }).Count -gt 0 -or
+                @($requiredLimits | Where-Object { -not $policy.InputLimits.ContainsKey($_) -or [long]$policy.InputLimits[$_] -lt 1 }).Count -gt 0 -or
+                @($policy.InputLimits.ApprovedCategories).Count -lt 1 -or
+                @($policy.InputLimits.ApprovedDeterministicAssertions).Count -lt 1) {
+                $results.Add([ordered]@{ ruleId='DEP023'; status='Failed'; message='Trusted Codex evaluator policy must separate approved configuration hashes from immutable evaluator paths and declare all positive input bounds.'; path=$codexPolicyRelativePath })
+            }
+        }
+        catch {
+            $results.Add([ordered]@{ ruleId='DEP023'; status='Failed'; message="Trusted Codex evaluator policy is malformed: $($_.Exception.Message)"; path=$codexPolicyRelativePath })
+        }
+    }
 }
 catch {
     $results.Add([ordered]@{ ruleId='DEP001'; status='Failed'; message=$_.Exception.Message; path=$LockFile })
