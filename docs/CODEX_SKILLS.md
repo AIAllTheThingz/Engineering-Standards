@@ -43,11 +43,17 @@ Official Codex documentation:
 
 Repository validation is defined in [Codex Skill Validation](CODEX_SKILL_VALIDATION.md). It deliberately applies stricter governed-tree rules than general Codex discovery and separates deterministic structure from model behavior evaluation.
 
-## Current Skill
+## Current Skills
 
-The first implemented skill is [`enterprise-powershell`](../.agents/suspended-skills/enterprise-powershell/SKILL.md); it is currently outside the discoverable active-skills root while suspended.
+[`powershell-review`](../.agents/skills/powershell-review/SKILL.md) reviews existing PowerShell diffs, pull requests, commits, scripts, modules, manifests, tests, or repository scopes against applicable governance and `agents/AGENTS_PowerShell.md`. It reports prioritized evidence-backed findings without modifying reviewed files or executing production automation.
 
-It creates or substantially modifies governed enterprise PowerShell automation, including project structure, configuration, credential handling, safe operating modes, reporting, tests, documentation, validation, and completion evidence.
+Explicit invocation example:
+
+```text
+$powershell-review Review this PowerShell pull request and report findings only.
+```
+
+[`enterprise-powershell`](../.agents/suspended-skills/enterprise-powershell/SKILL.md) creates or substantially modifies governed enterprise PowerShell automation, including project structure, configuration, credential handling, safe operating modes, reporting, tests, documentation, validation, and completion evidence. It remains outside the discoverable active-skills root while suspended.
 
 Explicit invocation example:
 
@@ -253,9 +259,9 @@ A skill installed without its governing context is incomplete. If central standa
 
 ## Planned Skill Sequence
 
-`enterprise-powershell` is implemented but currently Suspended outside the discoverable `.agents/skills` root by the checked
+`powershell-review` is implemented as the first focused findings-only review skill. `enterprise-powershell` is implemented but currently Suspended outside the discoverable `.agents/skills` root by the checked
 `Blocked` controlled behavior result. It may return to Active only after a
-passing unchanged-input live evaluation and attributable human approval. The remaining planned skills are owned by
+passing unchanged-input live evaluation and attributable human approval. The remaining skill sequence is owned by
 GitHub issues rather than prose-only checklist entries. Live issue state,
 acceptance criteria, dependencies, and delivery decisions are authoritative;
 this table records the stable recommended sequence only.

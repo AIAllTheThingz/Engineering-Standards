@@ -1,0 +1,6 @@
+interface:
+  display_name: "PowerShell Review"
+  short_description: "Review governed PowerShell changes safely"
+  default_prompt: "Use $powershell-review to review this PowerShell change and report prioritized findings with evidence."
+policy:
+  allow_implicit_invocation: true

@@ -19,8 +19,8 @@ The published GitHub Release body retains stale preparation-era statements that 
 
 Current `master` contains development after the published target. The authoritative inventory is [`CHANGELOG.md` `[Unreleased]`](../CHANGELOG.md#unreleased). The root `VERSION` remains `1.1.0` because it identifies the latest published release, not the moving development head.
 
-Post-release implementation includes the enterprise PowerShell Codex skill,
-the controlled skill behavior evaluator, cross-repository reusable-workflow
+Post-release implementation includes the enterprise PowerShell and PowerShell
+review Codex skills, the controlled skill behavior evaluator, cross-repository reusable-workflow
 repair, trusted pin rotation, downstream canary gate, and specific bootstrap
 failure evidence. None is part of `v1.1.0`. Issue #25 completed the release
 lifecycle controls; it did not approve, tag, or publish the planned `1.2.0`, so

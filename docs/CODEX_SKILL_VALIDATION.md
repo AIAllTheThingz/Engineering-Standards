@@ -10,7 +10,7 @@ Deterministic checks can pass while model selection and response-quality evaluat
 
 | Rule | Required input | Positive example | Negative example | Failure status | Severity | Kind |
 | --- | --- | --- | --- | --- | --- | --- |
-| SKL001 | `.agents/skills/<name>` | `enterprise-powershell` | `PowerShell_Tools`, linked directory | `Failed` or `Blocked` for inaccessible traversal | error | Deterministic |
+| SKL001 | `.agents/skills/<name>` | `powershell-review` | `PowerShell_Tools`, linked directory | `Failed` or `Blocked` for inaccessible traversal | error | Deterministic |
 | SKL002 | Skill directory | One regular bounded `SKILL.md` | missing, empty, linked, duplicate-by-case | `Failed` | error | Deterministic |
 | SKL003 | Frontmatter | Closed mapping parsed by safe YAML loader | malformed YAML, duplicate keys, tags, excess depth | `Failed` | error | Deterministic |
 | SKL004 | `name` | Exact lowercase directory match | normalization, missing name, mismatch | `Failed` | error | Deterministic |

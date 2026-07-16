@@ -6,6 +6,10 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
+- Added the Issue #43 `powershell-review` Codex skill for findings-only review
+  of existing PowerShell changes, with explicit remediation boundaries,
+  prioritized evidence-backed output, sanitized examples, controlled prompt
+  fixtures, deterministic validation, and PowerShell-standard coverage.
 - Added the Issue #42 versioned controlled Codex skill behavior evaluator,
   approved model and sampling contract, sanitized portable evidence schema,
   fail-closed evidence verifier, aggregate `CodexSkills` gate, governed secret and
