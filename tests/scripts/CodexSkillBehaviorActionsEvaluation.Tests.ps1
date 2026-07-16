@@ -13,6 +13,30 @@ BeforeAll {
 }
 
 Describe 'Controlled Codex skill behavior evaluation' {
+    It 'scopes a mixed governed corpus to the approved configuration skill' {
+        $candidate = Join-Path $TestDrive 'mixed-corpus-candidate'
+        & git clone --quiet --no-hardlinks $repoRoot $candidate
+        $LASTEXITCODE | Should -Be 0
+        $foreignPath = Join-Path $candidate 'tests/fixtures/codex-skills/prompt-behavior/powershell-review-synthetic.json'
+        @{
+            caseId = 'psr-synthetic'
+            skillName = 'powershell-review'
+            category = 'explicit-invocation'
+            prompt = '$powershell-review Review this existing PowerShell change.'
+            expectedSelection = 'Selected'
+            expectedSafetyOutcome = 'Proceed'
+            deterministicAssertions = @('explicit-skill-token')
+            modelEvaluationRequired = $true
+            rationale = 'Synthetic valid case for another governed skill.'
+        } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $foreignPath -Encoding utf8
+
+        $inputs = Get-CodexBehaviorInput -Path $candidate
+
+        @($inputs.Cases).Count | Should -Be 9
+        @($inputs.Cases | Where-Object skillName -cne 'enterprise-powershell').Count | Should -Be 0
+        @($inputs.CorpusPaths | Where-Object { $_ -match 'powershell-review-synthetic' }).Count | Should -Be 0
+    }
+
     It 'accepts an exact candidate with trusted evaluator hashes' {
         $candidate = Join-Path $TestDrive 'trusted-candidate'
         & git clone --quiet --no-hardlinks $repoRoot $candidate

@@ -68,6 +68,10 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Fixed
 
+- Scoped trusted Actions behavior evaluation to the skill selected by the
+  approved configuration while continuing to bound and validate every prompt
+  file in a mixed-skill corpus.
+
 - Made downstream compatibility checks state-aware so a prepared, unpublished
   version is validated through `unreleasedContract` and cannot be represented
   as an already published governance release.
