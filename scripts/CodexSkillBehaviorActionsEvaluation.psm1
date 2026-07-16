@@ -185,14 +185,14 @@ function Get-CodexBehaviorInput {
 
     $caseIds = @{}
     $requiredCaseKeys = @('caseId','skillName','category','prompt','expectedSelection','expectedSafetyOutcome','deterministicAssertions','modelEvaluationRequired','rationale')
-    $cases = foreach ($file in $corpusFiles) {
+    $caseEntries = foreach ($file in $corpusFiles) {
         try { $case = [IO.File]::ReadAllText($file.FullName) | ConvertFrom-Json -AsHashtable }
         catch { throw 'Prompt input is malformed JSON.' }
         if ($case.Count -ne $requiredCaseKeys.Count -or @($requiredCaseKeys | Where-Object { -not $case.ContainsKey($_) }).Count -gt 0) { throw 'Prompt input has missing or unexpected fields.' }
         if ([string]$case.caseId -cnotmatch '^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])$' -or ([string]$case.caseId).Length -gt [int]$limits.MaximumCaseIdLength) { throw 'Prompt case ID is unsafe or unbounded.' }
         if ($caseIds.ContainsKey([string]$case.caseId)) { throw 'Prompt case ID is duplicated.' }
         $caseIds[[string]$case.caseId] = $true
-        if ([string]::IsNullOrWhiteSpace([string]$case.skillName) -or ([string]$case.skillName).Length -gt [int]$limits.MaximumSkillNameLength -or [string]$case.skillName -cne [string]$config.Skill.Name) { throw 'Prompt skill name is not the approved configuration skill.' }
+        if ([string]::IsNullOrWhiteSpace([string]$case.skillName) -or ([string]$case.skillName).Length -gt [int]$limits.MaximumSkillNameLength) { throw 'Prompt skill name is empty or unbounded.' }
         if ([string]::IsNullOrWhiteSpace([string]$case.category) -or ([string]$case.category).Length -gt [int]$limits.MaximumCategoryLength -or [string]$case.category -notin @($limits.ApprovedCategories)) { throw 'Prompt category is not approved by trusted policy.' }
         if ([string]::IsNullOrWhiteSpace([string]$case.prompt) -or ([string]$case.prompt).Length -gt [int]$limits.MaximumPromptCharacters) { throw 'Prompt text exceeds the trusted character limit or is empty.' }
         if ([string]$case.expectedSelection -notin @($limits.ExpectedSelections) -or [string]$case.expectedSafetyOutcome -notin @($limits.ExpectedSafetyOutcomes)) { throw 'Prompt expected values are not approved by trusted policy.' }
@@ -202,12 +202,14 @@ function Get-CodexBehaviorInput {
             if ([string]::IsNullOrWhiteSpace([string]$assertion) -or ([string]$assertion).Length -gt [int]$limits.MaximumDeterministicAssertionLength -or [string]$assertion -notin @($limits.ApprovedDeterministicAssertions)) { throw 'Prompt deterministic assertion is not approved by trusted policy.' }
         }
         if ([string]::IsNullOrWhiteSpace([string]$case.rationale) -or ([string]$case.rationale).Length -gt [int]$limits.MaximumRationaleCharacters) { throw 'Prompt rationale is empty or unbounded.' }
-        [pscustomobject]$case
+        [pscustomobject]@{ Case = [pscustomobject]$case; File = $file }
     }
+    $selectedEntries = @($caseEntries | Where-Object { [string]$_.Case.skillName -ceq [string]$config.Skill.Name })
+    if ($selectedEntries.Count -lt 1) { throw "The governed prompt corpus has no cases for approved skill '$($config.Skill.Name)'." }
     [pscustomobject]@{
         Root = $root
-        Cases = @($cases)
-        CorpusPaths = @($corpusFiles | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.FullName).Replace('\','/') })
+        Cases = @($selectedEntries | ForEach-Object { $_.Case })
+        CorpusPaths = @($selectedEntries | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.File.FullName).Replace('\','/') })
         SkillPaths = $normalizedSkillPaths
         AuthorityPaths = $authorityPaths
         ConfigurationPath = [string]$policy.ConfigurationPath
