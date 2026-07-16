@@ -10,6 +10,11 @@ All notable changes to the Engineering Standards repository are recorded here. T
   approved model and sampling contract, sanitized portable evidence schema,
   fail-closed evidence verifier, aggregate `CodexSkills` gate, governed secret and
   destructive cases, and positive plus failure-path regression coverage.
+- Added the manual trusted default-branch Codex behavior workflow, exact
+  `@openai/codex` lock, candidate symlink and evaluator-hash gates, step-scoped
+  environment secret isolation, exact runtime and installed-package provenance,
+  CycloneDX inventory, sanitized artifact publication, and negative workflow
+  security tests needed to bootstrap current controlled evidence.
 
 - Added the Issue #25 machine-readable release lifecycle schema and read-only
   PreRelease, Publication, and PostRelease validator with immutable-head,

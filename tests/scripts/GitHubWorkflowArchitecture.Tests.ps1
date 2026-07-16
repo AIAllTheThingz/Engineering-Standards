@@ -33,9 +33,10 @@ function script:New-CurrentWorkflowFixture {
     param([Parameter(Mandatory)][string]$Name)
     $root = New-WorkflowFixture -Name $Name
     Set-FixtureFile -Root $root -RelativePath 'project-manifest.json' -Content (Get-Content -LiteralPath (Join-Path $script:repoRoot 'project-manifest.json') -Raw)
-    foreach ($relative in @('.github/workflows/governance-ci.yml','.github/workflows/governance-ci-reusable.yml','.github/workflows/governance-ci-candidate.yml')) {
+    foreach ($relative in @('.github/workflows/governance-ci.yml','.github/workflows/governance-ci-reusable.yml','.github/workflows/governance-ci-candidate.yml','.github/workflows/codex-skill-behavior.yml')) {
         Set-FixtureFile -Root $root -RelativePath $relative -Content (Get-Content -LiteralPath (Join-Path $script:repoRoot $relative) -Raw)
     }
+    Set-FixtureFile -Root $root -RelativePath 'governance/codex-skill-behavior-evaluation.psd1' -Content (Get-Content -LiteralPath (Join-Path $script:repoRoot 'governance/codex-skill-behavior-evaluation.psd1') -Raw)
     $root
 }
 
@@ -1140,6 +1141,117 @@ jobs:
         $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
         $LASTEXITCODE | Should -Not -Be 0
         $output -join "`n" | Should -Match 'must not execute commands from the caller working directory'
+    }
+}
+
+Describe 'Trusted Codex behavior workflow isolation' {
+    It 'rejects automatic triggers' {
+        $root = New-CurrentWorkflowFixture -Name 'codex-automatic-trigger'
+        $path = Join-Path $root '.github/workflows/codex-skill-behavior.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("on:`n  workflow_dispatch:", "on:`n  pull_request:`n  workflow_dispatch:")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'triggered only by workflow_dispatch'
+    }
+
+    It 'rejects workflow-scoped secret exposure' {
+        $root = New-CurrentWorkflowFixture -Name 'codex-workflow-secret'
+        $path = Join-Path $root '.github/workflows/codex-skill-behavior.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("permissions:`n  contents: read", "env:`n  OPENAI_API_KEY: `${{ secrets.OPENAI_API_KEY }}`n`npermissions:`n  contents: read")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'workflow scope|Only the trusted model collector'
+    }
+
+    It 'rejects job-scoped secret exposure' {
+        $root = New-CurrentWorkflowFixture -Name 'codex-job-secret'
+        $path = Join-Path $root '.github/workflows/codex-skill-behavior.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("    permissions:`n      contents: read`n    steps:", "    permissions:`n      contents: read`n    env:`n      OPENAI_API_KEY: `${{ secrets.OPENAI_API_KEY }}`n    steps:")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'job scope|Only the trusted model collector'
+    }
+
+    It 'rejects candidate code execution' {
+        $root = New-CurrentWorkflowFixture -Name 'codex-candidate-execution'
+        $path = Join-Path $root '.github/workflows/codex-skill-behavior.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("          `$ErrorActionPreference = 'Stop'`n          Import-Module ./trusted/scripts/CodexSkillBehaviorEvaluation.psm1 -Force", "          `$ErrorActionPreference = 'Stop'`n          & ./candidate/scripts/Test-CodexSkills.ps1`n          Import-Module ./trusted/scripts/CodexSkillBehaviorEvaluation.psm1 -Force")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'untrusted data'
+    }
+
+    It 'rejects candidate execution through <CaseName>' -ForEach @(
+        @{ CaseName = 'dot sourcing'; Command = '. ./candidate/scripts/extensionless' }
+        @{ CaseName = 'module import'; Command = 'Import-Module ./candidate/scripts/Candidate.psm1' }
+        @{ CaseName = 'process launch'; Command = 'Start-Process ./candidate/tools/runner' }
+        @{ CaseName = 'shell indirection'; Command = 'bash -c ./candidate/tools/runner' }
+        @{ CaseName = 'expression piping'; Command = 'Get-Content ./candidate/tools/runner | Invoke-Expression' }
+    ) {
+        $root = New-CurrentWorkflowFixture -Name "codex-candidate-$($CaseName.Replace(' ', '-'))"
+        $path = Join-Path $root '.github/workflows/codex-skill-behavior.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace(
+            "          `$ErrorActionPreference = 'Stop'`n          Import-Module ./trusted/scripts/CodexSkillBehaviorEvaluation.psm1 -Force",
+            "          `$ErrorActionPreference = 'Stop'`n          $Command`n          Import-Module ./trusted/scripts/CodexSkillBehaviorEvaluation.psm1 -Force"
+        )
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'untrusted data'
+    }
+
+    It 'rejects execution outside the trusted repository and default branch' {
+        $root = New-CurrentWorkflowFixture -Name 'codex-untrusted-context'
+        $path = Join-Path $root '.github/workflows/codex-skill-behavior.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("github.repository == 'AIAllTheThingz/Engineering-Standards'", "github.repository != 'AIAllTheThingz/Engineering-Standards'")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'trusted repository and default master branch'
+    }
+
+    It 'rejects removal of candidate symlink enforcement' {
+        $root = New-CurrentWorkflowFixture -Name 'codex-symlink-enforcement'
+        $path = Join-Path $root '.github/workflows/codex-skill-behavior.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace('Test-CodexBehaviorCandidateTrust', 'Get-CodexBehaviorInput')
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'reject symlinks'
+    }
+
+    It 'rejects npm lifecycle script enablement' {
+        $root = New-CurrentWorkflowFixture -Name 'codex-npm-lifecycle'
+        $path = Join-Path $root '.github/workflows/codex-skill-behavior.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace('npm ci --ignore-scripts --no-audit --no-fund', 'npm ci --no-audit --no-fund')
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'lifecycle scripts'
+    }
+
+    It 'rejects removal of evaluator dependency provenance' {
+        $root = New-CurrentWorkflowFixture -Name 'codex-dependency-provenance'
+        $path = Join-Path $root '.github/workflows/codex-skill-behavior.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace("bomFormat = 'CycloneDX'", "bomFormat = 'Omitted'")
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'hashed dependency provenance'
+    }
+
+    It 'rejects removal of trusted evaluator hash binding' {
+        $root = New-CurrentWorkflowFixture -Name 'codex-evaluator-hash'
+        $path = Join-Path $root '.github/workflows/codex-skill-behavior.yml'
+        $content = (Get-Content -LiteralPath $path -Raw).Replace('-TrustedPath ./trusted', '-TrustedPath ./candidate')
+        Set-Content -LiteralPath $path -Value $content -Encoding utf8
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $root -DefaultBranch master 2>&1)
+        $LASTEXITCODE | Should -Not -Be 0
+        $output -join "`n" | Should -Match 'evaluator hash'
     }
 }
 

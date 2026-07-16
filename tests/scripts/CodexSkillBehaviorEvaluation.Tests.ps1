@@ -13,6 +13,83 @@ BeforeAll {
 }
 
 Describe 'Controlled Codex skill behavior evaluation' {
+    It 'accepts an exact candidate with trusted evaluator hashes' {
+        $candidate = Join-Path $TestDrive 'trusted-candidate'
+        & git clone --quiet --no-hardlinks $repoRoot $candidate
+        $LASTEXITCODE | Should -Be 0
+        $inputs = Get-CodexBehaviorInput -Path $repoRoot
+        foreach ($relativePath in $inputs.EvaluatorPaths) {
+            Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
+        }
+        & git -C $candidate config user.email 'codex-evaluator@example.invalid'
+        & git -C $candidate config user.name 'Codex Evaluator Test'
+        & git -C $candidate add -- @($inputs.EvaluatorPaths)
+        & git -C $candidate commit --quiet -m 'test: synchronize evaluator inputs'
+        $sha = (& git -C $candidate rev-parse HEAD).Trim()
+
+        $result = Test-CodexBehaviorCandidateTrust -TrustedPath $repoRoot -CandidatePath $candidate -CandidateSha $sha
+
+        $result.status | Should -BeExactly 'Passed'
+        $result.candidateSha | Should -BeExactly $sha
+        @($result.evaluatorFiles).Count | Should -Be @($inputs.EvaluatorPaths).Count
+    }
+
+    It 'rejects a candidate evaluator hash mismatch' {
+        $candidate = Join-Path $TestDrive 'mismatched-candidate'
+        & git clone --quiet --no-hardlinks $repoRoot $candidate
+        $LASTEXITCODE | Should -Be 0
+        $inputs = Get-CodexBehaviorInput -Path $repoRoot
+        foreach ($relativePath in $inputs.EvaluatorPaths) {
+            Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
+        }
+        $modulePath = 'scripts/CodexSkillBehaviorEvaluation.psm1'
+        Add-Content -LiteralPath (Join-Path $candidate $modulePath) -Value '# synthetic mismatch'
+        & git -C $candidate config user.email 'codex-evaluator@example.invalid'
+        & git -C $candidate config user.name 'Codex Evaluator Test'
+        & git -C $candidate add -- @($inputs.EvaluatorPaths)
+        & git -C $candidate commit --quiet -m 'test: introduce evaluator mismatch'
+        $sha = (& git -C $candidate rev-parse HEAD).Trim()
+
+        { Test-CodexBehaviorCandidateTrust -TrustedPath $repoRoot -CandidatePath $candidate -CandidateSha $sha } |
+            Should -Throw '*evaluator hash mismatch*'
+    }
+
+    It 'rejects candidate-controlled evaluator configuration drift' {
+        $candidate = Join-Path $TestDrive 'configuration-drift-candidate'
+        & git clone --quiet --no-hardlinks $repoRoot $candidate
+        $LASTEXITCODE | Should -Be 0
+        $inputs = Get-CodexBehaviorInput -Path $repoRoot
+        foreach ($relativePath in $inputs.EvaluatorPaths) {
+            Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
+        }
+        Add-Content -LiteralPath (Join-Path $candidate $inputs.ConfigurationPath) -Value '# synthetic control-plane drift'
+        & git -C $candidate config user.email 'codex-evaluator@example.invalid'
+        & git -C $candidate config user.name 'Codex Evaluator Test'
+        & git -C $candidate add -- @($inputs.EvaluatorPaths)
+        & git -C $candidate commit --quiet -m 'test: alter evaluator configuration'
+        $sha = (& git -C $candidate rev-parse HEAD).Trim()
+
+        { Test-CodexBehaviorCandidateTrust -TrustedPath $repoRoot -CandidatePath $candidate -CandidateSha $sha } |
+            Should -Throw '*governance/codex-skill-behavior-evaluation.psd1*'
+    }
+
+    It 'rejects a candidate Git mode 120000 entry' {
+        $candidate = Join-Path $TestDrive 'symlink-candidate'
+        & git clone --quiet --no-hardlinks $repoRoot $candidate
+        $LASTEXITCODE | Should -Be 0
+        $target = Join-Path $candidate 'synthetic-link-target.txt'
+        Set-Content -LiteralPath $target -Value 'outside-target' -Encoding utf8
+        $blob = (& git -C $candidate hash-object -w -- 'synthetic-link-target.txt').Trim()
+        & git -C $candidate update-index --add --cacheinfo 120000 $blob 'synthetic-link'
+        & git -C $candidate config user.email 'codex-evaluator@example.invalid'
+        & git -C $candidate config user.name 'Codex Evaluator Test'
+        & git -C $candidate commit --quiet -m 'test: add synthetic symlink entry'
+        $sha = (& git -C $candidate rev-parse HEAD).Trim()
+
+        { Test-CodexBehaviorCandidateTrust -TrustedPath $repoRoot -CandidatePath $candidate -CandidateSha $sha } |
+            Should -Throw '*mode 120000*'
+    }
+
     It 'keeps the live adapter authority-complete and malformed output non-retryable' {
         $runner = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorModel.ps1') -Raw
         $runner | Should -Match 'inputs\.AuthorityPaths'
@@ -21,6 +98,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Match '\$retrySuppressed = \$true'
         $runner | Should -Match 'OverallTimeoutSeconds'
         $runner | Should -Match 'overallDeadline'
+        $runner | Should -Match 'SecretRedaction'
+        $runner | Should -Match '\.Contains\(\$credential, \[StringComparison\]::Ordinal\)'
         $runner | Should -Not -Match 'Case category:'
         $runner | Should -Not -Match 'Copy-Item -LiteralPath \(Join-Path \$root ''\.agents''\)'
         $runner | Should -Match 'foreach \(\$skillInput in \$inputs\.SkillPaths\)'

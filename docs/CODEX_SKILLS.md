@@ -186,6 +186,33 @@ ambiguity, governance bypass, secret exposure, and destructive defaults.
 Evidence retains the final sanitized sample outcome, attempt count, and failure
 reason; transient raw attempt output is not retained or claimed as preserved.
 
+The trusted hosted path is the manual
+[`Codex Skill Behavior Evaluation`](../.github/workflows/codex-skill-behavior.yml)
+workflow. It can be dispatched only from protected `master` with an exact
+lowercase candidate commit SHA. The workflow checks out trusted evaluator code
+at the dispatched `github.sha`, checks out the candidate separately as
+untrusted data, rejects candidate symlinks, and requires every candidate
+evaluator file to match the trusted evaluator by SHA-256. It never executes
+candidate scripts, actions, package hooks, tests, or workflows.
+
+The `codex-skill-evaluation` environment must contain `OPENAI_API_KEY`; enter or
+rotate it locally without displaying it:
+
+```powershell
+gh secret set OPENAI_API_KEY --env codex-skill-evaluation
+gh workflow run codex-skill-behavior.yml --ref master `
+  -f candidate_sha=<lowercase-40-character-sha>
+```
+
+Only the trusted collector step receives the secret. Dependencies are installed
+from the committed lock with `npm ci --ignore-scripts --no-audit --no-fund`.
+The uploaded artifact contains the sanitized evaluation, evaluator hashes,
+runtime bootstrap metadata, exact Node and Codex package/file-hash provenance,
+a CycloneDX dependency inventory, and the workflow identity record; it excludes
+prompts, raw observations, model transcripts, environment dumps, and credentials. The
+artifact uploads before final fail-closed enforcement. Automation leaves human
+adjudication `Pending` and cannot manufacture approval.
+
 Every incomplete, unavailable, timed-out, malformed, contradictory, or unsafe
 sample fails closed. Replay is always `NotRun`. Valid evidence may honestly
 contain an underlying `Blocked` result; evidence-contract validation does not

@@ -42,11 +42,79 @@ function Get-CodexBehaviorInput {
     [pscustomobject]@{
         Root = $root
         Cases = @($cases)
-        CorpusPaths = @($corpus | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.FullName) })
-        SkillPaths = @($skillFiles | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.FullName) })
+        CorpusPaths = @($corpus | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.FullName).Replace('\','/') })
+        SkillPaths = @($skillFiles | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.FullName).Replace('\','/') })
         AuthorityPaths = $authorityPaths
         ConfigurationPath = 'governance/codex-skill-behavior-evaluation.psd1'
-        EvaluatorPaths = @('scripts/CodexSkillBehaviorEvaluation.psm1', 'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1', 'scripts/Invoke-CodexSkillBehaviorModel.ps1', 'scripts/Test-CodexSkillBehaviorEvidence.ps1', 'schemas/codex-skill-behavior-evaluation.schema.json', 'schemas/codex-skill-behavior-observation.schema.json')
+        EvaluatorPaths = @('governance/codex-skill-behavior-evaluation.psd1', 'scripts/CodexSkillBehaviorEvaluation.psm1', 'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1', 'scripts/Invoke-CodexSkillBehaviorModel.ps1', 'scripts/Test-CodexSkillBehaviorEvidence.ps1', 'schemas/codex-skill-behavior-evaluation.schema.json', 'schemas/codex-skill-behavior-observation.schema.json')
+    }
+}
+
+function Test-CodexBehaviorCandidateTrust {
+    <#
+    .SYNOPSIS
+    Validates an untrusted candidate checkout before controlled evaluation.
+    .DESCRIPTION
+    Binds the candidate checkout to an exact lowercase commit SHA, rejects Git
+    symlink entries, and requires every evaluator input declared by the trusted
+    module to be byte-identical to the trusted evaluator checkout.
+    .PARAMETER TrustedPath
+    Trusted default-branch evaluator checkout.
+    .PARAMETER CandidatePath
+    Candidate checkout that is treated strictly as untrusted data.
+    .PARAMETER CandidateSha
+    Exact lowercase 40-character candidate commit SHA.
+    .EXAMPLE
+    Test-CodexBehaviorCandidateTrust -TrustedPath ./trusted -CandidatePath ./candidate -CandidateSha ('a' * 40)
+    .INPUTS
+    None.
+    .OUTPUTS
+    PSCustomObject containing only sanitized identities and evaluator hashes.
+    .NOTES
+    This function reads and hashes candidate files. It never imports or executes
+    candidate scripts, actions, package hooks, or workflow content.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$TrustedPath,
+        [Parameter(Mandatory)][string]$CandidatePath,
+        [Parameter(Mandatory)][ValidatePattern('^[0-9a-f]{40}$')][string]$CandidateSha
+    )
+
+    $trustedRoot = (Resolve-Path -LiteralPath $TrustedPath).Path
+    $candidateRoot = (Resolve-Path -LiteralPath $CandidatePath).Path
+    $candidateHead = (& git -C $candidateRoot rev-parse HEAD 2>$null).Trim()
+    if ($LASTEXITCODE -ne 0 -or $candidateHead -cne $CandidateSha) {
+        throw 'Candidate checkout HEAD does not match the exact requested SHA.'
+    }
+
+    $indexEntries = @(& git -C $candidateRoot ls-files --stage 2>$null)
+    if ($LASTEXITCODE -ne 0) { throw 'Candidate Git index could not be inspected safely.' }
+    if (@($indexEntries | Where-Object { $_ -match '^120000\s' }).Count -gt 0) {
+        throw 'Candidate checkout contains a prohibited Git mode 120000 symbolic link.'
+    }
+
+    $inputs = Get-CodexBehaviorInput -Path $candidateRoot
+    $hashes = foreach ($relativePath in $inputs.EvaluatorPaths) {
+        $trustedFile = Join-Path $trustedRoot $relativePath
+        $candidateFile = Join-Path $candidateRoot $relativePath
+        if (-not (Test-Path -LiteralPath $trustedFile -PathType Leaf)) { throw "Trusted evaluator file is missing: $relativePath" }
+        if (-not (Test-Path -LiteralPath $candidateFile -PathType Leaf)) { throw "Candidate evaluator file is missing: $relativePath" }
+        $trustedHash = (Get-FileHash -LiteralPath $trustedFile -Algorithm SHA256).Hash.ToLowerInvariant()
+        $candidateHash = (Get-FileHash -LiteralPath $candidateFile -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($candidateHash -cne $trustedHash) { throw "Candidate evaluator hash mismatch: $relativePath" }
+        [pscustomobject]@{ path = $relativePath.Replace('\','/'); sha256 = $trustedHash }
+    }
+
+    $trustedHead = (& git -C $trustedRoot rev-parse HEAD 2>$null).Trim()
+    if ($LASTEXITCODE -ne 0 -or $trustedHead -notmatch '^[0-9a-f]{40}$') { throw 'Trusted evaluator checkout identity is invalid.' }
+    [pscustomobject]@{
+        schemaVersion = '1.0.0'
+        status = 'Passed'
+        trustedSha = $trustedHead
+        candidateSha = $candidateHead
+        symlinkEntries = 0
+        evaluatorFiles = @($hashes)
     }
 }
 
@@ -199,4 +267,4 @@ function Invoke-CodexSkillBehaviorEvaluation {
     }
 }
 
-Export-ModuleMember -Function Get-Sha256String, Get-BoundedInputHash, Get-CodexBehaviorInput, Invoke-CodexSkillBehaviorEvaluation
+Export-ModuleMember -Function Get-Sha256String, Get-BoundedInputHash, Get-CodexBehaviorInput, Test-CodexBehaviorCandidateTrust, Invoke-CodexSkillBehaviorEvaluation

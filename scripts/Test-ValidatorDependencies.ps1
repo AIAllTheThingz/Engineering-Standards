@@ -94,6 +94,49 @@ try {
             }
         }
     }
+
+    $codexDependencyRoot = Join-Path $root '.github/dependencies/codex-evaluator'
+    $codexPackagePath = Join-Path $codexDependencyRoot 'package.json'
+    $codexLockPath = Join-Path $codexDependencyRoot 'package-lock.json'
+    $codexWorkflowPath = Join-Path $root '.github/workflows/codex-skill-behavior.yml'
+    if (-not (Test-Path -LiteralPath $codexPackagePath -PathType Leaf) -or -not (Test-Path -LiteralPath $codexLockPath -PathType Leaf)) {
+        $results.Add([ordered]@{ ruleId='DEP020'; status='Failed'; message='Trusted Codex evaluator package.json and package-lock.json are required.'; path='.github/dependencies/codex-evaluator' })
+    }
+    else {
+        try {
+            $codexPackage = Get-Content -LiteralPath $codexPackagePath -Raw | ConvertFrom-Json -AsHashtable
+            $codexLock = Get-Content -LiteralPath $codexLockPath -Raw | ConvertFrom-Json -AsHashtable
+            $rootLockPackage = $codexLock.packages['']
+            $codexLockPackage = $codexLock.packages['node_modules/@openai/codex']
+            if ([string]$codexPackage.dependencies['@openai/codex'] -cne '0.144.0-alpha.4' -or
+                [string]$rootLockPackage.dependencies['@openai/codex'] -cne '0.144.0-alpha.4' -or
+                [string]$codexLockPackage.version -cne '0.144.0-alpha.4' -or
+                [string]$codexLockPackage.resolved -cne 'https://registry.npmjs.org/@openai/codex/-/codex-0.144.0-alpha.4.tgz' -or
+                [string]$codexLockPackage.integrity -cne 'sha512-Uf915avv7ETTv5PFLPf+Bw2KICFXgW8M+5vMzoUlrJkcRlCOTs5FgzjLZPvawWOJqZEgFsrQuJeLMRog0XSxxQ==' -or
+                [int]$codexLock.lockfileVersion -ne 3 -or $codexPackage.ContainsKey('scripts')) {
+                $results.Add([ordered]@{ ruleId='DEP021'; status='Failed'; message='Trusted Codex evaluator dependency must use the exact reviewed package, registry artifact, integrity hash, lockfile version, and no package scripts.'; path='.github/dependencies/codex-evaluator/package-lock.json' })
+            }
+        }
+        catch {
+            $results.Add([ordered]@{ ruleId='DEP021'; status='Failed'; message="Trusted Codex evaluator dependency metadata is malformed: $($_.Exception.Message)"; path='.github/dependencies/codex-evaluator/package-lock.json' })
+        }
+    }
+    if (-not (Test-Path -LiteralPath $codexWorkflowPath -PathType Leaf)) {
+        $results.Add([ordered]@{ ruleId='DEP022'; status='Failed'; message='Trusted Codex evaluator workflow is missing.'; path='.github/workflows/codex-skill-behavior.yml' })
+    }
+    else {
+        $codexWorkflowText = Get-Content -LiteralPath $codexWorkflowPath -Raw
+        if ($codexWorkflowText -notmatch 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020' -or
+            $codexWorkflowText -notmatch 'node-version:\s*22\.17\.0' -or
+            $codexWorkflowText -notmatch 'Install-ValidatorRuntime\.ps1' -or
+            $codexWorkflowText -notmatch 'npm ci --ignore-scripts --no-audit --no-fund' -or
+            $codexWorkflowText -notmatch "codexVersion\s+-cne\s+'codex-cli 0\.144\.0-alpha\.4'" -or
+            $codexWorkflowText -notmatch 'codex-evaluator-provenance\.json' -or
+            $codexWorkflowText -notmatch 'codex-evaluator-sbom\.cdx\.json' -or
+            $codexWorkflowText -notmatch "bomFormat\s*=\s*'CycloneDX'") {
+            $results.Add([ordered]@{ ruleId='DEP022'; status='Failed'; message='Trusted Codex evaluator workflow must use locked runtimes, lifecycle-disabled npm install, exact CLI verification, file-hash provenance, and CycloneDX inventory.'; path='.github/workflows/codex-skill-behavior.yml' })
+        }
+    }
 }
 catch {
     $results.Add([ordered]@{ ruleId='DEP001'; status='Failed'; message=$_.Exception.Message; path=$LockFile })
