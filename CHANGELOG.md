@@ -40,6 +40,10 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Changed
 
+- Rotated governance, candidate, and pull-request self-CI plus the root contract
+  to immutable lifecycle-aware validator commit
+  `45b37196ace37566ab391d711978179d74705987` using the two-commit bootstrap
+  process.
 - Added an isolated trusted Actions evaluator with a reviewed configuration
   hash allowlist, immutable evaluator-policy binding, pre-parse candidate input
   bounds, non-regular Git mode rejection, a non-secret fail-closed dispatch
