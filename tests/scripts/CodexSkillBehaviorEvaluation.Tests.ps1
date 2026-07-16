@@ -242,7 +242,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $aggregate | Should -Match "\.agents/suspended-skills"
         $aggregate | Should -Match 'No governed active or suspended Codex skills directory'
         $codeowners = Get-Content -LiteralPath (Join-Path $repoRoot 'CODEOWNERS') -Raw
-        $codeowners | Should -Match '(?m)^/\.agents/skills/\s+@AIAllTheThingz\s+@mezuccolini\s+@megad00die
+        $codeowners | Should -Match '(?m)^/\.agents/skills/\s+@AIAllTheThingz\s+@mezuccolini\s+@megad00die$'
+    }
 
     It 'requires an explicit Approved decision for passing human adjudication' {
         $verifier = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Raw
