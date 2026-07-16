@@ -90,7 +90,7 @@ try {
         if (-not (Test-Path -LiteralPath $behaviorEvidence -PathType Leaf) -or -not (Test-Path -LiteralPath $behaviorConfiguration -PathType Leaf)) {
             Stop-CodexSkillsBehaviorGate 'Controlled behavior evidence and its approved configuration must be present together.' -Status Blocked
         }
-        & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $PSScriptRoot 'Test-CodexSkillBehaviorEvidence.ps1') -Path $root
+        & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $PSScriptRoot 'Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $root
         if ($LASTEXITCODE -ne 0) { Stop-CodexSkillsBehaviorGate 'Controlled behavior evidence verification failed.' -Status Blocked }
         $behavior = Get-Content -LiteralPath $behaviorEvidence -Raw | ConvertFrom-Json
         $approvedBehavior = Import-PowerShellDataFile -LiteralPath $behaviorConfiguration

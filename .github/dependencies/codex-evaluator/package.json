@@ -1,0 +1,13 @@
+{
+  "name": "engineering-standards-codex-evaluator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pinned Codex CLI dependency for the trusted skill behavior evaluator.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=16"
+  },
+  "dependencies": {
+    "@openai/codex": "0.144.0-alpha.4"
+  }
+}

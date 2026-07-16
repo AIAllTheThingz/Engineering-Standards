@@ -20,6 +20,54 @@ Describe 'Validator dependency integrity controls' {
         @($results | Where-Object ruleId -eq 'DEP000').Count | Should -Be 1
     }
 
+    It 'pins the trusted Codex evaluator package and lock integrity without package scripts' {
+        $package = Get-Content -LiteralPath (Join-Path $repoRoot '.github/dependencies/codex-evaluator/package.json') -Raw | ConvertFrom-Json -AsHashtable
+        $lock = Get-Content -LiteralPath (Join-Path $repoRoot '.github/dependencies/codex-evaluator/package-lock.json') -Raw | ConvertFrom-Json -AsHashtable
+        $lockedCodex = $lock.packages['node_modules/@openai/codex']
+
+        $package.dependencies['@openai/codex'] | Should -BeExactly '0.144.0-alpha.4'
+        $package.ContainsKey('scripts') | Should -BeFalse
+        $lock.lockfileVersion | Should -Be 3
+        $lockedCodex.version | Should -BeExactly '0.144.0-alpha.4'
+        $lockedCodex.integrity | Should -BeExactly 'sha512-Uf915avv7ETTv5PFLPf+Bw2KICFXgW8M+5vMzoUlrJkcRlCOTs5FgzjLZPvawWOJqZEgFsrQuJeLMRog0XSxxQ=='
+    }
+
+    It 'requires lifecycle-disabled npm installation in the trusted workflow' {
+        $workflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github/workflows/codex-skill-behavior.yml') -Raw
+        $workflow | Should -Match 'npm ci --ignore-scripts --no-audit --no-fund'
+        $workflow | Should -Not -Match '(?m)^\s*working-directory:\s*candidate(?:/|\\|\s|$)'
+    }
+
+    It 'requires exact evaluator provenance and CycloneDX artifact inventory' {
+        $workflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github/workflows/codex-skill-behavior.yml') -Raw
+        $workflow | Should -Match "nodeVersion\s+-cne\s+'v22\.17\.0'"
+        $workflow | Should -Match "codexVersion\s+-cne\s+'codex-cli 0\.144\.0-alpha\.4'"
+        $workflow | Should -Match 'codex-evaluator-provenance\.json'
+        $workflow | Should -Match 'codex-evaluator-sbom\.cdx\.json'
+        $workflow | Should -Match "bomFormat\s*=\s*'CycloneDX'"
+        $workflow | Should -Match 'Get-FileHash'
+    }
+
+    It 'hash-approves candidate configurations separately from immutable evaluator code and bounds all inputs' {
+        $policy = Import-PowerShellDataFile -LiteralPath (Join-Path $repoRoot '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1')
+        $hashes = @($policy.ApprovedConfigurations | ForEach-Object Sha256)
+
+        $policy.EvaluatorPaths | Should -Contain '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
+        $policy.EvaluatorPaths | Should -Contain 'scripts/CodexSkillBehaviorActionsEvaluation.psm1'
+        $policy.EvaluatorPaths | Should -Contain 'scripts/Invoke-CodexSkillBehaviorActionsEvaluation.ps1'
+        $policy.EvaluatorPaths | Should -Contain 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1'
+        $policy.EvaluatorPaths | Should -Contain 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1'
+        $policy.EvaluatorPaths | Should -Not -Contain 'scripts/CodexSkillBehaviorEvaluation.psm1'
+        $policy.EvaluatorPaths | Should -Not -Contain $policy.ConfigurationPath
+        $hashes | Should -Contain '26edd6a335bfcc359e32f35959cf1a5bd514125f0fd94d88b688083c782f1515'
+        $hashes | Should -Contain '9a24ce3d74448b2787e3470dbb9cace027aa5ae9fddbeff507a0019ccd700de6'
+        $policy.InputLimits.MaximumPromptFileCount | Should -BeGreaterThan 0
+        $policy.InputLimits.MaximumPromptBytesPerFile | Should -BeGreaterThan 0
+        $policy.InputLimits.MaximumAggregateSkillBytes | Should -BeGreaterThan 0
+        $policy.InputLimits.MaximumAggregateAuthorityBytes | Should -BeGreaterThan 0
+        @($policy.InputLimits.ApprovedCategories).Count | Should -BeGreaterThan 0
+    }
+
     It 'fails when the Python requirement hash does not match the dependency lock' {
         $lock = Import-ValidatorDependencyLock -Path (Join-Path $repoRoot '.github/dependencies/validator-dependencies.psd1')
         $requirementsPath = Join-Path $testRoot 'requirements.txt'

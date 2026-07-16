@@ -531,6 +531,193 @@ if ($isStandardsRepository) {
     }
 }
 
+$behaviorWorkflowPath = '.github/workflows/codex-skill-behavior.yml'
+$requiresBehaviorWorkflow = Test-Path -LiteralPath (Join-Path $root 'governance/codex-skill-behavior-evaluation.psd1') -PathType Leaf
+if ($workflows.ContainsKey($behaviorWorkflowPath)) {
+    $behaviorWorkflow = $workflows[$behaviorWorkflowPath]
+    $behaviorText = Get-Content -LiteralPath (Join-Path $root $behaviorWorkflowPath) -Raw
+    $behaviorOn = if ($behaviorWorkflow.ContainsKey('on')) { $behaviorWorkflow['on'] } else { $null }
+    if ($behaviorOn -isnot [hashtable] -or $behaviorOn.Count -ne 1 -or -not $behaviorOn.ContainsKey('workflow_dispatch')) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior workflow must be triggered only by workflow_dispatch.' -Path $behaviorWorkflowPath))
+    }
+    else {
+        $candidateInput = $behaviorOn.workflow_dispatch.inputs.candidate_sha
+        if ($candidateInput -isnot [hashtable] -or $candidateInput.required -ne $true -or [string]$candidateInput.type -ne 'string') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior workflow must require the string input candidate_sha.' -Path $behaviorWorkflowPath))
+        }
+    }
+    if ($behaviorWorkflow.permissions -isnot [hashtable] -or $behaviorWorkflow.permissions.Count -ne 1 -or [string]$behaviorWorkflow.permissions.contents -ne 'read') {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior workflow permissions must be exactly contents: read.' -Path $behaviorWorkflowPath))
+    }
+    if ($behaviorWorkflow.ContainsKey('env')) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior workflow must not expose secrets or environment values at workflow scope.' -Path $behaviorWorkflowPath))
+    }
+    if ($behaviorWorkflow.concurrency -isnot [hashtable] -or [string]$behaviorWorkflow.concurrency.group -ne 'codex-skill-behavior-${{ inputs.candidate_sha }}' -or [string]$behaviorWorkflow.concurrency['cancel-in-progress'] -ne 'false') {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior workflow concurrency must bind the exact candidate SHA without cancellation.' -Path $behaviorWorkflowPath))
+    }
+    if ($behaviorWorkflow.jobs -isnot [hashtable] -or $behaviorWorkflow.jobs.Count -ne 2 -or
+        -not $behaviorWorkflow.jobs.ContainsKey('guard') -or -not $behaviorWorkflow.jobs.ContainsKey('evaluate')) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior workflow must define exactly the non-secret guard and protected evaluate jobs.' -Path $behaviorWorkflowPath))
+    }
+    else {
+        $guardJob = $behaviorWorkflow.jobs.guard
+        $behaviorJob = $behaviorWorkflow.jobs.evaluate
+        if ($guardJob.ContainsKey('environment') -or $guardJob.ContainsKey('env') -or $guardJob.ContainsKey('secrets') -or $guardJob.ContainsKey('if') -or
+            $guardJob.permissions -isnot [hashtable] -or $guardJob.permissions.Count -ne 1 -or [string]$guardJob.permissions.contents -ne 'read') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior guard must be unskippable, non-secret, unprotected, and limited to contents: read.' -Path $behaviorWorkflowPath))
+        }
+        $guardSteps = @($guardJob.steps)
+        $dispatchGuard = @($guardSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Reject invalid dispatch context' })
+        $guardRun = if ($dispatchGuard.Count -eq 1) { [string]$dispatchGuard[0].run } else { '' }
+        $expectedGuardEnvironment = [ordered]@{
+            CANDIDATE_SHA = '${{ inputs.candidate_sha }}'
+            DEFAULT_BRANCH = '${{ github.event.repository.default_branch }}'
+            EVENT_NAME = '${{ github.event_name }}'
+            REPOSITORY = '${{ github.repository }}'
+            WORKFLOW_REF = '${{ github.ref }}'
+        }
+        $guardEnvironment = if ($dispatchGuard.Count -eq 1) { $dispatchGuard[0].env } else { $null }
+        if ($guardEnvironment -isnot [hashtable] -or $guardEnvironment.Count -ne $expectedGuardEnvironment.Count -or
+            @($expectedGuardEnvironment.Keys | Where-Object { -not $guardEnvironment.ContainsKey($_) -or [string]$guardEnvironment[$_] -cne [string]$expectedGuardEnvironment[$_] }).Count -gt 0) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior guard variables must bind exactly to trusted GitHub event contexts.' -Path $behaviorWorkflowPath))
+        }
+        foreach ($guardPattern in @(
+            "REPOSITORY\s+-cne\s+'AIAllTheThingz/Engineering-Standards'",
+            "EVENT_NAME\s+-cne\s+'workflow_dispatch'",
+            "DEFAULT_BRANCH\s+-cne\s+'master'",
+            "WORKFLOW_REF\s+-cne\s+'refs/heads/master'",
+            "CANDIDATE_SHA\s+-cnotmatch\s+'\^\[0-9a-f\]\{40\}\$'"
+        )) {
+            if ($guardRun -notmatch $guardPattern) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior guard must fail explicitly for every invalid repository, event, branch, ref, or candidate SHA.' -Path $behaviorWorkflowPath))
+                break
+            }
+        }
+        if (-not $behaviorJob.ContainsKey('needs') -or [string]$behaviorJob.needs -ne 'guard' -or $behaviorJob.ContainsKey('if')) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior evaluation must depend on the successful guard without a skippable job condition.' -Path $behaviorWorkflowPath))
+        }
+        if ([string]$behaviorJob.environment -ne 'codex-skill-evaluation') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior job must use the codex-skill-evaluation environment.' -Path $behaviorWorkflowPath))
+        }
+        if ($behaviorJob.permissions -isnot [hashtable] -or $behaviorJob.permissions.Count -ne 1 -or [string]$behaviorJob.permissions.contents -ne 'read') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior job permissions must be exactly contents: read.' -Path $behaviorWorkflowPath))
+        }
+        if ($behaviorJob.ContainsKey('env') -or $behaviorJob.ContainsKey('secrets')) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior job must not expose secrets or environment values at job scope.' -Path $behaviorWorkflowPath))
+        }
+        $behaviorSteps = @($behaviorJob.steps)
+        $trustedCheckout = @($behaviorSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Checkout trusted evaluator code' })
+        $candidateCheckout = @($behaviorSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Checkout candidate as untrusted data' })
+        if ($trustedCheckout.Count -ne 1 -or $trustedCheckout[0].uses -notmatch '^actions/checkout@[0-9a-f]{40}$' -or
+            [string]$trustedCheckout[0].with.repository -ne '${{ github.repository }}' -or [string]$trustedCheckout[0].with.ref -ne '${{ github.sha }}' -or
+            [string]$trustedCheckout[0].with.path -ne 'trusted' -or [string]$trustedCheckout[0].with['persist-credentials'] -ne 'false') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior trusted checkout must use github.sha in a separate credential-free trusted path.' -Path $behaviorWorkflowPath))
+        }
+        if ($candidateCheckout.Count -ne 1 -or $candidateCheckout[0].uses -notmatch '^actions/checkout@[0-9a-f]{40}$' -or
+            [string]$candidateCheckout[0].with.repository -ne '${{ github.repository }}' -or [string]$candidateCheckout[0].with.ref -ne '${{ inputs.candidate_sha }}' -or
+            [string]$candidateCheckout[0].with.path -ne 'candidate' -or [string]$candidateCheckout[0].with['persist-credentials'] -ne 'false') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior candidate checkout must use candidate_sha as untrusted data in a separate credential-free path.' -Path $behaviorWorkflowPath))
+        }
+        $initializeStep = @($behaviorSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Initialize fail-closed trusted output boundary' })
+        $stepNames = @($behaviorSteps | ForEach-Object { if ($_ -is [hashtable] -and $_.ContainsKey('name')) { [string]$_.name } })
+        $trustedIndex = [array]::IndexOf($stepNames, 'Checkout trusted evaluator code')
+        $initializeIndex = [array]::IndexOf($stepNames, 'Initialize fail-closed trusted output boundary')
+        $candidateIndex = [array]::IndexOf($stepNames, 'Checkout candidate as untrusted data')
+        if ($initializeStep.Count -ne 1 -or $trustedIndex -lt 0 -or $initializeIndex -le $trustedIndex -or $candidateIndex -le $initializeIndex -or
+            [string]$initializeStep[0].run -notmatch 'New-CodexBehaviorOutputRoot' -or
+            [string]$initializeStep[0].run -notmatch 'CODEX_BEHAVIOR_ARTIFACT_ROOT' -or
+            [string]$initializeStep[0].run -notmatch 'CODEX_BEHAVIOR_OBSERVATION_ROOT') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior workflow must create a new run-specific trusted output root after trusted checkout and before candidate checkout.' -Path $behaviorWorkflowPath))
+        }
+        $readonlyStep = @($behaviorSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Make candidate checkout read-only' })
+        if ($readonlyStep.Count -ne 1 -or [string]$readonlyStep[0].run -notmatch 'chmod\s+-R\s+a-w\s+\./candidate') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior workflow must make the candidate checkout read-only before evaluation.' -Path $behaviorWorkflowPath))
+        }
+        $trustStep = @($behaviorSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Validate candidate identity, file modes, configuration, and evaluator hashes' })
+        if ($trustStep.Count -ne 1 -or [string]$trustStep[0].run -notmatch 'Test-CodexBehaviorCandidateTrust' -or
+            [string]$trustStep[0].run -notmatch '-TrustedPath\s+\./trusted' -or [string]$trustStep[0].run -notmatch '-CandidatePath\s+\./candidate') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior workflow must reject prohibited modes, approve configuration, and compare evaluator hashes with trusted code.' -Path $behaviorWorkflowPath))
+        }
+        $dependencyStep = @($behaviorSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Install pinned trusted evaluator dependency' })
+        if ($dependencyStep.Count -ne 1 -or [string]$dependencyStep[0]['working-directory'] -ne 'trusted/.github/dependencies/codex-evaluator' -or
+            [string]$dependencyStep[0].run -notmatch '^npm ci --ignore-scripts --no-audit --no-fund\s*$') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior dependency install must use npm ci with lifecycle scripts, audit, and funding calls disabled in the trusted dependency directory.' -Path $behaviorWorkflowPath))
+        }
+        $provenanceStep = @($behaviorSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Verify pinned evaluator provenance' })
+        if ($provenanceStep.Count -ne 1 -or [string]$provenanceStep[0].run -notmatch "nodeVersion\s+-cne\s+'v22\.17\.0'" -or
+            [string]$provenanceStep[0].run -notmatch "codexVersion\s+-cne\s+'codex-cli 0\.144\.0-alpha\.4'" -or
+            [string]$provenanceStep[0].run -notmatch 'Get-FileHash' -or [string]$provenanceStep[0].run -notmatch "bomFormat\s*=\s*'CycloneDX'" -or
+            [string]$provenanceStep[0].run -notmatch 'codex-evaluator-provenance\.json' -or [string]$provenanceStep[0].run -notmatch 'codex-evaluator-sbom\.cdx\.json') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior workflow must verify exact Node and Codex versions and emit hashed dependency provenance plus a CycloneDX inventory.' -Path $behaviorWorkflowPath))
+        }
+        $collector = @($behaviorSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Collect trusted model observations' })
+        $secretReferences = [regex]::Matches($behaviorText, '\$\{\{\s*secrets\.OPENAI_API_KEY\s*\}\}')
+        if ($collector.Count -ne 1 -or $collector[0].env -isnot [hashtable] -or $collector[0].env.Count -ne 1 -or
+            [string]$collector[0].env.OPENAI_API_KEY -ne '${{ secrets.OPENAI_API_KEY }}' -or $secretReferences.Count -ne 1 -or
+            [string]$collector[0].run -notmatch 'trusted/scripts/Invoke-CodexSkillBehaviorActionsModel\.ps1' -or
+            [string]$collector[0].run -notmatch '-TrustedOutputRoot\s+\$env:CODEX_BEHAVIOR_OUTPUT_ROOT' -or
+            [string]$collector[0].run -notmatch '-OutputDirectory\s+\$env:CODEX_BEHAVIOR_OBSERVATION_ROOT') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Only the trusted model collector step may receive OPENAI_API_KEY.' -Path $behaviorWorkflowPath))
+        }
+        foreach ($step in $behaviorSteps) {
+            if ($step -isnot [hashtable]) { continue }
+            if (($step.ContainsKey('uses') -and [string]$step.uses -match '^\.?[/\\]candidate([/\\]|$)') -or
+                ($step.ContainsKey('working-directory') -and [string]$step['working-directory'] -match '^\.?[/\\]candidate([/\\]|$)')) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior workflow must not execute candidate actions, packages, or commands.' -Path $behaviorWorkflowPath))
+            }
+            if ($step.ContainsKey('run')) {
+                $runText = [string]$step.run
+                $candidateExecutionPatterns = @(
+                    '(?im)^\s*(?:&|\.)\s+["'']?\.?[/\\]candidate(?:[/\\]|["'']|\s|$)',
+                    '(?im)^\s*\.?[/\\]candidate[/\\][^\r\n\s]+(?:\s|$)',
+                    '(?im)^\s*(?:Import-Module|Start-Process|Invoke-Command)\b[^\r\n]*\.?[/\\]candidate(?:[/\\]|["'']|\s|$)',
+                    '(?im)^\s*(?:iex|Invoke-Expression)\b[^\r\n]*candidate',
+                    '(?im)^[^\r\n]*candidate[^\r\n]*\|\s*(?:iex|Invoke-Expression)\b',
+                    '(?im)^\s*(?:npm|npx|pwsh|powershell|python|bash|sh|node|dotnet)\b[^\r\n]*\.?[/\\]candidate(?:[/\\]|\s|$)'
+                )
+                if (@($candidateExecutionPatterns | Where-Object { $runText -match $_ }).Count -gt 0) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior workflow must treat candidate content only as untrusted data.' -Path $behaviorWorkflowPath))
+                }
+            }
+            if ($step.ContainsKey('continue-on-error')) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior workflow must not suppress step failures with continue-on-error.' -Path $behaviorWorkflowPath))
+            }
+        }
+        $stageStep = @($behaviorSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Stage sanitized artifact only' })
+        if ($stageStep.Count -ne 1 -or [string]$stageStep[0]['if'] -ne "always() && steps.initialize.outcome == 'success'" -or
+            [string]$stageStep[0].run -match '(?i)candidate[/\\]\.tmp|Copy-Item[^\r\n]*candidate' -or
+            [string]$stageStep[0].run -notmatch 'allowedNames' -or [string]$stageStep[0].run -notmatch 'Test-Json -SchemaFile') {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior artifact staging must validate only trusted output files and must never copy candidate files.' -Path $behaviorWorkflowPath))
+        }
+        $uploadIndex = [array]::IndexOf($stepNames, 'Upload sanitized behavior evidence')
+        $enforceIndex = [array]::IndexOf($stepNames, 'Enforce trusted evaluation result')
+        $uploadStep = @($behaviorSteps | Where-Object { $_ -is [hashtable] -and $_.name -eq 'Upload sanitized behavior evidence' })
+        $expectedUploadPaths = @(
+            '${{ steps.initialize.outputs.artifact-root }}/workflow-result.json',
+            '${{ steps.initialize.outputs.artifact-root }}/runtime-bootstrap.json',
+            '${{ steps.initialize.outputs.artifact-root }}/codex-evaluator-provenance.json',
+            '${{ steps.initialize.outputs.artifact-root }}/codex-evaluator-sbom.cdx.json',
+            '${{ steps.initialize.outputs.artifact-root }}/evaluator-hashes.json',
+            '${{ steps.initialize.outputs.artifact-root }}/codex-skill-behavior.json'
+        )
+        $actualUploadPaths = if ($uploadStep.Count -eq 1) { @(([string]$uploadStep[0].with.path -split "`r?`n") | ForEach-Object Trim | Where-Object { $_ }) } else { @() }
+        if ($uploadIndex -lt 0 -or $enforceIndex -le $uploadIndex -or $uploadStep.Count -ne 1 -or
+            [string]$uploadStep[0]['if'] -ne "always() && steps.initialize.outcome == 'success' && steps.stage.outcome == 'success'" -or
+            [string]$uploadStep[0].with['if-no-files-found'] -ne 'error' -or
+            $actualUploadPaths.Count -ne $expectedUploadPaths.Count -or
+            @($expectedUploadPaths | Where-Object { $_ -notin $actualUploadPaths }).Count -gt 0 -or
+            @($actualUploadPaths | Where-Object { $_ -match '(?i)candidate|(?:^|/)artifact(?:/)?$' }).Count -gt 0) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior workflow must upload only the explicit trusted sanitized files before final fail-closed enforcement.' -Path $behaviorWorkflowPath))
+        }
+    }
+    if ($behaviorText -match 'pull_request_target|secrets:\s*inherit|contents:\s*write|id-' + ('tok' + 'en') + ':\s*write') {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Codex behavior workflow contains a prohibited trigger, inherited secret, or elevated permission.' -Path $behaviorWorkflowPath))
+    }
+}
+elseif ($requiresBehaviorWorkflow) {
+    $results.Add((New-ValidationResult -Status Failed -Message 'Trusted Codex skill behavior workflow is missing.' -Path $behaviorWorkflowPath))
+}
+
 $reusable = '.github/workflows/governance-ci-reusable.yml'
 if ($workflows.ContainsKey($reusable)) {
     if (-not (Test-HasWorkflowCall -Workflow $workflows[$reusable])) {

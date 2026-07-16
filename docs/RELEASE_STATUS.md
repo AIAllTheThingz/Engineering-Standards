@@ -20,9 +20,17 @@ The published GitHub Release body retains stale preparation-era statements that 
 Current `master` contains development after the published target. The authoritative inventory is [`CHANGELOG.md` `[Unreleased]`](../CHANGELOG.md#unreleased). The root `VERSION` remains `1.1.0` because it identifies the latest published release, not the moving development head.
 
 Post-release implementation includes the enterprise PowerShell and PowerShell
-review Codex skills, the controlled skill behavior evaluator, cross-repository reusable-workflow
+review Codex skills, the controlled skill behavior evaluator, its trusted
+secret-backed GitHub Actions workflow, cross-repository reusable-workflow
 repair, trusted pin rotation, downstream canary gate, and specific bootstrap
-failure evidence. None is part of `v1.1.0`. Issue #25 completed the release
+failure evidence. None is part of `v1.1.0`. The trusted workflow is now on
+protected `master`, but hosted behavior evidence is valid only when produced by
+an authorized dispatch and independently verified; the bootstrap source changes
+did not themselves claim a hosted behavior run or artifact. The isolated hosted
+evaluator separates reviewed candidate configuration hashes from immutable
+evaluator code, validates bounded candidate data before selecting the configured
+skill's cases, fails invalid dispatches in a non-secret guard, and keeps output
+inside a trusted runner-temporary boundary. Issue #25 completed the release
 lifecycle controls; it did not approve, tag, or publish the planned `1.2.0`, so
 Issue #42's `1.2.0` target remains unreleased planning metadata.
 
