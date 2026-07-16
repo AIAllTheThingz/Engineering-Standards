@@ -90,10 +90,17 @@ try {
         if (-not (Test-Path -LiteralPath $behaviorEvidence -PathType Leaf) -or -not (Test-Path -LiteralPath $behaviorConfiguration -PathType Leaf)) {
             Stop-CodexSkillsBehaviorGate 'Controlled behavior evidence and its approved configuration must be present together.' -Status Blocked
         }
-        & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $PSScriptRoot 'Test-CodexSkillBehaviorEvidence.ps1') -Path $root
+        $approvedBehavior = Import-PowerShellDataFile -LiteralPath $behaviorConfiguration
+        $behaviorVerifier = switch ([string]$approvedBehavior.Skill.Name) {
+            'enterprise-powershell' { 'Test-CodexSkillBehaviorEvidence.ps1'; break }
+            'powershell-review' { 'Test-CodexSkillBehaviorActionsEvidence.ps1'; break }
+            default {
+                Stop-CodexSkillsBehaviorGate "Governed skill '$([string]$approvedBehavior.Skill.Name)' does not have an approved behavior-evidence verifier." -Status Blocked
+            }
+        }
+        & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $PSScriptRoot $behaviorVerifier) -Path $root
         if ($LASTEXITCODE -ne 0) { Stop-CodexSkillsBehaviorGate 'Controlled behavior evidence verification failed.' -Status Blocked }
         $behavior = Get-Content -LiteralPath $behaviorEvidence -Raw | ConvertFrom-Json
-        $approvedBehavior = Import-PowerShellDataFile -LiteralPath $behaviorConfiguration
         $report.modelEvaluationStatus = $behavior.status
         $verifiedBehaviorResult = [ordered]@{ ruleId='SKL020'; status=$behavior.status; severity=if($behavior.status -eq 'Passed'){'info'}else{'warning'}; message="Verified controlled behavior evidence reported '$($behavior.status)'; lifecycle enforcement was applied."; path='evidence/codex-skill-behavior.json'; skillName=[string]$approvedBehavior.Skill.Name; deterministic=$false; requiredValidation=$false; data=[ordered]@{ decisionAction=$behavior.decision.action; executionMode=$behavior.executionMode } }
         $report.results = @($report.results) + @($verifiedBehaviorResult)

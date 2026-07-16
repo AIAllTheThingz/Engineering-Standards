@@ -68,6 +68,10 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Fixed
 
+- Selected controlled behavior evidence verifiers by exact governed skill name,
+  preserving legacy `enterprise-powershell` evidence while routing
+  `powershell-review` to the isolated Actions verifier and blocking unknown
+  skills without a fallback.
 - Scoped trusted Actions behavior evaluation to the skill selected by the
   approved configuration while continuing to bound and validate every prompt
   file in a mixed-skill corpus.

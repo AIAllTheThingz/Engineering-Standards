@@ -178,6 +178,32 @@ Describe 'Codex skill validation' {
         Test-Path -LiteralPath $output -PathType Leaf | Should -BeTrue
     }
 
+    It 'selects only approved per-skill behavior verifiers and blocks unknown skills' {
+        $wrapperPath = Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1'
+        $wrapper = Get-Content -LiteralPath $wrapperPath -Raw
+        $wrapper | Should -Match "'enterprise-powershell' \{ 'Test-CodexSkillBehaviorEvidence\.ps1'; break \}"
+        $wrapper | Should -Match "'powershell-review' \{ 'Test-CodexSkillBehaviorActionsEvidence\.ps1'; break \}"
+        $wrapper | Should -Match "default \{\s+Stop-CodexSkillsBehaviorGate .* does not have an approved behavior-evidence verifier\."
+
+        $root = New-TestRepository -Name unknown-behavior-verifier -SkillName unknown-governed-skill
+        $configurationPath = Join-Path $root 'governance/codex-skill-behavior-evaluation.psd1'
+        $evidencePath = Join-Path $root 'evidence/codex-skill-behavior.json'
+        New-Item -ItemType Directory -Path (Split-Path -Parent $configurationPath),(Split-Path -Parent $evidencePath) -Force | Out-Null
+        "@{ Skill = @{ Name = 'unknown-governed-skill' } }" | Set-Content -LiteralPath $configurationPath -Encoding utf8
+        '{}' | Set-Content -LiteralPath $evidencePath -Encoding utf8
+        $output = Join-Path $root '.tmp/codex-skills-unknown-verifier.json'
+
+        & pwsh -NoProfile -File $wrapperPath -Path $root -OutputJson $output 2>$null
+
+        $LASTEXITCODE | Should -Be 1
+        $report = Get-Content -LiteralPath $output -Raw | ConvertFrom-Json
+        $report.modelEvaluationStatus | Should -BeExactly 'Blocked'
+        $finding = @($report.results | Where-Object ruleId -eq 'SKL020')
+        $finding.Count | Should -Be 1
+        $finding[0].status | Should -BeExactly 'Blocked'
+        $finding[0].message | Should -Match "Governed skill 'unknown-governed-skill'.*approved behavior-evidence verifier"
+    }
+
     It 'accepts minimal metadata, valid openai metadata, safe references, scripts, lifecycle, and explicit-only policy without executing scripts' {
         $root = New-TestRepository -Name valid -OpenAiYaml @'
 interface:
