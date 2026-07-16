@@ -321,7 +321,7 @@ jobs:
           $evidenceStatus = 'NotRun'
           if (Test-Path -LiteralPath $evidencePath -PathType Leaf) {
             if ($null -eq $trust) { throw 'Behavior evidence exists without a validated trust result.' }
-            $schemaPath = (Resolve-Path ./trusted/schemas/codex-skill-behavior.schema.json).Path
+            $schemaPath = (Resolve-Path ./trusted/schemas/codex-skill-behavior-evaluation.schema.json).Path
             $rawEvidence = Get-Content -LiteralPath $evidencePath -Raw
             if (-not ($rawEvidence | Test-Json -SchemaFile $schemaPath)) { throw 'Behavior evidence does not satisfy the trusted schema.' }
             $evidence = $rawEvidence | ConvertFrom-Json
