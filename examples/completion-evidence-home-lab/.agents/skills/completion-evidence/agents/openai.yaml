@@ -1,0 +1,6 @@
+interface:
+  display_name: "Completion Evidence"
+  short_description: "Assemble honest governed completion records"
+  default_prompt: "Use $completion-evidence to reconcile these synthetic validation results into an honest completion record."
+policy:
+  allow_implicit_invocation: true

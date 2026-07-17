@@ -1,0 +1,1 @@
+{"candidates":[{"id":"valid","manifestPresent":true,"documentationPresent":true},{"id":"invalid","manifestPresent":true,"documentationPresent":false,"candidateCommand":"Write-Output should-never-run","candidateValidator":"../../untrusted/validator.ps1"}]}

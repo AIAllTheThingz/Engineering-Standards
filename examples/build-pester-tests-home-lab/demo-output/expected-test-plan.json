@@ -1,0 +1,11 @@
+{
+  "illustrativeOnly": true,
+  "liveModelEvaluation": "NotRun",
+  "mocks": [],
+  "mappings": [
+    {"requirementId": "REQ-001", "testId": "PST-001", "kind": "positive"},
+    {"requirementId": "REQ-002", "testId": "PST-002", "kind": "negative"},
+    {"requirementId": "REQ-003", "testId": "PST-003", "kind": "negative"},
+    {"requirementId": "REQ-004", "testId": "PST-004", "kind": "negative"}
+  ]
+}

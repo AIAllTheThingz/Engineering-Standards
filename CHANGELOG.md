@@ -6,6 +6,12 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
+- Added six isolated, secret-free home-lab skill packages for
+  `build-pester-tests`, `safe-automation`, `governance-validation`,
+  `completion-evidence`, `vendor-documentation-analysis`, and
+  `infrastructure-automation-design`, with synthetic scenarios, nine-case
+  routing corpora, deterministic Pester and contract validation, immutable
+  workflow references, and honest live-behavior `NotRun` boundaries.
 - Added the Issue #42 versioned controlled Codex skill behavior evaluator,
   approved model and sampling contract, sanitized portable evidence schema,
   fail-closed evidence verifier, aggregate `CodexSkills` gate, governed secret and

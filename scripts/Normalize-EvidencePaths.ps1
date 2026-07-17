@@ -21,13 +21,16 @@ function ConvertTo-NormalizedEvidenceText {
     param([Parameter(Mandatory)][string]$Value)
 
     $normalized = $Value.Replace($root, '.').Replace($rootSlash, '.')
+    if ($normalized -match '^[A-Za-z]:[\\/]' -or $normalized.StartsWith('\\')) {
+        return $normalized
+    }
     if ($normalized.StartsWith('.\') -or $normalized.StartsWith('./')) {
-        return $normalized.Substring(2)
+        return $normalized.Substring(2).Replace('\','/')
     }
     if ($normalized.StartsWith('\') -and -not $normalized.StartsWith('\\')) {
-        return $normalized.Substring(1)
+        return $normalized.Substring(1).Replace('\','/')
     }
-    $normalized
+    $normalized.Replace('\','/')
 }
 
 function Update-NormalizedEvidenceNode {

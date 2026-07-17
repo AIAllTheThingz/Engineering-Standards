@@ -1,0 +1,1 @@
+{"validatedCommitSha":"1111111111111111111111111111111111111111","results":[{"command":"Invoke-Pester -Path tests","exitCode":0,"status":"Passed","passed":14,"failed":0,"skipped":0,"notRun":0},{"command":"Invoke-ScriptAnalyzer -Path . -Recurse -Severity Error","exitCode":3,"status":"NotRun","reason":"Tool is intentionally absent from the synthetic runner."}]}

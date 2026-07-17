@@ -82,6 +82,7 @@ Passing deterministic validation proves that the committed demo package is struc
 
 - PowerShell 7.2 or later for deterministic validation.
 - Pester 5.7.1, installed by the repository's hosted validation environment.
+- Python 3 with PyYAML for deterministic skill metadata validation.
 - Optional interactive Codex access for the visual demonstration.
 
 ## Related Files

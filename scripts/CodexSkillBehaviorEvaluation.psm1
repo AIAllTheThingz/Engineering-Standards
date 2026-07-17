@@ -42,8 +42,8 @@ function Get-CodexBehaviorInput {
     [pscustomobject]@{
         Root = $root
         Cases = @($cases)
-        CorpusPaths = @($corpus | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.FullName) })
-        SkillPaths = @($skillFiles | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.FullName) })
+        CorpusPaths = @($corpus | ForEach-Object { ([IO.Path]::GetRelativePath($root, $_.FullName)).Replace('\','/') })
+        SkillPaths = @($skillFiles | ForEach-Object { ([IO.Path]::GetRelativePath($root, $_.FullName)).Replace('\','/') })
         AuthorityPaths = $authorityPaths
         ConfigurationPath = 'governance/codex-skill-behavior-evaluation.psd1'
         EvaluatorPaths = @('scripts/CodexSkillBehaviorEvaluation.psm1', 'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1', 'scripts/Invoke-CodexSkillBehaviorModel.ps1', 'scripts/Test-CodexSkillBehaviorEvidence.ps1', 'schemas/codex-skill-behavior-evaluation.schema.json', 'schemas/codex-skill-behavior-observation.schema.json')

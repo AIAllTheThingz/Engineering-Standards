@@ -25,6 +25,13 @@ Describe 'GovernanceValidation module' {
             }
         }
 
+        It 'declares the complete Examples validation prerequisites' {
+            $examples = Get-GovernanceValidationCategoryRegistry | Where-Object Name -eq 'Examples'
+
+            @($examples.RequiredCommands) | Should -Contain 'python'
+            @($examples.RequiredPythonModules) | Should -Contain 'yaml'
+        }
+
         It 'keeps the aggregate Category parameter synchronized with the registry' {
             $repoRoot = (Resolve-Path "$PSScriptRoot/../..").Path
             $scriptCommand = Get-Command -Name (Join-Path $repoRoot 'scripts/Invoke-GovernanceValidation.ps1')

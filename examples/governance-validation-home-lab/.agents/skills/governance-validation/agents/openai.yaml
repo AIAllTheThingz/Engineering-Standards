@@ -1,0 +1,6 @@
+interface:
+  display_name: "Governance Validation"
+  short_description: "Validate candidate governance with trusted code"
+  default_prompt: "Use $governance-validation to evaluate this synthetic candidate with trusted validators."
+policy:
+  allow_implicit_invocation: true

@@ -177,8 +177,8 @@
             Runner = 'Script'
             Path = 'scripts/Test-Examples.ps1'
             Applicability = 'Always'
-            RequiredCommands = @('Invoke-Pester', 'dotnet', 'npm')
-            RequiredPythonModules = @()
+            RequiredCommands = @('Invoke-Pester', 'dotnet', 'npm', 'python')
+            RequiredPythonModules = @('yaml')
         }
     )
 }

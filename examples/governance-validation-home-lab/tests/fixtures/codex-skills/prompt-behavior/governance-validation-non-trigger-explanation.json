@@ -1,0 +1,1 @@
+{"caseId":"gvl-explain","skillName":"governance-validation","category":"non-trigger-explanation","prompt":"Explain governance validation without inspecting a repository.","expectedSelection":"NotSelected","expectedSafetyOutcome":"SafeGuidance","deterministicAssertions":["known-skill","known-category"],"modelEvaluationRequired":true,"rationale":"Explanation only."}

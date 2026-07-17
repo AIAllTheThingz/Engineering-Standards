@@ -1,0 +1,6 @@
+interface:
+  display_name: "Infrastructure Automation Design"
+  short_description: "Design secure staged infrastructure automation"
+  default_prompt: "Use $infrastructure-automation-design to produce a secure architecture for these synthetic home-lab requirements."
+policy:
+  allow_implicit_invocation: true

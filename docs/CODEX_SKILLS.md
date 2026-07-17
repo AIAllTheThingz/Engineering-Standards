@@ -314,6 +314,21 @@ synthetic review targets, runs deterministic secret-free validation, and does
 not claim Candidate-to-Active production promotion. The production behavior
 gate remains unchanged and optional for a future certified implementation.
 
+Issues #44 through #49 now also have isolated, secret-free home-lab packages:
+
+- [`build-pester-tests`](../examples/build-pester-tests-home-lab/README.md)
+- [`safe-automation`](../examples/safe-automation-home-lab/README.md)
+- [`governance-validation`](../examples/governance-validation-home-lab/README.md)
+- [`completion-evidence`](../examples/completion-evidence-home-lab/README.md)
+- [`vendor-documentation-analysis`](../examples/vendor-documentation-analysis-home-lab/README.md)
+- [`infrastructure-automation-design`](../examples/infrastructure-automation-design-home-lab/README.md)
+
+These packages use synthetic inputs, nine-case routing corpora, deterministic
+Pester and contract validation, and explicit `NotRun` labels for live model,
+hosted, external, or deployment behavior. Their issue acceptance criteria for
+production discovery and controlled Candidate-to-Active promotion remain open
+until separately implemented and approved.
+
 Five adjacent home-lab workspaces extend the same isolation pattern with
 source-pinned packages copied from Public-Access-Agents:
 

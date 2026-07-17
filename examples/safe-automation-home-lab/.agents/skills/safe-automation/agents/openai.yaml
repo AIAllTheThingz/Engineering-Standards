@@ -1,0 +1,6 @@
+interface:
+  display_name: "Safe Automation"
+  short_description: "Design bounded reversible automation"
+  default_prompt: "Use $safe-automation to design a guarded plan for this synthetic home-lab change."
+policy:
+  allow_implicit_invocation: true

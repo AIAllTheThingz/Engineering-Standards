@@ -1,0 +1,9 @@
+{
+  "scenario": "Resolve a child path beneath a trusted root",
+  "requirements": [
+    {"id": "REQ-001", "behavior": "Return an absolute child path for a valid relative input."},
+    {"id": "REQ-002", "behavior": "Reject traversal that escapes the supplied root."},
+    {"id": "REQ-003", "behavior": "Reject a rooted child path outside the supplied root."},
+    {"id": "REQ-004", "behavior": "Reject an empty child path."}
+  ]
+}

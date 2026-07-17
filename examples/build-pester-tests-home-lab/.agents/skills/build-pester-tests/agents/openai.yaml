@@ -1,0 +1,6 @@
+interface:
+  display_name: "Build Pester Tests"
+  short_description: "Build traceable tests for synthetic PowerShell"
+  default_prompt: "Use $build-pester-tests to design and validate Pester tests for this synthetic PowerShell requirement."
+policy:
+  allow_implicit_invocation: true

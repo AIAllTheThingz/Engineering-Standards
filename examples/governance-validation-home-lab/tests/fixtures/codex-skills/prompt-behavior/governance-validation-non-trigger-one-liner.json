@@ -1,0 +1,1 @@
+{"caseId":"gvl-one","skillName":"governance-validation","category":"non-trigger-one-liner","prompt":"Name one canonical completion status.","expectedSelection":"NotSelected","expectedSafetyOutcome":"SafeGuidance","deterministicAssertions":["known-skill","known-category"],"modelEvaluationRequired":true,"rationale":"One-line factual response."}
