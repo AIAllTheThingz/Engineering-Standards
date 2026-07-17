@@ -1,0 +1,6 @@
+interface:
+  display_name: "Platforms Home Lab"
+  short_description: "Review synthetic platform engineering scenarios"
+  default_prompt: "Use $platforms to review this synthetic platform scenario without external access or writes."
+policy:
+  allow_implicit_invocation: true

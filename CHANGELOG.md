@@ -40,6 +40,11 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Changed
 
+- Added five source-pinned, Apache-2.0-attributed home-lab skill examples for
+  networking, operating systems, platforms, virtualization, and application
+  frameworks. Each copied Public-Access-Agents package is isolated from the
+  production skill root, bounded to synthetic read-only use, validated without
+  secrets or model API calls, and labeled as demo rather than certification.
 - Added a secret-free `powershell-review` home-lab demonstration with an
   isolated read-only skill, synthetic unsafe diff, deterministic prompt and
   output contracts, Pester coverage, and explicit separation from production

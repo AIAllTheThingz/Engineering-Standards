@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "repository": "AIAllTheThingz/Public-Access-Agents",
+  "commit": "af649326961de32adcd2c5644c4305fa893d4ade",
+  "sourcePath": "operating-systems",
+  "upstreamVersion": "0.9.0",
+  "license": "Apache-2.0",
+  "upstreamFileCount": 80,
+  "localSkillFileCount": 81,
+  "pinnedExternalLinkCount": 0,
+  "packages": ["debian", "freebsd", "macos", "oracle-linux", "rhel-family", "suse-linux-enterprise", "ubuntu", "windows-client", "windows-server"]
+}

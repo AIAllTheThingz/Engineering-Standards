@@ -1,0 +1,6 @@
+interface:
+  display_name: "Operating Systems Home Lab"
+  short_description: "Review synthetic operating-system scenarios"
+  default_prompt: "Use $operating-systems to review this synthetic operating-system scenario without external access or writes."
+policy:
+  allow_implicit_invocation: true
