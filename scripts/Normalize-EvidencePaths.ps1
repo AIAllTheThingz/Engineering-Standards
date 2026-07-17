@@ -18,7 +18,7 @@ $root = (Resolve-Path -LiteralPath $Path).Path
 $rootSlash = $root.Replace('\','/')
 
 function ConvertTo-NormalizedEvidenceText {
-    param([Parameter(Mandatory)][AllowEmptyString()][string]$Value)
+    param([Parameter(Mandatory)][string]$Value)
 
     $normalized = $Value.Replace($root, '.').Replace($rootSlash, '.')
     if ($normalized.StartsWith('.\') -or $normalized.StartsWith('./')) {

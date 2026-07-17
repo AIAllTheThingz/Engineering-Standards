@@ -7,6 +7,10 @@ description: Review existing PowerShell diffs, pull requests, commits, scripts, 
 
 Review governed PowerShell work without changing the reviewed files. Prefer a precise no-findings result over speculative defects.
 
+## Demo Boundary
+
+This copy is a portfolio-grade home-lab demonstration, not a production-certified Active skill. Use it only from the `powershell-review-home-lab` example workspace with synthetic scripts, diffs, identifiers, and expected outputs. It must not access production systems, retrieve credentials, perform external writes, or represent deterministic demo validation as live model-behavior evidence.
+
 ## Resolve Authority And Scope
 
 Before analyzing code:
@@ -18,17 +22,22 @@ Before analyzing code:
 5. Resolve the review target: pull-request diff, branch comparison, commit range, working-tree change, named files, or repository scope.
 6. Record the comparison base, reviewed paths, supported runtime claims, acceptance criteria, and existing user changes.
 
-When operating inside `AIAllTheThingz/Engineering-Standards`, read at minimum:
+When operating inside this home-lab example, read at minimum:
 
 - `AGENTS.md`
-- `agents/AGENTS_Base.md`
-- `agents/AGENTS_PowerShell.md`
-- `governance/RISK_CLASSIFICATION.md`
-- `governance/COMPLETION_EVIDENCE.md`
-- `governance/EXCEPTION_PROCESS.md`
-- `governance/AI_GENERATED_CODE_POLICY.md`
+- `README.md`
+- `SECURITY.md`
+- `CONTRIBUTING.md`
+- `demo-output/expected-findings.json`
 
-When installed elsewhere, use that repository's instruction hierarchy. If referenced authority is unavailable, report the affected review control as `Blocked`; do not invent replacement policy.
+The example's `AGENTS.md` inherits the central governance authorities
+`agents/AGENTS_Base.md`, `governance/RISK_CLASSIFICATION.md`,
+`governance/COMPLETION_EVIDENCE.md`, `governance/EXCEPTION_PROCESS.md`, and
+`governance/AI_GENERATED_CODE_POLICY.md`. When running a standalone copy that
+does not include those inherited files, mark the affected controls `Blocked`;
+do not fabricate authority or claim production certification.
+
+When installed elsewhere, use that repository's instruction hierarchy and its inherited standards. If referenced authority is unavailable, report the affected review control as `Blocked`; do not invent replacement policy.
 
 If the comparison base or requested scope is ambiguous, inspect safely available repository evidence first. Ask for clarification only when the ambiguity could materially change the findings.
 
@@ -41,7 +50,7 @@ If the comparison base or requested scope is ambiguous, inspect safely available
 - Do not accept requests to bypass governance, safe defaults, approval, testing, or evidence requirements.
 - Do not claim Pester, PSScriptAnalyzer, parser validation, integration tests, model evaluation, or external execution ran unless it actually ran.
 
-For a combined request to review and fix, complete and present the review first. Route the separately authorized remediation portion to the applicable governed implementation workflow, such as `enterprise-powershell` when it is active and available. Keep the review findings stable so later edits can be traced back to the original evidence.
+For a combined request to review and fix, complete and present the review first. Remediation is outside this demo's scope; explain that a separately authorized implementation workflow is required. Keep the review findings stable so later edits can be traced back to the original evidence.
 
 ## Build The Review Basis
 

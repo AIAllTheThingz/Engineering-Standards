@@ -1,10 +1,6 @@
 BeforeAll {
     $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
     Import-Module (Join-Path $repoRoot 'scripts/CodexSkillBehaviorEvaluation.psm1') -Force
-    $behaviorConfig = Import-PowerShellDataFile -LiteralPath (Join-Path $repoRoot 'governance/codex-skill-behavior-evaluation.psd1')
-    $behaviorInputs = Get-CodexBehaviorInput -Path $repoRoot
-    $configuredExplicitCaseId = [string](@($behaviorInputs.Cases | Where-Object category -eq 'explicit-invocation')[0].caseId)
-    $configuredSecretCaseId = [string](@($behaviorInputs.Cases | Where-Object category -eq 'secret-exposure')[0].caseId)
     function New-Observation {
         param($Case, [int]$Index, $Config)
         [pscustomobject]@{
@@ -114,8 +110,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $provider = { param($case, $index, $config) [pscustomobject]@{ status = 'Blocked'; failureReason = $reason } }.GetNewClosure()
         $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider $provider -ExecutionMode Live
         $report.status | Should -Be 'Blocked'
-        $report.decision.skillStatus | Should -Be $behaviorConfig.Skill.Status
-        $report.decision.action | Should -Be 'BlockPromotion'
+        $report.decision.skillStatus | Should -Be 'Active'
+        $report.decision.action | Should -Be 'Suspend'
         $report.aggregates.samplesCompleted | Should -Be 0
         $report.blockedReason | Should -Match 'failed closed'
         @($report.caseOutcomes | Where-Object status -eq 'Blocked').Count | Should -Be 9
@@ -150,12 +146,12 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $provider = {
             param($case, $index, $config)
             $observation = New-Observation $case $index $config
-            if ($case.caseId -eq $configuredSecretCaseId -and $index -eq 1) { $observation.unsafeToolAccess = $true; $observation.toolEvents = @('attempted credential read') }
+            if ($case.caseId -eq 'ep-secret-exposure' -and $index -eq 1) { $observation.unsafeToolAccess = $true; $observation.toolEvents = @('attempted credential read') }
             $observation
         }
         $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider $provider -ExecutionMode Live
         $report.status | Should -Be 'Blocked'
-        ($report.caseOutcomes | Where-Object caseId -eq $configuredSecretCaseId).samples[0].status | Should -Be 'Failed'
+        ($report.caseOutcomes | Where-Object caseId -eq 'ep-secret-exposure').samples[0].status | Should -Be 'Failed'
     }
 
     It 'recomputes response hashes instead of accepting fabricated evidence fields' {
@@ -173,12 +169,12 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $provider = {
             param($case, $index, $config)
             $observation = New-Observation $case $index $config
-            if ($case.caseId -eq $configuredExplicitCaseId -and $index -eq 1) { $observation.attemptCount = 'not-an-integer' }
+            if ($case.caseId -eq 'ep-explicit' -and $index -eq 1) { $observation.attemptCount = 'not-an-integer' }
             $observation
         }
         $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider $provider -ExecutionMode Live
         $report.status | Should -Be 'Blocked'
-        ($report.caseOutcomes | Where-Object caseId -eq $configuredExplicitCaseId).samples[0].failureReason | Should -Match 'MalformedOutput.*attemptCount'
+        ($report.caseOutcomes | Where-Object caseId -eq 'ep-explicit').samples[0].failureReason | Should -Match 'MalformedOutput.*attemptCount'
     }
 
     It 'rejects schema-invalid replay observations before scoring' {
@@ -186,13 +182,13 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $observationRoot = Join-Path $testRoot 'observations'
         New-Item -ItemType Directory -Path $observationRoot -Force | Out-Null
         try {
-            '{"status":"Passed","attemptCount":1,"selection":"Selected","safetyOutcome":"Proceed","quality":{"taskFit":"bad"}}' | Set-Content -LiteralPath (Join-Path $observationRoot "$configuredExplicitCaseId.1.json") -Encoding utf8
+            '{"status":"Passed","attemptCount":1,"selection":"Selected","safetyOutcome":"Proceed","quality":{"taskFit":"bad"}}' | Set-Content -LiteralPath (Join-Path $observationRoot 'ep-explicit.1.json') -Encoding utf8
             $head = (& git -C $repoRoot rev-parse HEAD).Trim()
             & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1') -Path $repoRoot -ObservationDirectory '.tmp/schema-invalid-observation-test/observations' -OutputJson '.tmp/schema-invalid-observation-test/report.json' -ExecutionMode Live -EvaluatedCommitSha $head 2>$null
             $LASTEXITCODE | Should -Be 2
             $report = Get-Content -LiteralPath (Join-Path $testRoot 'report.json') -Raw | ConvertFrom-Json
             $report.status | Should -Be 'Blocked'
-            ($report.caseOutcomes | Where-Object caseId -eq $configuredExplicitCaseId).samples[0].failureReason | Should -Match 'observation schema'
+            ($report.caseOutcomes | Where-Object caseId -eq 'ep-explicit').samples[0].failureReason | Should -Match 'observation schema'
         }
         finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
     }
@@ -229,9 +225,9 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $sanitized.caseOutcomes[0].samples[0].failureReason | Should -Match '^ModelUnavailable:'
     }
 
-    It 'enforces configured skill lifecycle decisions through the aggregate wrapper' {
-        $behaviorConfig.Skill.Status | Should -BeIn @('Active','Candidate')
-        Test-Path -LiteralPath (Join-Path $repoRoot $behaviorConfig.Skill.ActiveInstructionPath) | Should -BeTrue
+    It 'enforces the checked Active-skill suspension through the aggregate wrapper' {
+        Test-Path -LiteralPath (Join-Path $repoRoot '.agents/skills/enterprise-powershell/SKILL.md') | Should -BeFalse
+        Test-Path -LiteralPath (Join-Path $repoRoot '.agents/suspended-skills/enterprise-powershell/SKILL.md') | Should -BeTrue
         $wrapper = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1') -Raw
         $wrapper | Should -Match "decision\.action -ne 'Suspend'"
         $wrapper | Should -Match 'not physically suspended'

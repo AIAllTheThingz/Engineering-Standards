@@ -381,7 +381,7 @@ function Invoke-CodexSkillValidation {
     if ($directories.Count -gt $script:Limits.MaxSkills) { $results.Add((New-SkillValidationResult -RuleId SKL019 -Status Failed -Severity error -Message 'Skill count exceeds the configured limit.' -Path $SkillsRootRelative)); return New-CodexSkillValidationReport -RepositoryRoot $repositoryRoot -SkillsRoot $skillsRoot -SkillNames @() -Results @($results) -PromptResults @() }
     $skillNames = [System.Collections.Generic.List[string]]::new()
     $declaredNames = @{}
-    $plannedSkillNames = @('build-pester-tests','safe-automation','governance-validation','completion-evidence','vendor-documentation-analysis','infrastructure-automation-design')
+    $plannedSkillNames = @('powershell-review','build-pester-tests','safe-automation','governance-validation','completion-evidence','vendor-documentation-analysis','infrastructure-automation-design')
     foreach ($directory in $directories) {
         $relativeDirectory = Get-SafeRelativePath $repositoryRoot $directory.FullName
         if ($directory.Name -cnotmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$' -or $directory.LinkType -or ($directory.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {

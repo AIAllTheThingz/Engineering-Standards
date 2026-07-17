@@ -24,35 +24,28 @@ function Get-BoundedInputHash {
 }
 
 function Get-CodexBehaviorInput {
-    param([Parameter(Mandatory)][string]$Path, [string]$SkillName)
+    param([Parameter(Mandatory)][string]$Path)
     $root = (Resolve-Path -LiteralPath $Path).Path
-    $configurationPath = 'governance/codex-skill-behavior-evaluation.psd1'
-    if ([string]::IsNullOrWhiteSpace($SkillName)) {
-        $configuration = Import-PowerShellDataFile -LiteralPath (Join-Path $root $configurationPath)
-        $SkillName = [string]$configuration.Skill.Name
-    }
     $corpus = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests/fixtures/codex-skills/prompt-behavior') -Filter '*.json' -File | Sort-Object Name)
     if ($corpus.Count -lt 1) { throw 'The governed prompt corpus is empty.' }
     $caseIds = @{}
-    $caseEntries = foreach ($file in $corpus) {
+    $cases = foreach ($file in $corpus) {
         $case = Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json
         if ([string]$case.caseId -cnotmatch '^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])$' -or ([string]$case.caseId).Length -gt 120) { throw "Prompt case ID is unsafe or unbounded in $($file.Name)." }
         if ($caseIds.ContainsKey([string]$case.caseId)) { throw "Prompt case ID '$($case.caseId)' is duplicated." }
         $caseIds[[string]$case.caseId] = $true
-        [pscustomobject]@{ Case = $case; File = $file }
+        $case
     }
-    $selectedEntries = @($caseEntries | Where-Object { [string]$_.Case.skillName -ceq $SkillName })
-    if ($selectedEntries.Count -lt 1) { throw "The governed prompt corpus has no cases for configured skill '$SkillName'." }
     $skillRoots = @('.agents/skills', '.agents/suspended-skills') | ForEach-Object { Join-Path $root $_ } | Where-Object { Test-Path -LiteralPath $_ -PathType Container }
     $skillFiles = @($skillRoots | ForEach-Object { Get-ChildItem -LiteralPath $_ -File -Recurse } | Sort-Object FullName)
     $authorityPaths = @('AGENTS.md','agents/AGENTS_Base.md','agents/AGENTS_PowerShell.md','governance/RISK_CLASSIFICATION.md','governance/COMPLETION_EVIDENCE.md','governance/EXCEPTION_PROCESS.md','governance/AI_GENERATED_CODE_POLICY.md')
     [pscustomobject]@{
         Root = $root
-        Cases = @($selectedEntries | ForEach-Object { $_.Case })
-        CorpusPaths = @($selectedEntries | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.File.FullName) })
+        Cases = @($cases)
+        CorpusPaths = @($corpus | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.FullName) })
         SkillPaths = @($skillFiles | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.FullName) })
         AuthorityPaths = $authorityPaths
-        ConfigurationPath = $configurationPath
+        ConfigurationPath = 'governance/codex-skill-behavior-evaluation.psd1'
         EvaluatorPaths = @('scripts/CodexSkillBehaviorEvaluation.psm1', 'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1', 'scripts/Invoke-CodexSkillBehaviorModel.ps1', 'scripts/Test-CodexSkillBehaviorEvidence.ps1', 'schemas/codex-skill-behavior-evaluation.schema.json', 'schemas/codex-skill-behavior-observation.schema.json')
     }
 }

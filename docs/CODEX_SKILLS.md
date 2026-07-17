@@ -43,17 +43,11 @@ Official Codex documentation:
 
 Repository validation is defined in [Codex Skill Validation](CODEX_SKILL_VALIDATION.md). It deliberately applies stricter governed-tree rules than general Codex discovery and separates deterministic structure from model behavior evaluation.
 
-## Current Skills
+## Current Skill
 
-[`powershell-review`](../.agents/skills/powershell-review/SKILL.md) reviews existing PowerShell diffs, pull requests, commits, scripts, modules, manifests, tests, or repository scopes against applicable governance and `agents/AGENTS_PowerShell.md`. It reports prioritized evidence-backed findings without modifying reviewed files or executing production automation.
+The first implemented skill is [`enterprise-powershell`](../.agents/suspended-skills/enterprise-powershell/SKILL.md); it is currently outside the discoverable active-skills root while suspended.
 
-Explicit invocation example:
-
-```text
-$powershell-review Review this PowerShell pull request and report findings only.
-```
-
-[`enterprise-powershell`](../.agents/suspended-skills/enterprise-powershell/SKILL.md) creates or substantially modifies governed enterprise PowerShell automation, including project structure, configuration, credential handling, safe operating modes, reporting, tests, documentation, validation, and completion evidence. It remains outside the discoverable active-skills root while suspended.
+It creates or substantially modifies governed enterprise PowerShell automation, including project structure, configuration, credential handling, safe operating modes, reporting, tests, documentation, validation, and completion evidence.
 
 Explicit invocation example:
 
@@ -306,12 +300,19 @@ A skill installed without its governing context is incomplete. If central standa
 
 ## Planned Skill Sequence
 
-`powershell-review` is implemented as the first focused findings-only review skill. `enterprise-powershell` is implemented but currently Suspended outside the discoverable `.agents/skills` root by the checked
+`enterprise-powershell` is implemented but currently Suspended outside the discoverable `.agents/skills` root by the checked
 `Blocked` controlled behavior result. It may return to Active only after a
-passing unchanged-input live evaluation and attributable human approval. The remaining skill sequence is owned by
+passing unchanged-input live evaluation and attributable human approval. The remaining planned skills are owned by
 GitHub issues rather than prose-only checklist entries. Live issue state,
 acceptance criteria, dependencies, and delivery decisions are authoritative;
 this table records the stable recommended sequence only.
+
+Issue #43 also provides a portfolio-grade
+[`powershell-review` home-lab demonstration](../examples/powershell-review-home-lab/README.md).
+The example is discoverable only when opened as its own workspace, uses
+synthetic review targets, runs deterministic secret-free validation, and does
+not claim Candidate-to-Active production promotion. The production behavior
+gate remains unchanged and optional for a future certified implementation.
 
 | Order | Skill | Authoritative issue | Accountable role | Risk | Target guidance |
 | --- | --- | --- | --- | --- | --- |

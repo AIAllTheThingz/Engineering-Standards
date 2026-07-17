@@ -12,10 +12,10 @@
     }
 
     Skill = @{
-        Name = 'powershell-review'
-        Status = 'Candidate'
-        ActiveInstructionPath = '.agents/skills/powershell-review/SKILL.md'
-        SuspendedInstructionPath = '.agents/suspended-skills/powershell-review/SKILL.md'
+        Name = 'enterprise-powershell'
+        Status = 'Active'
+        ActiveInstructionPath = '.agents/skills/enterprise-powershell/SKILL.md'
+        SuspendedInstructionPath = '.agents/suspended-skills/enterprise-powershell/SKILL.md'
     }
 
     Model = @{

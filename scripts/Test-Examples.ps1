@@ -26,6 +26,8 @@ function Assert-LastExitCode {
 
 & pwsh -NoProfile -File (Join-Path $root 'examples/powershell-project/tools/Test-Example.ps1')
 Assert-LastExitCode -Name 'PowerShell example'
+& pwsh -NoProfile -File (Join-Path $root 'examples/powershell-review-home-lab/tools/Test-Demo.ps1')
+Assert-LastExitCode -Name 'PowerShell review home-lab demo'
 & pwsh -NoProfile -File (Join-Path $root 'examples/database-project/tools/Test-Migrations.ps1') -Path (Join-Path $root 'examples/database-project')
 Assert-LastExitCode -Name 'Database example'
 & pwsh -NoProfile -File (Join-Path $root 'examples/integration-project/tools/Test-Example.ps1') -Path 'examples/integration-project'

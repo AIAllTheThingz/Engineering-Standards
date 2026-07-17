@@ -1,0 +1,26 @@
+diff --git a/UnsafeMaintenance.ps1 b/UnsafeMaintenance.ps1
+new file mode 100644
+--- /dev/null
++++ b/UnsafeMaintenance.ps1
+@@ -0,0 +1,21 @@
++[CmdletBinding()]
++param(
++    [string]$TargetRoot = 'C:\LabData',
++    [string]$ApiToken,
++    [switch]$Execute
++)
++
++$ErrorActionPreference = 'Continue'
++
++Write-Output ("Authentication material {0}" -f $ApiToken)
++$inventory = Invoke-RestMethod -Uri 'https://example.invalid/api/inventory' -Headers @{ Authorization = "Bearer $ApiToken" }
++
++foreach ($target in Get-ChildItem -Path $TargetRoot -Recurse) {
++    Remove-Item -Path $target.FullName -Recurse -Force
++}
++
++try {
++    $inventory | ConvertTo-Json | Set-Content -Path './last-inventory.json'
++}
++catch {
++}

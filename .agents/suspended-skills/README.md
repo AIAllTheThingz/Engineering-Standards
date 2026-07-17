@@ -14,12 +14,13 @@ Skills package repeatable engineering workflows. They do not replace governance,
 
 The following skills are planned but are not represented by placeholder directories or incomplete `SKILL.md` files:
 
-1. [`build-pester-tests` (#44)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/44)
-2. [`safe-automation` (#45)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/45)
-3. [`governance-validation` (#46)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/46)
-4. [`completion-evidence` (#47)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/47)
-5. [`vendor-documentation-analysis` (#48)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/48)
-6. [`infrastructure-automation-design` (#49)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/49)
+1. [`powershell-review` (#43)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/43)
+2. [`build-pester-tests` (#44)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/44)
+3. [`safe-automation` (#45)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/45)
+4. [`governance-validation` (#46)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/46)
+5. [`completion-evidence` (#47)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/47)
+6. [`vendor-documentation-analysis` (#48)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/48)
+7. [`infrastructure-automation-design` (#49)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/49)
 
 A planned skill becomes active only after its instructions, references,
 deterministic validation, passing controlled behavior evaluation, attributable

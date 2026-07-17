@@ -6,10 +6,6 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
-- Added the Issue #43 `powershell-review` Codex skill for findings-only review
-  of existing PowerShell changes, with explicit remediation boundaries,
-  prioritized evidence-backed output, sanitized examples, controlled prompt
-  fixtures, deterministic validation, and PowerShell-standard coverage.
 - Added the Issue #42 versioned controlled Codex skill behavior evaluator,
   approved model and sampling contract, sanitized portable evidence schema,
   fail-closed evidence verifier, aggregate `CodexSkills` gate, governed secret and
@@ -44,6 +40,11 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Changed
 
+- Added a secret-free `powershell-review` home-lab demonstration with an
+  isolated read-only skill, synthetic unsafe diff, deterministic prompt and
+  output contracts, Pester coverage, and explicit separation from production
+  behavior certification. The trusted live-evaluation architecture remains
+  available for future production promotion but is not required by the demo.
 - Rotated governance, candidate, and pull-request self-CI plus the root contract
   to immutable lifecycle-aware validator commit
   `bf54167e26fb2aa41eccb653ad25b85d77bb584f` using the two-commit bootstrap
@@ -76,9 +77,6 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Fixed
 
-- Routed aggregate Codex skill validation through the trusted Actions evidence
-  verifier so secret-backed behavior artifacts are checked against the same
-  evaluator hash contract that produced them.
 - Normalized evidence paths through parsed JSON values so escaped parameterized
   Pester test names remain valid JSON, and made malformed evidence fail closed
   before artifact publication.

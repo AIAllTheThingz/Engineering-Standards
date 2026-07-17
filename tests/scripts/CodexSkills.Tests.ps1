@@ -79,19 +79,15 @@ function Set-AggregateFixtureIdentity {
 }
 
 Describe 'Codex skill validation' {
-    It 'validates the active review skill and the separately suspended creation skill' {
-        $report = Invoke-CodexSkillValidation -Path $repoRoot -SkipPromptBehavior
+    It 'validates the suspended repository skill without making it actively discoverable' {
+        $report = Invoke-CodexSkillValidation -Path $repoRoot
         $report.deterministicStatus | Should -Be 'Passed'
-        $report.modelEvaluationStatus | Should -Be 'NotRun'
-        $report.skillsDiscovered | Should -Contain 'powershell-review'
+        $report.modelEvaluationStatus | Should -Be 'NotApplicable'
         $report.skillsDiscovered | Should -Not -Contain 'enterprise-powershell'
         Test-Path -LiteralPath (Join-Path $repoRoot '.agents/suspended-skills/enterprise-powershell/SKILL.md') | Should -BeTrue
-        $suspendedReport = Invoke-CodexSkillValidation -Path $repoRoot -SkillsRootRelative '.agents/suspended-skills' -SkipPromptBehavior
+        $suspendedReport = Invoke-CodexSkillValidation -Path $repoRoot -SkillsRootRelative '.agents/suspended-skills'
         $suspendedReport.deterministicStatus | Should -Be 'Passed'
         $suspendedReport.skillsDiscovered | Should -Contain 'enterprise-powershell'
-        $promptResults = Test-PromptBehaviorCorpus -RepositoryRoot $repoRoot -SkillNames @('powershell-review','enterprise-powershell')
-        @($promptResults | Where-Object status -eq 'Failed').Count | Should -Be 0
-        @($promptResults | Where-Object { $_.skillName -eq 'powershell-review' -and $_.ruleId -eq 'SKL018' }).Count | Should -Be 9
     }
 
     It 'fails malformed suspended skill structure through the aggregate wrapper' {
@@ -431,7 +427,7 @@ Read AGENTS.md, agents/AGENTS_Base.md, governance/RISK_CLASSIFICATION.md, govern
 
     It 'rejects an empty planned-skill directory' {
         $root = New-TestRepository -Name planned
-        New-Item -ItemType Directory -Path (Join-Path $root '.agents/skills/build-pester-tests') -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $root '.agents/skills/powershell-review') -Force | Out-Null
         @((Invoke-TestValidation $root).results | Where-Object ruleId -eq 'SKL014').Count | Should -Be 1
     }
 
