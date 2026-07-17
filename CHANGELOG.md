@@ -40,6 +40,11 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Changed
 
+- Added a secret-free `powershell-review` home-lab demonstration with an
+  isolated read-only skill, synthetic unsafe diff, deterministic prompt and
+  output contracts, Pester coverage, and explicit separation from production
+  behavior certification. The trusted live-evaluation architecture remains
+  available for future production promotion but is not required by the demo.
 - Rotated governance, candidate, and pull-request self-CI plus the root contract
   to immutable lifecycle-aware validator commit
   `bf54167e26fb2aa41eccb653ad25b85d77bb584f` using the two-commit bootstrap

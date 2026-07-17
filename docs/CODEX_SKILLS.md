@@ -307,6 +307,13 @@ GitHub issues rather than prose-only checklist entries. Live issue state,
 acceptance criteria, dependencies, and delivery decisions are authoritative;
 this table records the stable recommended sequence only.
 
+Issue #43 also provides a portfolio-grade
+[`powershell-review` home-lab demonstration](../examples/powershell-review-home-lab/README.md).
+The example is discoverable only when opened as its own workspace, uses
+synthetic review targets, runs deterministic secret-free validation, and does
+not claim Candidate-to-Active production promotion. The production behavior
+gate remains unchanged and optional for a future certified implementation.
+
 | Order | Skill | Authoritative issue | Accountable role | Risk | Target guidance |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `powershell-review` | [#43](https://github.com/AIAllTheThingz/Engineering-Standards/issues/43) | PowerShell Standards Maintainers | High | 1.2.0 |

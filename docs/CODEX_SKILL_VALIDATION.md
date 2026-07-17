@@ -6,6 +6,11 @@
 
 Deterministic checks can pass while model selection and response-quality evaluation remains `NotRun`. Maintainers must review real prompt behavior separately; fixture labels and keyword checks are not proof of model behavior.
 
+The [`powershell-review` home-lab example](../examples/powershell-review-home-lab/README.md)
+uses this boundary intentionally: deterministic automation validates its
+isolated package and synthetic contracts, while interactive output remains a
+demonstration rather than production behavior evidence.
+
 ## Rule Matrix
 
 | Rule | Required input | Positive example | Negative example | Failure status | Severity | Kind |

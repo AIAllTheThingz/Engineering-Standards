@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "Failed",
+  "illustrativeOnly": true,
+  "findings": [
+    {
+      "id": "PSR-001",
+      "severity": "High",
+      "category": "destructive-default",
+      "path": "samples/UnsafeMaintenance.ps1",
+      "line": 14,
+      "summary": "Recursive deletion bypasses ShouldProcess and exact-target validation."
+    },
+    {
+      "id": "PSR-002",
+      "severity": "High",
+      "category": "execution-gate",
+      "path": "samples/UnsafeMaintenance.ps1",
+      "line": 5,
+      "summary": "The Execute switch is declared but never gates mutation."
+    },
+    {
+      "id": "PSR-003",
+      "severity": "High",
+      "category": "secret-exposure",
+      "path": "samples/UnsafeMaintenance.ps1",
+      "line": 10,
+      "summary": "The supplied token is written to standard output."
+    },
+    {
+      "id": "PSR-004",
+      "severity": "Moderate",
+      "category": "external-call-resilience",
+      "path": "samples/UnsafeMaintenance.ps1",
+      "line": 11,
+      "summary": "The HTTP request has no explicit timeout or bounded failure strategy."
+    },
+    {
+      "id": "PSR-005",
+      "severity": "Moderate",
+      "category": "error-handling",
+      "path": "samples/UnsafeMaintenance.ps1",
+      "line": 20,
+      "summary": "The empty catch block hides report-write failure."
+    }
+  ]
+}

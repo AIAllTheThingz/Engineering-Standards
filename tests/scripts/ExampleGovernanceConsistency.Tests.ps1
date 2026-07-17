@@ -128,6 +128,7 @@ Describe 'Example governance version and trusted implementation consistency' {
             'infrastructure-project',
             'integration-project',
             'powershell-project',
+            'powershell-review-home-lab',
             'web-project',
             'worker-service-project'
         )

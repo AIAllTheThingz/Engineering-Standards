@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.2.0",
+  "projectName": "powershell-review-home-lab",
+  "repository": "example-org/powershell-review-home-lab",
+  "description": "A secret-free home-lab demonstration of an evidence-backed, findings-only PowerShell review skill.",
+  "projectType": "powershell",
+  "technologies": [
+    "powershell",
+    "github-actions"
+  ],
+  "governanceVersion": "1.1.0",
+  "riskClassification": "Moderate",
+  "dataClassification": "Internal",
+  "owners": [
+    {
+      "type": "github-team",
+      "identifier": "@example-org/engineering",
+      "responsibility": "Owns the synthetic demo assets and deterministic validation contract.",
+      "escalation": "SECURITY.md"
+    }
+  ],
+  "environments": [
+    {
+      "name": "home-lab",
+      "type": "development",
+      "production": false
+    }
+  ],
+  "applicableStandards": [
+    "agents/AGENTS_Base.md",
+    "agents/AGENTS_PowerShell.md"
+  ],
+  "requiredWorkflows": [
+    "governance"
+  ],
+  "externalIntegrations": [],
+  "secretsProvider": "none-required-for-demo",
+  "productionApprovalRequired": false,
+  "evidence": {
+    "local": {
+      "completion": "evidence/local-completion-result.json",
+      "tests": "evidence/local-test-results.json"
+    },
+    "hosted": {
+      "workspace": "evidence",
+      "completion": "completion-result.json",
+      "tests": "ci-test-results.json",
+      "artifactNamePattern": "governance-evidence-${run_id}"
+    }
+  },
+  "exceptions": [],
+  "governanceCommitSha": "1ee830403569a7e59a5d193229cd19e210113c56",
+  "workflowInterfaceVersion": "1.0.0",
+  "repositoryOwnerType": "Organization",
+  "standardsConsumption": {
+    "mode": "central-reference",
+    "sourceRepository": "AIAllTheThingz/Engineering-Standards",
+    "sourceCommitSha": "1ee830403569a7e59a5d193229cd19e210113c56"
+  }
+}
