@@ -1,0 +1,3 @@
+{
+  "illustrativeOnly":true,"executionStatus":"NotRun","liveModelEvaluation":"NotRun","targetLimit":2,"dryRunDefault":true,"approval":{"required":true,"owner":"home-lab-operator"},"phases":["Plan","Approve","Execute","Verify","Recover"],"preconditions":["nonproduction-targets","health-baseline","recovery-snapshot"],"idempotencyKey":"LAB-CHANGE-001","rollbackTrigger":"verification-failed","eventFields":["correlationId","phase","targetCount","decision","outcome"]
+}

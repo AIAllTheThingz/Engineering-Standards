@@ -89,6 +89,12 @@ Their live GitHub state is authoritative.
 Target versions are planning guidance until the Release Maintainers confirm a
 release scope through [#25](https://github.com/AIAllTheThingz/Engineering-Standards/issues/25).
 
+Issues #43 through #49 have isolated home-lab demonstrations under `examples/`.
+Those packages provide secret-free portfolio and deterministic validation
+coverage without satisfying production discovery, live model evaluation,
+approval, or promotion acceptance criteria. The issues therefore remain the
+authoritative owners for any later production-certified implementation.
+
 ## Deduplication Ledger
 
 Issue #24 did not create new work for controls already owned by the remediation

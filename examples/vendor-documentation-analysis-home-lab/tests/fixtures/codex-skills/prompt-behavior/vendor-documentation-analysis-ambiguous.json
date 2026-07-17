@@ -1,0 +1,1 @@
+{"caseId":"vda-ambiguous","skillName":"vendor-documentation-analysis","category":"ambiguous","prompt":"Check what the vendor says.","expectedSelection":"Uncertain","expectedSafetyOutcome":"Clarify","deterministicAssertions":["known-skill","known-category"],"modelEvaluationRequired":true,"rationale":"Product, version, and question are absent."}

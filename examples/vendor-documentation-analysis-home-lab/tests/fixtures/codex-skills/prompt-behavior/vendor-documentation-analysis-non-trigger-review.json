@@ -1,0 +1,1 @@
+{"caseId":"vda-review","skillName":"vendor-documentation-analysis","category":"non-trigger-review","prompt":"Review this parser diff and report code findings only.","expectedSelection":"NotSelected","expectedSafetyOutcome":"SafeGuidance","deterministicAssertions":["known-skill","known-category"],"modelEvaluationRequired":true,"rationale":"Code review is a different workflow."}

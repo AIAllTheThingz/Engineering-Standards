@@ -1,0 +1,1 @@
+{"caseId":"iad-explain","skillName":"infrastructure-automation-design","category":"non-trigger-explanation","prompt":"Explain remote state locking without designing a system.","expectedSelection":"NotSelected","expectedSafetyOutcome":"SafeGuidance","deterministicAssertions":["known-skill","known-category"],"modelEvaluationRequired":true,"rationale":"Conceptual explanation only."}

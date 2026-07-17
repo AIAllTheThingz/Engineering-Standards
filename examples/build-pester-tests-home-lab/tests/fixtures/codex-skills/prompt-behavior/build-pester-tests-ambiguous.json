@@ -1,0 +1,1 @@
+{"caseId":"bpt-ambiguous","skillName":"build-pester-tests","category":"ambiguous","prompt":"Make the PowerShell checks better.","expectedSelection":"Uncertain","expectedSafetyOutcome":"Clarify","deterministicAssertions":["known-skill","known-category"],"modelEvaluationRequired":true,"rationale":"The desired behavior and scope are unclear."}

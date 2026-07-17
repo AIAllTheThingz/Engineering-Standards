@@ -2,10 +2,24 @@
 .SYNOPSIS
 Runs deterministic validation for an isolated home-lab skill example.
 .DESCRIPTION
-Parses PowerShell without executing copied scenario content, validates one
-isolated skill and its synthetic prompt corpus, runs the example Pester tests,
-and checks the downstream governance contract. The runner makes no model call,
-uses no secret, and performs no production or external write operation.
+Parses every committed PowerShell script and module before execution, validates
+one isolated skill and its synthetic prompt corpus, runs the reviewed example
+Pester tests, and checks the downstream governance contract. A demo test may
+execute its committed synthetic module under test. The runner makes no model
+call or secret request; repository policy and reviewed tests constrain writes
+to the example or test-managed temporary storage.
+.PARAMETER ProjectPath
+Repository-relative or absolute path to one isolated project beneath examples.
+.PARAMETER SkillName
+Kebab-case name of the single skill expected in the isolated project.
+.EXAMPLE
+pwsh -NoProfile -File scripts/Test-HomeLabSkillDemo.ps1 -ProjectPath examples/build-pester-tests-home-lab -SkillName build-pester-tests
+.INPUTS
+None.
+.OUTPUTS
+System.String. Writes a concise deterministic-validation summary.
+.NOTES
+Requires PowerShell 7.2 or later, Pester 5.7.1 or later, Python 3, and PyYAML.
 #>
 [CmdletBinding()]
 param(
@@ -24,11 +38,37 @@ $standardsRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $projectRoot = (Resolve-Path -LiteralPath $ProjectPath).Path
 $examplesRoot = (Resolve-Path -LiteralPath (Join-Path $standardsRoot 'examples')).Path
 $projectBoundary = $examplesRoot.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
-if (-not $projectRoot.StartsWith($projectBoundary, [StringComparison]::Ordinal)) {
+$pathComparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+if (-not $projectRoot.StartsWith($projectBoundary, $pathComparison)) {
     throw 'Home-lab project path must remain beneath the repository examples directory.'
 }
+$relativeProjectPath = [IO.Path]::GetRelativePath($examplesRoot, $projectRoot)
+$currentPath = $examplesRoot
+foreach ($segment in @($relativeProjectPath -split '[\\/]' | Where-Object { $_ -and $_ -ne '.' })) {
+    $currentPath = Join-Path $currentPath $segment
+    $pathItem = Get-Item -LiteralPath $currentPath -Force
+    if ($pathItem.LinkType -or (($pathItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)) {
+        throw "Home-lab project path must not traverse a symbolic link, junction, or other reparse point: '$currentPath'."
+    }
+}
 
-foreach ($file in Get-ChildItem -LiteralPath $projectRoot -Recurse -File -Include *.ps1,*.psd1) {
+$python = Get-Command python -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($null -eq $python) {
+    throw 'Python 3 is required to validate the isolated skill metadata.'
+}
+& $python.Source -c 'import yaml' 2>$null
+if ($LASTEXITCODE -ne 0) {
+    throw 'PyYAML is required to validate the isolated skill metadata.'
+}
+
+$projectItems = @(Get-ChildItem -LiteralPath $projectRoot -Recurse -Force)
+foreach ($item in $projectItems) {
+    if ($item.LinkType -or (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)) {
+        throw "Home-lab content must not contain links or reparse points: '$([IO.Path]::GetRelativePath($projectRoot, $item.FullName))'."
+    }
+}
+
+foreach ($file in $projectItems | Where-Object { -not $_.PSIsContainer -and $_.Extension -in @('.ps1', '.psd1', '.psm1') }) {
     $tokens = $null
     $errors = $null
     [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors) | Out-Null
