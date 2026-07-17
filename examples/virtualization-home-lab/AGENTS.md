@@ -2,7 +2,7 @@
 
 ## Inherited Standards
 
-This example inherits `agents/AGENTS_Base.md` and the repository governance authorities. Local rules may strengthen but must not weaken them.
+This example inherits `agents/AGENTS_Base.md`, `agents/AGENTS_Integration.md`, and the repository governance authorities. Local rules may strengthen but must not weaken them.
 
 ## Boundaries
 
