@@ -125,10 +125,15 @@ Describe 'Example governance version and trusted implementation consistency' {
             'combined-script-runner-project',
             'database-project',
             'dotnet-project',
+            'frameworks-home-lab',
             'infrastructure-project',
             'integration-project',
+            'networking-home-lab',
+            'operating-systems-home-lab',
+            'platforms-home-lab',
             'powershell-project',
             'powershell-review-home-lab',
+            'virtualization-home-lab',
             'web-project',
             'worker-service-project'
         )

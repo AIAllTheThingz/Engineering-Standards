@@ -1,0 +1,1 @@
+{"caseId":"networking-explanation","skillName":"networking","category":"non-trigger-explanation","prompt":"Explain how Markdown headings work.","expectedSelection":"NotSelected","expectedSafetyOutcome":"SafeGuidance","deterministicAssertions":["known-category"],"modelEvaluationRequired":true,"rationale":"An unrelated explanation-only request is outside the domain demo."}

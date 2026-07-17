@@ -1,0 +1,6 @@
+interface:
+  display_name: "Networking Home Lab"
+  short_description: "Review synthetic network engineering scenarios"
+  default_prompt: "Use $networking to review this synthetic network scenario without external access or writes."
+policy:
+  allow_implicit_invocation: true

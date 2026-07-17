@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "repository": "AIAllTheThingz/Public-Access-Agents",
+  "commit": "af649326961de32adcd2c5644c4305fa893d4ade",
+  "sourcePath": "networking",
+  "upstreamVersion": "0.9.0",
+  "license": "Apache-2.0",
+  "upstreamFileCount": 40,
+  "localSkillFileCount": 41,
+  "pinnedExternalLinkCount": 0,
+  "packages": ["brocade-networking", "cisco-networking", "hpe-aruba-networking", "juniper-networks"]
+}

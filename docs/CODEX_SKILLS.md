@@ -314,6 +314,19 @@ synthetic review targets, runs deterministic secret-free validation, and does
 not claim Candidate-to-Active production promotion. The production behavior
 gate remains unchanged and optional for a future certified implementation.
 
+Five adjacent home-lab workspaces extend the same isolation pattern with
+source-pinned packages copied from Public-Access-Agents:
+
+- [`networking`](../examples/networking-home-lab/README.md)
+- [`operating-systems`](../examples/operating-systems-home-lab/README.md)
+- [`platforms`](../examples/platforms-home-lab/README.md)
+- [`virtualization`](../examples/virtualization-home-lab/README.md)
+- [`frameworks`](../examples/frameworks-home-lab/README.md)
+
+They are independently discoverable only from their example directories, use
+synthetic read-only boundaries, require no model API key, preserve immutable
+upstream provenance and notices, and do not enter production promotion gates.
+
 | Order | Skill | Authoritative issue | Accountable role | Risk | Target guidance |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `powershell-review` | [#43](https://github.com/AIAllTheThingz/Engineering-Standards/issues/43) | PowerShell Standards Maintainers | High | 1.2.0 |

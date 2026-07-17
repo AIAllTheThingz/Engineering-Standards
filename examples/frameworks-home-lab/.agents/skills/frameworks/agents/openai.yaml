@@ -1,0 +1,6 @@
+interface:
+  display_name: "Frameworks Home Lab"
+  short_description: "Review synthetic application framework scenarios"
+  default_prompt: "Use $frameworks to review this synthetic framework scenario without external access or writes."
+policy:
+  allow_implicit_invocation: true
