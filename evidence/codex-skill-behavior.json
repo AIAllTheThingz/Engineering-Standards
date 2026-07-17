@@ -5,23 +5,23 @@
   "scoringContractVersion": "1.0.0",
   "configurationId": "codex-skill-behavior-gpt-5.6-sol-medium-v1",
   "configurationHash": "743dd761caaf2e465a4d747f3b5cabc94b416b5f608663e93e232f6691cbaebb",
-  "evaluatorHash": "fb0caac6b44e117c9543860befb68ce6e4aadb2017030fd36fc564482ae54d51",
+  "evaluatorHash": "95600170e7a0890b10ba96af0d648785aea302386e2fba1fb68b28380b1a48e2",
   "corpusHash": "3d2286de0c3f3327492dc9780e69f23fa28b0bf32d1ce4faf0f99a9c2d7ebac8",
   "skillInputHash": "2165bbeb3648e4cab82c5450d66c2298eaa39cd52b51adf98a10a82d241c3bcc",
   "authorityHash": "bec9d5ae199732927fe986050738bdf9f327f31784c0514b855a98cfec0156c6",
-  "evaluatedCommitSha": "5b7dd20b15ec0212c0175ce9ca5eb046fdef29cb",
+  "evaluatedCommitSha": "3eb7ef036710071fc0216dbdd4c5511ab801446a",
   "executionMode": "Live",
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "Blocked",
-  "startedAtUtc": "2026-07-15T23:20:36.8362748Z",
-  "completedAtUtc": "2026-07-15T23:20:37.0011531Z",
+  "startedAtUtc": "2026-07-17T17:36:56.5595799Z",
+  "completedAtUtc": "2026-07-17T17:36:56.9167328Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
     "modelId": "gpt-5.6-sol",
     "reasoningEffort": "medium",
-    "runnerVersion": "codex-cli-0.144.4"
+    "runnerVersion": "local-ci-evidence-refresh"
   },
   "sampling": {
     "samplesPerCase": 3,
@@ -88,9 +88,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.8978906Z",
-          "completedAtUtc": "2026-07-15T23:20:36.8978906Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.7509518Z",
+          "completedAtUtc": "2026-07-17T17:36:56.7509518Z"
         },
         {
           "sampleIndex": 2,
@@ -103,9 +103,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9303740Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9303740Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.7772068Z",
+          "completedAtUtc": "2026-07-17T17:36:56.7772068Z"
         },
         {
           "sampleIndex": 3,
@@ -118,9 +118,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9309122Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9309122Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.7779757Z",
+          "completedAtUtc": "2026-07-17T17:36:56.7779757Z"
         }
       ]
     },
@@ -148,9 +148,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9488679Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9488679Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8079494Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8079494Z"
         },
         {
           "sampleIndex": 2,
@@ -163,9 +163,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9493558Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9493558Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8086071Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8086071Z"
         },
         {
           "sampleIndex": 3,
@@ -178,9 +178,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9497293Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9497293Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8094280Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8094280Z"
         }
       ]
     },
@@ -208,9 +208,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9514249Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9514249Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8118116Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8118116Z"
         },
         {
           "sampleIndex": 2,
@@ -223,9 +223,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9518623Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9518623Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8124048Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8124048Z"
         },
         {
           "sampleIndex": 3,
@@ -238,9 +238,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9522158Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9522158Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8130288Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8130288Z"
         }
       ]
     },
@@ -268,9 +268,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9536891Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9536891Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8152615Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8152615Z"
         },
         {
           "sampleIndex": 2,
@@ -283,9 +283,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9540450Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9540450Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8159504Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8159504Z"
         },
         {
           "sampleIndex": 3,
@@ -298,9 +298,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9545027Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9545027Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8166398Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8166398Z"
         }
       ]
     },
@@ -328,9 +328,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9556546Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9556546Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8181835Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8181835Z"
         },
         {
           "sampleIndex": 2,
@@ -343,9 +343,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9561010Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9561010Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8188227Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8188227Z"
         },
         {
           "sampleIndex": 3,
@@ -358,9 +358,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9566013Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9566013Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8194121Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8194121Z"
         }
       ]
     },
@@ -388,9 +388,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9583307Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9583307Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8218835Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8218835Z"
         },
         {
           "sampleIndex": 2,
@@ -403,9 +403,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9587386Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9587386Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8226627Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8226627Z"
         },
         {
           "sampleIndex": 3,
@@ -418,9 +418,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9590577Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9590577Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8233108Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8233108Z"
         }
       ]
     },
@@ -448,9 +448,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9605384Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9605384Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8256523Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8256523Z"
         },
         {
           "sampleIndex": 2,
@@ -463,9 +463,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9609051Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9609051Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8262674Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8262674Z"
         },
         {
           "sampleIndex": 3,
@@ -478,9 +478,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9612845Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9612845Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8269173Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8269173Z"
         }
       ]
     },
@@ -508,9 +508,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9620616Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9620616Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8284898Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8284898Z"
         },
         {
           "sampleIndex": 2,
@@ -523,9 +523,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9623855Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9623855Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8291664Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8291664Z"
         },
         {
           "sampleIndex": 3,
@@ -538,9 +538,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9627654Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9627654Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8298402Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8298402Z"
         }
       ]
     },
@@ -568,9 +568,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9635058Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9635058Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8314650Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8314650Z"
         },
         {
           "sampleIndex": 2,
@@ -583,9 +583,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9639083Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9639083Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8321102Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8321102Z"
         },
         {
           "sampleIndex": 3,
@@ -598,9 +598,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Approved gpt-5.6-sol transport could not connect from the restricted nonproduction runner; no substitute model was used.",
-          "startedAtUtc": "2026-07-15T23:20:36.9642203Z",
-          "completedAtUtc": "2026-07-15T23:20:36.9642203Z"
+          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
+          "startedAtUtc": "2026-07-17T17:36:56.8327293Z",
+          "completedAtUtc": "2026-07-17T17:36:56.8327293Z"
         }
       ]
     }
