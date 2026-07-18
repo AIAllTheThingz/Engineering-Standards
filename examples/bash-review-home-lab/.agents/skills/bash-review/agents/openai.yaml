@@ -1,0 +1,6 @@
+interface:
+  display_name: "Bash Review"
+  short_description: "Review governed shell changes safely"
+  default_prompt: "Use $bash-review to review this shell change and report prioritized findings with evidence."
+policy:
+  allow_implicit_invocation: true

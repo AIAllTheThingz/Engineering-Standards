@@ -326,7 +326,7 @@ validation, and explicit `NotRun` labels for live model, hosted, external, or
 deployment behavior. They are discoverable only when their own example is
 opened as the workspace and require no model API key.
 
-Five adjacent home-lab workspaces extend the same isolation pattern with
+Eight adjacent home-lab workspaces extend the same isolation pattern. Five use
 source-pinned packages copied from Public-Access-Agents:
 
 - [`networking`](../examples/networking-home-lab/README.md)
@@ -335,9 +335,18 @@ source-pinned packages copied from Public-Access-Agents:
 - [`virtualization`](../examples/virtualization-home-lab/README.md)
 - [`frameworks`](../examples/frameworks-home-lab/README.md)
 
-They are independently discoverable only from their example directories, use
-synthetic read-only boundaries, require no model API key, preserve immutable
-upstream provenance and notices, and do not enter production promotion gates.
+Three additional findings-only review labs are locally authored and keep their
+unsafe examples inert:
+
+- [`python-review`](../examples/python-review-home-lab/README.md)
+- [`bash-review`](../examples/bash-review-home-lab/README.md)
+- [`terraform-review`](../examples/terraform-review-home-lab/README.md)
+
+All eight are independently discoverable only from their example directories,
+use synthetic read-only boundaries, require no model API key, and do not enter
+production promotion gates. The five copied packages preserve immutable
+upstream provenance and notices; the three review labs never execute their
+Python, Bash, or Terraform samples.
 
 | Order | Demo skill | Resolution issue | Accountable role | Production status |
 | --- | --- | --- | --- | --- |

@@ -29,6 +29,7 @@ Assert-LastExitCode -Name 'PowerShell example'
 & pwsh -NoProfile -File (Join-Path $root 'examples/powershell-review-home-lab/tools/Test-Demo.ps1')
 Assert-LastExitCode -Name 'PowerShell review home-lab demo'
 foreach ($homeLab in @(
+    'bash-review',
     'build-pester-tests',
     'completion-evidence',
     'frameworks',
@@ -37,7 +38,9 @@ foreach ($homeLab in @(
     'networking',
     'operating-systems',
     'platforms',
+    'python-review',
     'safe-automation',
+    'terraform-review',
     'vendor-documentation-analysis',
     'virtualization'
 )) {

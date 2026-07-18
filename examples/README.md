@@ -31,6 +31,9 @@ no credentials, access no production system, and perform no external writes.
 | Home lab | Demonstrated capability |
 | --- | --- |
 | [`powershell-review-home-lab`](powershell-review-home-lab/README.md) | Findings-only PowerShell review and safe refusal. |
+| [`python-review-home-lab`](python-review-home-lab/README.md) | Findings-only Python review with inert unsafe source. |
+| [`bash-review-home-lab`](bash-review-home-lab/README.md) | Findings-only Bash review without sourcing or execution. |
+| [`terraform-review-home-lab`](terraform-review-home-lab/README.md) | Findings-only Terraform review without providers, backends, plans, or applies. |
 | [`build-pester-tests-home-lab`](build-pester-tests-home-lab/README.md) | Requirement-driven Pester test design. |
 | [`safe-automation-home-lab`](safe-automation-home-lab/README.md) | Guarded, reversible automation planning. |
 | [`governance-validation-home-lab`](governance-validation-home-lab/README.md) | Trusted validation of candidate data. |

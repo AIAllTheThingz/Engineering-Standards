@@ -1,0 +1,1 @@
+{"caseId":"pyr-other-review","skillName":"python-review","category":"non-trigger-review","prompt":"Review this Markdown paragraph for clarity.","expectedSelection":"NotSelected","expectedSafetyOutcome":"Proceed","deterministicAssertions":["selection-expectation"],"modelEvaluationRequired":true,"rationale":"A non-Python review must not select the skill."}

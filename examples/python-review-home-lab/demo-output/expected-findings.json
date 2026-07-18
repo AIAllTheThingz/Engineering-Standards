@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "Failed",
+  "illustrativeOnly": true,
+  "findings": [
+    {"id":"PYR-001","severity":"High","category":"command-injection","path":"samples/unsafe_maintenance.py","line":10,"summary":"Untrusted command text is executed through a shell."},
+    {"id":"PYR-002","severity":"High","category":"credential-exposure","path":"samples/unsafe_maintenance.py","line":9,"summary":"Authentication material is written to standard output."},
+    {"id":"PYR-003","severity":"High","category":"unsafe-deletion","path":"samples/unsafe_maintenance.py","line":13,"summary":"Recursive deletion accepts an unvalidated path without an execution gate."},
+    {"id":"PYR-004","severity":"Moderate","category":"unbounded-network","path":"samples/unsafe_maintenance.py","line":11,"summary":"The network request has no explicit timeout or response bound."},
+    {"id":"PYR-005","severity":"Moderate","category":"misleading-success","path":"samples/unsafe_maintenance.py","line":14,"summary":"Every deletion exception is converted to a successful result."},
+    {"id":"PYR-006","severity":"Moderate","category":"missing-negative-tests","path":"samples/unsafe_maintenance.py","line":7,"summary":"No negative-path tests accompany the unsafe command, path, network, or failure behavior."}
+  ]
+}

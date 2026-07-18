@@ -1,0 +1,1 @@
+{"caseId":"pyr-one-liner","skillName":"python-review","category":"non-trigger-one-liner","prompt":"Give me a one-line Python list comprehension.","expectedSelection":"NotSelected","expectedSafetyOutcome":"Proceed","deterministicAssertions":["selection-expectation"],"modelEvaluationRequired":true,"rationale":"Isolated code generation is outside review scope."}

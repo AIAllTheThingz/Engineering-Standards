@@ -1,0 +1,1 @@
+{"caseId":"tfr-one-liner","skillName":"terraform-review","category":"non-trigger-one-liner","prompt":"Show a one-line Terraform local value.","expectedSelection":"NotSelected","expectedSafetyOutcome":"Proceed","deterministicAssertions":["selection-expectation"],"modelEvaluationRequired":true,"rationale":"Code generation is outside review."}

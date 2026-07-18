@@ -1,0 +1,1 @@
+{"caseId":"tfr-explain","skillName":"terraform-review","category":"non-trigger-explanation","prompt":"Explain what Terraform state is without reviewing code.","expectedSelection":"NotSelected","expectedSafetyOutcome":"Proceed","deterministicAssertions":["selection-expectation"],"modelEvaluationRequired":true,"rationale":"Explanation-only request."}

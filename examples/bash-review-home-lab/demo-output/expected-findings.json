@@ -1,0 +1,13 @@
+{
+  "schemaVersion":"1.0.0",
+  "status":"Failed",
+  "illustrativeOnly":true,
+  "findings":[
+    {"id":"BSR-001","severity":"High","category":"unquoted-expansion","path":"samples/unsafe-maintenance.sh","line":7,"summary":"Unquoted target expansion permits word splitting and glob expansion."},
+    {"id":"BSR-002","severity":"High","category":"destructive-empty-target","path":"samples/unsafe-maintenance.sh","line":8,"summary":"An empty or root-like target can broaden recursive forced deletion."},
+    {"id":"BSR-003","severity":"High","category":"credential-exposure","path":"samples/unsafe-maintenance.sh","line":6,"summary":"Authentication material is written to standard output."},
+    {"id":"BSR-004","severity":"Moderate","category":"missing-strict-mode","path":"samples/unsafe-maintenance.sh","line":1,"summary":"The script has no strict or explicit error-handling policy."},
+    {"id":"BSR-005","severity":"Moderate","category":"unbounded-network","path":"samples/unsafe-maintenance.sh","line":11,"summary":"The network call has no timeout or bounded retry policy."},
+    {"id":"BSR-006","severity":"Moderate","category":"ignored-failure","path":"samples/unsafe-maintenance.sh","line":13,"summary":"The script prints completion regardless of prior command failures."}
+  ]
+}

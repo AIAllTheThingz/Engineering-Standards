@@ -1,0 +1,6 @@
+interface:
+  display_name: "Python Review"
+  short_description: "Review governed Python changes safely"
+  default_prompt: "Use $python-review to review this Python change and report prioritized findings with evidence."
+policy:
+  allow_implicit_invocation: true

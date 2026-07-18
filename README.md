@@ -255,10 +255,13 @@ and boundaries for every governed example.
 
 ## Home-Lab Skill Demonstrations
 
-Twelve isolated, portfolio-grade home labs demonstrate skills without
+Fifteen isolated, portfolio-grade home labs demonstrate skills without
 production discovery, secrets, external writes, or an `OPENAI_API_KEY`:
 
 - [`powershell-review`](examples/powershell-review-home-lab/README.md)
+- [`python-review`](examples/python-review-home-lab/README.md)
+- [`bash-review`](examples/bash-review-home-lab/README.md)
+- [`terraform-review`](examples/terraform-review-home-lab/README.md)
 - [`build-pester-tests`](examples/build-pester-tests-home-lab/README.md)
 - [`safe-automation`](examples/safe-automation-home-lab/README.md)
 - [`governance-validation`](examples/governance-validation-home-lab/README.md)

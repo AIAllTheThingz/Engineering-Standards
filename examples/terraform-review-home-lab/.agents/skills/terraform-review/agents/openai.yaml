@@ -1,0 +1,6 @@
+interface:
+  display_name: "Terraform Review"
+  short_description: "Review infrastructure code without provider access"
+  default_prompt: "Use $terraform-review to review this Terraform change and report prioritized findings with evidence."
+policy:
+  allow_implicit_invocation: true
