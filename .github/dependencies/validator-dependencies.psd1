@@ -24,7 +24,7 @@
         DotNet = @{
             Version = '8.0.411'
             SetupAction = 'actions/setup-dotnet'
-            ActionSha = '26b0ec14cb23fa6904739307f278c14f94c95bf1'
+            ActionSha = 'a98b56852c35b8e3190ac28c8c2271da59106c68'
         }
     }
     Packages = @(
