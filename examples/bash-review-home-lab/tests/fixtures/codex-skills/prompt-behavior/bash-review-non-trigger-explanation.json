@@ -1,0 +1,1 @@
+{"caseId":"bsr-explain","skillName":"bash-review","category":"non-trigger-explanation","prompt":"Explain shell parameter expansion without reviewing code.","expectedSelection":"NotSelected","expectedSafetyOutcome":"Proceed","deterministicAssertions":["selection-expectation"],"modelEvaluationRequired":true,"rationale":"Explanation-only request."}

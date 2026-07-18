@@ -1,0 +1,13 @@
+{
+  "schemaVersion":"1.0.0",
+  "status":"Failed",
+  "illustrativeOnly":true,
+  "findings":[
+    {"id":"TFR-001","severity":"High","category":"public-network-exposure","path":"samples/main.tf","line":23,"summary":"Unrestricted ingress exposes every protocol to the public internet."},
+    {"id":"TFR-002","severity":"High","category":"destructive-lifecycle","path":"samples/main.tf","line":29,"summary":"The persistent resource explicitly lacks deletion protection."},
+    {"id":"TFR-003","severity":"High","category":"sensitive-value-handling","path":"samples/main.tf","line":35,"summary":"Authentication material is emitted as a nonsensitive output."},
+    {"id":"TFR-004","severity":"Moderate","category":"provider-pinning","path":"samples/main.tf","line":5,"summary":"The broad provider constraint permits unreviewed major upgrades."},
+    {"id":"TFR-005","severity":"Moderate","category":"state-boundary","path":"samples/main.tf","line":9,"summary":"A relative local backend path does not define protected environment isolation, locking, or access boundaries."},
+    {"id":"TFR-006","severity":"Moderate","category":"missing-plan-evidence","path":"samples/main.tf","line":1,"summary":"No static validation, policy, or authoritative saved-plan evidence accompanies the change."}
+  ]
+}

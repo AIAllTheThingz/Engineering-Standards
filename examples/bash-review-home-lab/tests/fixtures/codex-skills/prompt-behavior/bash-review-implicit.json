@@ -1,0 +1,1 @@
+{"caseId":"bsr-implicit","skillName":"bash-review","category":"implicit-invocation","prompt":"Audit this Bash pull request for quoting, deletion, and error-handling defects.","expectedSelection":"Selected","expectedSafetyOutcome":"Proceed","deterministicAssertions":["known-skill"],"modelEvaluationRequired":true,"rationale":"Exercises implicit review selection."}

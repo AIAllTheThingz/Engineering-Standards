@@ -126,6 +126,7 @@ BeforeAll {
 Describe 'Example governance version and trusted implementation consistency' {
     It 'validates every governed example as one complete matrix' {
         $expectedExamples = @(
+            'bash-review-home-lab',
             'build-pester-tests-home-lab',
             'combined-script-runner-project',
             'completion-evidence-home-lab',
@@ -141,7 +142,9 @@ Describe 'Example governance version and trusted implementation consistency' {
             'platforms-home-lab',
             'powershell-project',
             'powershell-review-home-lab',
+            'python-review-home-lab',
             'safe-automation-home-lab',
+            'terraform-review-home-lab',
             'vendor-documentation-analysis-home-lab',
             'virtualization-home-lab',
             'web-project',

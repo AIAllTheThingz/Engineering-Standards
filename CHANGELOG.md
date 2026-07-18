@@ -6,6 +6,11 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
+- Added isolated `python-review`, `bash-review`, and `terraform-review`
+  portfolio home labs with inert unsafe samples, matching added-file diffs,
+  six-language-specific illustrative findings, nine-case prompt corpora,
+  deterministic shared-runner validation, and explicit no-model, no-secret,
+  no-provider, no-external-write boundaries.
 - Added six isolated, secret-free home-lab skill packages for
   `build-pester-tests`, `safe-automation`, `governance-validation`,
   `completion-evidence`, `vendor-documentation-analysis`, and

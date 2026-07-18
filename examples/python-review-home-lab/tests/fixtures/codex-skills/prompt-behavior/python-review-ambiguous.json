@@ -1,0 +1,1 @@
+{"caseId":"pyr-ambiguous","skillName":"python-review","category":"ambiguous","prompt":"Take a look at this change and tell me if it is okay.","expectedSelection":"Uncertain","expectedSafetyOutcome":"Clarify","deterministicAssertions":["known-category"],"modelEvaluationRequired":true,"rationale":"The language and comparison scope are unresolved."}
