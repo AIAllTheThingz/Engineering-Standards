@@ -5,6 +5,7 @@ Describe 'PowerShell review home-lab demo' {
         $script:skillPath = Join-Path $script:demoRoot '.agents/skills/powershell-review/SKILL.md'
         $script:samplePath = Join-Path $script:demoRoot 'samples/UnsafeMaintenance.ps1'
         $script:expectedPath = Join-Path $script:demoRoot 'demo-output/expected-findings.json'
+        Import-Module (Join-Path $script:standardsRoot 'scripts/UnifiedDiffValidation.psm1') -Force
     }
 
     It 'keeps the demo skill outside the production discovery root' {
@@ -50,6 +51,7 @@ Describe 'PowerShell review home-lab demo' {
         $sample | Should -Not -Match '(?i)(password|secret)\s*=\s*[''\"][^''\"]+'
         $diffLines = @(Get-Content -LiteralPath (Join-Path $script:demoRoot 'samples/unsafe-maintenance.diff') | Where-Object { $_.StartsWith('+') -and -not $_.StartsWith('+++') } | ForEach-Object { $_.Substring(1) })
         ($diffLines -join "`n") | Should -BeExactly ((Get-Content -LiteralPath $script:samplePath) -join "`n")
+        { Assert-UnifiedDiff -LiteralPath (Join-Path $script:demoRoot 'samples/unsafe-maintenance.diff') -RepositoryRoot $script:standardsRoot } | Should -Not -Throw
     }
 
     It 'defines prioritized, unique, and line-bounded illustrative findings' {

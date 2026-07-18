@@ -2,7 +2,7 @@ diff --git a/main.tf b/main.tf
 new file mode 100644
 --- /dev/null
 +++ b/main.tf
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,36 @@
 +terraform {
 +  required_providers {
 +    aws = {

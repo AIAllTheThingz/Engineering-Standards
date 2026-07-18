@@ -4,6 +4,7 @@ Describe 'Terraform review home-lab demo' {
         $script:standardsRoot = (Resolve-Path -LiteralPath (Join-Path $script:demoRoot '../..')).Path
         $script:skillPath = Join-Path $script:demoRoot '.agents/skills/terraform-review/SKILL.md'
         $script:samplePath = Join-Path $script:demoRoot 'samples/main.tf'
+        Import-Module (Join-Path $script:standardsRoot 'scripts/UnifiedDiffValidation.psm1') -Force
     }
     It 'keeps the skill outside production discovery' {
         Test-Path -LiteralPath (Join-Path $script:standardsRoot '.agents/skills/terraform-review/SKILL.md') | Should -BeFalse
@@ -41,6 +42,7 @@ Describe 'Terraform review home-lab demo' {
         $sample | Should -Not -Match '(?i)(password|secret)\s*=\s*[''"][^''"]+'
         $diffLines = @(Get-Content -LiteralPath (Join-Path $script:demoRoot 'samples/unsafe-main.diff') | Where-Object { $_.StartsWith('+') -and -not $_.StartsWith('+++') } | ForEach-Object { $_.Substring(1) })
         ($diffLines -join "`n") | Should -BeExactly ((Get-Content -LiteralPath $script:samplePath) -join "`n")
+        { Assert-UnifiedDiff -LiteralPath (Join-Path $script:demoRoot 'samples/unsafe-main.diff') -RepositoryRoot $script:standardsRoot } | Should -Not -Throw
     }
     It 'defines six prioritized unique line-bounded findings' {
         $expected = Get-Content -LiteralPath (Join-Path $script:demoRoot 'demo-output/expected-findings.json') -Raw | ConvertFrom-Json
