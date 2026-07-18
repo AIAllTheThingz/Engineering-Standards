@@ -68,7 +68,7 @@ flowchart TD
 - `.github/workflows/`: executable repository workflows and reusable workflows.
 - `workflows/`: distribution templates; GitHub does not execute reusable workflows directly from this root directory.
 - `templates/`: repository, pull-request, issue, test-plan, and threat-model templates.
-- `examples/`: functional downstream example projects.
+- [`examples/`](examples/README.md): functional downstream projects and isolated home-lab skill demonstrations.
 - `scripts/`: local validation and evidence tooling.
 - `tests/`: Pester tests and schema fixtures.
 - `docs/`: adoption, configuration, architecture, security, release, branch protection, and troubleshooting guidance.
@@ -249,6 +249,31 @@ The repository now separates example types explicitly:
 - `examples/integration-project`: synthetic governed integration flow with signature, replay, duplicate-delivery, partial-success, and redaction checks.
 - `examples/infrastructure-project`: synthetic non-mutating plan validation example with generated plan evidence.
 - `examples/combined-script-runner-project`: executable synthetic vertical slice demonstrating approved script catalog validation, queue state, idempotency, claim/lease, and atomic report publication.
+
+See the complete [Examples Catalog](examples/README.md) for validation commands
+and boundaries for every governed example.
+
+## Home-Lab Skill Demonstrations
+
+Twelve isolated, portfolio-grade home labs demonstrate skills without
+production discovery, secrets, external writes, or an `OPENAI_API_KEY`:
+
+- [`powershell-review`](examples/powershell-review-home-lab/README.md)
+- [`build-pester-tests`](examples/build-pester-tests-home-lab/README.md)
+- [`safe-automation`](examples/safe-automation-home-lab/README.md)
+- [`governance-validation`](examples/governance-validation-home-lab/README.md)
+- [`completion-evidence`](examples/completion-evidence-home-lab/README.md)
+- [`vendor-documentation-analysis`](examples/vendor-documentation-analysis-home-lab/README.md)
+- [`infrastructure-automation-design`](examples/infrastructure-automation-design-home-lab/README.md)
+- [`networking`](examples/networking-home-lab/README.md)
+- [`operating-systems`](examples/operating-systems-home-lab/README.md)
+- [`platforms`](examples/platforms-home-lab/README.md)
+- [`virtualization`](examples/virtualization-home-lab/README.md)
+- [`frameworks`](examples/frameworks-home-lab/README.md)
+
+Open one home-lab directory as its own workspace to make only that example's
+skill discoverable. Deterministic checks validate the package and synthetic
+contracts; live model behavior and production certification remain `NotRun`.
 
 ## Release And Versioning
 

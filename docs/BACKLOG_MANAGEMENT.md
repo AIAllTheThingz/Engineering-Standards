@@ -69,31 +69,31 @@ Risk cannot be lowered to improve apparent priority. An Exception to a
 mandatory control follows the governed exception process; it is not a backlog
 label or a substitute for remediation.
 
-## Owned Active Backlog
+## Current Active Backlog
 
-The issues below are the normalized remaining work discovered by Issue #24.
-Their live GitHub state is authoritative.
+There are no open issues in the normalized backlog discovered by Issue #24.
+Live GitHub state remains authoritative; new production work requires a new or
+reopened issue with current acceptance criteria, ownership, dependencies, risk,
+validation, evidence, and rollback requirements.
 
-| Priority | Work | Issue | Accountable role | Risk | Dependency guidance | Target guidance |
-| --- | --- | --- | --- | --- | --- | --- |
-| P1 | Release-readiness, post-release, and downstream compatibility gates | [#25](https://github.com/AIAllTheThingz/Engineering-Standards/issues/25) | Release Maintainers | High | Follows roadmap issues #15-#24 | 1.2.0 |
-| P1 | Controlled Codex skill behavior evaluation | [#42](https://github.com/AIAllTheThingz/Engineering-Standards/issues/42) | AI Governance Maintainers | High | #20 and #23 | 1.2.0 |
-| P2 | `powershell-review` skill | [#43](https://github.com/AIAllTheThingz/Engineering-Standards/issues/43) | PowerShell Standards Maintainers | High | #20 and #42 | 1.2.0 |
-| P2 | `build-pester-tests` skill | [#44](https://github.com/AIAllTheThingz/Engineering-Standards/issues/44) | PowerShell Test Maintainers | High | #20, #42, and #43 | 1.2.0 |
-| P2 | `safe-automation` skill | [#45](https://github.com/AIAllTheThingz/Engineering-Standards/issues/45) | Automation Safety Maintainers | High | #20 and #42-#44 | 1.2.0 |
-| P2 | `governance-validation` skill | [#46](https://github.com/AIAllTheThingz/Engineering-Standards/issues/46) | Governance Validation Maintainers | High | #22, #23, #42, and #45 | 1.2.0 |
-| P2 | `completion-evidence` skill | [#47](https://github.com/AIAllTheThingz/Engineering-Standards/issues/47) | Governance Evidence Maintainers | High | #22, #42, #45, and #46 | 1.2.0 |
-| P3 | `vendor-documentation-analysis` skill | [#48](https://github.com/AIAllTheThingz/Engineering-Standards/issues/48) | Integration And Documentation Maintainers | High | #20, #42, and #45 | 1.3.0 |
-| P3 | `infrastructure-automation-design` skill | [#49](https://github.com/AIAllTheThingz/Engineering-Standards/issues/49) | Infrastructure Standards Maintainers | High | #42, #45, #47, and #48 | 1.3.0 |
+## Resolution Ledger
 
-Target versions are planning guidance until the Release Maintainers confirm a
-release scope through [#25](https://github.com/AIAllTheThingz/Engineering-Standards/issues/25).
+| Priority | Work | Issue | Accountable role | Resolution |
+| --- | --- | --- | --- | --- |
+| P1 | Release-readiness, post-release, and downstream compatibility gates | [#25](https://github.com/AIAllTheThingz/Engineering-Standards/issues/25) | Release Maintainers | Completed. |
+| P1 | Controlled Codex skill behavior evaluation | [#42](https://github.com/AIAllTheThingz/Engineering-Standards/issues/42) | AI Governance Maintainers | Completed; the production promotion gate remains available. |
+| P2 | `powershell-review` skill | [#43](https://github.com/AIAllTheThingz/Engineering-Standards/issues/43) | PowerShell Standards Maintainers | Not planned; superseded by the [`powershell-review` home lab](../examples/powershell-review-home-lab/README.md). |
+| P2 | `build-pester-tests` skill | [#44](https://github.com/AIAllTheThingz/Engineering-Standards/issues/44) | PowerShell Test Maintainers | Not planned; superseded by the [`build-pester-tests` home lab](../examples/build-pester-tests-home-lab/README.md). |
+| P2 | `safe-automation` skill | [#45](https://github.com/AIAllTheThingz/Engineering-Standards/issues/45) | Automation Safety Maintainers | Not planned; superseded by the [`safe-automation` home lab](../examples/safe-automation-home-lab/README.md). |
+| P2 | `governance-validation` skill | [#46](https://github.com/AIAllTheThingz/Engineering-Standards/issues/46) | Governance Validation Maintainers | Not planned; superseded by the [`governance-validation` home lab](../examples/governance-validation-home-lab/README.md). |
+| P2 | `completion-evidence` skill | [#47](https://github.com/AIAllTheThingz/Engineering-Standards/issues/47) | Governance Evidence Maintainers | Not planned; superseded by the [`completion-evidence` home lab](../examples/completion-evidence-home-lab/README.md). |
+| P3 | `vendor-documentation-analysis` skill | [#48](https://github.com/AIAllTheThingz/Engineering-Standards/issues/48) | Integration And Documentation Maintainers | Not planned; superseded by the [`vendor-documentation-analysis` home lab](../examples/vendor-documentation-analysis-home-lab/README.md). |
+| P3 | `infrastructure-automation-design` skill | [#49](https://github.com/AIAllTheThingz/Engineering-Standards/issues/49) | Infrastructure Standards Maintainers | Not planned; superseded by the [`infrastructure-automation-design` home lab](../examples/infrastructure-automation-design-home-lab/README.md). |
 
-Issues #43 through #49 have isolated home-lab demonstrations under `examples/`.
-Those packages provide secret-free portfolio and deterministic validation
-coverage without satisfying production discovery, live model evaluation,
-approval, or promotion acceptance criteria. The issues therefore remain the
-authoritative owners for any later production-certified implementation.
+The demo packages are isolated, secret-free portfolio implementations. They do
+not satisfy production discovery, live model evaluation, attributable approval,
+or Candidate-to-Active promotion acceptance criteria. A future production
+promotion is separate work and must not be inferred from these resolutions.
 
 ## Deduplication Ledger
 
@@ -107,11 +107,11 @@ roadmap:
 | Release/version reconciliation | [#17](https://github.com/AIAllTheThingz/Engineering-Standards/issues/17) | Existing roadmap issue; completed. |
 | CODEOWNERS and branch/tag protection | [#18](https://github.com/AIAllTheThingz/Engineering-Standards/issues/18) | Existing roadmap issue; completed. |
 | Pull-request body governance | [#19](https://github.com/AIAllTheThingz/Engineering-Standards/issues/19) | Existing roadmap issue; completed. |
-| Deterministic Codex skill validation | [#20](https://github.com/AIAllTheThingz/Engineering-Standards/issues/20) | Existing roadmap issue; completed. Model behavior remains owned by #42. |
+| Deterministic Codex skill validation | [#20](https://github.com/AIAllTheThingz/Engineering-Standards/issues/20) | Existing roadmap issue; completed. The controlled behavior gate was delivered by #42. |
 | Manifest/configuration semantics | [#21](https://github.com/AIAllTheThingz/Engineering-Standards/issues/21) | Existing roadmap issue; completed. |
-| Authoritative aggregate validator | [#22](https://github.com/AIAllTheThingz/Engineering-Standards/issues/22) | Existing roadmap issue; completed. Skill orchestration remains owned by #46. |
+| Authoritative aggregate validator | [#22](https://github.com/AIAllTheThingz/Engineering-Standards/issues/22) | Existing roadmap issue; completed. Demo-only orchestration is documented by the #46 resolution. |
 | Reproducible validation environment | [#23](https://github.com/AIAllTheThingz/Engineering-Standards/issues/23) | Existing roadmap issue; completed. Deferred container/signing decisions remain documented below. |
-| Release lifecycle gate | [#25](https://github.com/AIAllTheThingz/Engineering-Standards/issues/25) | Existing roadmap issue; active. |
+| Release lifecycle gate | [#25](https://github.com/AIAllTheThingz/Engineering-Standards/issues/25) | Existing roadmap issue; completed. |
 
 ## Known Limitation Dispositions
 
@@ -122,12 +122,12 @@ commit and is not rewritten merely because later work resolved a limitation.
 
 | Limitation or deferred item | Accountable role | Disposition |
 | --- | --- | --- |
-| Actual skill selection, over-trigger avoidance, and response quality are not deterministically proven. | AI Governance Maintainers | Actionable; owned by [#42](https://github.com/AIAllTheThingz/Engineering-Standards/issues/42). |
-| The `v1.1.0` tag is unsigned. | Release Maintainers | Accepted historical risk. Do not rewrite the published tag; #25 must verify protection and provenance for future releases. |
+| Actual skill selection, over-trigger avoidance, and response quality are not deterministically proven. | AI Governance Maintainers | Permanent deterministic boundary. [#42](https://github.com/AIAllTheThingz/Engineering-Standards/issues/42) delivered the controlled live-evaluation gate; no production promotion is currently planned. |
+| The `v1.1.0` tag is unsigned. | Release Maintainers | Accepted historical risk. Do not rewrite the published tag; future release work must use the lifecycle gate delivered by #25 to verify protection and provenance. |
 | The published `v1.1.0` release body contains stale preparation language. | Release Maintainers | Documented non-action from #17. API state and `docs/RELEASE_STATUS.md` remain authoritative; the historical payload is not silently rewritten. |
 | Historical `1.1.0` notes report missing local YAML parsing and PSScriptAnalyzer. | Validator Dependency Maintainers | Resolved for current development by #23's pinned dependency model; preserved as historical release context. |
 | Historical `1.1.0` notes report incomplete non-PowerShell examples. | Example Maintainers | Resolved by the current functional example set; preserved as historical release context. |
-| Local validation cannot prove live GitHub settings, hosted execution, or artifact publication. | Repository and Release Maintainers | Permanent trust boundary, not missing implementation. #18 owns settings verification and #25 owns release proof. |
+| Local validation cannot prove live GitHub settings, hosted execution, or artifact publication. | Repository and Release Maintainers | Permanent trust boundary, not missing implementation. #18 delivered settings verification and #25 delivered release proof controls. |
 | GitHub's `ubuntu-24.04` label is versioned but not an immutable image digest. | Validator Dependency Maintainers | Accepted residual risk under #23 with runtime/hash verification. Digest-pinned container work remains deferred until its build, signing, scanning, retention, and compatibility cost is justified. |
 | A signed validator module or release bundle is not published. | Validator Dependency Maintainers | Deferred non-action because publication/signing authority and a complete distribution design do not exist. Reopen as a focused issue only when those prerequisites exist. |
 | The downstream canary does not exercise consumer builds, private repositories, GitHub Enterprise Server, or every caller category. | Downstream Repository Owners | Intentional scope boundary. Caller-owned CI and adoption Evidence remain authoritative; create a central issue only after a supported central use case is approved. |
@@ -139,9 +139,11 @@ release review identifies new material impact.
 
 ## Documentation Reference Rules
 
-Documentation links to an issue by number and stable purpose. It does not copy
-the issue's open/closed state, completion percentage, current assignee activity,
-or acceptance checkboxes. GitHub owns those volatile fields.
+Active planning documentation links to an issue by number and stable purpose.
+It does not copy completion percentage, current assignee activity, or acceptance
+checkboxes. GitHub owns those volatile fields. A resolution ledger may record a
+durable final disposition when closure has an attributable comment and the
+documentation no longer presents the work as active.
 
 When documentation introduces planned active work, the author MUST create or
 identify the issue in the same change and include the issue link. Rejected or
@@ -181,17 +183,17 @@ release-readiness review:
 
 ## Validation And Evidence
 
-Repository validation enforces that each planned skill in
-`docs/CODEX_SKILLS.md` appears in an issue-linked table row and rejects the old
-prose-only numbered or unchecked-list form. Local validation proves repository
-references and structure; it cannot prove live issue existence or assignment.
+Repository validation enforces that each demo-resolved skill in
+`docs/CODEX_SKILLS.md` appears in an issue-linked resolution table row and
+rejects the old prose-only numbered or unchecked-list form. Local validation
+proves repository references and structure; it cannot prove live issue state.
 The maintainer review therefore records the GitHub issue URLs and verifies them
 through the GitHub API.
 
-Issue #24 Evidence must include the created issue numbers, the documentation and
-link validation results, Codex skill validation, Pester results, authoritative
-governance validation, GitHub Actions state, and any check that remained
-`NotRun` or `Blocked`.
+Historical Issue #24 evidence includes the created issue numbers, documentation
+and link validation results, Codex skill validation, Pester results,
+authoritative governance validation, GitHub Actions state, and checks that
+remained `NotRun` or `Blocked`.
 
 ## Related
 

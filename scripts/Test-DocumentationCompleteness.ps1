@@ -144,7 +144,7 @@ $skillPlanRelativePath = 'docs/CODEX_SKILLS.md'
 $skillPlanPath = Join-Path $root $skillPlanRelativePath
 if (Test-Path -LiteralPath $skillPlanPath -PathType Leaf) {
     $skillPlanText = Get-Content -LiteralPath $skillPlanPath -Raw
-    $plannedSkills = @(
+    $demoResolvedSkills = @(
         'powershell-review',
         'build-pester-tests',
         'safe-automation',
@@ -154,16 +154,16 @@ if (Test-Path -LiteralPath $skillPlanPath -PathType Leaf) {
         'infrastructure-automation-design'
     )
 
-    foreach ($skill in $plannedSkills) {
+    foreach ($skill in $demoResolvedSkills) {
         $escapedSkill = [regex]::Escape($skill)
         $issueLinkedRow = "(?m)^\|[^\r\n]*$escapedSkill[^\r\n]*\[#(?<issue>\d+)\]\(https://github\.com/AIAllTheThingz/Engineering-Standards/issues/\k<issue>\)[^\r\n]*\|\s*$"
         if ([regex]::Matches($skillPlanText, $issueLinkedRow).Count -ne 1) {
-            $results.Add((New-ValidationResult -Status Failed -Message "Planned skill '$skill' must appear exactly once in an authoritative GitHub issue-linked table row." -Path $skillPlanRelativePath))
+            $results.Add((New-ValidationResult -Status Failed -Message "Demo-resolved skill '$skill' must appear exactly once in an authoritative GitHub issue-linked resolution table row." -Path $skillPlanRelativePath))
         }
 
         $proseOnlyPattern = "(?m)^\s*(?:\d+\.|[-*]\s+\[[ xX]\])\s+``?$escapedSkill``?\s*$"
         if ($skillPlanText -match $proseOnlyPattern) {
-            $results.Add((New-ValidationResult -Status Failed -Message "Planned skill '$skill' is represented by a prose-only numbered or unchecked list item." -Path $skillPlanRelativePath))
+            $results.Add((New-ValidationResult -Status Failed -Message "Demo-resolved skill '$skill' is represented by a prose-only numbered or unchecked list item." -Path $skillPlanRelativePath))
         }
     }
 }

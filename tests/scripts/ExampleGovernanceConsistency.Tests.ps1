@@ -157,7 +157,11 @@ Describe 'Example governance version and trusted implementation consistency' {
         $actualExamples | Should -HaveCount $expectedExamples.Count
         ($actualExamples -join "`n") |
             Should -BeExactly (@($expectedExamples | Sort-Object) -join "`n")
+        $catalogPath = Join-Path $script:examplesRoot 'README.md'
+        Test-Path -LiteralPath $catalogPath -PathType Leaf | Should -BeTrue
+        $catalogText = Get-Content -LiteralPath $catalogPath -Raw
         foreach ($exampleName in $expectedExamples) {
+            $catalogText | Should -Match ([regex]::Escape("$exampleName/README.md")) -Because "$exampleName must be discoverable from the examples catalog"
             $record = Get-ExampleGovernanceRecord -Directory (Join-Path $script:examplesRoot $exampleName)
             $findings = @(
                 Get-ExampleGovernanceConsistencyFinding -Manifest $record.Manifest -Config $record.Config -Workflow $record.Workflow -ExpectedSha $script:expectedImplementationSha

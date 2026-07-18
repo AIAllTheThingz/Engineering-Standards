@@ -28,7 +28,7 @@ demonstration rather than production behavior evidence.
 | SKL011 | Optional compatibility | Supported semantic version | malformed, impossible, placeholder version | `Failed` | error | Deterministic |
 | SKL012 | Optional lifecycle | Active, or complete deprecation/migration contract | silently active deprecated skill | `Failed` | error | Deterministic |
 | SKL013 | All declared names | Unique names | duplicate declaration in different directories | `Failed` | error | Deterministic |
-| SKL014 | Planned skill names | Documentation-only plan | empty or placeholder active directory | `Failed` | error | Deterministic |
+| SKL014 | Demo-resolved skill names | No empty or placeholder production directory | demo-only name reintroduced as an incomplete Active skill | `Failed` | error | Deterministic |
 | SKL015 | Instruction body | “Do not bypass governance” | affirmative bypass, fabricated evidence, destructive default | `Failed` | error | Deterministic, scoped patterns |
 | SKL016 | Skill metadata/content | Clearly synthetic examples | obvious embedded credential/production identifier | `Failed` | error | Deterministic advisory control; not a complete secret scan |
 | SKL017 | Prompt fixtures | Eight required categories with unique IDs and enums | missing category, duplicate ID, unknown expectation | `Failed` | error | Deterministic structure only |
