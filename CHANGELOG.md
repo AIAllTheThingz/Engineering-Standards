@@ -46,6 +46,11 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Changed
 
+- Reconciled the closed #43-#49 production-skill backlog with its demo-only
+  resolution, added a complete examples catalog, corrected the
+  `governance-validation` demo's trusted-source provenance, and added regression
+  coverage that binds the catalog and illustrative provenance to governed
+  repository identities.
 - Added five source-pinned, Apache-2.0-attributed home-lab skill examples for
   networking, operating systems, platforms, virtualization, and application
   frameworks. Each copied Public-Access-Agents package is isolated from the

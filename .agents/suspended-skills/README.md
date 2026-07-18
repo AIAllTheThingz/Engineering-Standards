@@ -10,21 +10,19 @@ Skills package repeatable engineering workflows. They do not replace governance,
 | --- | --- | --- | --- |
 | [`enterprise-powershell`](enterprise-powershell/SKILL.md) | Create or substantially modify governed enterprise PowerShell automation and its supporting project files. | Suspended | Current controlled evaluation is `Blocked`; implicit and explicit invocation remain suspended until a passing unchanged-input live run and attributable human approval. |
 
-## Planned Skills
+## Demo-Only Skills
 
-The following skills are planned but are not represented by placeholder directories or incomplete `SKILL.md` files:
+There are no planned production skills represented by placeholder directories
+or incomplete `SKILL.md` files. Issues #43 through #49 were closed as not
+planned and superseded by isolated home-lab demonstrations. The demonstrations
+are cataloged in [`../../examples/README.md`](../../examples/README.md) and are
+not part of this Suspended production-skill directory.
 
-1. [`powershell-review` (#43)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/43)
-2. [`build-pester-tests` (#44)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/44)
-3. [`safe-automation` (#45)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/45)
-4. [`governance-validation` (#46)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/46)
-5. [`completion-evidence` (#47)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/47)
-6. [`vendor-documentation-analysis` (#48)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/48)
-7. [`infrastructure-automation-design` (#49)](https://github.com/AIAllTheThingz/Engineering-Standards/issues/49)
-
-A planned skill becomes active only after its instructions, references,
-deterministic validation, passing controlled behavior evaluation, attributable
-human adjudication, documentation, and review are complete.
+A future production skill requires a new or reopened issue and becomes Active
+only after its instructions, references, deterministic validation, passing
+controlled behavior evaluation, attributable human adjudication,
+documentation, and review are complete. Demo output is not production
+promotion evidence.
 
 ## Authority
 

@@ -381,7 +381,7 @@ function Invoke-CodexSkillValidation {
     if ($directories.Count -gt $script:Limits.MaxSkills) { $results.Add((New-SkillValidationResult -RuleId SKL019 -Status Failed -Severity error -Message 'Skill count exceeds the configured limit.' -Path $SkillsRootRelative)); return New-CodexSkillValidationReport -RepositoryRoot $repositoryRoot -SkillsRoot $skillsRoot -SkillNames @() -Results @($results) -PromptResults @() }
     $skillNames = [System.Collections.Generic.List[string]]::new()
     $declaredNames = @{}
-    $plannedSkillNames = @('powershell-review','build-pester-tests','safe-automation','governance-validation','completion-evidence','vendor-documentation-analysis','infrastructure-automation-design')
+    $demoResolvedSkillNames = @('powershell-review','build-pester-tests','safe-automation','governance-validation','completion-evidence','vendor-documentation-analysis','infrastructure-automation-design')
     foreach ($directory in $directories) {
         $relativeDirectory = Get-SafeRelativePath $repositoryRoot $directory.FullName
         if ($directory.Name -cnotmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$' -or $directory.LinkType -or ($directory.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
@@ -392,8 +392,8 @@ function Invoke-CodexSkillValidation {
         $skillFiles = @(Get-ChildItem -LiteralPath $directory.FullName -Force | Where-Object { $_.Name -ceq 'SKILL.md' })
         $caseVariantSkillFiles = @(Get-ChildItem -LiteralPath $directory.FullName -Force | Where-Object { $_.Name -ieq 'SKILL.md' })
         if ($skillFiles.Count -ne 1 -or $caseVariantSkillFiles.Count -ne 1 -or $skillFiles[0].PSIsContainer -or $skillFiles[0].LinkType -or ($skillFiles[0].Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
-            $rule = if ($directory.Name -in $plannedSkillNames) { 'SKL014' } else { 'SKL002' }
-            $results.Add((New-SkillValidationResult -RuleId $rule -Status Failed -Severity error -Message 'Skill directory must contain exactly one regular SKILL.md file; planned skills may not exist as empty active directories.' -Path $relativeDirectory -SkillName $directory.Name)); continue
+            $rule = if ($directory.Name -in $demoResolvedSkillNames) { 'SKL014' } else { 'SKL002' }
+            $results.Add((New-SkillValidationResult -RuleId $rule -Status Failed -Severity error -Message 'Skill directory must contain exactly one regular SKILL.md file; demo-resolved skills may not reappear as empty active directories.' -Path $relativeDirectory -SkillName $directory.Name)); continue
         }
         try { $frontmatter = Get-SkillFrontmatter -Path $skillFiles[0].FullName; $metadata = ConvertFrom-SafeYamlText -Text $frontmatter.yaml }
         catch { $results.Add((New-SkillValidationResult -RuleId SKL003 -Status Failed -Severity error -Message $_.Exception.Message -Path (Get-SafeRelativePath $repositoryRoot $skillFiles[0].FullName) -SkillName $directory.Name)); continue }
@@ -402,7 +402,7 @@ function Invoke-CodexSkillValidation {
         if ($declaredNames.ContainsKey($name)) { $results.Add((New-SkillValidationResult -RuleId SKL013 -Status Failed -Severity error -Message 'Duplicate declared skill name.' -Path (Get-SafeRelativePath $repositoryRoot $skillFiles[0].FullName) -SkillName $name)) } else { $declaredNames[$name] = $true }
         if ($name) { $skillNames.Add($name) }
         foreach ($failure in @(Test-DescriptionContract -Description ([string](Get-OptionalProperty -InputObject $metadata -Name 'description')))) { $results.Add((New-SkillValidationResult -RuleId SKL005 -Status Failed -Severity error -Message $failure -Path (Get-SafeRelativePath $repositoryRoot $skillFiles[0].FullName) -SkillName $name)) }
-        if ($directory.Name -in $plannedSkillNames -and ([string](Get-OptionalProperty -InputObject $metadata -Name 'description')) -match '(?i)\b(todo|tbd|placeholder|coming soon|future work)\b') { $results.Add((New-SkillValidationResult -RuleId SKL014 -Status Failed -Severity error -Message 'Planned skill directory contains placeholder-only implementation.' -Path (Get-SafeRelativePath $repositoryRoot $skillFiles[0].FullName) -SkillName $name)) }
+        if ($directory.Name -in $demoResolvedSkillNames -and ([string](Get-OptionalProperty -InputObject $metadata -Name 'description')) -match '(?i)\b(todo|tbd|placeholder|coming soon|future work)\b') { $results.Add((New-SkillValidationResult -RuleId SKL014 -Status Failed -Severity error -Message 'Demo-resolved skill directory contains placeholder-only implementation.' -Path (Get-SafeRelativePath $repositoryRoot $skillFiles[0].FullName) -SkillName $name)) }
         foreach ($match in @(Test-UnsafeInstructions -Text $frontmatter.body)) { $results.Add((New-SkillValidationResult -RuleId SKL015 -Status Failed -Severity error -Message 'Skill contains an affirmative policy-weakening instruction.' -Path (Get-SafeRelativePath $repositoryRoot $skillFiles[0].FullName) -SkillName $name)) }
         if ($frontmatter.body -match '(?i)(password|token|api[_-]?key)\s*[:=]\s*[^\s"'']{8,}' -or $frontmatter.body -match '(?i)https?://[^\s/@]+:[^\s/@]+@') { $results.Add((New-SkillValidationResult -RuleId SKL016 -Status Failed -Severity error -Message 'Skill contains an obvious embedded credential pattern; repository-wide secret scanning remains separate.' -Path (Get-SafeRelativePath $repositoryRoot $skillFiles[0].FullName) -SkillName $name)) }
         $requiredAuthorities = @('AGENTS.md','agents/AGENTS_Base.md','governance/RISK_CLASSIFICATION.md','governance/COMPLETION_EVIDENCE.md','governance/EXCEPTION_PROCESS.md','governance/AI_GENERATED_CODE_POLICY.md')

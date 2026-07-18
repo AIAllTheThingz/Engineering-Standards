@@ -425,7 +425,7 @@ Read AGENTS.md, agents/AGENTS_Base.md, governance/RISK_CLASSIFICATION.md, govern
         @((Invoke-TestValidation (New-TestRepository -Name lifecycle-state -SkillContent $content)).results | Where-Object ruleId -eq 'SKL012').Count | Should -Be 1
     }
 
-    It 'rejects an empty planned-skill directory' {
+    It 'rejects an empty demo-resolved skill directory' {
         $root = New-TestRepository -Name planned
         New-Item -ItemType Directory -Path (Join-Path $root '.agents/skills/powershell-review') -Force | Out-Null
         @((Invoke-TestValidation $root).results | Where-Object ruleId -eq 'SKL014').Count | Should -Be 1

@@ -135,12 +135,12 @@ Describe 'Documentation completeness' {
             }
         }
 
-        It 'accepts the current issue-linked planned skill inventory' {
+        It 'accepts the current issue-linked demo resolution inventory' {
             & pwsh -NoProfile -File $script:backlogDocumentationValidator -Path "$PSScriptRoot/../.."
             $LASTEXITCODE | Should -Be 0
         }
 
-        It 'fails when a planned skill loses its authoritative issue link' {
+        It 'fails when a demo-resolved skill loses its authoritative issue link' {
             $text = (Get-Content -LiteralPath $script:skillPlanFixture -Raw) -replace '\[#43\]\(https://github\.com/AIAllTheThingz/Engineering-Standards/issues/43\)', 'Issue pending'
             Set-Content -LiteralPath $script:skillPlanFixture -Value $text -Encoding utf8
             $output = @(& pwsh -NoProfile -File $script:backlogDocumentationValidator -Path $script:backlogTempRoot 2>&1)
@@ -148,7 +148,7 @@ Describe 'Documentation completeness' {
             $output -join "`n" | Should -Match "powershell-review.*authoritative GitHub issue-linked"
         }
 
-        It 'fails when a planned skill is also represented as prose-only work' {
+        It 'fails when a demo-resolved skill is also represented as prose-only work' {
             Add-Content -LiteralPath $script:skillPlanFixture -Value "`n1. ``powershell-review```n"
             $output = @(& pwsh -NoProfile -File $script:backlogDocumentationValidator -Path $script:backlogTempRoot 2>&1)
             $LASTEXITCODE | Should -Not -Be 0

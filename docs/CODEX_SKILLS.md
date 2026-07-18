@@ -298,24 +298,22 @@ Recommended flow:
 
 A skill installed without its governing context is incomplete. If central standards are referenced but unavailable, the skill must report `Blocked` instead of inventing policy.
 
-## Planned Skill Sequence
+## Demonstration Skill Resolution And Optional Promotion
 
 `enterprise-powershell` is implemented but currently Suspended outside the discoverable `.agents/skills` root by the checked
 `Blocked` controlled behavior result. It may return to Active only after a
-passing unchanged-input live evaluation and attributable human approval. The remaining planned skills are owned by
-GitHub issues rather than prose-only checklist entries. Live issue state,
-acceptance criteria, dependencies, and delivery decisions are authoritative;
-this table records the stable recommended sequence only.
+passing unchanged-input live evaluation and attributable human approval.
 
-Issue #43 also provides a portfolio-grade
-[`powershell-review` home-lab demonstration](../examples/powershell-review-home-lab/README.md).
-The example is discoverable only when opened as its own workspace, uses
-synthetic review targets, runs deterministic secret-free validation, and does
-not claim Candidate-to-Active production promotion. The production behavior
-gate remains unchanged and optional for a future certified implementation.
+Issues #43 through #49 are closed as not planned and superseded by
+portfolio-grade home-lab demonstrations. Their original production Active-skill
+acceptance criteria were intentionally not completed. No production promotion
+is currently planned; a future promotion requires a new or reopened issue,
+passing controlled live behavior evaluation, attributable approval, and all
+other lifecycle evidence.
 
-Issues #44 through #49 now also have isolated, secret-free home-lab packages:
+The seven issue-resolved home-lab packages are:
 
+- [`powershell-review`](../examples/powershell-review-home-lab/README.md)
 - [`build-pester-tests`](../examples/build-pester-tests-home-lab/README.md)
 - [`safe-automation`](../examples/safe-automation-home-lab/README.md)
 - [`governance-validation`](../examples/governance-validation-home-lab/README.md)
@@ -323,11 +321,10 @@ Issues #44 through #49 now also have isolated, secret-free home-lab packages:
 - [`vendor-documentation-analysis`](../examples/vendor-documentation-analysis-home-lab/README.md)
 - [`infrastructure-automation-design`](../examples/infrastructure-automation-design-home-lab/README.md)
 
-These packages use synthetic inputs, nine-case routing corpora, deterministic
-Pester and contract validation, and explicit `NotRun` labels for live model,
-hosted, external, or deployment behavior. Their issue acceptance criteria for
-production discovery and controlled Candidate-to-Active promotion remain open
-until separately implemented and approved.
+These packages use synthetic inputs, deterministic Pester and contract
+validation, and explicit `NotRun` labels for live model, hosted, external, or
+deployment behavior. They are discoverable only when their own example is
+opened as the workspace and require no model API key.
 
 Five adjacent home-lab workspaces extend the same isolation pattern with
 source-pinned packages copied from Public-Access-Agents:
@@ -342,21 +339,22 @@ They are independently discoverable only from their example directories, use
 synthetic read-only boundaries, require no model API key, preserve immutable
 upstream provenance and notices, and do not enter production promotion gates.
 
-| Order | Skill | Authoritative issue | Accountable role | Risk | Target guidance |
-| --- | --- | --- | --- | --- | --- |
-| 1 | `powershell-review` | [#43](https://github.com/AIAllTheThingz/Engineering-Standards/issues/43) | PowerShell Standards Maintainers | High | 1.2.0 |
-| 2 | `build-pester-tests` | [#44](https://github.com/AIAllTheThingz/Engineering-Standards/issues/44) | PowerShell Test Maintainers | High | 1.2.0 |
-| 3 | `safe-automation` | [#45](https://github.com/AIAllTheThingz/Engineering-Standards/issues/45) | Automation Safety Maintainers | High | 1.2.0 |
-| 4 | `governance-validation` | [#46](https://github.com/AIAllTheThingz/Engineering-Standards/issues/46) | Governance Validation Maintainers | High | 1.2.0 |
-| 5 | `completion-evidence` | [#47](https://github.com/AIAllTheThingz/Engineering-Standards/issues/47) | Governance Evidence Maintainers | High | 1.2.0 |
-| 6 | `vendor-documentation-analysis` | [#48](https://github.com/AIAllTheThingz/Engineering-Standards/issues/48) | Integration And Documentation Maintainers | High | 1.3.0 |
-| 7 | `infrastructure-automation-design` | [#49](https://github.com/AIAllTheThingz/Engineering-Standards/issues/49) | Infrastructure Standards Maintainers | High | 1.3.0 |
+| Order | Demo skill | Resolution issue | Accountable role | Production status |
+| --- | --- | --- | --- | --- |
+| 1 | `powershell-review` | [#43](https://github.com/AIAllTheThingz/Engineering-Standards/issues/43) | PowerShell Standards Maintainers | Not planned; superseded by demo. |
+| 2 | `build-pester-tests` | [#44](https://github.com/AIAllTheThingz/Engineering-Standards/issues/44) | PowerShell Test Maintainers | Not planned; superseded by demo. |
+| 3 | `safe-automation` | [#45](https://github.com/AIAllTheThingz/Engineering-Standards/issues/45) | Automation Safety Maintainers | Not planned; superseded by demo. |
+| 4 | `governance-validation` | [#46](https://github.com/AIAllTheThingz/Engineering-Standards/issues/46) | Governance Validation Maintainers | Not planned; superseded by demo. |
+| 5 | `completion-evidence` | [#47](https://github.com/AIAllTheThingz/Engineering-Standards/issues/47) | Governance Evidence Maintainers | Not planned; superseded by demo. |
+| 6 | `vendor-documentation-analysis` | [#48](https://github.com/AIAllTheThingz/Engineering-Standards/issues/48) | Integration And Documentation Maintainers | Not planned; superseded by demo. |
+| 7 | `infrastructure-automation-design` | [#49](https://github.com/AIAllTheThingz/Engineering-Standards/issues/49) | Infrastructure Standards Maintainers | Not planned; superseded by demo. |
 
 [Issue #42](https://github.com/AIAllTheThingz/Engineering-Standards/issues/42)
-delivered the controlled model-behavior evaluation gate for safe promotion of
-new skills. [Backlog Management](BACKLOG_MANAGEMENT.md) defines prioritization,
-known-limitation dispositions, documentation reference rules, and the periodic
-review checklist. Empty placeholder skill directories remain prohibited.
+delivered the controlled model-behavior evaluation gate for any future safe
+promotion. [Backlog Management](BACKLOG_MANAGEMENT.md) records the current
+resolution ledger, known-limitation dispositions, documentation reference
+rules, and periodic review checklist. Empty placeholder skill directories
+remain prohibited.
 
 ## Example End-To-End Flow
 
