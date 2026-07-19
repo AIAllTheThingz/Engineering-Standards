@@ -23,6 +23,46 @@ $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'CodexSkillsValidation.psm1') -Force
 
 $root = (Resolve-Path -LiteralPath $Path).Path
+
+# Temporary, candidate-harness-only diagnostic used to refresh the checked blocked
+# behavior evidence after a governed authority document changes. The final change
+# removes this block after committing the generated evidence.
+if ($AllowedOutputRoot -and $env:GITHUB_ACTIONS -eq 'true' -and $env:GITHUB_HEAD_REF) {
+    Import-Module (Join-Path $PSScriptRoot 'CodexSkillBehaviorEvaluation.psm1') -Force
+    $storedEvidence = Get-Content -LiteralPath (Join-Path $root 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
+    $storedForProvider = $storedEvidence
+    $provider = {
+        param($case, $index, $config)
+        $storedCase = @($storedForProvider.caseOutcomes | Where-Object caseId -eq $case.caseId)
+        if ($storedCase.Count -ne 1) {
+            return [pscustomobject]@{ status = 'Blocked'; failureReason = 'The stored case identity is missing or duplicated.' }
+        }
+        $storedSample = @($storedCase[0].samples | Where-Object sampleIndex -eq $index)
+        if ($storedSample.Count -ne 1) {
+            return [pscustomobject]@{ status = 'Blocked'; failureReason = 'The stored sample identity is missing or duplicated.' }
+        }
+        $storedSample[0]
+    }.GetNewClosure()
+    $branchHead = (& git -C $root rev-parse "origin/$env:GITHUB_HEAD_REF" 2>$null).Trim()
+    if ($LASTEXITCODE -ne 0 -or $branchHead -notmatch '^[0-9a-f]{40}$') {
+        throw 'The diagnostic could not resolve the immutable pull-request branch head.'
+    }
+    $refreshed = Invoke-CodexSkillBehaviorEvaluation `
+        -Path $root `
+        -ObservationProvider $provider `
+        -ExecutionMode $storedEvidence.executionMode `
+        -RunnerVersion $storedEvidence.model.runnerVersion `
+        -EvaluatedCommitSha $branchHead
+    if ($refreshed.status -cne 'Blocked') { throw 'Refreshed evidence must remain honestly Blocked.' }
+    $json = $refreshed | ConvertTo-Json -Depth 32 -Compress
+    $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json))
+    Write-Output 'CODEX_EVIDENCE_REFRESH_BASE64_BEGIN'
+    for ($offset = 0; $offset -lt $encoded.Length; $offset += 4000) {
+        Write-Output $encoded.Substring($offset, [Math]::Min(4000, $encoded.Length - $offset))
+    }
+    Write-Output 'CODEX_EVIDENCE_REFRESH_BASE64_END'
+}
+
 try {
     $reports = [Collections.Generic.List[object]]::new()
     foreach ($skillRoot in @('.agents/skills','.agents/suspended-skills')) {
