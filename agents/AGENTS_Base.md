@@ -3,9 +3,9 @@
 | Field | Value |
 | --- | --- |
 | Status | Active |
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Owner role | Engineering Standards Maintainers |
-| Last reviewed | 2026-06-20 |
+| Last reviewed | 2026-07-19 |
 | Changelog | See [../CHANGELOG.md](../CHANGELOG.md). |
 
 ## Purpose
@@ -197,6 +197,47 @@ Agents MUST produce maintainable structure, clear naming, explicit error handlin
 
 Agents MUST NOT add swallowed exceptions, fake success paths, dead code, unexplained constants, unnecessary dependencies, unsafe shell construction, or comments that only restate obvious code. Comments SHOULD explain non-obvious logic, risk, or constraints.
 
+## Simplicity And Proportional Design
+
+Agents MUST implement the smallest complete change that satisfies the current requirements, applicable standards, and validation obligations.
+
+Agents MUST:
+
+- Follow the existing architecture and conventions unless changing them is explicitly in scope and justified.
+- Prefer direct, readable implementations over clever, highly generic, or speculative designs.
+- Introduce an abstraction only when it removes demonstrated duplication, isolates a meaningful boundary, improves testability, or represents a real domain concept required by the current task.
+- Add a dependency only when it provides a clear benefit in correctness, security, interoperability, maintainability, or overall complexity that outweighs its operational and supply-chain cost.
+- Prefer removing obsolete, redundant, or compensating code over adding another layer, provided required behavior, compatibility, security controls, tests, documentation, and evidence remain intact.
+- Choose the safer implementation when two approaches are comparably small and understandable.
+- Keep short, single-use logic inline when extraction would hide useful local context.
+- Extract a private helper when it names an important invariant, isolates side effects, centralizes security-sensitive logic, prevents meaningful duplication, reduces material complexity, or improves testing.
+
+Agents MUST NOT:
+
+- Add speculative extension points, generic frameworks, factories, interfaces, configuration switches, or plugin systems for requirements that do not exist.
+- Add boilerplate, wrapper layers, utility collections, or generic helpers merely to make the implementation appear reusable.
+- Create placeholder abstractions for hypothetical future work.
+- Replace straightforward code with a more abstract design unless the change produces a demonstrable benefit.
+- Remove required validation, testing, documentation, compatibility behavior, evidence, or security controls in the name of simplicity.
+
+## Runtime Validation Discipline
+
+Runtime validation MUST be placed at trust boundaries and wherever an invariant can no longer be assumed.
+
+Trust boundaries include:
+
+- User, administrator, file, environment, command-line, network, API, database, queue, event, and external-service input.
+- Deserialization and persistence boundaries.
+- Authentication, authorization, tenant, privilege, and data-classification boundaries.
+- Paths, targets, identifiers, configuration, credentials, and values used by state-changing or destructive operations.
+- Values that may be stale, mutated, replayed, or supplied by another process or subsystem.
+
+Within a single trusted control flow, agents SHOULD avoid repeatedly validating an invariant that has already been established and cannot have changed.
+
+Runtime guards, type checks, fallbacks, retries, and exception handling MUST protect a documented invariant or credible failure mode. Agents MUST NOT add defensive checks merely to suppress uncertainty, hide errors, or continue after an invalid state.
+
+Catch-all exception handling MUST NOT swallow failures or fabricate successful behavior. When a broad catch is required at a process, job, request, or operational boundary, it MUST preserve actionable context, propagate an appropriate failure status, perform required cleanup, and avoid exposing sensitive information.
+
 ## Documentation Requirements
 
 When behavior, contracts, usage, security posture, validation, or operations change, agents MUST update relevant documentation. Documentation SHOULD include top-level purpose, function or method documentation where applicable, usage examples, configuration, security notes, validation instructions, troubleshooting, rollback, and known limitations.
@@ -291,4 +332,5 @@ Expired, missing, malformed, rejected, or unapproved exceptions MUST NOT be trea
 
 ## Revision History
 
+- 1.1.0: Added enforceable proportional-design and trust-boundary runtime-validation requirements.
 - 1.0.0: Base agent contract rebuilt with explicit instruction hierarchy, mandatory phases, safety rules, validation, evidence, completion status, prohibited behaviors, exceptions, and final reporting requirements.
