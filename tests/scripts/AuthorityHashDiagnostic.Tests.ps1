@@ -21,7 +21,13 @@ Describe 'Temporary Codex authority evidence refresh diagnostic' {
             $storedSample[0]
         }.GetNewClosure()
 
-        $currentCommit = (& git -C $script:repoRoot rev-parse HEAD).Trim()
+        $headRef = [Environment]::GetEnvironmentVariable('GITHUB_HEAD_REF')
+        $currentCommit = if ([string]::IsNullOrWhiteSpace($headRef)) {
+            (& git -C $script:repoRoot rev-parse HEAD).Trim()
+        }
+        else {
+            (& git -C $script:repoRoot rev-parse "origin/$headRef").Trim()
+        }
         $refreshedEvidence = Invoke-CodexSkillBehaviorEvaluation `
             -Path $script:repoRoot `
             -ObservationProvider $observationProvider `
