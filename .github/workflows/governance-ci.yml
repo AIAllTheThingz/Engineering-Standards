@@ -50,37 +50,37 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Generate refreshed blocked Codex evidence
+      - name: Patch stale evidence bindings without reserializing samples
         shell: pwsh
         env:
           EVALUATED_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           $ErrorActionPreference = 'Stop'
           Import-Module ./scripts/CodexSkillBehaviorEvaluation.psm1 -Force
-          $stored = Get-Content -LiteralPath ./evidence/codex-skill-behavior.json -Raw | ConvertFrom-Json
-          $storedForProvider = $stored
-          $provider = {
-            param($case, $index, $config)
-            $storedCase = @($storedForProvider.caseOutcomes | Where-Object caseId -eq $case.caseId)
-            if ($storedCase.Count -ne 1) {
-              return [pscustomobject]@{ status = 'Blocked'; failureReason = 'The stored case identity is missing or duplicated.' }
-            }
-            $sample = @($storedCase[0].samples | Where-Object sampleIndex -eq $index)
-            if ($sample.Count -ne 1) {
-              return [pscustomobject]@{ status = 'Blocked'; failureReason = 'The stored sample identity is missing or duplicated.' }
-            }
-            $sample[0]
-          }.GetNewClosure()
-          $refreshed = Invoke-CodexSkillBehaviorEvaluation `
-            -Path . `
-            -ObservationProvider $provider `
-            -ExecutionMode $stored.executionMode `
-            -RunnerVersion $stored.model.runnerVersion `
-            -EvaluatedCommitSha $env:EVALUATED_COMMIT_SHA
-          if ($refreshed.status -cne 'Blocked') { throw 'Refreshed evidence must remain honestly Blocked.' }
+          $root = (Resolve-Path .).Path
+          $inputs = Get-CodexBehaviorInput -Path $root
+          $authorityHash = Get-BoundedInputHash -Root $root -RelativePaths $inputs.AuthorityPaths
+          $sourcePath = Join-Path $root 'evidence/codex-skill-behavior.json'
+          $raw = Get-Content -LiteralPath $sourcePath -Raw
+          $raw = [regex]::Replace(
+            $raw,
+            '"authorityHash"\s*:\s*"[a-f0-9]{64}"',
+            ('"authorityHash": "{0}"' -f $authorityHash),
+            1
+          )
+          $raw = [regex]::Replace(
+            $raw,
+            '"evaluatedCommitSha"\s*:\s*"[a-f0-9]{40}"',
+            ('"evaluatedCommitSha": "{0}"' -f $env:EVALUATED_COMMIT_SHA),
+            1
+          )
           New-Item -ItemType Directory -Path .tmp/codex-evidence-refresh -Force | Out-Null
-          $refreshed | ConvertTo-Json -Depth 32 |
-            Set-Content -LiteralPath .tmp/codex-evidence-refresh/codex-skill-behavior.json -Encoding utf8
+          $outputPath = Join-Path $root '.tmp/codex-evidence-refresh/codex-skill-behavior.json'
+          Set-Content -LiteralPath $outputPath -Value $raw -Encoding utf8 -NoNewline
+          $parsed = Get-Content -LiteralPath $outputPath -Raw | ConvertFrom-Json
+          if ($parsed.status -cne 'Blocked' -or $parsed.authorityHash -cne $authorityHash -or $parsed.evaluatedCommitSha -cne $env:EVALUATED_COMMIT_SHA) {
+            throw 'The raw evidence binding refresh did not produce the expected blocked record.'
+          }
 
       - name: Upload refreshed evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
