@@ -51,6 +51,10 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Changed
 
+- Strengthened the base agent standard from `1.0.0` to `1.1.0` with
+  proportional-design requirements that reject speculative abstractions,
+  unnecessary dependencies, and defensive noise while preserving meaningful
+  trust-boundary validation, failure propagation, safety controls, and tests.
 - Reconciled the closed #43-#49 production-skill backlog with its demo-only
   resolution, added a complete examples catalog, corrected the
   `governance-validation` demo's trusted-source provenance, and added regression
