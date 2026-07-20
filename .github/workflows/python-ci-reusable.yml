@@ -81,16 +81,15 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: |
-          $prefix = '${{ inputs.project-path }}'.TrimEnd('/')
-          if ($prefix -eq '.') { $prefix = '' } else { $prefix += '/' }
-          ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath 'caller' -OutputPath "${prefix}evidence/local-completion-result.json" -TestResultPath "${prefix}evidence/local-test-results.json" -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary 'Governed Python static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' -CommandsExecuted @('python standards/scripts/python-project-validation.py --project caller/${{ inputs.project-path }}') -ArtifactPath @("${prefix}evidence/python-tests.json","${prefix}evidence/python-type-check.json","${prefix}evidence/python-dependency-audit.json","${prefix}evidence/python-build.json","${prefix}evidence/python-project-sbom.cdx.json")
+          $env:GIT_CEILING_DIRECTORIES = (Resolve-Path -LiteralPath 'caller/${{ inputs.project-path }}').Path
+          ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath 'caller/${{ inputs.project-path }}' -OutputPath 'evidence/local-completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary 'Governed Python static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' -CommandsExecuted @('python standards/scripts/python-project-validation.py --project caller/${{ inputs.project-path }}') -ArtifactPath @('evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json')
 
       - name: Validate Python completion evidence
         id: evidence
         if: always()
         continue-on-error: true
         shell: pwsh
-        run: ./standards/actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path caller -EvidencePath '${{ inputs.project-path }}/evidence/local-completion-result.json'
+        run: ./standards/actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path 'caller/${{ inputs.project-path }}' -EvidencePath 'evidence/local-completion-result.json'
 
       - name: Upload Python evidence before enforcement
         if: always()

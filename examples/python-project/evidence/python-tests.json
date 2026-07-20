@@ -5,11 +5,11 @@
   "status": "Passed",
   "requiredValidation": true,
   "evidenceSource": "Automated",
-  "command": ".tmp/pr3-venv2/Scripts/python.exe -m pytest -c nul --rootdir . -p no:cacheprovider --strict-config --strict-markers tests",
+  "command": "python -m pytest -c nul --rootdir . -p no:cacheprovider --strict-config --strict-markers tests",
   "workingDirectory": "examples/python-project",
-  "startedAtUtc": "2026-07-20T21:27:01.898673Z",
-  "completedAtUtc": "2026-07-20T21:27:01.898687Z",
-  "durationSeconds": 0.871,
+  "startedAtUtc": "2026-07-20T22:08:34.374543Z",
+  "completedAtUtc": "2026-07-20T22:08:34.374556Z",
+  "durationSeconds": 0.69,
   "runtime": "CPython 3.13.2",
   "toolVersion": "governed-python-validator/1.0.0",
   "exitCode": 0,
@@ -18,6 +18,6 @@
   "failureReason": null,
   "blockedReason": null,
   "details": {
-    "sanitizedOutput": "============================= test session starts =============================\nplatform win32 -- Python 3.13.2, pytest-9.1.1, pluggy-1.6.0\nrootdir: ./examples/python-project\nconfigfile: //./nul\ncollected 8 items\n\ntests/test_paths.py ........                                             [100%]\n\n============================== 8 passed in 0.11s ==============================\n"
+    "sanitizedOutput": "============================= test session starts =============================\nplatform win32 -- Python 3.13.2, pytest-9.1.1, pluggy-1.6.0\nrootdir: ./examples/python-project\nconfigfile: //./nul\ncollected 8 items\n\ntests/test_paths.py ........                                             [100%]\n\n============================== 8 passed in 0.09s ==============================\n"
   }
 }

@@ -21,6 +21,17 @@ def utc() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
+def sanitize(value: str) -> str:
+    """Remove local workspace and interpreter paths from portable evidence."""
+    workspace = str(Path.cwd())
+    return (
+        value.replace(workspace, ".")
+        .replace(workspace.replace("\\", "/"), ".")
+        .replace(sys.executable, "python")
+        .replace(sys.executable.replace("\\", "/"), "python")
+    )
+
+
 def run(command: list[str], cwd: Path, timeout: int = 300) -> tuple[int, str, float]:
     started = time.monotonic()
     env = {
@@ -84,6 +95,7 @@ def evidence(
     blocked: bool = False,
 ) -> dict[str, Any]:
     status = "Blocked" if blocked else ("Passed" if code == 0 else "Failed")
+    output = sanitize(output)
     reason = (
         None
         if status == "Passed"
@@ -96,7 +108,7 @@ def evidence(
         "status": status,
         "requiredValidation": True,
         "evidenceSource": "Automated",
-        "command": " ".join(command),
+        "command": sanitize(" ".join(command)),
         "workingDirectory": "examples/python-project",
         "startedAtUtc": utc(),
         "completedAtUtc": utc(),

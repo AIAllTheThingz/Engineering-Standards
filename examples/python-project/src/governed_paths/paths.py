@@ -16,6 +16,7 @@ def normalize_relative_path(value: str) -> str:
     if (
         path.is_absolute()
         or PurePath(value).drive
+        or (len(candidate) >= 2 and candidate[0].isalpha() and candidate[1] == ":")
         or any(part == ".." for part in path.parts)
     ):
         raise InvalidPath("path must remain repository-relative")
