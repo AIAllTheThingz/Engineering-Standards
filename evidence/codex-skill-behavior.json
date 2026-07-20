@@ -8,14 +8,14 @@
   "evaluatorHash": "95600170e7a0890b10ba96af0d648785aea302386e2fba1fb68b28380b1a48e2",
   "corpusHash": "3d2286de0c3f3327492dc9780e69f23fa28b0bf32d1ce4faf0f99a9c2d7ebac8",
   "skillInputHash": "e1cd34a5714e4f8d9cb831fc6fa70e19b28a9ac0f38184bcc4bcccc3d175ce9e",
-  "authorityHash": "f6bfb1a01ae0013bfe2f5d563eed2177fecdc4ba17217e1ad1c54b6e058c0adc",
-  "evaluatedCommitSha": "0ee868a9b99cac2d27ff9956c89c0495c727d511",
+  "authorityHash": "5c7e3b80a396a4d2582cc38176c178a5fad6ecb2c4a38a087ba2c40639125571",
+  "evaluatedCommitSha": "0ab6eb0035f728c8be27fbdddb0ed6d4f1000fb0",
   "executionMode": "Live",
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "Blocked",
-  "startedAtUtc": "2026-07-18T04:18:20.5525492Z",
-  "completedAtUtc": "2026-07-18T04:18:20.5525492Z",
+  "startedAtUtc": "2026-07-20T03:09:37.3725414Z",
+  "completedAtUtc": "2026-07-20T03:09:37.7483412Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
@@ -88,9 +88,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.7509518Z",
-          "completedAtUtc": "2026-07-17T17:36:56.7509518Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.5394555Z",
+          "completedAtUtc": "2026-07-20T03:09:37.5394555Z"
         },
         {
           "sampleIndex": 2,
@@ -103,9 +103,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.7772068Z",
-          "completedAtUtc": "2026-07-17T17:36:56.7772068Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.5784584Z",
+          "completedAtUtc": "2026-07-20T03:09:37.5784584Z"
         },
         {
           "sampleIndex": 3,
@@ -118,9 +118,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.7779757Z",
-          "completedAtUtc": "2026-07-17T17:36:56.7779757Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.5894279Z",
+          "completedAtUtc": "2026-07-20T03:09:37.5894279Z"
         }
       ]
     },
@@ -148,9 +148,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8079494Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8079494Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6232571Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6232571Z"
         },
         {
           "sampleIndex": 2,
@@ -163,9 +163,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8086071Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8086071Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6243698Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6243698Z"
         },
         {
           "sampleIndex": 3,
@@ -178,9 +178,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8094280Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8094280Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6251538Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6251538Z"
         }
       ]
     },
@@ -208,9 +208,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8118116Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8118116Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6277144Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6277144Z"
         },
         {
           "sampleIndex": 2,
@@ -223,9 +223,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8124048Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8124048Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6284883Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6284883Z"
         },
         {
           "sampleIndex": 3,
@@ -238,9 +238,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8130288Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8130288Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6291578Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6291578Z"
         }
       ]
     },
@@ -268,9 +268,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8152615Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8152615Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6317323Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6317323Z"
         },
         {
           "sampleIndex": 2,
@@ -283,9 +283,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8159504Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8159504Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6324643Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6324643Z"
         },
         {
           "sampleIndex": 3,
@@ -298,9 +298,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8166398Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8166398Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6330945Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6330945Z"
         }
       ]
     },
@@ -328,9 +328,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8181835Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8181835Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6352157Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6352157Z"
         },
         {
           "sampleIndex": 2,
@@ -343,9 +343,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8188227Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8188227Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6360340Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6360340Z"
         },
         {
           "sampleIndex": 3,
@@ -358,9 +358,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8194121Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8194121Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6367727Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6367727Z"
         }
       ]
     },
@@ -388,9 +388,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8218835Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8218835Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6396105Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6396105Z"
         },
         {
           "sampleIndex": 2,
@@ -403,9 +403,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8226627Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8226627Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6407109Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6407109Z"
         },
         {
           "sampleIndex": 3,
@@ -418,9 +418,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8233108Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8233108Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6420714Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6420714Z"
         }
       ]
     },
@@ -448,9 +448,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8256523Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8256523Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6454132Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6454132Z"
         },
         {
           "sampleIndex": 2,
@@ -463,9 +463,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8262674Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8262674Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6464255Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6464255Z"
         },
         {
           "sampleIndex": 3,
@@ -478,9 +478,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8269173Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8269173Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6473702Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6473702Z"
         }
       ]
     },
@@ -508,9 +508,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8284898Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8284898Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6496046Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6496046Z"
         },
         {
           "sampleIndex": 2,
@@ -523,9 +523,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8291664Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8291664Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6505988Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6505988Z"
         },
         {
           "sampleIndex": 3,
@@ -538,9 +538,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8298402Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8298402Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6515558Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6515558Z"
         }
       ]
     },
@@ -568,9 +568,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8314650Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8314650Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6536493Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6536493Z"
         },
         {
           "sampleIndex": 2,
@@ -583,9 +583,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8321102Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8321102Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6546052Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6546052Z"
         },
         {
           "sampleIndex": 3,
@@ -598,9 +598,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: A governed live-model run was not executed during this CI correction; no substitute model or fabricated observation was used.",
-          "startedAtUtc": "2026-07-17T17:36:56.8327293Z",
-          "completedAtUtc": "2026-07-17T17:36:56.8327293Z"
+          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
+          "startedAtUtc": "2026-07-20T03:09:37.6554562Z",
+          "completedAtUtc": "2026-07-20T03:09:37.6554562Z"
         }
       ]
     }

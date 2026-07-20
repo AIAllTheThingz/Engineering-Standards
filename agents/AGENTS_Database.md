@@ -33,6 +33,8 @@ Cross-standard handoffs are mandatory:
 - Scheduled jobs, queue consumers, ETL workers, backfills, and unattended processors MUST also apply [AGENTS_WorkerService.md](AGENTS_WorkerService.md).
 - External feeds, file transfers, webhooks, vendor APIs, partner data, and cross-system synchronization MUST also apply [AGENTS_Integration.md](AGENTS_Integration.md).
 - Database hosts, managed database services, networking, storage, TLS, backup infrastructure, clustering, and failover configuration MUST also apply [AGENTS_Infrastructure.md](AGENTS_Infrastructure.md).
+- Python database access, migrations, ETL, and data repair MUST also apply [AGENTS_Python.md](AGENTS_Python.md).
+- Bash database administration and migration scripts MUST also apply [AGENTS_Bash.md](AGENTS_Bash.md).
 
 Local instructions MAY strengthen this standard. They MUST NOT weaken root, base, security, review, evidence, validation, or exception controls.
 

@@ -34,6 +34,8 @@ Cross-standard handoffs are mandatory:
 - PowerShell scripts, modules, configuration, credentials, remoting, reporting, Authenticode, `WhatIf`, `DryRun`, and scheduled automation MUST also apply [AGENTS_PowerShell.md](AGENTS_PowerShell.md).
 - Vendor APIs, webhooks, queues, message brokers, SMTP, SFTP, and cross-system workflows MUST also apply [AGENTS_Integration.md](AGENTS_Integration.md).
 - Windows Services, containers, Kubernetes, service accounts, secrets infrastructure, networking, storage, schedulers, and deployment infrastructure MUST also apply [AGENTS_Infrastructure.md](AGENTS_Infrastructure.md).
+- Python workers, schedulers, queue consumers, and long-running jobs MUST also apply [AGENTS_Python.md](AGENTS_Python.md).
+- Bash scheduled, daemonized, and background jobs MUST also apply [AGENTS_Bash.md](AGENTS_Bash.md).
 
 Local instructions MAY strengthen this standard. They MUST NOT weaken root, base, security, review, evidence, validation, or exception controls.
 

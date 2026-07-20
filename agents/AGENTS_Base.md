@@ -329,6 +329,8 @@ Expired, missing, malformed, rejected, or unapproved exceptions MUST NOT be trea
 - [AGENTS_WorkerService.md](AGENTS_WorkerService.md)
 - [AGENTS_Integration.md](AGENTS_Integration.md)
 - [AGENTS_Infrastructure.md](AGENTS_Infrastructure.md)
+- [AGENTS_Python.md](AGENTS_Python.md)
+- [AGENTS_Bash.md](AGENTS_Bash.md)
 
 ## Revision History
 

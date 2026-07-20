@@ -33,6 +33,17 @@ Describe 'JSON schema validation' {
             (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/governance-config-1.2.0.json" -Raw | Test-Json -SchemaFile $configSchema) | Should -BeTrue
         }
 
+        It 'accepts Python and Bash project types and rejects unsupported values' {
+            $schema = Resolve-Path "$PSScriptRoot/../../schemas/project-manifest.schema.json"
+            foreach ($name in @('project-manifest-1.2.0-python.json','project-manifest-1.2.0-bash.json')) {
+                (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/$name" -Raw | Test-Json -SchemaFile $schema) | Should -BeTrue -Because $name
+            }
+            $unsupported = Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/project-manifest-1.2.0-python.json" -Raw | ConvertFrom-Json
+            $unsupported.projectType = 'python-script'
+            ($unsupported | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeFalse
+            (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/invalid/project-manifest-unsupported-project-type.json" -Raw | Test-Json -SchemaFile $schema) | Should -BeFalse
+        }
+
         It 'enforces the release lifecycle structure directly in JSON Schema' {
             $schema = Resolve-Path "$PSScriptRoot/../../schemas/release-lifecycle.schema.json"
             (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/release-lifecycle/valid/full-lifecycle.json" -Raw | Test-Json -SchemaFile $schema) | Should -BeTrue

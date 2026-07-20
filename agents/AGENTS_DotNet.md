@@ -27,6 +27,9 @@ This standard applies to:
 
 When work crosses boundaries, agents MUST also apply the specialized standard:
 
+- Python interoperability, Python-driven .NET tooling, and mixed Python/.NET service contracts MUST apply [AGENTS_Python.md](AGENTS_Python.md).
+- Bash-driven .NET build, test, package, or deployment tooling MUST apply [AGENTS_Bash.md](AGENTS_Bash.md).
+
 - Database schema, data repair, migration, seed, and query work MUST apply [AGENTS_Database.md](AGENTS_Database.md).
 - Background job, queue, schedule, idempotency, retry, and daemon lifecycle work MUST apply [AGENTS_WorkerService.md](AGENTS_WorkerService.md).
 - External API, SMTP, webhook, file-transfer, vendor SDK, contract, and credential-flow work MUST apply [AGENTS_Integration.md](AGENTS_Integration.md).

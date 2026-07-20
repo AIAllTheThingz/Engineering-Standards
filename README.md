@@ -241,6 +241,8 @@ pwsh -NoProfile -File examples/powershell-project/tools/Test-Example.ps1
 
 The repository now separates example types explicitly:
 
+Python and Bash now have first-class central standards in `agents/AGENTS_Python.md` and `agents/AGENTS_Bash.md`. This foundation governs hierarchy, project-manifest types, deterministic standard validation, and regression coverage. Runtime validators, language workflows, package or distribution tooling, and functional Python or Bash project examples are intentionally deferred.
+
 - `examples/powershell-project`: functional PowerShell example.
 - `examples/dotnet-project`: runtime-dependent .NET example.
 - `examples/database-project`: non-mutating migration validation example.
@@ -277,6 +279,8 @@ production discovery, secrets, external writes, or an `OPENAI_API_KEY`:
 Open one home-lab directory as its own workspace to make only that example's
 skill discoverable. Deterministic checks validate the package and synthetic
 contracts; live model behavior and production certification remain `NotRun`.
+
+The `python-review` and `bash-review` home labs remain isolated demonstrations and are not production-certified skills. Their deterministic checks require no `OPENAI_API_KEY` or paid model evaluation.
 
 ## Release And Versioning
 

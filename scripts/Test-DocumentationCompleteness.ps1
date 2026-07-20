@@ -34,6 +34,8 @@ $authoritative = @(
     'agents/AGENTS_WorkerService.md',
     'agents/AGENTS_Integration.md',
     'agents/AGENTS_Infrastructure.md',
+    'agents/AGENTS_Python.md',
+    'agents/AGENTS_Bash.md',
     'docs/ADOPTION_GUIDE.md',
     'docs/DOWNSTREAM_CANARY.md',
     'docs/DOWNSTREAM_COMPATIBILITY.md',

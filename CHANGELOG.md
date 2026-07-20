@@ -6,6 +6,8 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
+- Added first-class Python and Bash central standards, hierarchy and cross-standard handoffs, backward-compatible project-manifest types and fixtures, standards-consistency records, deterministic semantic validation, and twenty mutation regression cases. Runtime toolchains, language workflows, functional examples, production skills, and paid model evaluation remain out of scope for this standards-foundation change.
+
 - Added isolated `python-review`, `bash-review`, and `terraform-review`
   portfolio home labs with inert unsafe samples, matching added-file diffs,
   six-language-specific illustrative findings, nine-case prompt corpora,

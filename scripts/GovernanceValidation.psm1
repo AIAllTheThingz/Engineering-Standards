@@ -915,6 +915,10 @@ function Test-GovernanceJsonDocument {
     }
 
     if ($Kind -eq 'project-manifest') {
+        $supportedProjectTypes = @('powershell','dotnet','web','database','worker-service','integration','infrastructure','python','bash','governance','mixed')
+        if ($supportedProjectTypes -cnotcontains [string]$json.projectType) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Project type '$($json.projectType)' is unsupported or noncanonical." -Path $Path))
+        }
         if ($json.schemaVersion -eq '1.2.0') {
             foreach ($name in @('governanceCommitSha','workflowInterfaceVersion','repositoryOwnerType','standardsConsumption')) {
                 if (-not $json.ContainsKey($name)) { $results.Add((New-ValidationResult -Status Failed -Message "Missing required 1.2.0 property '$name'." -Path $Path)) }
@@ -1027,6 +1031,8 @@ function Test-GovernanceJsonDocument {
             'agents/AGENTS_Integration.md',
             'agents/AGENTS_Infrastructure.md',
             'agents/AGENTS_WebFrontend.md',
+            'agents/AGENTS_Python.md',
+            'agents/AGENTS_Bash.md',
             'governance/ORGANIZATION_CONTRACT.md',
             'governance/COMPLETION_EVIDENCE.md',
             'governance/RISK_CLASSIFICATION.md',
@@ -1618,14 +1624,14 @@ function Test-GovernanceContractSemantics {
     }
 
     $technologyStandards = @{
-        powershell='agents/AGENTS_PowerShell.md'; dotnet='agents/AGENTS_DotNet.md'; web='agents/AGENTS_WebFrontend.md'; database='agents/AGENTS_Database.md';
+        powershell='agents/AGENTS_PowerShell.md'; dotnet='agents/AGENTS_DotNet.md'; web='agents/AGENTS_WebFrontend.md'; database='agents/AGENTS_Database.md'; python='agents/AGENTS_Python.md'; bash='agents/AGENTS_Bash.md';
         'worker-service'='agents/AGENTS_WorkerService.md'; integration='agents/AGENTS_Integration.md'; infrastructure='agents/AGENTS_Infrastructure.md'
     }
     if ($Manifest.schemaVersion -cne '1.2.0') {
         $manifestStandards = @($Manifest.applicableStandards)
         $configStandards = @($Config.applicableAgentStandards)
     }
-    if ($Manifest.schemaVersion -ceq '1.2.0' -and @('powershell','dotnet','web','database','worker-service','integration','infrastructure','governance','mixed') -cnotcontains [string]$Manifest.projectType) {
+    if ($Manifest.schemaVersion -ceq '1.2.0' -and @('powershell','dotnet','web','database','worker-service','integration','infrastructure','python','bash','governance','mixed') -cnotcontains [string]$Manifest.projectType) {
         Add-Finding 'GCS005' "Project type '$($Manifest.projectType)' is unsupported or noncanonical."
     }
     if ($manifestStandards -cnotcontains 'agents/AGENTS_Base.md') { Add-Finding 'GCS005' 'The base agent standard is required.' }

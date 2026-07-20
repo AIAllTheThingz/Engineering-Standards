@@ -24,6 +24,8 @@ When integration work includes .NET code, PowerShell automation, database transa
 - [Worker Service](AGENTS_WorkerService.md) for background execution, queues, leases, retries, artifacts, cancellation, and job state.
 - [Infrastructure](AGENTS_Infrastructure.md) for gateways, DNS, network paths, certificates, secrets, service accounts, queues, topics, and managed transfer infrastructure.
 - [Web Frontend](AGENTS_WebFrontend.md) for browser API clients, CORS, WebSocket UI behavior, OAuth/OIDC browser flows, uploads, downloads, and polling.
+- [Python](AGENTS_Python.md) for Python API clients, webhooks, queues, serialization, and file-transfer integrations.
+- [Bash](AGENTS_Bash.md) for Bash HTTP, SSH, SFTP, remote-command, and vendor integration scripts.
 
 ## Normative Terminology
 

@@ -25,7 +25,9 @@ Reviewers are responsible for verifying that the repository did not merely copy 
 
 ## Prerequisites
 
-Before adoption, confirm that maintainers have permission to edit repository settings, create or update workflows, configure branch protection, and review security-sensitive findings. Local validation requires PowerShell 7, Git, and the runtime tools for the project type, such as .NET, Node.js, database migration tooling, or infrastructure CLIs.
+Before adoption, confirm that maintainers have permission to edit repository settings, create or update workflows, configure branch protection, and review security-sensitive findings. Local validation requires PowerShell 7, Git, and the runtime tools for the project type, such as Python, Bash, .NET, Node.js, database migration tooling, or infrastructure CLIs.
+
+Python and Bash repositories MUST select `python` or `bash` as the manifest project type and reference the corresponding central standard. The current support stage provides standards, hierarchy, schema, and deterministic contract validation; runtime validators, reusable language workflows, packaging, distribution, and functional examples will arrive in later phases. The review home labs are demonstrations only and require neither an `OPENAI_API_KEY` nor paid model evaluation.
 
 The repository MUST have no known unresolved secret exposure before governance enforcement is enabled. If adoption discovers exposed credentials, stop normal onboarding, rotate the credential, remove the exposure from history according to the organization incident process, and attach incident evidence separately from normal completion evidence.
 
