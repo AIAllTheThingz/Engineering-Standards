@@ -2,9 +2,10 @@
 
 ## Inherited Standards
 
-This example inherits `agents/AGENTS_Base.md` and
-`agents/AGENTS_PowerShell.md`; the latter governs its trusted validation
-wrapper. Local rules may strengthen but not weaken central governance.
+This example inherits `agents/AGENTS_Base.md`, `agents/AGENTS_Bash.md`, and
+`agents/AGENTS_PowerShell.md`; the Bash standard governs the reviewed shell
+content, while the PowerShell standard governs its trusted validation wrapper.
+Local rules may strengthen but not weaken central governance.
 
 ## Boundaries
 

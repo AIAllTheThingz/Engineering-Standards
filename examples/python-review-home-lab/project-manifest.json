@@ -10,7 +10,7 @@
   "dataClassification": "Internal",
   "owners": [{"type":"github-team","identifier":"@example-org/engineering","responsibility":"Owns synthetic demo assets and deterministic validation.","escalation":"SECURITY.md"}],
   "environments": [{"name":"home-lab","type":"development","production":false}],
-  "applicableStandards": ["agents/AGENTS_Base.md", "agents/AGENTS_PowerShell.md"],
+  "applicableStandards": ["agents/AGENTS_Base.md", "agents/AGENTS_PowerShell.md", "agents/AGENTS_Python.md"],
   "requiredWorkflows": ["governance"],
   "externalIntegrations": [],
   "secretsProvider": "none-required-for-demo",

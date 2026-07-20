@@ -2,9 +2,10 @@
 
 ## Inherited Standards
 
-This example inherits `agents/AGENTS_Base.md` and
-`agents/AGENTS_PowerShell.md`. The PowerShell standard applies to its trusted
-validation wrapper. Local rules may strengthen but must not weaken governance.
+This example inherits `agents/AGENTS_Base.md`, `agents/AGENTS_Python.md`, and
+`agents/AGENTS_PowerShell.md`. The Python standard governs the reviewed Python
+content, while the PowerShell standard applies to its trusted validation wrapper.
+Local rules may strengthen but must not weaken governance.
 
 ## Purpose And Boundaries
 
