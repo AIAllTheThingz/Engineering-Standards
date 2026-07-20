@@ -172,13 +172,18 @@ try {
     }
 
     $env:PSModulePath = $ModuleRoot + [System.IO.Path]::PathSeparator + $env:PSModulePath
+    $env:VALIDATOR_PYTHON_PACKAGE_ROOT = $PythonPackageRoot
+    $env:VALIDATOR_PYTHON_PATH = (Get-Command python -CommandType Application | Select-Object -First 1).Source
+    $env:VALIDATOR_RUFF_PATH = $ruffPath
+    $env:VALIDATOR_BASH_PATH = (Get-Command bash -CommandType Application | Select-Object -First 1).Source
+    $env:VALIDATOR_SHELLCHECK_PATH = $shellCheckPath
     if ($env:GITHUB_ENV) {
         "PSModulePath=$($env:PSModulePath)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         "PYTHONPATH=$PythonPackageRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         "VALIDATOR_PYTHON_PACKAGE_ROOT=$PythonPackageRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        "VALIDATOR_PYTHON_PATH=$((Get-Command python -CommandType Application | Select-Object -First 1).Source)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        "VALIDATOR_PYTHON_PATH=$($env:VALIDATOR_PYTHON_PATH)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         "VALIDATOR_RUFF_PATH=$ruffPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        "VALIDATOR_BASH_PATH=$((Get-Command bash -CommandType Application | Select-Object -First 1).Source)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        "VALIDATOR_BASH_PATH=$($env:VALIDATOR_BASH_PATH)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         "VALIDATOR_SHELLCHECK_PATH=$shellCheckPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
     }
     foreach ($package in @($lock.Packages)) {

@@ -30,6 +30,18 @@ Describe 'Validator dependency integrity controls' {
         ($sbom.components|Where-Object name -eq ShellCheck).type | Should -BeExactly 'application'
     }
 
+    It 'exports installed validator paths to the current process before collecting runtime inventory' {
+        $installer = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Install-ValidatorDependencies.ps1') -Raw
+        $inventoryOffset = $installer.IndexOf('$runtimeInventory = @(Get-ValidatorCommandInventory')
+
+        $inventoryOffset | Should -BeGreaterThan 0
+        foreach ($variable in @('VALIDATOR_PYTHON_PATH', 'VALIDATOR_RUFF_PATH', 'VALIDATOR_BASH_PATH', 'VALIDATOR_SHELLCHECK_PATH')) {
+            $assignmentOffset = $installer.IndexOf("`$env:${variable} =")
+            $assignmentOffset | Should -BeGreaterThan 0
+            $assignmentOffset | Should -BeLessThan $inventoryOffset
+        }
+    }
+
     It 'rejects duplicate package names and extra or missing Python requirements' {
         $lock=Import-ValidatorDependencyLock -Path (Join-Path $repoRoot '.github/dependencies/validator-dependencies.psd1')
         $lock.Packages=@($lock.Packages)+@($lock.Packages[0])

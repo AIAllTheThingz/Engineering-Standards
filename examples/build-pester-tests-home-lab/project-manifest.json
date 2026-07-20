@@ -17,8 +17,8 @@
   "productionApprovalRequired": false,
   "evidence": {"local": {"completion": "evidence/local-completion-result.json", "tests": "evidence/local-test-results.json"}, "hosted": {"workspace": "evidence", "completion": "completion-result.json", "tests": "ci-test-results.json", "artifactNamePattern": "governance-evidence-${run_id}"}},
   "exceptions": [],
-  "governanceCommitSha": "28bb17a5d361f46a456e97ce8de3151e8b5acbf5",
+  "governanceCommitSha": "89c06c93d82d7777b6efed4326c2b33d7c31cd88",
   "workflowInterfaceVersion": "1.0.0",
   "repositoryOwnerType": "Organization",
-  "standardsConsumption": {"mode": "central-reference", "sourceRepository": "AIAllTheThingz/Engineering-Standards", "sourceCommitSha": "28bb17a5d361f46a456e97ce8de3151e8b5acbf5"}
+  "standardsConsumption": {"mode": "central-reference", "sourceRepository": "AIAllTheThingz/Engineering-Standards", "sourceCommitSha": "89c06c93d82d7777b6efed4326c2b33d7c31cd88"}
 }
