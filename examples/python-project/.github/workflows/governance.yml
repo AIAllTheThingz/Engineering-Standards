@@ -14,7 +14,7 @@ jobs:
       governance-version: 1.1.0
   python:
     name: Python
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/python-ci-reusable.yml@c4e3492fb2d110f811475360c2335e5bbe58f319
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/python-ci-reusable.yml@d4fca6128cc44fc90b1fd6d3726844f847462b68
     with:
       project-path: .
       python-version: 3.12.11
