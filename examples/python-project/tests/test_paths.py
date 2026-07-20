@@ -9,7 +9,9 @@ from governed_paths import InvalidPath, normalize_relative_path
     ("value", "expected"), [("src/app.py", "src/app.py"), ("a\\b", "a/b")]
 )
 def test_normalizes_safe_paths(value: str, expected: str) -> None:
-    assert normalize_relative_path(value) == expected
+    actual = normalize_relative_path(value)
+    if actual != expected:
+        pytest.fail(f"expected {expected!r}, received {actual!r}")
 
 
 @pytest.mark.parametrize(

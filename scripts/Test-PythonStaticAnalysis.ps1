@@ -25,28 +25,10 @@ try {
     $version=Invoke-BoundedProcess -FilePath $RuffPath -ArgumentList @('--version')
     if($version.exitCode -ne 0 -or $version.stdout.Trim() -ne 'ruff 0.15.22'){ throw "Trusted Ruff version mismatch; expected 'ruff 0.15.22'." }
     if($paths.Count){
-        $ruffGroups=@([ordered]@{ paths=$paths; ignore=@() })
-        if($Profile -eq 'standards-maintainer') {
-            # Reviewed repository-only exceptions. Downstream callers receive no
-            # path exceptions and cannot supply their own Ruff configuration.
-            $pytestPaths=@($selected|Where-Object{$_.relativePath -like 'examples/python-project/tests/*.py'}|ForEach-Object path)
-            $runnerPaths=@($selected|Where-Object{$_.relativePath -eq 'scripts/python-project-validation.py'}|ForEach-Object path)
-            $baselinePaths=@($selected|Where-Object{$_.relativePath -notlike 'examples/python-project/tests/*.py' -and $_.relativePath -ne 'scripts/python-project-validation.py'}|ForEach-Object path)
-            $ruffGroups=@(
-                [ordered]@{ paths=$baselinePaths; ignore=@() },
-                [ordered]@{ paths=$pytestPaths; ignore=@('S101') },
-                [ordered]@{ paths=$runnerPaths; ignore=@('S603') }
-            )
-        }
-        foreach($group in @($ruffGroups)) {
-            if(-not $group.paths.Count){ continue }
-            $args=@('check','--isolated','--no-cache','--output-format','json','--select','E9,F,B,S','--ignore-noqa','--no-fix')
-            if($group.ignore.Count){ $args+=@('--ignore',($group.ignore -join ',')) }
-            $args+=@($group.paths)
-            $ruff=Invoke-BoundedProcess -FilePath $RuffPath -ArgumentList $args -TimeoutSeconds 60
-            if($ruff.timedOut){ throw 'Ruff timed out.' }; if($ruff.exitCode -notin @(0,1)){ throw "Ruff failed: $($ruff.stderr)" }
-            foreach($item in @($ruff.stdout|ConvertFrom-Json)){ $findings.Add([ordered]@{tool='Ruff';rule=$item.code;path=[IO.Path]::GetRelativePath($root,$item.filename).Replace('\','/');line=$item.location.row;message=$item.message}) }
-        }
+        $args=@('check','--isolated','--no-cache','--output-format','json','--select','E9,F,B,S','--ignore-noqa','--no-fix')+$paths
+        $ruff=Invoke-BoundedProcess -FilePath $RuffPath -ArgumentList $args -TimeoutSeconds 60
+        if($ruff.timedOut){ throw 'Ruff timed out.' }; if($ruff.exitCode -notin @(0,1)){ throw "Ruff failed: $($ruff.stderr)" }
+        foreach($item in @($ruff.stdout|ConvertFrom-Json)){ $findings.Add([ordered]@{tool='Ruff';rule=$item.code;path=[IO.Path]::GetRelativePath($root,$item.filename).Replace('\','/');line=$item.location.row;message=$item.message}) }
     }
     $tools.python=[ordered]@{pathHash=(Get-FileHash -LiteralPath $PythonPath -Algorithm SHA256).Hash.ToLowerInvariant()}; $tools.ruff=[ordered]@{version='0.15.22';sha256=(Get-FileHash -LiteralPath $RuffPath -Algorithm SHA256).Hash.ToLowerInvariant()}
     $status=if($findings.Count){'Failed'}else{'Passed'}

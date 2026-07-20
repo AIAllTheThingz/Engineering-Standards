@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import hashlib
 import json
 import os
@@ -46,8 +47,8 @@ def run(command: list[str], cwd: Path, timeout: int = 300) -> tuple[int, str, fl
         }
     )
     try:
-        result = subprocess.run(
-            command,
+        execute = functools.partial(
+            subprocess.run,
             cwd=cwd,
             env=env,
             text=True,
@@ -56,6 +57,7 @@ def run(command: list[str], cwd: Path, timeout: int = 300) -> tuple[int, str, fl
             timeout=timeout,
             check=False,
         )
+        result = execute(command)
         return result.returncode, result.stdout[-12000:], time.monotonic() - started
     except subprocess.TimeoutExpired as exc:
         return (
