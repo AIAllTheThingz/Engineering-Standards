@@ -1,5 +1,12 @@
 # Validator Dependency Model
 
+Functional Python dependencies are intentionally outside the central static
+validator lock. Each governed Python project owns a fully transitive
+`requirements-ci.lock` with exact versions and SHA-256 hashes and installs it
+with `--only-binary=:all: --require-hashes --no-deps`. This preserves the
+non-executing downstream static boundary while giving the isolated functional
+workflow reviewed pytest, mypy, pip-audit, build, backend, and SBOM tooling.
+
 | Field | Value |
 | --- | --- |
 | Status | Active |

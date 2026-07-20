@@ -239,6 +239,16 @@ Troubleshooting evidence should include failing command, exit code, logs with se
 
 When a tool was unavailable, include runtime context and mark the status honestly as `NotRun` or `Blocked`.
 
+## Python Functional Validation
+
+Use exact CPython 3.12.11 and install `requirements-ci.lock` with
+`--only-binary=:all: --require-hashes --no-deps`. A missing or hash-mismatched
+artifact is `Blocked`; a pytest, mypy, vulnerability, build, archive, install,
+or smoke-test defect is `Failed`. Advisory-service or network unavailability
+must remain `Blocked`, never Passed. Inspect the individual `python-*.json`
+reports and `python-project-sbom.cdx.json` before retrying. Caller pytest/mypy/
+Ruff configuration is intentionally ignored by the trusted baseline.
+
 ## Related
 
 - `docs/ADOPTION_GUIDE.md`

@@ -83,6 +83,7 @@ $standardsRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $workflowWorkspaceRoot = Split-Path -Parent $standardsRoot
 $temporaryRoot = [System.IO.Path]::GetTempPath().TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
 Import-Module (Join-Path $standardsRoot 'scripts/GovernanceValidation.psm1') -Force
+Import-Module (Join-Path $standardsRoot 'scripts/StaticAnalysisTools.psm1') -Force
 
 function Test-PathWithinRoot {
     param(
@@ -271,11 +272,11 @@ function Get-CategoryNonApplicabilityReason {
             return $null
         }
         'WhenPythonPresent' {
-            $file = Get-ChildItem -LiteralPath $ProjectRoot -Recurse -File -Include *.py,*.pyi -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '[\\/](?:\.git|\.venv|venv|site-packages|\.tox|\.nox|__pycache__|build|dist|coverage|TestResults|node_modules|bin|obj)[\\/]' } | Select-Object -First 1
+            $file = Get-TrustedSourceFiles -Root $ProjectRoot -Language Python | Where-Object { -not $_.excluded } | Select-Object -First 1
             if(-not $file){return 'No maintained Python source files are present.'}; return $null
         }
         'WhenBashPresent' {
-            $file = Get-ChildItem -LiteralPath $ProjectRoot -Recurse -File -Include *.sh,*.bash -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '[\\/](?:\.git|\.venv|venv|site-packages|\.tox|\.nox|__pycache__|build|dist|coverage|TestResults|node_modules|bin|obj)[\\/]' } | Select-Object -First 1
+            $file = Get-TrustedSourceFiles -Root $ProjectRoot -Language Bash | Where-Object { -not $_.excluded } | Select-Object -First 1
             if(-not $file){return 'No maintained Bash source files are present.'}; return $null
         }
         default { throw "Unsupported validation applicability '$($PlanEntry.applicability)'." }
@@ -415,6 +416,9 @@ foreach ($disabledControl in @($disabledMandatoryControls)) {
     if (@($profileDefinition.mandatoryCategories) -ccontains $controlName) {
         if ($controlName -ceq 'Contract') {
             throw 'Contract validation cannot be disabled because it validates the exception authority.'
+        }
+        if (-not $isMaintainerProfile) {
+            throw "Downstream caller configuration cannot disable mandatory category '$controlName'; exceptions require trusted standards-side authority."
         }
         $candidateDisabledCategories[$controlName] = [string]$disabledControl.exceptionReference
     }

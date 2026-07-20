@@ -141,6 +141,7 @@ Describe 'Example governance version and trusted implementation consistency' {
             'operating-systems-home-lab',
             'platforms-home-lab',
             'powershell-project',
+            'python-project',
             'powershell-review-home-lab',
             'python-review-home-lab',
             'safe-automation-home-lab',

@@ -1,0 +1,54 @@
+[
+  {
+    "schemaVersion": "1.1.0",
+    "name": "Python archive inspection",
+    "category": "build",
+    "status": "Passed",
+    "requiredValidation": true,
+    "evidenceSource": "Automated",
+    "command": "trusted-archive-inspection",
+    "workingDirectory": "examples/python-project",
+    "startedAtUtc": "2026-07-20T21:27:06.894352Z",
+    "completedAtUtc": "2026-07-20T21:27:06.894365Z",
+    "durationSeconds": 0,
+    "runtime": "CPython 3.13.2",
+    "toolVersion": "governed-python-validator/1.0.0",
+    "exitCode": 0,
+    "summary": "Python archive inspection completed successfully.",
+    "warnings": [],
+    "failureReason": null,
+    "blockedReason": null,
+    "details": {
+      "sanitizedOutput": "Archive members are safe.",
+      "hashes": {
+        "governed_paths_example-1.0.0-py3-none-any.whl": "9a44b326d8adad5e91320f4aa6752ebfecdfdfe1df8a299cfd73bc5908c1d64f",
+        "governed_paths_example-1.0.0.tar.gz": "5724dc16286fd2ea5f874a8b89e8cfb5d1eae8c0f3f1aa15b4419405847beb59"
+      },
+      "wheelMembers": 8,
+      "sdistMembers": 9
+    }
+  },
+  {
+    "schemaVersion": "1.1.0",
+    "name": "Installed wheel smoke test",
+    "category": "integration",
+    "status": "Passed",
+    "requiredValidation": true,
+    "evidenceSource": "Automated",
+    "command": "examples/python-project/.smoke-venv/Scripts/python.exe -I -c import governed_paths",
+    "workingDirectory": "examples/python-project",
+    "startedAtUtc": "2026-07-20T21:27:23.000722Z",
+    "completedAtUtc": "2026-07-20T21:27:23.00074Z",
+    "durationSeconds": 4.402,
+    "runtime": "CPython 3.13.2",
+    "toolVersion": "governed-python-validator/1.0.0",
+    "exitCode": 0,
+    "summary": "Installed wheel smoke test completed successfully.",
+    "warnings": [],
+    "failureReason": null,
+    "blockedReason": null,
+    "details": {
+      "sanitizedOutput": "src/app.py\n"
+    }
+  }
+]

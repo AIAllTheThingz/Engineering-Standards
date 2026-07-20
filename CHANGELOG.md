@@ -6,6 +6,11 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
+- Added functional governed Python support with an isolated reusable workflow,
+  exact hash-locked pytest, mypy, pip-audit, build and SBOM tooling, safe wheel
+  and sdist inspection, fresh-environment smoke testing, structured evidence,
+  and a maintainable `src/`-layout example project.
+
 - Added mandatory, applicability-aware trusted Python and Bash static analysis
   using non-executing AST/Bash parsing plus exact hash-pinned Ruff `0.15.22` and
   ShellCheck `0.11.0`, with bounded source inspection, isolated configuration,

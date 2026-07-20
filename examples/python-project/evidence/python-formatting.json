@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.1.0",
+  "name": "Python formatting",
+  "category": "lint",
+  "status": "Passed",
+  "requiredValidation": true,
+  "evidenceSource": "Automated",
+  "command": ".tmp/pr3-venv2/Scripts/python.exe -m ruff format --check --no-cache --isolated src tests",
+  "workingDirectory": "examples/python-project",
+  "startedAtUtc": "2026-07-20T21:27:00.386728Z",
+  "completedAtUtc": "2026-07-20T21:27:00.386744Z",
+  "durationSeconds": 0.257,
+  "runtime": "CPython 3.13.2",
+  "toolVersion": "governed-python-validator/1.0.0",
+  "exitCode": 0,
+  "summary": "Python formatting completed successfully.",
+  "warnings": [],
+  "failureReason": null,
+  "blockedReason": null,
+  "details": {
+    "sanitizedOutput": "4 files already formatted\n"
+  }
+}

@@ -1,0 +1,16 @@
+# Distribution template. Copy into .github/workflows/ before use.
+name: Governed Python CI
+on:
+  workflow_call:
+    inputs:
+      project-path: { type: string, required: false, default: . }
+      python-version: { type: string, required: false, default: 3.12.11 }
+permissions:
+  contents: read
+jobs:
+  python:
+    name: Python validation
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/python-ci-reusable.yml@0c9716bb7d85b9753f3be6a04a5d863ebcf9f7e8
+    with:
+      project-path: ${{ inputs.project-path }}
+      python-version: ${{ inputs.python-version }}

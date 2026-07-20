@@ -1,0 +1,20 @@
+name: Governance
+on:
+  pull_request:
+  push:
+    branches: [master, main]
+permissions:
+  contents: read
+jobs:
+  governance:
+    name: Governance
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@80c46e552a4960e09335b50ca02d3f19c7afa168
+    with:
+      project-path: .
+      governance-version: 1.1.0
+  python:
+    name: Python
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/python-ci-reusable.yml@0c9716bb7d85b9753f3be6a04a5d863ebcf9f7e8
+    with:
+      project-path: .
+      python-version: 3.12.11

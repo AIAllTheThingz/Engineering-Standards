@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.1.0",
+  "name": "Python type check",
+  "category": "lint",
+  "status": "Passed",
+  "requiredValidation": true,
+  "evidenceSource": "Automated",
+  "command": ".tmp/pr3-venv2/Scripts/python.exe -m mypy --config-file ./scripts/python-mypy.ini src",
+  "workingDirectory": "examples/python-project",
+  "startedAtUtc": "2026-07-20T21:27:01.026635Z",
+  "completedAtUtc": "2026-07-20T21:27:01.026656Z",
+  "durationSeconds": 0.639,
+  "runtime": "CPython 3.13.2",
+  "toolVersion": "governed-python-validator/1.0.0",
+  "exitCode": 0,
+  "summary": "Python type check completed successfully.",
+  "warnings": [],
+  "failureReason": null,
+  "blockedReason": null,
+  "details": {
+    "sanitizedOutput": "Success: no issues found in 3 source files\n"
+  }
+}

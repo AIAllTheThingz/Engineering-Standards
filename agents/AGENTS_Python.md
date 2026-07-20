@@ -106,7 +106,7 @@ Repositories MUST declare approved formatting, linting, type-checking, security-
 
 ## Packaging And Distribution
 
-Package names, versions, included files, licenses, metadata, entry points, and supported Python requirements MUST be explicit. Published artifacts MUST be built reproducibly where feasible, tested after installation in an isolated environment, scanned as required, and bound to source provenance. Publishing MUST require approved credentials and target verification. This PR does not provide Python package-build infrastructure.
+Package names, versions, included files, licenses, metadata, entry points, and supported Python requirements MUST be explicit. Governed package validation MUST use the isolated functional Python workflow, build wheel and sdist without unreviewed build isolation, inspect archive paths and links, install the wheel into a fresh environment, smoke-test the installed artifact, and record hashes and SBOM identity. Publishing remains out of scope and requires separately approved credentials and target verification.
 
 ## Deployment And Operational Requirements
 
@@ -154,4 +154,5 @@ Exceptions MUST follow [../governance/EXCEPTION_PROCESS.md](../governance/EXCEPT
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| 1.1.0 | 2026-07-20 | Added governed pytest, strict mypy, vulnerability audit, package build, archive inspection, installed-wheel smoke test, SBOM, and evidence requirements. |
 | 1.0.0 | 2026-07-19 | Established the Python standards, hierarchy, schema, validation, and evidence foundation. |
