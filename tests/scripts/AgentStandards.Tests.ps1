@@ -65,7 +65,7 @@ Describe 'Agent standards validation' {
             @{ Name='unsafe destructive targets allowed'; Old='reject empty, root, home, wildcard, traversal, or unbounded destructive targets'; New='accept empty or root destructive targets' },
             @{ Name='unsafe eval permitted'; Old='Unsafe `eval` is prohibited'; New='Unsafe `eval` is permitted' },
             @{ Name='temporary-file safety weakened'; Old='Temporary files and directories MUST use `mktemp`'; New='Temporary files and directories MAY use predictable paths' },
-            @{ Name='unverified download execution permitted'; Old='Unverified `curl | bash`, `wget | sh`, or equivalent download-and-execute pipelines are prohibited'; New='Unverified `curl | bash` pipelines are permitted' },
+            @{ Name='unverified download execution permitted'; Old='Piping unverified `curl` or `wget` output directly into `bash`, `sh`, or another interpreter is prohibited'; New='Piping unverified downloads into an interpreter is permitted' },
             @{ Name='secret tracing controls removed'; Old='Secrets MUST NOT be exposed through `set -x`'; New='Secrets MAY be exposed through tracing' },
             @{ Name='failure propagation weakened'; Old='Scripts MUST preserve command and pipeline failure exit codes'; New='Scripts MAY ignore command and pipeline failures' },
             @{ Name='negative testing made optional'; Old='Tests MUST cover syntax, positive, negative, boundary, destructive-target, quoting, signal, cleanup, pipeline, command-failure, and failure-path behavior'; New='Tests MAY cover positive behavior' },

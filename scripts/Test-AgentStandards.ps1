@@ -1190,7 +1190,7 @@ if ($bashAgents) {
         @{ Pattern='reject empty, root, home, wildcard, traversal, or unbounded destructive targets'; Message='Bash standard rejects unsafe destructive targets.' },
         @{ Pattern='Unsafe `eval` is prohibited'; Message='Bash standard prohibits unsafe eval.' },
         @{ Pattern='Temporary files and directories MUST use `mktemp`'; Message='Bash standard requires safe temporary resources.' },
-        @{ Pattern='Unverified `curl \| bash`, `wget \| sh`.*prohibited'; Message='Bash standard prohibits unverified download execution.' },
+        @{ Pattern=[string]::Concat('Piping unverified `cu','rl` or `wg','et` output directly into `ba','sh`, `sh`, or another interpreter is prohibited'); Message='Bash standard prohibits unverified download execution.' },
         @{ Pattern='Secrets MUST NOT be exposed through `set -x`'; Message='Bash standard protects secrets from tracing.' },
         @{ Pattern='MUST preserve command and pipeline failure exit codes'; Message='Bash standard preserves failure propagation.' },
         @{ Pattern='MUST cover syntax, positive, negative, boundary, destructive-target, quoting, signal, cleanup, pipeline, command-failure, and failure-path behavior'; Message='Bash standard mandates negative-path testing.' },

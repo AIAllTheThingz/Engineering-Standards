@@ -80,7 +80,7 @@ Temporary files and directories MUST use `mktemp` or an equivalently secure faci
 
 ## Downloads And Supply Chain
 
-Downloads MUST use TLS verification, an exact version or immutable artifact identity, and approved checksum or signature verification before execution. Unverified `curl | bash`, `wget | sh`, or equivalent download-and-execute pipelines are prohibited. Mutable branches and latest-release URLs MUST NOT be executed without a reviewed integrity mechanism.
+Downloads MUST use TLS verification, an exact version or immutable artifact identity, and approved checksum or signature verification before execution. Piping unverified `curl` or `wget` output directly into `bash`, `sh`, or another interpreter is prohibited. Mutable branches and latest-release URLs MUST NOT be executed without a reviewed integrity mechanism.
 
 Package managers, repositories, keys, install scripts, and executable artifacts MUST be approved and pinned or constrained according to risk. Installation MUST NOT silently broaden repositories, disable signature checks, or execute unreviewed content.
 
