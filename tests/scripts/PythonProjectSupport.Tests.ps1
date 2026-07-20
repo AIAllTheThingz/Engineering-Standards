@@ -6,6 +6,12 @@ BeforeAll {
 }
 
 Describe 'Governed Python project support' {
+    It 'keeps functional execution in the dedicated Python workflow' {
+        $aggregate=Get-Content (Join-Path $script:root 'scripts/Test-Examples.ps1') -Raw
+        $aggregate | Should -Not -Match 'examples/python-project/tools/Test-Example\.ps1'
+        (Get-Content (Join-Path $script:root '.github/workflows/python-ci-reusable.yml') -Raw) | Should -Match 'python-project-validation\.py'
+    }
+
     It 'provides the complete functional example contract' {
         foreach ($path in @('pyproject.toml','requirements-ci.in','requirements-ci.lock','project-manifest.json','governance.config.json','src/governed_paths/paths.py','tests/test_paths.py','tools/Test-Example.ps1')) {
             Test-Path -LiteralPath (Join-Path $script:example $path) -PathType Leaf | Should -BeTrue
