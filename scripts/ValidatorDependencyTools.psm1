@@ -320,7 +320,7 @@ function Expand-ValidatorExecutableArchive {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$PackagePath,[Parameter(Mandatory)][string]$DestinationPath,[Parameter(Mandatory)][string]$Version)
     if(Test-Path -LiteralPath $DestinationPath){throw "Tool destination '$DestinationPath' already exists."}
-    $tar=(Get-Command tar -CommandType Application -ErrorAction Stop).Source
+    $tar=(Get-Command tar -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
     $names=@(& $tar -tf $PackagePath); if($LASTEXITCODE -ne 0){throw 'Executable archive inventory failed.'}
     $prefix="shellcheck-v$Version"; $expected=@("$prefix/LICENSE.txt","$prefix/README.txt","$prefix/shellcheck")
     if($names.Count -ne $expected.Count -or (Compare-Object $expected $names -CaseSensitive)){throw 'Executable archive has an unexpected layout or member set.'}
