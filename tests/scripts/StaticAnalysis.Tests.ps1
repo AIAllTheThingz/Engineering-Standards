@@ -29,6 +29,14 @@ Describe 'Trusted Python and Bash source discovery' {
         Set-Content (Join-Path $root 'large.py') ('x' * 20) -NoNewline
         { Get-TrustedSourceFiles -Root $root -Language Python -MaximumBytesPerFile 10 } | Should -Throw '*exceeds*byte limit*'
     }
+
+    It 'preserves a one-file AST input as a JSON array without executing it' {
+        $sentinel=Join-Path $root 'sentinel.txt';$source=Join-Path $root 'side_effect.py'
+        Set-Content $source "from pathlib import Path`nPath(r'$sentinel').write_text('executed')"
+        $python=(Get-Command python -CommandType Application|Select-Object -First 1).Source
+        $result=Invoke-BoundedProcess -FilePath $python -ArgumentList @('-I',(Join-Path $repoRoot 'scripts/python-static-ast.py')) -StandardInput (ConvertTo-Json -InputObject @($source) -Compress)
+        $result.exitCode | Should -Be 0;$result.stdout | Should -BeExactly '[]';Test-Path $sentinel | Should -BeFalse
+    }
 }
 
 Describe 'Static validator prerequisite honesty' {

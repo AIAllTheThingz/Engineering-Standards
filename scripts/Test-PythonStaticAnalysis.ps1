@@ -19,7 +19,7 @@ try {
     if(-not $RuffPath -or -not (Test-Path -LiteralPath $RuffPath -PathType Leaf)){ throw 'Trusted Ruff executable is unavailable; set VALIDATOR_RUFF_PATH to the verified installed executable.' }
     $files=@(Get-TrustedSourceFiles -Root $root -Language Python -ExcludedRelativePath $exclusions)
     $selected=@($files|Where-Object{-not $_.excluded}); $paths=@($selected.path)
-    $ast=Invoke-BoundedProcess -FilePath $PythonPath -ArgumentList @('-I',(Join-Path $PSScriptRoot 'python-static-ast.py')) -StandardInput ($paths|ConvertTo-Json -Compress) -TimeoutSeconds 60
+    $ast=Invoke-BoundedProcess -FilePath $PythonPath -ArgumentList @('-I',(Join-Path $PSScriptRoot 'python-static-ast.py')) -StandardInput (ConvertTo-Json -InputObject @($paths) -Compress) -TimeoutSeconds 60
     if($ast.timedOut){ throw 'Python AST parsing timed out.' }; if($ast.exitCode -ne 0){ throw "Python AST parser failed: $($ast.stderr)" }
     foreach($item in @($ast.stdout|ConvertFrom-Json)){ $rel=[IO.Path]::GetRelativePath($root,$item.path).Replace('\','/'); $findings.Add([ordered]@{tool='PythonAST';rule='SyntaxError';path=$rel;line=$item.line;message=$item.message}) }
     $version=Invoke-BoundedProcess -FilePath $RuffPath -ArgumentList @('--version')
