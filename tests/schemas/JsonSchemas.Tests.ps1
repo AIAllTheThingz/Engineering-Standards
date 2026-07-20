@@ -38,6 +38,9 @@ Describe 'JSON schema validation' {
             foreach ($name in @('project-manifest-1.2.0-python.json','project-manifest-1.2.0-bash.json')) {
                 (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/$name" -Raw | Test-Json -SchemaFile $schema) | Should -BeTrue -Because $name
             }
+            $unsupported = Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/project-manifest-1.2.0-python.json" -Raw | ConvertFrom-Json
+            $unsupported.projectType = 'python-script'
+            ($unsupported | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeFalse
             (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/invalid/project-manifest-unsupported-project-type.json" -Raw | Test-Json -SchemaFile $schema) | Should -BeFalse
         }
 
