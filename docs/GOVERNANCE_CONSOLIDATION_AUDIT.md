@@ -84,6 +84,10 @@ Canonical completion statuses are:
 | [../agents/AGENTS_Integration.md](../agents/AGENTS_Integration.md) | 1.1.0 | Active | 2026-06-21 | Engineering Standards Maintainers | 1.1.0 | Present | Present | Present | Strengthened from 1.0.0 with semantic validator coverage. |
 | [../agents/AGENTS_Infrastructure.md](../agents/AGENTS_Infrastructure.md) | 1.1.1 | Active | 2026-06-20 | Engineering Standards Maintainers | 1.1.1 | Present | Present | Present | Preserved. |
 | [../agents/AGENTS_WebFrontend.md](../agents/AGENTS_WebFrontend.md) | 1.1.1 | Active | 2026-06-21 | Engineering Standards Maintainers | 1.1.1 | Present | Present | Present | Preserved. |
+| [../agents/AGENTS_Python.md](../agents/AGENTS_Python.md) | 1.0.0 | Active | 2026-07-19 | Engineering Standards Maintainers | 1.0.0 | Present | Present | Present | Initial standards-foundation contract and mutation coverage. |
+| [../agents/AGENTS_Bash.md](../agents/AGENTS_Bash.md) | 1.0.0 | Active | 2026-07-19 | Engineering Standards Maintainers | 1.0.0 | Present | Present | Present | Initial standards-foundation contract and mutation coverage. |
+
+Python and Bash are now first-class central technology standards. This foundation adds hierarchy, schema, deterministic validation, and regression contracts only; runtime validators, language workflows, package or distribution tooling, and functional examples remain future work. The existing Python and Bash review home labs remain inert demonstrations rather than production-certified skills, and neither an `OPENAI_API_KEY` nor paid model evaluation is required.
 
 ## Remaining Consolidation Areas
 

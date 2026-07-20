@@ -22,10 +22,24 @@ never reproduce authentication material or production identifiers.
 - Required correction: <smallest defensible change>
 
 ## Recommendations
+
+List bounded remediation recommendations, or state that none were identified.
+
 ## Assumptions
+
+List review assumptions, or state that none were required.
+
 ## Checks run
+
+List deterministic checks that actually ran with their outcomes.
+
 ## Checks not run
+
+List checks that did not run and use the applicable `NotRun` or `Blocked` status.
+
 ## Residual risks
+
+List remaining risks without claiming production certification.
 ```
 
 Do not include a patch. Distinguish absent evidence from a proven defect, and
