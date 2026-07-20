@@ -43,7 +43,9 @@ Describe 'Static validator prerequisite honesty' {
     It 'keeps reviewed Ruff exceptions maintainer-only and path-specific' {
         $script=Get-Content (Join-Path $repoRoot 'scripts/Test-PythonStaticAnalysis.ps1') -Raw
         $script | Should -Match 'if\(\$Profile -eq ''standards-maintainer''\)'
-        $script | Should -Match 'examples/python-project/tests/\*\.py:S101,scripts/python-project-validation\.py:S603'
+        $script | Should -Match "ignore=@\('S101'\)"
+        $script | Should -Match "ignore=@\('S603'\)"
+        $script | Should -Match "relativePath -eq 'scripts/python-project-validation\.py'"
         $script | Should -Match '--ignore-noqa'
     }
 
