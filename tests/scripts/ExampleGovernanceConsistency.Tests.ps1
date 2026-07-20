@@ -166,13 +166,43 @@ Describe 'Example governance version and trusted implementation consistency' {
         foreach ($exampleName in $expectedExamples) {
             $catalogText | Should -Match ([regex]::Escape("$exampleName/README.md")) -Because "$exampleName must be discoverable from the examples catalog"
             $record = Get-ExampleGovernanceRecord -Directory (Join-Path $script:examplesRoot $exampleName)
+            $expectedSha = if ($exampleName -in @('python-review-home-lab', 'bash-review-home-lab')) {
+                $record.Workflow.Sha
+            }
+            else {
+                $script:expectedImplementationSha
+            }
             $findings = @(
-                Get-ExampleGovernanceConsistencyFinding -Manifest $record.Manifest -Config $record.Config -Workflow $record.Workflow -ExpectedSha $script:expectedImplementationSha
+                Get-ExampleGovernanceConsistencyFinding -Manifest $record.Manifest -Config $record.Config -Workflow $record.Workflow -ExpectedSha $expectedSha
             )
             $findings | Should -HaveCount 0 -Because "$exampleName must keep its manifest, config, and workflow identities synchronized"
             $record.Manifest.schemaVersion | Should -BeExactly '1.2.0'
             $record.Config.schemaVersion | Should -BeExactly '1.2.0'
             $record.Manifest.governanceVersion | Should -BeExactly '1.1.0'
+        }
+    }
+
+    It 'keeps Python and Bash review labs pinned to revisions containing their declared standards' -ForEach @(
+        @{ ExampleName='python-review-home-lab'; RequiredStandard='agents/AGENTS_Python.md' },
+        @{ ExampleName='bash-review-home-lab'; RequiredStandard='agents/AGENTS_Bash.md' }
+    ) {
+        $record = Get-ExampleGovernanceRecord -Directory (Join-Path $script:examplesRoot $ExampleName)
+        $authoritySha = $record.Workflow.Sha
+
+        $authoritySha | Should -Match '^[0-9a-f]{40}$'
+        $record.Manifest.governanceCommitSha | Should -BeExactly $authoritySha
+        $record.Manifest.standardsConsumption.sourceCommitSha | Should -BeExactly $authoritySha
+        $record.Config.governanceCommitSha | Should -BeExactly $authoritySha
+        @($record.Manifest.applicableStandards | Sort-Object) |
+            Should -BeExactly @($record.Config.applicableAgentStandards | Sort-Object)
+        $record.Manifest.applicableStandards | Should -Contain $RequiredStandard
+
+        & git -C $script:root cat-file -e "$authoritySha^{commit}" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            foreach ($standard in @($record.Manifest.applicableStandards)) {
+                & git -C $script:root cat-file -e "${authoritySha}:$standard" 2>$null
+                $LASTEXITCODE | Should -Be 0 -Because "declared central standard '$standard' must exist at pinned authority '$authoritySha'"
+            }
         }
     }
 

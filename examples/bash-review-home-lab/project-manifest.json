@@ -17,8 +17,8 @@
   "productionApprovalRequired":false,
   "evidence":{"local":{"completion":"evidence/local-completion-result.json","tests":"evidence/local-test-results.json"},"hosted":{"workspace":"evidence","completion":"completion-result.json","tests":"ci-test-results.json","artifactNamePattern":"governance-evidence-${run_id}"}},
   "exceptions":[],
-  "governanceCommitSha":"b6c85e1deb4685791db6cd8decd915a5f7477600",
+  "governanceCommitSha":"60ce636e7127ed23d7fc212088cdcb4f1a975453",
   "workflowInterfaceVersion":"1.0.0",
   "repositoryOwnerType":"Organization",
-  "standardsConsumption":{"mode":"central-reference","sourceRepository":"AIAllTheThingz/Engineering-Standards","sourceCommitSha":"b6c85e1deb4685791db6cd8decd915a5f7477600"}
+  "standardsConsumption":{"mode":"central-reference","sourceRepository":"AIAllTheThingz/Engineering-Standards","sourceCommitSha":"60ce636e7127ed23d7fc212088cdcb4f1a975453"}
 }

@@ -10,7 +10,7 @@
   "controls": {"mandatoryControlsDisabled": []},
   "exceptions": [],
   "governanceVersion": "1.1.0",
-  "governanceCommitSha": "b6c85e1deb4685791db6cd8decd915a5f7477600",
+  "governanceCommitSha": "60ce636e7127ed23d7fc212088cdcb4f1a975453",
   "workflowInterfaceVersion": "1.0.0",
   "workflowProfile": "downstream",
   "workflowInterface": {
