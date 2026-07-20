@@ -16,4 +16,4 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/pr-governance-reusable.yml@ac6b96d8c91b17fa89ff08781766ecfc6b65b571
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/pr-governance-reusable.yml@28bb17a5d361f46a456e97ce8de3151e8b5acbf5
