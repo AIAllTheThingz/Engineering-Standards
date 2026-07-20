@@ -59,7 +59,9 @@
         "integration",
         "infrastructure",
         "governance",
-        "mixed"
+        "mixed",
+        "python",
+        "bash"
       ]
     },
     "technologies": {

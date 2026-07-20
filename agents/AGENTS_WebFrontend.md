@@ -28,6 +28,8 @@ Cross-standard handoffs are mandatory:
 - Job submission, job status, script catalog, cancellation, replay, report links, worker state, and background-processing UI MUST also apply [AGENTS_WorkerService.md](AGENTS_WorkerService.md).
 - Database details MUST NOT be exposed directly to the browser. Database-backed application behavior MUST also respect [AGENTS_Database.md](AGENTS_Database.md) through server-side boundaries.
 - PowerShell-generated frontend assets, deployment scripts, packaging, IIS automation, and test orchestration MUST also apply [AGENTS_PowerShell.md](AGENTS_PowerShell.md).
+- Python web backends that define browser-facing contracts MUST also apply [AGENTS_Python.md](AGENTS_Python.md).
+- Bash-driven frontend builds, packaging, or deployments MUST also apply [AGENTS_Bash.md](AGENTS_Bash.md).
 
 Local instructions MAY strengthen this standard. They MUST NOT weaken root, base, security, accessibility, privacy, evidence, review, approval, exception, or validation controls.
 

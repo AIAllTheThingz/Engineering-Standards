@@ -29,6 +29,8 @@ Agents MUST apply:
 - [agents/AGENTS_WorkerService.md](agents/AGENTS_WorkerService.md)
 - [agents/AGENTS_Integration.md](agents/AGENTS_Integration.md)
 - [agents/AGENTS_Infrastructure.md](agents/AGENTS_Infrastructure.md)
+- [agents/AGENTS_Python.md](agents/AGENTS_Python.md)
+- [agents/AGENTS_Bash.md](agents/AGENTS_Bash.md)
 - Governance documents in [governance/](governance/)
 
 A technology-specific standard applies when files for that technology, its examples, its workflows, or its validation behavior are changed. Local instructions MAY strengthen these standards and MUST NOT weaken central governance.

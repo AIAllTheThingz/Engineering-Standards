@@ -30,6 +30,8 @@ This standard applies to:
 
 When PowerShell orchestrates another technology, this standard applies to the PowerShell portion and the relevant technology standard applies to the underlying platform.
 
+PowerShell that orchestrates Python or is invoked by Python MUST also apply [AGENTS_Python.md](AGENTS_Python.md). PowerShell that orchestrates Bash or is invoked by Bash MUST also apply [AGENTS_Bash.md](AGENTS_Bash.md). Cross-shell process boundaries MUST preserve arguments, exit codes, timeouts, cancellation, environment scope, and secret redaction.
+
 ## Normative Terminology
 
 `MUST`, `MUST NOT`, and `REQUIRED` are mandatory. `SHOULD` and `SHOULD NOT` are expected controls that require a recorded rationale when omitted. `MAY` is optional.

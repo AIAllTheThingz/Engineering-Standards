@@ -36,6 +36,8 @@ Cross-standard handoffs are mandatory:
 - Worker services, schedulers, long-running jobs, script runners, leases, retries, and job execution infrastructure MUST also apply [AGENTS_WorkerService.md](AGENTS_WorkerService.md).
 - Vendor APIs, DNS/IPAM APIs, cloud APIs, certificate APIs, webhooks, message systems, and cross-system provisioning MUST also apply [AGENTS_Integration.md](AGENTS_Integration.md).
 - Web ingress, CSP-related hosting configuration, reverse proxies, static hosting, CDN, browser-facing TLS, and frontend delivery MUST also apply [AGENTS_WebFrontend.md](AGENTS_WebFrontend.md).
+- Python infrastructure automation and deployment tooling MUST also apply [AGENTS_Python.md](AGENTS_Python.md).
+- Bash provisioning, deployment, package, filesystem, and service automation MUST also apply [AGENTS_Bash.md](AGENTS_Bash.md).
 
 Local instructions MAY strengthen this standard. They MUST NOT weaken root, base, security, review, validation, evidence, or exception controls.
 
