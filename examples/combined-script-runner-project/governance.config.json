@@ -28,7 +28,7 @@
   },
   "exceptions": [],
   "governanceVersion": "1.1.0",
-  "governanceCommitSha": "8c430d9ba2167c2f1506710d94d9ff012c45a6f8",
+  "governanceCommitSha": "80c46e552a4960e09335b50ca02d3f19c7afa168",
   "workflowInterfaceVersion": "1.0.0",
   "workflowProfile": "downstream",
   "workflowInterface": {
