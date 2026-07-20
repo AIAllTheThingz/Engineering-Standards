@@ -131,6 +131,8 @@ $databasePath = Join-Path $root 'agents/AGENTS_Database.md'
 $workerPath = Join-Path $root 'agents/AGENTS_WorkerService.md'
 $integrationPath = Join-Path $root 'agents/AGENTS_Integration.md'
 $infrastructurePath = Join-Path $root 'agents/AGENTS_Infrastructure.md'
+$pythonPath = Join-Path $root 'agents/AGENTS_Python.md'
+$bashPath = Join-Path $root 'agents/AGENTS_Bash.md'
 
 if (-not (Test-Path -LiteralPath $basePath -PathType Leaf)) {
     Add-Result Failed 'AGENTS_Base.md exists.' 'agents/AGENTS_Base.md'
@@ -161,6 +163,8 @@ $databaseAgents = if (Test-Path -LiteralPath $databasePath -PathType Leaf) { Get
 $workerAgents = if (Test-Path -LiteralPath $workerPath -PathType Leaf) { Get-Content -LiteralPath $workerPath -Raw } else { '' }
 $integrationAgents = if (Test-Path -LiteralPath $integrationPath -PathType Leaf) { Get-Content -LiteralPath $integrationPath -Raw } else { '' }
 $infrastructureAgents = if (Test-Path -LiteralPath $infrastructurePath -PathType Leaf) { Get-Content -LiteralPath $infrastructurePath -Raw } else { '' }
+$pythonAgents = if (Test-Path -LiteralPath $pythonPath -PathType Leaf) { Get-Content -LiteralPath $pythonPath -Raw } else { '' }
+$bashAgents = if (Test-Path -LiteralPath $bashPath -PathType Leaf) { Get-Content -LiteralPath $bashPath -Raw } else { '' }
 
 if ($base -match '(?im)\binherits?\s+(?:\[[^\]]+\]\()?AGENTS_Base\.md|inherits?\s+itself|inherits?\s+this\s+base') {
     Add-Result Failed 'Base standard does not claim to inherit itself.' 'agents/AGENTS_Base.md'
@@ -284,7 +288,9 @@ $technologyStandards = @(
     'agents/AGENTS_Database.md',
     'agents/AGENTS_WorkerService.md',
     'agents/AGENTS_Integration.md',
-    'agents/AGENTS_Infrastructure.md'
+    'agents/AGENTS_Infrastructure.md',
+    'agents/AGENTS_Python.md',
+    'agents/AGENTS_Bash.md'
 )
 foreach ($standard in $technologyStandards) {
     if ($rootAgents.Contains($standard) -and (Test-Path -LiteralPath (Join-Path $root $standard) -PathType Leaf)) {
@@ -1138,6 +1144,71 @@ if ($infrastructureAgents) {
             Add-Result Passed $item.Message 'agents/AGENTS_Infrastructure.md'
         }
     }
+}
+
+if ($pythonAgents) {
+    Test-MinimumSemanticVersion -Text $pythonAgents -MinimumVersion '1.0.0' -Message 'Python standard declares a valid semantic version at least 1.0.0.' -RelativePath 'agents/AGENTS_Python.md'
+    foreach ($heading in @('Purpose','Applicability And Inheritance','Normative Terminology','Required Discovery','Risk Classification','Supported Runtime And Compatibility','Architecture And Project Structure','Dependency And Supply-Chain Controls','Configuration And Secret Handling','Type And Data Safety','Input Validation And Trust Boundaries','Error And Exception Handling','Logging And Sensitive-Data Redaction','Filesystem And Path Safety','External Process And Command Execution','Network And Integration Behavior','Async And Concurrency','Testing Requirements','Static-Analysis Requirements','Packaging And Distribution','Deployment And Operational Requirements','Validation Commands','Evidence Requirements','Rollback Requirements','Exceptions','Cross-Standard Handoffs','Related Documents','Revision History')) {
+        Test-Contains $pythonAgents "(?im)^## $([regex]::Escape($heading))\s*$" "Python standard includes required section '$heading'." 'agents/AGENTS_Python.md'
+    }
+    $pythonRequiredPatterns = @(
+        @{ Pattern='inherits \[AGENTS_Base\.md\]'; Message='Python standard inherits the base standard.' },
+        @{ Pattern='supported CPython version matrix'; Message='Python standard requires a supported CPython runtime matrix.' },
+        @{ Pattern='Dependency resolution MUST be reproducible'; Message='Python standard requires reproducible dependency resolution.' },
+        @{ Pattern='External commands MUST prefer argument arrays'; Message='Python standard requires safe subprocess argument boundaries.' },
+        @{ Pattern='Unsafe shell interpolation.*prohibited'; Message='Python standard prohibits unsafe shell interpolation.' },
+        @{ Pattern='`shell=True` MUST NOT be used with untrusted or concatenated input'; Message='Python standard prohibits unsafe shell=True use.' },
+        @{ Pattern='Untrusted data MUST NOT be loaded with unsafe pickle, marshal'; Message='Python standard prohibits unsafe deserialization.' },
+        @{ Pattern='Network clients MUST.*explicit connection and operation timeouts'; Message='Python standard requires network timeouts.' },
+        @{ Pattern='Secrets MUST NOT be committed, embedded in artifacts, placed in URLs, exposed in logs or exceptions'; Message='Python standard protects secrets.' },
+        @{ Pattern='MUST include positive, negative, boundary, failure-path, and security cases'; Message='Python standard mandates negative-path testing.' },
+        @{ Pattern='Missing tools or environments MUST be reported as `NotRun` or `Blocked`'; Message='Python standard preserves missing-tool status semantics.' },
+        @{ Pattern='AGENTS_WebFrontend\.md'; Message='Python standard hands off frontend work.' },
+        @{ Pattern='AGENTS_Database\.md'; Message='Python standard hands off database work.' },
+        @{ Pattern='AGENTS_WorkerService\.md'; Message='Python standard hands off worker work.' },
+        @{ Pattern='AGENTS_Integration\.md'; Message='Python standard hands off integration work.' },
+        @{ Pattern='AGENTS_Infrastructure\.md'; Message='Python standard hands off infrastructure work.' },
+        @{ Pattern='AGENTS_PowerShell\.md'; Message='Python standard hands off PowerShell work.' },
+        @{ Pattern='AGENTS_DotNet\.md'; Message='Python standard hands off .NET work.' },
+        @{ Pattern='Agents MUST NOT fabricate interpreter coverage, tests, builds, scans, workflow runs, or approvals'; Message='Python standard prohibits fabricated evidence.' },
+        @{ Pattern='EXCEPTION_PROCESS\.md'; Message='Python standard references the exception process.' },
+        @{ Pattern='COMPLETION_EVIDENCE\.md'; Message='Python standard references completion evidence.' }
+    )
+    foreach ($item in $pythonRequiredPatterns) { Test-Contains $pythonAgents $item.Pattern $item.Message 'agents/AGENTS_Python.md' }
+    Test-MarkdownRelativeLinks -Text $pythonAgents -FullPath $pythonPath
+}
+
+if ($bashAgents) {
+    Test-MinimumSemanticVersion -Text $bashAgents -MinimumVersion '1.0.0' -Message 'Bash standard declares a valid semantic version at least 1.0.0.' -RelativePath 'agents/AGENTS_Bash.md'
+    foreach ($heading in @('Purpose','Applicability And Inheritance','Normative Terminology','Required Discovery','Risk Classification','Shell Identity And Compatibility','Architecture And Script Structure','Strict And Failure Behavior','Quoting And Expansion','Configuration And Secret Handling','Input Validation And Trust Boundaries','Error Handling And Logging','Command Execution','Filesystem And Destructive Operations','Temporary Resources And Cleanup','Downloads And Supply Chain','Network And Integration Behavior','Concurrency And Lifecycle','Testing Requirements','Static-Analysis Requirements','Packaging And Distribution','Deployment And Operational Requirements','Validation Commands','Evidence Requirements','Rollback Requirements','Exceptions','Cross-Standard Handoffs','Related Documents','Revision History')) {
+        Test-Contains $bashAgents "(?im)^## $([regex]::Escape($heading))\s*$" "Bash standard includes required section '$heading'." 'agents/AGENTS_Bash.md'
+    }
+    $bashRequiredPatterns = @(
+        @{ Pattern='inherits \[AGENTS_Base\.md\]'; Message='Bash standard inherits the base standard.' },
+        @{ Pattern='declare whether it requires Bash or portable POSIX `sh`'; Message='Bash standard distinguishes Bash from POSIX sh.' },
+        @{ Pattern='Variable expansions MUST be quoted'; Message='Bash standard requires safe quoting.' },
+        @{ Pattern='reject empty, root, home, wildcard, traversal, or unbounded destructive targets'; Message='Bash standard rejects unsafe destructive targets.' },
+        @{ Pattern='Unsafe `eval` is prohibited'; Message='Bash standard prohibits unsafe eval.' },
+        @{ Pattern='Temporary files and directories MUST use `mktemp`'; Message='Bash standard requires safe temporary resources.' },
+        @{ Pattern='Unverified `curl \| bash`, `wget \| sh`.*prohibited'; Message='Bash standard prohibits unverified download execution.' },
+        @{ Pattern='Secrets MUST NOT be exposed through `set -x`'; Message='Bash standard protects secrets from tracing.' },
+        @{ Pattern='MUST preserve command and pipeline failure exit codes'; Message='Bash standard preserves failure propagation.' },
+        @{ Pattern='MUST cover syntax, positive, negative, boundary, destructive-target, quoting, signal, cleanup, pipeline, command-failure, and failure-path behavior'; Message='Bash standard mandates negative-path testing.' },
+        @{ Pattern='Missing tools or environments MUST be reported as `NotRun` or `Blocked`'; Message='Bash standard preserves missing-tool status semantics.' },
+        @{ Pattern='AGENTS_Infrastructure\.md'; Message='Bash standard hands off infrastructure work.' },
+        @{ Pattern='AGENTS_Integration\.md'; Message='Bash standard hands off integration work.' },
+        @{ Pattern='AGENTS_WorkerService\.md'; Message='Bash standard hands off worker work.' },
+        @{ Pattern='AGENTS_Database\.md'; Message='Bash standard hands off database work.' },
+        @{ Pattern='AGENTS_PowerShell\.md'; Message='Bash standard hands off PowerShell work.' },
+        @{ Pattern='AGENTS_WebFrontend\.md'; Message='Bash standard hands off frontend work.' },
+        @{ Pattern='AGENTS_DotNet\.md'; Message='Bash standard hands off .NET work.' },
+        @{ Pattern='AGENTS_Python\.md'; Message='Bash standard hands off Python work.' },
+        @{ Pattern='Agents MUST NOT fabricate shell compatibility, analysis, tests, workflow runs, approvals, or production behavior'; Message='Bash standard prohibits fabricated evidence.' },
+        @{ Pattern='EXCEPTION_PROCESS\.md'; Message='Bash standard references the exception process.' },
+        @{ Pattern='COMPLETION_EVIDENCE\.md'; Message='Bash standard references completion evidence.' }
+    )
+    foreach ($item in $bashRequiredPatterns) { Test-Contains $bashAgents $item.Pattern $item.Message 'agents/AGENTS_Bash.md' }
+    Test-MarkdownRelativeLinks -Text $bashAgents -FullPath $bashPath
 }
 
 $baseWordCount = Get-WordCount -Text $base

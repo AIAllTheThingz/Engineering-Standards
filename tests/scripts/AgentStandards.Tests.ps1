@@ -40,6 +40,44 @@ Describe 'Agent standards validation' {
             }
         }
 
+        It 'fails Python mutation: <Name>' -ForEach @(
+            @{ Name='runtime compatibility removed'; Old='Each repository MUST declare a supported CPython version matrix'; New='Runtime compatibility may be inferred' },
+            @{ Name='reproducible dependencies weakened'; Old='Dependency resolution MUST be reproducible'; New='Dependency resolution SHOULD be reproducible' },
+            @{ Name='safe subprocess arguments weakened'; Old='External commands MUST prefer argument arrays'; New='External commands MAY prefer argument arrays' },
+            @{ Name='shell true allowed for untrusted input'; Old='`shell=True` MUST NOT be used with untrusted or concatenated input'; New='`shell=True` MAY be used with untrusted or concatenated input' },
+            @{ Name='unsafe deserialization prohibition removed'; Old='Untrusted data MUST NOT be loaded with unsafe pickle, marshal'; New='Untrusted data may be loaded with pickle or marshal' },
+            @{ Name='network timeouts removed'; Old='use explicit connection and operation timeouts'; New='use default timeout behavior' },
+            @{ Name='secret protection weakened'; Old='Secrets MUST NOT be committed, embedded in artifacts, placed in URLs, exposed in logs or exceptions'; New='Secrets SHOULD NOT usually be logged' },
+            @{ Name='negative testing made optional'; Old='Tests MUST include positive, negative, boundary, failure-path, and security cases'; New='Tests MAY include positive and negative cases' },
+            @{ Name='missing tools changed to invented success'; Old='Missing tools or environments MUST be reported as `NotRun` or `Blocked`'; New='Missing tools or environments may be reported as `AssumedPassed`' },
+            @{ Name='base inheritance removed'; Old='This standard inherits [AGENTS_Base.md](AGENTS_Base.md).'; New='This standard is independent of the base standard.' }
+        ) {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Python.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace($Old, $New)
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
+        It 'fails Bash mutation: <Name>' -ForEach @(
+            @{ Name='Bash versus POSIX declaration removed'; Old='declare whether it requires Bash or portable POSIX `sh`'; New='declare a generic shell' },
+            @{ Name='quoting requirement weakened'; Old='Variable expansions MUST be quoted'; New='Variable expansions MAY be quoted' },
+            @{ Name='unsafe destructive targets allowed'; Old='reject empty, root, home, wildcard, traversal, or unbounded destructive targets'; New='accept empty or root destructive targets' },
+            @{ Name='unsafe eval permitted'; Old='Unsafe `eval` is prohibited'; New='Unsafe `eval` is permitted' },
+            @{ Name='temporary-file safety weakened'; Old='Temporary files and directories MUST use `mktemp`'; New='Temporary files and directories MAY use predictable paths' },
+            @{ Name='unverified download execution permitted'; Old='Unverified `curl | bash`, `wget | sh`, or equivalent download-and-execute pipelines are prohibited'; New='Unverified `curl | bash` pipelines are permitted' },
+            @{ Name='secret tracing controls removed'; Old='Secrets MUST NOT be exposed through `set -x`'; New='Secrets MAY be exposed through tracing' },
+            @{ Name='failure propagation weakened'; Old='Scripts MUST preserve command and pipeline failure exit codes'; New='Scripts MAY ignore command and pipeline failures' },
+            @{ Name='negative testing made optional'; Old='Tests MUST cover syntax, positive, negative, boundary, destructive-target, quoting, signal, cleanup, pipeline, command-failure, and failure-path behavior'; New='Tests MAY cover positive behavior' },
+            @{ Name='base inheritance removed'; Old='This standard inherits [AGENTS_Base.md](AGENTS_Base.md).'; New='This standard is independent of the base standard.' }
+        ) {
+            $script:tempRoot = New-AgentStandardsFixture
+            $path = Join-Path $script:tempRoot 'agents/AGENTS_Bash.md'
+            $text = (Get-Content -LiteralPath $path -Raw).Replace($Old, $New)
+            Set-Content -LiteralPath $path -Value $text -Encoding utf8
+            Invoke-AgentStandardsValidator -Path $script:tempRoot | Should -Not -Be 0
+        }
+
         It 'fails self-inheritance in the base standard' {
             $script:tempRoot = New-AgentStandardsFixture
             Add-Content -LiteralPath (Join-Path $script:tempRoot 'agents/AGENTS_Base.md') -Value "`nThis file inherits AGENTS_Base.md."
