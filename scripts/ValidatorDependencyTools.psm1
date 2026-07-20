@@ -152,8 +152,8 @@ function Test-ValidatorDependencyLock {
 
     $seen = @{}
     $packages = @($Lock.Packages)
-    if ($packages.Count -lt 3) {
-        $results.Add((New-ValidatorDependencyResult -RuleId DEP007 -Status Failed -Message 'PyYAML, Pester, and PSScriptAnalyzer must all be locked.' -Path $LockPath))
+    if ($packages.Count -lt 5) {
+        $results.Add((New-ValidatorDependencyResult -RuleId DEP007 -Status Failed -Message 'PyYAML, Ruff, ShellCheck, Pester, and PSScriptAnalyzer must all be locked.' -Path $LockPath))
     }
     foreach ($package in $packages) {
         if ($package -isnot [hashtable]) {
@@ -172,11 +172,18 @@ function Test-ValidatorDependencyLock {
             [string]$package.Purl -notmatch '^pkg:') {
             $results.Add((New-ValidatorDependencyResult -RuleId DEP008 -Status Failed -Message "Package '$name' has invalid version, source, filename, SHA-256, or purl metadata." -Path $LockPath))
         }
+        $allowedKind = @{ Python='PythonWheel'; PowerShell='PowerShellModule'; BinaryTool='TarXzExecutable' }
+        if (-not $allowedKind.ContainsKey([string]$package.Ecosystem) -or [string]$package.InstallationKind -cne $allowedKind[[string]$package.Ecosystem]) {
+            $results.Add((New-ValidatorDependencyResult -RuleId DEP008 -Status Failed -Message "Package '$name' has invalid ecosystem or installation-kind metadata." -Path $LockPath))
+        }
         if ([string]$package.Ecosystem -eq 'PowerShell' -and [string]$package.ManifestPath -notmatch '^[A-Za-z0-9._-]+\.psd1$') {
             $results.Add((New-ValidatorDependencyResult -RuleId DEP009 -Status Failed -Message "PowerShell package '$name' must declare a root module manifest." -Path $LockPath))
         }
+        if([string]$package.Ecosystem -eq 'Python' -and ([string]$package.SourceUri -notmatch '^https://files\.pythonhosted\.org/' -or [string]$package.PackageIndexUri -cne 'https://pypi.org/simple')){
+            $results.Add((New-ValidatorDependencyResult -RuleId DEP009 -Status Failed -Message "Python package '$name' must declare its exact official artifact URL and approved package index." -Path $LockPath))
+        }
     }
-    foreach ($requiredName in @('PyYAML','Pester','PSScriptAnalyzer')) {
+    foreach ($requiredName in @('PyYAML','Ruff','ShellCheck','Pester','PSScriptAnalyzer')) {
         if (-not $seen.ContainsKey($requiredName)) {
             $results.Add((New-ValidatorDependencyResult -RuleId DEP007 -Status Failed -Message "Required package '$requiredName' is missing." -Path $LockPath))
         }
@@ -187,12 +194,10 @@ function Test-ValidatorDependencyLock {
     }
     else {
         $lines = @(Get-Content -LiteralPath $RequirementsPath | ForEach-Object { $_.Trim() } | Where-Object { $_ -and -not $_.StartsWith('#') })
-        $pyyaml = @($packages | Where-Object Name -eq 'PyYAML')
-        if ($pyyaml.Count -eq 1) {
-            $expectedRequirement = "PyYAML==$($pyyaml[0].Version) --hash=sha256:$($pyyaml[0].Sha256)"
-            if ($lines.Count -ne 2 -or $lines[0] -ne '--only-binary=:all:' -or $lines[1] -ne $expectedRequirement) {
-                $results.Add((New-ValidatorDependencyResult -RuleId DEP010 -Status Failed -Message 'Python requirements must allow only binary packages and exactly match the PyYAML version and hash in the dependency lock.' -Path $RequirementsPath))
-            }
+        $pythonPackages = @($packages | Where-Object Ecosystem -eq 'Python')
+        $expected = @('--only-binary=:all:') + @($pythonPackages | ForEach-Object { "$(if($_.Name -eq 'Ruff'){'ruff'}else{$_.Name})==$($_.Version) --hash=sha256:$($_.Sha256)" })
+        if ($lines.Count -ne $expected.Count -or (Compare-Object -ReferenceObject $expected -DifferenceObject $lines -CaseSensitive)) {
+            $results.Add((New-ValidatorDependencyResult -RuleId DEP010 -Status Failed -Message 'Python requirements must allow only binary packages and exactly match the complete locked Python package set.' -Path $RequirementsPath))
         }
     }
 
@@ -310,6 +315,22 @@ function Expand-ValidatorModulePackage {
     }
 }
 
+function Expand-ValidatorExecutableArchive {
+    <#.SYNOPSIS Safely extracts the exact reviewed ShellCheck archive layout. #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$PackagePath,[Parameter(Mandatory)][string]$DestinationPath,[Parameter(Mandatory)][string]$Version)
+    if(Test-Path -LiteralPath $DestinationPath){throw "Tool destination '$DestinationPath' already exists."}
+    $tar=(Get-Command tar -CommandType Application -ErrorAction Stop).Source
+    $names=@(& $tar -tf $PackagePath); if($LASTEXITCODE -ne 0){throw 'Executable archive inventory failed.'}
+    $prefix="shellcheck-v$Version"; $expected=@("$prefix/LICENSE.txt","$prefix/README.txt","$prefix/shellcheck")
+    if($names.Count -ne $expected.Count -or (Compare-Object $expected $names -CaseSensitive)){throw 'Executable archive has an unexpected layout or member set.'}
+    foreach($name in $names){if([IO.Path]::IsPathRooted($name) -or $name -match '(^|/)\.\.(/|$)'){throw "Executable archive contains unsafe member '$name'."}}
+    $listing=@(& $tar -tvf $PackagePath); if($LASTEXITCODE -ne 0 -or @($listing|Where-Object{$_ -notmatch '^[-d]'}).Count){throw 'Executable archive contains an unsafe link or member type.'}
+    New-Item -ItemType Directory -Path $DestinationPath | Out-Null
+    try{& $tar -xf $PackagePath -C $DestinationPath --no-same-owner --no-same-permissions; if($LASTEXITCODE -ne 0){throw 'Executable archive extraction failed.'}}catch{Remove-Item -LiteralPath $DestinationPath -Recurse -Force -ErrorAction SilentlyContinue;throw}
+    $executable=Join-Path $DestinationPath "$prefix/shellcheck"; if(-not(Test-Path -LiteralPath $executable -PathType Leaf)){throw 'ShellCheck executable is missing after extraction.'}; $executable
+}
+
 function Get-ValidatorCommandInventory {
     <#
     .SYNOPSIS
@@ -338,7 +359,10 @@ function Get-ValidatorCommandInventory {
         @{ Name='Node'; Command='node'; Declared=[string]$Lock.Runtimes.Node.Version; Args=@('--version') },
         @{ Name='npm'; Command='npm'; Declared=$null; Args=@('--version') },
         @{ Name='DotNet'; Command='dotnet'; Declared=[string]$Lock.Runtimes.DotNet.Version; Args=@('--version') },
-        @{ Name='Git'; Command='git'; Declared=$null; Args=@('--version') }
+        @{ Name='Git'; Command='git'; Declared=$null; Args=@('--version') },
+        @{ Name='Bash'; Command=if($env:VALIDATOR_BASH_PATH){$env:VALIDATOR_BASH_PATH}else{'bash'}; Declared='>=4.0'; Args=@('--version') },
+        @{ Name='Ruff'; Command=if($env:VALIDATOR_RUFF_PATH){$env:VALIDATOR_RUFF_PATH}else{'__trusted_ruff_unavailable__'}; Declared=[string](@($Lock.Packages|Where-Object Name -eq 'Ruff')[0].Version); Args=@('--version') },
+        @{ Name='ShellCheck'; Command=if($env:VALIDATOR_SHELLCHECK_PATH){$env:VALIDATOR_SHELLCHECK_PATH}else{'__trusted_shellcheck_unavailable__'}; Declared=[string](@($Lock.Packages|Where-Object Name -eq 'ShellCheck')[0].Version); Args=@('--version') }
     )
     if ($WorkingDirectory) { Push-Location $WorkingDirectory }
     try {
@@ -350,13 +374,19 @@ function Get-ValidatorCommandInventory {
             }
             $versionOutput = (& $command.Source @($definition.Args) 2>&1 | Out-String).Trim()
             $versionExitCode = $LASTEXITCODE
-            $normalizedVersion = $versionOutput -replace '^(Python|v|git version)\s*',''
+            $normalizedVersion = switch($definition.Name){
+                'Ruff' { $versionOutput -replace '^ruff\s+',''; break }
+                'ShellCheck' { if($versionOutput -match '(?m)^version:\s+(\S+)'){ $Matches[1] }else{$versionOutput}; break }
+                'Bash' { if($versionOutput -match 'version\s+(\d+\.\d+\.\d+)'){ $Matches[1] }else{$versionOutput}; break }
+                default { $versionOutput -replace '^(Python|v|git version)\s*','' }
+            }
+            $versionMatches = if($definition.Name -eq 'Bash'){ $normalizedVersion -match '^\d+\.' -and [int]($normalizedVersion.Split('.')[0]) -ge 4 }elseif($definition.Declared){$normalizedVersion -eq $definition.Declared}else{$true}
             [ordered]@{
                 name = $definition.Name
                 declaredVersion = $definition.Declared
                 actualVersion = $normalizedVersion
                 executableSha256 = Get-ValidatorFileSha256 -Path $command.Source
-                status = if ($versionExitCode -eq 0) { 'Passed' } else { 'Failed' }
+                status = if ($versionExitCode -eq 0 -and $versionMatches) { 'Passed' } else { 'Failed' }
             }
         }
     }
@@ -398,7 +428,7 @@ function New-ValidatorDependencySbom {
     }
     foreach ($package in @($Lock.Packages)) {
         $components.Add([ordered]@{
-            type='library'; name=[string]$package.Name; version=[string]$package.Version; purl=[string]$package.Purl
+            type=if($package.Ecosystem -eq 'BinaryTool'){'application'}else{'library'}; name=[string]$package.Name; version=[string]$package.Version; purl=[string]$package.Purl
             hashes=@([ordered]@{ alg='SHA-256'; content=[string]$package.Sha256 })
             externalReferences=@([ordered]@{ type='distribution'; url=[string]$package.SourceUri })
         })
@@ -416,6 +446,7 @@ Export-ModuleMember -Function @(
     'Test-ValidatorDependencyLock',
     'Test-ValidatorPackageCache',
     'Expand-ValidatorModulePackage',
+    'Expand-ValidatorExecutableArchive',
     'Get-ValidatorCommandInventory',
     'New-ValidatorDependencySbom'
 )

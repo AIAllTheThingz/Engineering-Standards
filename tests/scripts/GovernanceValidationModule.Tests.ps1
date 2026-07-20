@@ -16,10 +16,10 @@ Describe 'GovernanceValidation module' {
             $repoRoot = (Resolve-Path "$PSScriptRoot/../..").Path
             $registry = @(Get-GovernanceValidationCategoryRegistry)
 
-            $registry.Count | Should -Be 15
+            $registry.Count | Should -Be 17
             @($registry.Name | Sort-Object -Unique).Count | Should -Be $registry.Count
             @($registry.Order | Sort-Object -Unique).Count | Should -Be $registry.Count
-            ($registry.Name -join ',') | Should -BeExactly 'Contract,AgentStandards,CodexSkills,JsonSchemas,YamlSyntax,WorkflowArchitecture,MarkdownLinks,DocumentationCompleteness,ForbiddenPatterns,RepositoryHealth,Evidence,PowerShellParser,Pester,PSScriptAnalyzer,Examples'
+            ($registry.Name -join ',') | Should -BeExactly 'Contract,AgentStandards,CodexSkills,JsonSchemas,YamlSyntax,WorkflowArchitecture,MarkdownLinks,DocumentationCompleteness,ForbiddenPatterns,RepositoryHealth,Evidence,PowerShellParser,PythonStaticAnalysis,BashStaticAnalysis,Pester,PSScriptAnalyzer,Examples'
             foreach ($entry in $registry | Where-Object Runner -eq 'Script') {
                 Test-Path -LiteralPath (Join-Path $repoRoot $entry.Path) -PathType Leaf | Should -BeTrue -Because $entry.Name
             }
@@ -51,7 +51,7 @@ Describe 'GovernanceValidation module' {
         It 'adds downstream Contract while allowing explicit optional category selection' {
             $plan = @(Resolve-GovernanceValidationPlan -Profile downstream -ConfiguredCategory @('Contract','ForbiddenPatterns') -RequestedCategory @('MarkdownLinks'))
 
-            ($plan.Name -join ',') | Should -BeExactly 'Contract,MarkdownLinks'
+            ($plan.Name -join ',') | Should -BeExactly 'Contract,MarkdownLinks,PythonStaticAnalysis,BashStaticAnalysis'
             ($plan | Where-Object Name -eq 'Contract').selectedBy | Should -BeExactly 'ProfileMandatory'
             { Resolve-GovernanceValidationPlan -Profile downstream -ConfiguredCategory @('Contract') -RequestedCategory @('Pester') } | Should -Throw '*not applicable*'
         }

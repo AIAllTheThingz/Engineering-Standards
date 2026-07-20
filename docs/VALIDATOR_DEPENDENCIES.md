@@ -32,6 +32,8 @@ lock.
 | Node.js | `22.17.0` | `actions/setup-node` pinned by full commit SHA; exact version is verified and the executable SHA-256 is recorded. |
 | .NET SDK | `8.0.411` | `actions/setup-dotnet` pinned by full commit SHA plus root `global.json` with roll-forward and prerelease disabled; exact version is verified and the executable SHA-256 is recorded. |
 | PyYAML | `6.0.2` | Binary wheel only; exact wheel SHA-256 is locked and pip uses `--require-hashes`, `--no-deps`, and a verified local cache for installation. |
+| Ruff | `0.15.22` | Official Astral PyPI manylinux X64 wheel, MIT license; exact filename and SHA-256 are locked and installed binary-only from the verified local cache. |
+| ShellCheck | `0.11.0` | Official `koalaman/shellcheck` Linux X64 release archive, GPL-3.0; immutable release URL and SHA-256 are verified before bounded extraction. |
 | Pester | `5.7.1` | Exact PSGallery package URL, filename, version, module manifest, and package SHA-256 are locked and verified. |
 | PSScriptAnalyzer | `1.22.0` | Exact PSGallery package URL, filename, version, module manifest, and package SHA-256 are locked and verified. |
 
@@ -121,6 +123,7 @@ Then invoke the installed `pwsh` path:
   -PackageCachePath .cache/validator `
   -ModuleRoot .tmp/validator-modules `
   -PythonPackageRoot .tmp/validator-python `
+  -ToolRoot .tmp/validator-tools `
   -EvidencePath .tmp/dependencies.json `
   -SbomPath .tmp/validator-sbom.cdx.json `
   -RuntimeEvidencePath .tmp/runtime-bootstrap.json `
@@ -154,6 +157,20 @@ Hosted governance artifacts contain:
   versions, status, and failure reason.
 - `validator-sbom.cdx.json`: CycloneDX 1.5 runtime and package inventory with
   versions, purls, sources, and hashes.
+
+Ruff is invoked through its exact isolated executable with `--isolated`,
+`--no-cache`, an explicit `E9,F,B,S` baseline, `--ignore-noqa`, and no fixes.
+ShellCheck uses the exact extracted executable, `/dev/null` as its rc file,
+external-source loading disabled, and warning-or-higher findings. Bash syntax is
+checked with the observed runner Bash in `--noprofile --norc -n` mode after
+clearing startup variables. The `ubuntu-24.04` label is versioned but is not an
+immutable image digest, so Bash version and executable SHA-256 are evidence.
+
+The offline cache now requires the exact Ruff wheel and ShellCheck archive in
+addition to the existing packages. Missing offline artifacts are `Blocked`;
+hash mismatch, unsafe archive layout or links, destination reuse, and installed
+version mismatch are `Failed`. Python unit tests, Bash functional tests, and
+language workflow families remain deferred.
 
 These files describe the environment that actually ran. Checked-in local
 evidence does not prove a GitHub-hosted run. GitHub evidence becomes release

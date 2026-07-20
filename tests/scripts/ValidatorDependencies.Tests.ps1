@@ -20,6 +20,25 @@ Describe 'Validator dependency integrity controls' {
         @($results | Where-Object ruleId -eq 'DEP000').Count | Should -Be 1
     }
 
+    It 'locks Ruff and ShellCheck with exact installation metadata and includes both in the SBOM' {
+        $lock=Import-ValidatorDependencyLock -Path (Join-Path $repoRoot '.github/dependencies/validator-dependencies.psd1')
+        $ruff=@($lock.Packages|Where-Object Name -eq 'Ruff')[0];$shell=@($lock.Packages|Where-Object Name -eq 'ShellCheck')[0]
+        $ruff.InstallationKind | Should -BeExactly 'PythonWheel';$ruff.Sha256 | Should -Match '^[0-9a-f]{64}$'
+        $shell.InstallationKind | Should -BeExactly 'TarXzExecutable';$shell.SourceUri | Should -Match '/releases/download/v0\.11\.0/'
+        $sbom=New-ValidatorDependencySbom -Lock $lock -RuntimeInventory @([pscustomobject]@{name='Synthetic';declaredVersion='1.0.0';actualVersion='1.0.0';executableSha256=$null}) -SerialNumber ([guid]::NewGuid())
+        @($sbom.components.name) | Should -Contain 'Ruff';@($sbom.components.name) | Should -Contain 'ShellCheck'
+        ($sbom.components|Where-Object name -eq ShellCheck).type | Should -BeExactly 'application'
+    }
+
+    It 'rejects duplicate package names and extra or missing Python requirements' {
+        $lock=Import-ValidatorDependencyLock -Path (Join-Path $repoRoot '.github/dependencies/validator-dependencies.psd1')
+        $lock.Packages=@($lock.Packages)+@($lock.Packages[0])
+        $req=Join-Path $testRoot 'requirements.txt';Copy-Item (Join-Path $repoRoot '.github/dependencies/workflow-validation-requirements.txt') $req
+        @(Test-ValidatorDependencyLock -Lock $lock -LockPath lock.psd1 -RequirementsPath $req|Where-Object ruleId -eq DEP007).Count | Should -BeGreaterThan 0
+        Add-Content $req 'extra==1.0.0 --hash=sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        @(Test-ValidatorDependencyLock -Lock $lock -LockPath lock.psd1 -RequirementsPath $req|Where-Object ruleId -eq DEP010).Count | Should -BeGreaterThan 0
+    }
+
     It 'pins the trusted Codex evaluator package and lock integrity without package scripts' {
         $package = Get-Content -LiteralPath (Join-Path $repoRoot '.github/dependencies/codex-evaluator/package.json') -Raw | ConvertFrom-Json -AsHashtable
         $lock = Get-Content -LiteralPath (Join-Path $repoRoot '.github/dependencies/codex-evaluator/package-lock.json') -Raw | ConvertFrom-Json -AsHashtable

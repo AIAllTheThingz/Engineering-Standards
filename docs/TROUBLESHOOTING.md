@@ -250,3 +250,14 @@ When a tool was unavailable, include runtime context and mark the status honestl
 - `docs/VALIDATOR_DEPENDENCIES.md`
 - `governance/COMPLETION_EVIDENCE.md`
 - `governance/EXCEPTION_PROCESS.md`
+## Python Or Bash Static Validation Is Blocked
+
+Confirm dependency bootstrap completed and exported
+`VALIDATOR_RUFF_PATH`, `VALIDATOR_SHELLCHECK_PATH`,
+`VALIDATOR_PYTHON_PATH`, and `VALIDATOR_BASH_PATH`. Do not substitute an ambient
+or caller-local executable. In offline mode, populate the cache with the exact
+filenames in `.github/dependencies/validator-dependencies.psd1`. Exit `3` means
+the trusted artifact or runtime was unavailable; exit `1` means malformed lock,
+tamper/hash mismatch, unsafe archive content, wrong installed version, timeout,
+or a static finding. Review `dependencies.json`,
+`python-static-analysis.json`, and `bash-static-analysis.json` before retrying.

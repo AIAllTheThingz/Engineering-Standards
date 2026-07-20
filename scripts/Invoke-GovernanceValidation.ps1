@@ -62,7 +62,7 @@ param(
     [string]$ProjectPath = '.',
     [string]$EvidenceRoot,
     [string]$OutputJson,
-    [ValidateSet('Contract','AgentStandards','CodexSkills','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','Evidence','PowerShellParser','Pester','PSScriptAnalyzer','Examples')]
+    [ValidateSet('Contract','AgentStandards','CodexSkills','JsonSchemas','YamlSyntax','WorkflowArchitecture','MarkdownLinks','DocumentationCompleteness','ForbiddenPatterns','RepositoryHealth','Evidence','PowerShellParser','PythonStaticAnalysis','BashStaticAnalysis','Pester','PSScriptAnalyzer','Examples')]
     [string[]]$Category,
     [string]$ExpectedGovernanceVersion,
     [string]$CallerRepository,
@@ -270,6 +270,14 @@ function Get-CategoryNonApplicabilityReason {
             if (-not $powerShellFile) { return 'No PowerShell files are present.' }
             return $null
         }
+        'WhenPythonPresent' {
+            $file = Get-ChildItem -LiteralPath $ProjectRoot -Recurse -File -Include *.py,*.pyi -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '[\\/](?:\.git|\.venv|venv|site-packages|\.tox|\.nox|__pycache__|build|dist|coverage|TestResults|node_modules|bin|obj)[\\/]' } | Select-Object -First 1
+            if(-not $file){return 'No maintained Python source files are present.'}; return $null
+        }
+        'WhenBashPresent' {
+            $file = Get-ChildItem -LiteralPath $ProjectRoot -Recurse -File -Include *.sh,*.bash -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '[\\/](?:\.git|\.venv|venv|site-packages|\.tox|\.nox|__pycache__|build|dist|coverage|TestResults|node_modules|bin|obj)[\\/]' } | Select-Object -First 1
+            if(-not $file){return 'No maintained Bash source files are present.'}; return $null
+        }
         default { throw "Unsupported validation applicability '$($PlanEntry.applicability)'." }
     }
 }
@@ -425,6 +433,8 @@ $toolArguments = @{
     ForbiddenPatterns = @('-Path',$projectRoot)
     RepositoryHealth = @('-Path',$projectRoot,'-RepositoryOwnerType',$RepositoryOwnerType)
     Evidence = @('-Path',$projectRoot,'-EvidencePath','evidence/local-completion-result.json')
+    PythonStaticAnalysis = @('-Path',$projectRoot,'-Profile',$validationProfile,'-OutputJson',(Join-Path $evidenceFull 'python-static-analysis.json'),'-AllowedOutputRoot',$evidenceFull)
+    BashStaticAnalysis = @('-Path',$projectRoot,'-Profile',$validationProfile,'-OutputJson',(Join-Path $evidenceFull 'bash-static-analysis.json'),'-AllowedOutputRoot',$evidenceFull)
     Pester = @('-EvidenceRoot',$evidenceFull)
     Examples = @()
 }

@@ -54,6 +54,8 @@
     "ForbiddenPatterns",
     "RepositoryHealth",
     "Evidence",
+    "PythonStaticAnalysis",
+    "BashStaticAnalysis",
     "PowerShellParser",
     "Pester",
     "PSScriptAnalyzer",

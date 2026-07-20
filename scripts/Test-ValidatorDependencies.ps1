@@ -88,7 +88,7 @@ try {
                         $results.Add([ordered]@{ ruleId='DEP017'; status='Failed'; message="Workflow does not match the locked $runtimeName setup action SHA and version."; path=$expectation.Path })
                     }
                 }
-                if ($workflowText -notmatch 'Install-ValidatorDependencies\.ps1') {
+                if ($workflowText -notmatch 'Install-ValidatorDependencies\.ps1' -or $workflowText -notmatch '-ToolRoot') {
                     $results.Add([ordered]@{ ruleId='DEP018'; status='Failed'; message='Workflow does not use the shared hash-verifying dependency installer.'; path=$expectation.Path })
                 }
             }
