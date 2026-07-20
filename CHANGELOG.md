@@ -6,6 +6,11 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
+- Added mandatory, applicability-aware trusted Python and Bash static analysis
+  using non-executing AST/Bash parsing plus exact hash-pinned Ruff `0.15.22` and
+  ShellCheck `0.11.0`, with bounded source inspection, isolated configuration,
+  provenance evidence, CycloneDX coverage, and offline/tamper controls.
+
 - Added first-class Python and Bash central standards, hierarchy and cross-standard handoffs, backward-compatible project-manifest types and fixtures, standards-consistency records, deterministic semantic validation, and twenty mutation regression cases. Runtime toolchains, language workflows, functional examples, production skills, and paid model evaluation remain out of scope for this standards-foundation change.
 
 - Added isolated `python-review`, `bash-review`, and `terraform-review`

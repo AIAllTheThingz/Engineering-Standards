@@ -84,3 +84,9 @@ The canary validates the reusable governance contract and its security boundary.
 - [Release Process](RELEASE_PROCESS.md)
 - [Troubleshooting](TROUBLESHOOTING.md)
 - [Downstream Compatibility](DOWNSTREAM_COMPATIBILITY.md)
+Reusable-workflow candidates that change Python or Bash validation must include
+a canary caller containing clean maintained source and controlled static-failure
+cases. Verify that caller configuration cannot disable the baseline, caller code
+does not execute, the final exact candidate SHA is pinned, and downloaded
+artifacts contain both language reports plus Ruff and ShellCheck dependency and
+SBOM records.

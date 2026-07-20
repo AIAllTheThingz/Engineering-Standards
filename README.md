@@ -241,7 +241,13 @@ pwsh -NoProfile -File examples/powershell-project/tools/Test-Example.ps1
 
 The repository now separates example types explicitly:
 
-Python and Bash now have first-class central standards in `agents/AGENTS_Python.md` and `agents/AGENTS_Bash.md`. This foundation governs hierarchy, project-manifest types, deterministic standard validation, and regression coverage. Runtime validators, language workflows, package or distribution tooling, and functional Python or Bash project examples are intentionally deferred.
+Python and Bash have first-class central standards plus mandatory trusted static
+validation when maintained source is present. Python uses inert standard-library
+AST parsing and isolated Ruff; Bash uses no-execution syntax parsing and isolated
+ShellCheck. Exact tools are installed from the hash-locked validator cache and
+never import, source, or execute caller code. Language functional workflows,
+tests, package/distribution tooling, and functional project examples remain
+deferred.
 
 - `examples/powershell-project`: functional PowerShell example.
 - `examples/dotnet-project`: runtime-dependent .NET example.

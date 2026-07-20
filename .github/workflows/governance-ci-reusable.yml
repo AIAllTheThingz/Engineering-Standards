@@ -147,6 +147,7 @@ jobs:
             -PackageCachePath "$RUNNER_TEMP/validator-package-cache" \
             -ModuleRoot "$RUNNER_TEMP/validator-psmodules" \
             -PythonPackageRoot "$RUNNER_TEMP/validator-python" \
+            -ToolRoot "$RUNNER_TEMP/validator-tools" \
             -EvidencePath evidence/dependencies.json \
             -SbomPath evidence/validator-sbom.cdx.json \
             -RuntimeEvidencePath evidence/runtime-bootstrap.json

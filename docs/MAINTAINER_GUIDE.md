@@ -245,3 +245,16 @@ Expired exceptions must be removed, renewed, or converted into tracked remediati
 - `governance/EXCEPTION_PROCESS.md`
 - `governance/COMPLETION_EVIDENCE.md`
 - `docs/TROUBLESHOOTING.md`
+## Python And Bash Validator Updates
+
+Review the official release, publisher, license, release notes, vulnerability
+status, exact Linux X64 artifact, archive layout, and publisher checksum when
+available. Download the artifact independently, calculate SHA-256, then update
+the dependency PSD1, complete Python requirements file, installer assertions,
+tests, workflows, dependency documentation, and CycloneDX review together.
+Ruff and ShellCheck must remain isolated from caller configuration. The only
+maintainer exclusions are the exact intentionally unsafe files
+`examples/python-review-home-lab/samples/unsafe_maintenance.py` and
+`examples/bash-review-home-lab/samples/unsafe-maintenance.sh`; adjacent files
+remain validated. Bash formatting enforcement is deferred and shfmt is not
+installed by this validation foundation.

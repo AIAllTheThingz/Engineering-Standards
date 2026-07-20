@@ -2,7 +2,7 @@
 .SYNOPSIS
 Installs hash-verified governance validator dependencies.
 .DESCRIPTION
-Installs PyYAML, Pester, and PSScriptAnalyzer from the reviewed dependency lock.
+Installs PyYAML, Ruff, ShellCheck, Pester, and PSScriptAnalyzer from the reviewed dependency lock.
 Online mode downloads exact package files into an isolated cache and verifies
 their SHA-256 values before installation. Offline mode requires those files in
 the cache. The script verifies declared runtime and module versions, writes
@@ -16,7 +16,9 @@ Isolated cache for the exact Python wheel and PowerShell NuGet packages.
 .PARAMETER ModuleRoot
 Isolated PowerShell module root for Pester and PSScriptAnalyzer.
 .PARAMETER PythonPackageRoot
-Isolated Python target directory for PyYAML.
+Isolated Python target directory for PyYAML and Ruff.
+.PARAMETER ToolRoot
+Isolated executable-tool directory for ShellCheck.
 .PARAMETER EvidencePath
 Dependency provenance JSON output path.
 .PARAMETER SbomPath
@@ -38,6 +40,7 @@ param(
     [string]$PackageCachePath,
     [string]$ModuleRoot,
     [string]$PythonPackageRoot,
+    [string]$ToolRoot,
     [string]$EvidencePath,
     [string]$SbomPath,
     [string]$RuntimeEvidencePath,
@@ -53,6 +56,7 @@ $temporaryRoot = [System.IO.Path]::GetTempPath()
 if ([string]::IsNullOrWhiteSpace($PackageCachePath)) { $PackageCachePath = Join-Path $temporaryRoot 'validator-package-cache' }
 if ([string]::IsNullOrWhiteSpace($ModuleRoot)) { $ModuleRoot = Join-Path $temporaryRoot 'validator-psmodules' }
 if ([string]::IsNullOrWhiteSpace($PythonPackageRoot)) { $PythonPackageRoot = Join-Path $temporaryRoot 'validator-python' }
+if ([string]::IsNullOrWhiteSpace($ToolRoot)) { $ToolRoot = Join-Path $temporaryRoot 'validator-tools' }
 if ([string]::IsNullOrWhiteSpace($EvidencePath)) { $EvidencePath = Join-Path $temporaryRoot 'dependencies.json' }
 if ([string]::IsNullOrWhiteSpace($SbomPath)) { $SbomPath = Join-Path $temporaryRoot 'validator-sbom.cdx.json' }
 
@@ -102,7 +106,7 @@ try {
             throw "BLOCKED: $blockedReason"
         }
         if ([string]$package.Ecosystem -eq 'Python') {
-            & python -m pip download --disable-pip-version-check --no-input --no-deps --only-binary=:all: --require-hashes --index-url ([string]$package.SourceUri) --dest $PackageCachePath -r $requirementsPath
+            & python -m pip download --disable-pip-version-check --no-input --no-deps --only-binary=:all: --require-hashes --index-url ([string]$package.PackageIndexUri) --dest $PackageCachePath -r $requirementsPath
             if ($LASTEXITCODE -ne 0) {
                 $blockedReason = 'The reviewed Python package source was unavailable or did not provide the locked artifact.'
                 throw "BLOCKED: $blockedReason"
@@ -136,12 +140,23 @@ try {
     if (Test-Path -LiteralPath $PythonPackageRoot) { throw 'Python dependency target already exists; use a new isolated directory.' }
     New-Item -ItemType Directory -Path $PythonPackageRoot -Force | Out-Null
     & python -m pip install --disable-pip-version-check --no-input --no-deps --no-index --find-links $PackageCachePath --require-hashes --target $PythonPackageRoot -r $requirementsPath
-    if ($LASTEXITCODE -ne 0) { throw 'Hash-verified PyYAML installation failed.' }
+    if ($LASTEXITCODE -ne 0) { throw 'Hash-verified Python validator package installation failed.' }
     $env:PYTHONPATH = $PythonPackageRoot
     $installedPyYaml = (& python -c 'import yaml; print(yaml.__version__)' 2>&1 | Out-String).Trim()
     if ($LASTEXITCODE -ne 0 -or $installedPyYaml -ne [string]$lock.Packages[0].Version) {
         throw 'Installed PyYAML version does not match the dependency lock.'
     }
+    $ruffPackage=@($lock.Packages|Where-Object Name -eq 'Ruff')[0]
+    $ruffPath=Join-Path $PythonPackageRoot 'bin/ruff'
+    if(-not(Test-Path -LiteralPath $ruffPath -PathType Leaf)){throw 'Installed Ruff executable is missing.'}
+    $ruffVersion=(& $ruffPath --version 2>&1|Out-String).Trim()
+    if($LASTEXITCODE -ne 0 -or $ruffVersion -ne "ruff $($ruffPackage.Version)"){throw 'Installed Ruff version does not match the dependency lock.'}
+
+    if(Test-Path -LiteralPath $ToolRoot){throw 'Executable tool target already exists; use a new isolated directory.'}
+    $shellPackage=@($lock.Packages|Where-Object Name -eq 'ShellCheck')[0]
+    $shellCheckPath=Expand-ValidatorExecutableArchive -PackagePath (Join-Path $PackageCachePath $shellPackage.PackageFile) -DestinationPath $ToolRoot -Version $shellPackage.Version
+    $shellVersion=(& $shellCheckPath --version 2>&1|Out-String)
+    if($LASTEXITCODE -ne 0 -or $shellVersion -notmatch "(?m)^version:\s+$([regex]::Escape($shellPackage.Version))$"){throw 'Installed ShellCheck version does not match the dependency lock.'}
 
     if (Test-Path -LiteralPath $ModuleRoot) { throw 'PowerShell dependency target already exists; use a new isolated directory.' }
     New-Item -ItemType Directory -Path $ModuleRoot -Force | Out-Null
@@ -157,17 +172,27 @@ try {
     }
 
     $env:PSModulePath = $ModuleRoot + [System.IO.Path]::PathSeparator + $env:PSModulePath
+    $env:VALIDATOR_PYTHON_PACKAGE_ROOT = $PythonPackageRoot
+    $env:VALIDATOR_PYTHON_PATH = (Get-Command python -CommandType Application | Select-Object -First 1).Source
+    $env:VALIDATOR_RUFF_PATH = $ruffPath
+    $env:VALIDATOR_BASH_PATH = (Get-Command bash -CommandType Application | Select-Object -First 1).Source
+    $env:VALIDATOR_SHELLCHECK_PATH = $shellCheckPath
     if ($env:GITHUB_ENV) {
         "PSModulePath=$($env:PSModulePath)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         "PYTHONPATH=$PythonPackageRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        "VALIDATOR_PYTHON_PACKAGE_ROOT=$PythonPackageRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        "VALIDATOR_PYTHON_PATH=$($env:VALIDATOR_PYTHON_PATH)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        "VALIDATOR_RUFF_PATH=$ruffPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        "VALIDATOR_BASH_PATH=$($env:VALIDATOR_BASH_PATH)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        "VALIDATOR_SHELLCHECK_PATH=$shellCheckPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
     }
     foreach ($package in @($lock.Packages)) {
         $packagePath = Join-Path $PackageCachePath ([string]$package.PackageFile)
         $packageEvidence.Add([ordered]@{
-            name=[string]$package.Name; ecosystem=[string]$package.Ecosystem; version=[string]$package.Version
+            name=[string]$package.Name; ecosystem=[string]$package.Ecosystem; installationKind=[string]$package.InstallationKind; version=[string]$package.Version
             source=[string]$package.SourceUri; packageFile=[string]$package.PackageFile
             expectedSha256=[string]$package.Sha256; actualSha256=Get-ValidatorFileSha256 -Path $packagePath
-            verification='SHA-256'; status='Passed'
+            verification='SHA-256 before installation'; installedVersion=if($package.Name -eq 'Ruff'){$ruffPackage.Version}elseif($package.Name -eq 'ShellCheck'){$shellPackage.Version}else{$package.Version}; status='Passed'; reason=$null
         })
     }
     $runtimeInventory = @(Get-ValidatorCommandInventory -Lock $lock -WorkingDirectory $repositoryRoot)
@@ -188,6 +213,13 @@ catch {
     }
 }
 finally {
+    if($lock){
+        foreach($package in @($lock.Packages)){
+            if(@($packageEvidence|Where-Object name -eq $package.Name).Count){continue}
+            $candidate=Join-Path $PackageCachePath ([string]$package.PackageFile)
+            $packageEvidence.Add([ordered]@{name=[string]$package.Name;ecosystem=[string]$package.Ecosystem;installationKind=[string]$package.InstallationKind;version=[string]$package.Version;source=[string]$package.SourceUri;packageFile=[string]$package.PackageFile;expectedSha256=[string]$package.Sha256;actualSha256=if(Test-Path -LiteralPath $candidate -PathType Leaf){Get-ValidatorFileSha256 $candidate}else{$null};verification='SHA-256 before installation';installedVersion=$null;status=$status;reason=if($blockedReason){$blockedReason}else{$failureReason}})
+        }
+    }
     if ($lock -and $runtimeInventory.Count -eq 0) {
         try { $runtimeInventory = @(Get-ValidatorCommandInventory -Lock $lock -WorkingDirectory $repositoryRoot) } catch { $runtimeInventory = @() }
     }

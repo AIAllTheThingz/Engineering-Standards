@@ -170,7 +170,7 @@ Describe 'Reusable governance workflow trust boundaries' {
         $report.validationProfile | Should -Be 'downstream'
         $report.caller.commitSha | Should -Be $script:callerSha
         $report.standards.workflowSha | Should -Be $script:standardsSha
-        @($report.results).Count | Should -Be 1
+        @($report.results).Count | Should -Be 3
         $report.results[0].toolPath | Should -Be 'standards/actions/validate-contract/Invoke-ContractValidation.ps1'
         $report.results[0].target | Should -Be 'caller'
     }
@@ -318,7 +318,7 @@ Describe 'Reusable governance workflow trust boundaries' {
 
         $result.ExitCode | Should -Be 0 -Because $result.Output
         $report = Get-Content -LiteralPath (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
-        @($report.results).Count | Should -Be 1
+        @($report.results).Count | Should -Be 3
         $report.results[0].name | Should -Be 'Contract'
     }
 
@@ -342,7 +342,7 @@ Describe 'Reusable governance workflow trust boundaries' {
         $result.ExitCode | Should -Not -Be 0
         $result.Output | Should -Match 'GCS004.*regular file.*authoritative'
         $report = Get-Content -LiteralPath (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
-        @($report.results).Count | Should -Be 1
+            @($report.results).Count | Should -Be 3
         $report.results[0].name | Should -Be 'Contract'
         $report.results[0].status | Should -Be 'Failed'
     }
@@ -369,7 +369,7 @@ Describe 'Reusable governance workflow trust boundaries' {
 
         $result.ExitCode | Should -Be 0 -Because $result.Output
         $report = Get-Content -LiteralPath (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
-        @($report.results).Count | Should -Be 1
+            @($report.results).Count | Should -Be 3
         $report.results[0].name | Should -Be 'Contract'
         $report.results[0].status | Should -Be 'Passed'
     }
@@ -386,7 +386,7 @@ Describe 'Reusable governance workflow trust boundaries' {
 
         $result.ExitCode | Should -Be 0 -Because $result.Output
         $report = Get-Content -LiteralPath (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
-        ($report.results.name -join ',') | Should -BeExactly 'Contract,ForbiddenPatterns'
+        ($report.results.name -join ',') | Should -BeExactly 'Contract,ForbiddenPatterns,PythonStaticAnalysis,BashStaticAnalysis'
         $report.mandatoryCategories | Should -Contain 'Contract'
         $report.requestedCategories | Should -Contain 'ForbiddenPatterns'
     }

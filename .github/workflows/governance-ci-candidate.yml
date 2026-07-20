@@ -83,6 +83,7 @@ jobs:
             -PackageCachePath "$RUNNER_TEMP/candidate-package-cache" \
             -ModuleRoot "$RUNNER_TEMP/candidate-psmodules" \
             -PythonPackageRoot "$RUNNER_TEMP/candidate-python" \
+            -ToolRoot "$RUNNER_TEMP/candidate-tools" \
             -EvidencePath "$RUNNER_TEMP/candidate-validator-evidence/dependencies.json" \
             -SbomPath "$RUNNER_TEMP/candidate-validator-evidence/validator-sbom.cdx.json" \
             -RuntimeEvidencePath "$RUNNER_TEMP/candidate-validator-evidence/runtime-bootstrap.json"

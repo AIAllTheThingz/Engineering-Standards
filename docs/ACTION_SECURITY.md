@@ -72,6 +72,13 @@ Self-CI uses a second reusable harness at the same reviewed full SHA for candida
 
 Downstream manifests, configuration, paths, and files remain untrusted. The aggregate validator canonicalizes the caller project root, rejects rooted paths and `..`, rejects every symbolic link, junction, or reparse point anywhere in caller content—including internal-target links—requires nonoverlapping caller/standards/evidence roots, and loads modules only from the standards checkout. The all-links-denied rule deliberately fails closed against workspace-boundary and validator-confusion attacks. It does not execute downstream tests, scripts, examples, package hooks, or build commands.
 
+Python and Bash static validation preserves this boundary. Python files are
+parsed as text by the trusted standard-library AST helper and Ruff; they are
+never imported or executed. Bash files are passed only to Bash no-execution
+syntax mode and ShellCheck; they are never sourced or executed. Caller Ruff and
+ShellCheck configuration, suppressions, plugins, source directives, executable
+paths, and PATH shadows cannot replace the trusted baseline.
+
 The aggregate registry declares the `downstream` profile as non-executing and
 the `standards-maintainer` profile as repository-code executing. Candidate
 maintainer mode is accepted only in GitHub Actions for the exact central

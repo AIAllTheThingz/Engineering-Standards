@@ -84,7 +84,7 @@ function Get-GovernanceValidationRegistry {
         if (@('Script','PowerShellParser','PSScriptAnalyzer') -cnotcontains [string]$category.Runner) {
             throw "Governance validation category '$($category.Name)' uses unsupported runner '$($category.Runner)'."
         }
-        if (@('Always','WhenSkillsPresent','WhenPowerShellPresent') -cnotcontains [string]$category.Applicability) {
+        if (@('Always','WhenSkillsPresent','WhenPowerShellPresent','WhenPythonPresent','WhenBashPresent') -cnotcontains [string]$category.Applicability) {
             throw "Governance validation category '$($category.Name)' uses unsupported applicability '$($category.Applicability)'."
         }
         if ($category.Runner -ceq 'Script' -and [string]::IsNullOrWhiteSpace([string]$category.Path)) {
@@ -268,6 +268,13 @@ function Get-GovernanceMissingValidationPrerequisite {
     param([Parameter(Mandatory)][System.Collections.IDictionary]$PlanEntry)
 
     $missing = [System.Collections.Generic.List[string]]::new()
+    $planName = if($PlanEntry.Contains('name')){[string]$PlanEntry.name}else{''}
+    if ($planName -ceq 'PythonStaticAnalysis' -and (-not $env:VALIDATOR_RUFF_PATH -or -not (Test-Path -LiteralPath $env:VALIDATOR_RUFF_PATH -PathType Leaf))) {
+        $missing.Add("trusted executable 'Ruff'")
+    }
+    if ($planName -ceq 'BashStaticAnalysis' -and (-not $env:VALIDATOR_SHELLCHECK_PATH -or -not (Test-Path -LiteralPath $env:VALIDATOR_SHELLCHECK_PATH -PathType Leaf))) {
+        $missing.Add("trusted executable 'ShellCheck'")
+    }
     foreach ($commandName in @($PlanEntry.requiredCommands)) {
         if (-not (Get-Command -Name ([string]$commandName) -ErrorAction SilentlyContinue)) {
             $missing.Add("command '$commandName'")
@@ -281,7 +288,8 @@ function Get-GovernanceMissingValidationPrerequisite {
             if ([string]$moduleName -notmatch '^[A-Za-z_][A-Za-z0-9_.]*$') {
                 throw "Validation registry contains unsafe Python module name '$moduleName'."
             }
-            & python -c "import $moduleName" 2>$null
+            $trustedPythonRoot = [string]$env:VALIDATOR_PYTHON_PACKAGE_ROOT
+            & python -I -c "import importlib.util,sys; sys.path.insert(0,sys.argv[1]) if sys.argv[1] else None; sys.exit(0 if importlib.util.find_spec(sys.argv[2]) else 1)" $trustedPythonRoot $moduleName 2>$null
             if ($LASTEXITCODE -ne 0) { $missing.Add("Python module '$moduleName'") }
         }
     }

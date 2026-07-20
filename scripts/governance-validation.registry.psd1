@@ -137,6 +137,28 @@
             RequiredPythonModules = @()
         }
         @{
+            Name = 'PythonStaticAnalysis'
+            Order = 125
+            Profiles = @('standards-maintainer', 'downstream')
+            MandatoryProfiles = @('standards-maintainer', 'downstream')
+            Runner = 'Script'
+            Path = 'scripts/Test-PythonStaticAnalysis.ps1'
+            Applicability = 'WhenPythonPresent'
+            RequiredCommands = @('python')
+            RequiredPythonModules = @()
+        }
+        @{
+            Name = 'BashStaticAnalysis'
+            Order = 126
+            Profiles = @('standards-maintainer', 'downstream')
+            MandatoryProfiles = @('standards-maintainer', 'downstream')
+            Runner = 'Script'
+            Path = 'scripts/Test-BashStaticAnalysis.ps1'
+            Applicability = 'WhenBashPresent'
+            RequiredCommands = @('bash')
+            RequiredPythonModules = @()
+        }
+        @{
             Name = 'PowerShellParser'
             Order = 120
             Profiles = @('standards-maintainer')
