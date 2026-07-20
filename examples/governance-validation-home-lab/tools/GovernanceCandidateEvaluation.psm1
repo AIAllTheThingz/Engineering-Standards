@@ -37,7 +37,7 @@ function Test-SyntheticGovernanceCandidate {
         executionContext = 'Local'
         hostedExecution = 'NotRun'
         artifactsVerified = $false
-        trustedValidatorSource = 'AIAllTheThingz/Engineering-Standards@ac6b96d8c91b17fa89ff08781766ecfc6b65b571'
+        trustedValidatorSource = 'AIAllTheThingz/Engineering-Standards@28bb17a5d361f46a456e97ce8de3151e8b5acbf5'
         candidateCommandsExecuted = 0
         results = @($results)
     }
