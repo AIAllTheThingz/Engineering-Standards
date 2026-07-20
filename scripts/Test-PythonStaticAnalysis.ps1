@@ -26,6 +26,11 @@ try {
     if($version.exitCode -ne 0 -or $version.stdout.Trim() -ne 'ruff 0.15.22'){ throw "Trusted Ruff version mismatch; expected 'ruff 0.15.22'." }
     if($paths.Count){
         $args=@('check','--isolated','--no-cache','--output-format','json','--select','E9,F,B,S','--ignore-noqa','--no-fix')+$paths
+        if($Profile -eq 'standards-maintainer') {
+            # Reviewed repository-only exceptions. Downstream callers receive no
+            # path exceptions and cannot supply their own Ruff configuration.
+            $args=@('check','--isolated','--no-cache','--output-format','json','--select','E9,F,B,S','--ignore-noqa','--no-fix','--per-file-ignores','examples/python-project/tests/*.py:S101,scripts/python-project-validation.py:S603')+$paths
+        }
         $ruff=Invoke-BoundedProcess -FilePath $RuffPath -ArgumentList $args -TimeoutSeconds 60
         if($ruff.timedOut){ throw 'Ruff timed out.' }; if($ruff.exitCode -notin @(0,1)){ throw "Ruff failed: $($ruff.stderr)" }
         foreach($item in @($ruff.stdout|ConvertFrom-Json)){ $findings.Add([ordered]@{tool='Ruff';rule=$item.code;path=[IO.Path]::GetRelativePath($root,$item.filename).Replace('\','/');line=$item.location.row;message=$item.message}) }

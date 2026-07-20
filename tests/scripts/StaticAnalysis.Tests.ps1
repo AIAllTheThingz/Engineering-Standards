@@ -40,6 +40,13 @@ Describe 'Trusted Python and Bash source discovery' {
 }
 
 Describe 'Static validator prerequisite honesty' {
+    It 'keeps reviewed Ruff exceptions maintainer-only and path-specific' {
+        $script=Get-Content (Join-Path $repoRoot 'scripts/Test-PythonStaticAnalysis.ps1') -Raw
+        $script | Should -Match 'if\(\$Profile -eq ''standards-maintainer''\)'
+        $script | Should -Match 'examples/python-project/tests/\*\.py:S101,scripts/python-project-validation\.py:S603'
+        $script | Should -Match '--ignore-noqa'
+    }
+
     It 'returns Blocked evidence when trusted Ruff is missing' {
         $root=Join-Path $TestDrive 'python-missing';New-Item -ItemType Directory $root|Out-Null;Set-Content (Join-Path $root 'safe.py') 'value = 1'
         & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Test-PythonStaticAnalysis.ps1') -Path $root -RuffPath (Join-Path $root 'missing-ruff') -OutputJson result.json

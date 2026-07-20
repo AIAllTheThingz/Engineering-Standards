@@ -167,6 +167,12 @@ Hosted governance artifacts contain:
 
 Ruff is invoked through its exact isolated executable with `--isolated`,
 `--no-cache`, an explicit `E9,F,B,S` baseline, `--ignore-noqa`, and no fixes.
+The standards-maintainer profile has two repository-owned, path-specific
+exceptions: `S101` for the governed Python example's pytest files and `S603`
+for the trusted functional validator's shell-free subprocess runner. These
+exceptions are selected by the trusted profile and are not applied to
+downstream callers; caller Ruff configuration and inline suppressions remain
+ignored.
 ShellCheck uses the exact extracted executable, `/dev/null` as its rc file,
 external-source loading disabled, and warning-or-higher findings. Bash syntax is
 checked with the observed runner Bash in `--noprofile --norc -n` mode after
