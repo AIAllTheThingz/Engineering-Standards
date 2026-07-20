@@ -212,10 +212,10 @@ Describe 'Example governance version and trusted implementation consistency' {
             ManifestVersion = '1.1.0'
             ConfigVersion = '1.1.0'
             WorkflowVersion = '1.0.0'
-            ManifestSha = 'b6c85e1deb4685791db6cd8decd915a5f7477600'
-            ConfigSha = 'b6c85e1deb4685791db6cd8decd915a5f7477600'
-            SourceSha = 'b6c85e1deb4685791db6cd8decd915a5f7477600'
-            WorkflowSha = 'b6c85e1deb4685791db6cd8decd915a5f7477600'
+            ManifestSha = 'ac6b96d8c91b17fa89ff08781766ecfc6b65b571'
+            ConfigSha = 'ac6b96d8c91b17fa89ff08781766ecfc6b65b571'
+            SourceSha = 'ac6b96d8c91b17fa89ff08781766ecfc6b65b571'
+            WorkflowSha = 'ac6b96d8c91b17fa89ff08781766ecfc6b65b571'
             Pattern = '^Workflow governance-version'
         },
         @{
@@ -223,9 +223,9 @@ Describe 'Example governance version and trusted implementation consistency' {
             ManifestVersion = '1.1.0'
             ConfigVersion = '1.1.0'
             WorkflowVersion = '1.1.0'
-            ManifestSha = 'b6c85e1deb4685791db6cd8decd915a5f7477600'
-            ConfigSha = 'b6c85e1deb4685791db6cd8decd915a5f7477600'
-            SourceSha = 'b6c85e1deb4685791db6cd8decd915a5f7477600'
+            ManifestSha = 'ac6b96d8c91b17fa89ff08781766ecfc6b65b571'
+            ConfigSha = 'ac6b96d8c91b17fa89ff08781766ecfc6b65b571'
+            SourceSha = 'ac6b96d8c91b17fa89ff08781766ecfc6b65b571'
             WorkflowSha = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
             Pattern = '^Workflow reusable reference SHA'
         },
@@ -234,10 +234,10 @@ Describe 'Example governance version and trusted implementation consistency' {
             ManifestVersion = '1.1.0'
             ConfigVersion = '1.1.0'
             WorkflowVersion = '1.1.0'
-            ManifestSha = 'b6c85e1deb4685791db6cd8decd915a5f7477600'
+            ManifestSha = 'ac6b96d8c91b17fa89ff08781766ecfc6b65b571'
             ConfigSha = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
-            SourceSha = 'b6c85e1deb4685791db6cd8decd915a5f7477600'
-            WorkflowSha = 'b6c85e1deb4685791db6cd8decd915a5f7477600'
+            SourceSha = 'ac6b96d8c91b17fa89ff08781766ecfc6b65b571'
+            WorkflowSha = 'ac6b96d8c91b17fa89ff08781766ecfc6b65b571'
             Pattern = '^Config governanceCommitSha'
         }
     ) {
