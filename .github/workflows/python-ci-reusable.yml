@@ -90,6 +90,14 @@ jobs:
           --runtime-lock requirements-runtime.lock
           --mypy-config standards/scripts/python-mypy.ini
 
+      - name: Normalize Python evidence schema
+        id: normalization
+        if: always()
+        continue-on-error: true
+        run: >-
+          "$TOOL_PYTHON" -I standards/scripts/Normalize-PythonFunctionalEvidence.py
+          --evidence "$PYTHON_WORK_ROOT/evidence"
+
       - name: Create completion evidence in trusted workspace
         id: completion
         if: always()
@@ -118,4 +126,4 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          if ('${{ steps.regression.outcome }}' -ne 'success' -or '${{ steps.functional.outcome }}' -ne 'success' -or '${{ steps.completion.outcome }}' -ne 'success' -or '${{ steps.evidence.outcome }}' -ne 'success') { throw 'Mandatory governed Python regression, functional, completion, or evidence validation failed or was blocked.' }
+          if ('${{ steps.regression.outcome }}' -ne 'success' -or '${{ steps.functional.outcome }}' -ne 'success' -or '${{ steps.normalization.outcome }}' -ne 'success' -or '${{ steps.completion.outcome }}' -ne 'success' -or '${{ steps.evidence.outcome }}' -ne 'success') { throw 'Mandatory governed Python regression, functional, evidence normalization, completion, or evidence validation failed or was blocked.' }
