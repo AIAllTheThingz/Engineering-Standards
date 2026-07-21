@@ -25,7 +25,7 @@ jobs:
     name: Governance
     # Self-CI uses the frozen lifecycle-aware implementation commit so
     # pull-request changes cannot redefine the validator checkout labeled trusted.
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@021cf403ad14d94791061d396ec627027d3609e7
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@25bd1d055d345b29f756b100e6fd288db000f804
     with:
       project-path: .
       governance-version: 1.1.0
