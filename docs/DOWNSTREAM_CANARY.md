@@ -74,7 +74,7 @@ An exception to a mandatory canary scenario or verification requirement must fol
 
 ## Limitations
 
-The canary validates the reusable governance contract and its security boundary. It does not exercise consumer builds, tests, deployments, private repositories, GitHub Enterprise Server, repository-specific scanner extensions, or every supported static category. Those concerns remain with caller-owned CI and their applicable adoption evidence.
+The governance canary validates the reusable static contract and its security boundary. A Python functional-workflow release additionally requires a clean governed Python caller pinned to the exact candidate SHA and hosted proof for static analysis, pytest, mypy, audit, build, archive inspection, isolated wheel installation, SBOM, completion evidence, and caller-configuration resistance. It does not exercise deployments, private repositories, GitHub Enterprise Server, or production integrations.
 
 ## Related
 

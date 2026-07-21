@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.2.0",
+  "manifestPath": "project-manifest.json",
+  "evidencePath": "evidence",
+  "requiredDocumentationPaths": ["README.md", "SECURITY.md", "CONTRIBUTING.md", "AGENTS.md"],
+  "applicableAgentStandards": ["agents/AGENTS_Base.md", "agents/AGENTS_Python.md"],
+  "validationCategories": ["Contract", "PythonStaticAnalysis", "MarkdownLinks", "DocumentationCompleteness", "ForbiddenPatterns"],
+  "additionalForbiddenPatterns": [], "reviewedAllowlist": [],
+  "controls": {"mandatoryControlsDisabled": []}, "exceptions": [],
+  "governanceVersion": "1.1.0", "governanceCommitSha": "80c46e552a4960e09335b50ca02d3f19c7afa168",
+  "workflowInterfaceVersion": "1.0.0", "workflowProfile": "downstream",
+  "workflowInterface": {"path":".github/workflows/governance-ci-reusable.yml","inputs":["project-path","governance-version","artifact-retention-days","controlled-failure-test"],"outputs":["evidence-path","artifact-name"],"jobId":"governance","jobName":"Governance validation","artifactNamePattern":"governance-evidence-${run_id}","requiredCheckNames":["Governance / Governance validation", "Python / Python validation"]},
+  "requiredCheckNames": ["Governance / Governance validation", "Python / Python validation"]
+}

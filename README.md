@@ -130,6 +130,12 @@ The local event workflow is `.github/workflows/governance-ci.yml`. It triggers o
 
 Reusable-workflow releases also require the external proof described in [Downstream Governance Canary](docs/DOWNSTREAM_CANARY.md). Self-CI and the public canary test different trust boundaries; maintainers must run and independently verify all five canary scenarios against the exact candidate SHA before release approval or an authoritative pin rotation.
 
+Governed Python projects pair the non-executing static workflow with
+`.github/workflows/python-ci-reusable.yml`, pinned to the same immutable SHA.
+The functional job uses CPython 3.12.11 and a fully hashed project-owned lock
+to run pytest, strict mypy, pip-audit, package build and inspection, isolated
+wheel installation, an import smoke test, SBOM generation, and evidence upload.
+
 ## Example Local AGENTS.md
 
 ```markdown

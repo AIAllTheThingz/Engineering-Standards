@@ -1,0 +1,161 @@
+name: Governed Python CI reusable
+
+on:
+  workflow_call:
+    inputs:
+      project-path:
+        type: string
+        required: false
+        default: .
+      python-version:
+        type: string
+        required: false
+        default: 3.12.11
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONNOUSERSITE: "1"
+      PYTHONSAFEPATH: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - name: Checkout caller without credentials
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          path: caller
+
+      - name: Checkout immutable standards implementation
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          repository: AIAllTheThingz/Engineering-Standards
+          ref: ${{ job.workflow_sha }}
+          persist-credentials: false
+          path: standards
+
+      - name: Validate fixed runtime and project path
+        shell: pwsh
+        run: |
+          if ('${{ inputs.python-version }}' -cne '3.12.11') { throw 'python-version must be the reviewed exact version 3.12.11.' }
+          $candidate = '${{ inputs.project-path }}'
+          if ([IO.Path]::IsPathRooted($candidate) -or $candidate -match '(^|[\\/])\.\.([\\/]|$)') { throw 'project-path must be repository-relative without traversal.' }
+          $root = (Resolve-Path -LiteralPath (Join-Path $env:GITHUB_WORKSPACE 'caller')).Path
+          $projectItem = Get-Item -LiteralPath (Join-Path $root $candidate) -Force
+          if ($projectItem.LinkType -or ($projectItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'project-path must not be a link or reparse point.' }
+          $project = $projectItem.FullName
+          if (-not ($project -eq $root -or $project.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal))) { throw 'project-path escaped the caller checkout.' }
+
+      - name: Set up exact Python runtime
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: 3.12.11
+
+      - name: Install standards-owned hash-locked toolchain
+        shell: pwsh
+        run: |
+          $toolRoot = Join-Path $env:RUNNER_TEMP 'python-tools'
+          python -m venv $toolRoot
+          $venvPython = Join-Path $toolRoot 'bin/python'
+          & $venvPython -I -m pip install --no-input --only-binary=:all: --require-hashes --no-deps -r standards/examples/python-project/requirements-ci.lock
+          & $venvPython -I -m pip check
+          $toolPython = Join-Path $toolRoot 'bin/python-isolated'
+          Copy-Item -LiteralPath $venvPython -Destination $toolPython
+          & $toolPython -I -c "import sys; assert sys.prefix == '$toolRoot'"
+          "TOOL_PYTHON=$toolPython" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "PYTHON_WORK_ROOT=$(Join-Path $env:RUNNER_TEMP 'python-functional')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Run governed functional validation
+        id: functional
+        continue-on-error: true
+        run: >-
+          "$TOOL_PYTHON" -I standards/scripts/python-project-validation.py
+          --project "caller/${{ inputs.project-path }}"
+          --work-root "$PYTHON_WORK_ROOT"
+          --tool-python "$TOOL_PYTHON"
+          --tool-lock standards/examples/python-project/requirements-ci.lock
+          --runtime-lock requirements-runtime.lock
+          --mypy-config standards/scripts/python-mypy.ini
+
+      - name: Run trusted validator regression tests
+        id: regression
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p "$PYTHON_WORK_ROOT/evidence"
+          "$TOOL_PYTHON" -I -m pytest -c /dev/null --rootdir standards \
+            -p no:cacheprovider standards/tests/python/python_project_validation_tests.py \
+            2>&1 | tee "$PYTHON_WORK_ROOT/evidence/validator-regression.log"
+
+      - name: Normalize Python evidence schema
+        id: normalization
+        if: always()
+        continue-on-error: true
+        run: >-
+          "$TOOL_PYTHON" -I standards/scripts/Normalize-PythonFunctionalEvidence.py
+          --evidence "$PYTHON_WORK_ROOT/evidence"
+
+      - name: Create completion evidence in trusted workspace
+        id: completion
+        if: always()
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath (Join-Path $env:PYTHON_WORK_ROOT 'caller') -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary 'Governed Python static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' -CommandsExecuted @('python-project-validation.py') -ArtifactPath @('evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json') -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha '${{ job.workflow_sha }}'
+          $completionPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/completion-result.json'
+          if (-not (Test-Path -LiteralPath $completionPath -PathType Leaf)) { throw 'Completion evidence was not created.' }
+          $global:LASTEXITCODE = 0
+
+      - name: Validate Python completion evidence
+        id: evidence
+        if: always()
+        continue-on-error: true
+        shell: pwsh
+        run: ./standards/actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path $env:PYTHON_WORK_ROOT -EvidencePath 'evidence/completion-result.json' -OutputJson "$env:PYTHON_WORK_ROOT/evidence/evidence-validation.json"
+
+      - name: Record Python validation outcomes
+        if: always()
+        shell: pwsh
+        run: |
+          $outcomes = [ordered]@{
+            regression = '${{ steps.regression.outcome }}'
+            functional = '${{ steps.functional.outcome }}'
+            normalization = '${{ steps.normalization.outcome }}'
+            completion = '${{ steps.completion.outcome }}'
+            evidence = '${{ steps.evidence.outcome }}'
+          }
+          $outcomes | ConvertTo-Json | Set-Content -LiteralPath "$env:PYTHON_WORK_ROOT/evidence/step-outcomes.json" -Encoding utf8
+
+      - name: Upload Python evidence before enforcement
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: python-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/python-functional/evidence/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce Python validation
+        if: always()
+        shell: pwsh
+        run: |
+          $outcomes = [ordered]@{
+            regression = '${{ steps.regression.outcome }}'
+            functional = '${{ steps.functional.outcome }}'
+            normalization = '${{ steps.normalization.outcome }}'
+            completion = '${{ steps.completion.outcome }}'
+            evidence = '${{ steps.evidence.outcome }}'
+          }
+          $failed = @($outcomes.GetEnumerator() | Where-Object Value -ne 'success')
+          if ($failed.Count -gt 0) {
+            $summary = ($failed | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ', '
+            throw "Mandatory governed Python validation failed: $summary"
+          }

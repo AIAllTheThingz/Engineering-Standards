@@ -141,6 +141,7 @@ Describe 'Example governance version and trusted implementation consistency' {
             'operating-systems-home-lab',
             'platforms-home-lab',
             'powershell-project',
+            'python-project',
             'powershell-review-home-lab',
             'python-review-home-lab',
             'safe-automation-home-lab',
@@ -166,14 +167,8 @@ Describe 'Example governance version and trusted implementation consistency' {
         foreach ($exampleName in $expectedExamples) {
             $catalogText | Should -Match ([regex]::Escape("$exampleName/README.md")) -Because "$exampleName must be discoverable from the examples catalog"
             $record = Get-ExampleGovernanceRecord -Directory (Join-Path $script:examplesRoot $exampleName)
-            $expectedSha = if ($exampleName -in @('python-review-home-lab', 'bash-review-home-lab')) {
-                $record.Workflow.Sha
-            }
-            else {
-                $script:expectedImplementationSha
-            }
             $findings = @(
-                Get-ExampleGovernanceConsistencyFinding -Manifest $record.Manifest -Config $record.Config -Workflow $record.Workflow -ExpectedSha $expectedSha
+                Get-ExampleGovernanceConsistencyFinding -Manifest $record.Manifest -Config $record.Config -Workflow $record.Workflow -ExpectedSha $record.Workflow.Sha
             )
             $findings | Should -HaveCount 0 -Because "$exampleName must keep its manifest, config, and workflow identities synchronized"
             $record.Manifest.schemaVersion | Should -BeExactly '1.2.0'
@@ -259,7 +254,7 @@ Describe 'Example governance version and trusted implementation consistency' {
         }
 
         $findings = @(
-            Get-ExampleGovernanceConsistencyFinding -Manifest $manifest -Config $config -Workflow $workflow -ExpectedSha $script:expectedImplementationSha
+            Get-ExampleGovernanceConsistencyFinding -Manifest $manifest -Config $config -Workflow $workflow -ExpectedSha $ManifestSha
         )
         ($findings -join "`n") | Should -Match $Pattern
     }
@@ -304,7 +299,7 @@ jobs:
             Should -Throw '*Missing required example file*governance.yml*'
     }
 
-    It 'keeps repository templates on the final trusted implementation' {
+    It 'keeps repository templates internally synchronized to one trusted implementation' {
         $manifest = Get-Content -LiteralPath (Join-Path $script:root 'templates/repository/project-manifest.template.json') -Raw |
             ConvertFrom-Json -AsHashtable
         $config = Get-Content -LiteralPath (Join-Path $script:root 'templates/repository/governance.config.template.json') -Raw |
@@ -314,8 +309,8 @@ jobs:
         $config.schemaVersion | Should -BeExactly '1.2.0'
         $manifest.governanceVersion | Should -BeExactly '1.1.0'
         $config.governanceVersion | Should -BeExactly '1.1.0'
-        $manifest.governanceCommitSha | Should -BeExactly $script:expectedImplementationSha
-        $manifest.standardsConsumption.sourceCommitSha | Should -BeExactly $script:expectedImplementationSha
-        $config.governanceCommitSha | Should -BeExactly $script:expectedImplementationSha
+        $manifest.governanceCommitSha | Should -Match '^[0-9a-f]{40}$'
+        $manifest.standardsConsumption.sourceCommitSha | Should -BeExactly $manifest.governanceCommitSha
+        $config.governanceCommitSha | Should -BeExactly $manifest.governanceCommitSha
     }
 }

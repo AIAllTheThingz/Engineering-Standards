@@ -10,6 +10,7 @@ test entry point.
 | Example | Purpose |
 | --- | --- |
 | [`powershell-project`](powershell-project/README.md) | PowerShell module, scripts, Pester tests, and evidence. |
+| [`python-project`](python-project/README.md) | Hash-locked Python tests, strict typing, audit, build, archive inspection, SBOM, and evidence. |
 | [`dotnet-project`](dotnet-project/README.md) | Runtime-dependent .NET governance example. |
 | [`database-project`](database-project/README.md) | Non-mutating migration validation. |
 | [`web-project`](web-project/README.md) | Runtime-dependent web governance example. |

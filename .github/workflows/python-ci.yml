@@ -1,0 +1,14 @@
+name: Python example CI
+on:
+  pull_request:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  python:
+    name: Python
+    uses: ./.github/workflows/python-ci-reusable.yml
+    with:
+      project-path: examples/python-project
+      python-version: 3.12.11

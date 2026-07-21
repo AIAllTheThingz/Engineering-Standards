@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.1.0",
+  "name": "Python Ruff",
+  "category": "lint",
+  "status": "Passed",
+  "requiredValidation": true,
+  "evidenceSource": "Automated",
+  "command": "python -m ruff check --no-cache --isolated --extend-per-file-ignores tests/*:S101 src tests",
+  "workingDirectory": "examples/python-project",
+  "startedAtUtc": "2026-07-20T22:08:32.936122Z",
+  "completedAtUtc": "2026-07-20T22:08:32.936159Z",
+  "durationSeconds": 0.205,
+  "runtime": "CPython 3.13.2",
+  "toolVersion": "governed-python-validator/1.0.0",
+  "exitCode": 0,
+  "summary": "Python Ruff completed successfully.",
+  "warnings": [],
+  "failureReason": null,
+  "blockedReason": null,
+  "details": {
+    "sanitizedOutput": "All checks passed!\n"
+  }
+}

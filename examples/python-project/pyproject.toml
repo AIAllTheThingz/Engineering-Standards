@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling==1.31.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "governed-paths-example"
+version = "1.0.0"
+description = "Deterministic path-segment validation example"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+license = "MIT"
+authors = [{ name = "Engineering Standards Maintainers" }]
+dependencies = []
+
+[project.scripts]
+governed-path = "governed_paths.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/governed_paths"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/governed_paths", "tests", "pyproject.toml", "README.md", "LICENSE"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+no_site_packages = true
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers"
+testpaths = ["tests"]

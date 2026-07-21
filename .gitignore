@@ -6,6 +6,13 @@ TestResults/
 **/bin/
 **/obj/
 **/dist/
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/*.egg-info/
+**/.venv/
+**/.smoke-venv/
 **/node_modules/
 evidence/*.local.json
 .vscode/
