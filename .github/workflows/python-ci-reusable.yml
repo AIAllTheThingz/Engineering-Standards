@@ -74,9 +74,13 @@ jobs:
       - name: Run trusted validator regression tests
         id: regression
         continue-on-error: true
-        run: >-
-          "$TOOL_PYTHON" -I -m pytest -c /dev/null --rootdir standards
-          -p no:cacheprovider standards/tests/python/python_project_validation_tests.py
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p "$PYTHON_WORK_ROOT/evidence"
+          "$TOOL_PYTHON" -I -m pytest -c /dev/null --rootdir standards \
+            -p no:cacheprovider standards/tests/python/python_project_validation_tests.py \
+            2>&1 | tee "$PYTHON_WORK_ROOT/evidence/validator-regression.log"
 
       - name: Run governed functional validation
         id: functional
