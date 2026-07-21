@@ -10,7 +10,7 @@ permissions:
 jobs:
   python:
     name: Python validation
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/python-ci-reusable.yml@d4fca6128cc44fc90b1fd6d3726844f847462b68
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/python-ci-reusable.yml@e066df32a0deaee38fed4a4cd477d1f4b4b549ed
     with:
       project-path: ${{ inputs.project-path }}
       python-version: ${{ inputs.python-version }}
