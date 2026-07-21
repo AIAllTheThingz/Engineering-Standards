@@ -71,17 +71,6 @@ jobs:
           "TOOL_PYTHON=$toolPython" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "PYTHON_WORK_ROOT=$(Join-Path $env:RUNNER_TEMP 'python-functional')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Run trusted validator regression tests
-        id: regression
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          mkdir -p "$PYTHON_WORK_ROOT/evidence"
-          "$TOOL_PYTHON" -I -m pytest -c /dev/null --rootdir standards \
-            -p no:cacheprovider standards/tests/python/python_project_validation_tests.py \
-            2>&1 | tee "$PYTHON_WORK_ROOT/evidence/validator-regression.log"
-
       - name: Run governed functional validation
         id: functional
         continue-on-error: true
@@ -93,6 +82,18 @@ jobs:
           --tool-lock standards/examples/python-project/requirements-ci.lock
           --runtime-lock requirements-runtime.lock
           --mypy-config standards/scripts/python-mypy.ini
+
+      - name: Run trusted validator regression tests
+        id: regression
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p "$PYTHON_WORK_ROOT/evidence"
+          "$TOOL_PYTHON" -I -m pytest -c /dev/null --rootdir standards \
+            -p no:cacheprovider standards/tests/python/python_project_validation_tests.py \
+            2>&1 | tee "$PYTHON_WORK_ROOT/evidence/validator-regression.log"
 
       - name: Normalize Python evidence schema
         id: normalization
@@ -116,6 +117,19 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: ./standards/actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path $env:PYTHON_WORK_ROOT -EvidencePath 'evidence/completion-result.json' -OutputJson "$env:PYTHON_WORK_ROOT/evidence/evidence-validation.json"
+
+      - name: Record Python validation outcomes
+        if: always()
+        shell: pwsh
+        run: |
+          $outcomes = [ordered]@{
+            regression = '${{ steps.regression.outcome }}'
+            functional = '${{ steps.functional.outcome }}'
+            normalization = '${{ steps.normalization.outcome }}'
+            completion = '${{ steps.completion.outcome }}'
+            evidence = '${{ steps.evidence.outcome }}'
+          }
+          $outcomes | ConvertTo-Json | Set-Content -LiteralPath "$env:PYTHON_WORK_ROOT/evidence/step-outcomes.json" -Encoding utf8
 
       - name: Upload Python evidence before enforcement
         if: always()
