@@ -13,7 +13,7 @@ Describe 'Governed Python project support' {
     }
 
     It 'provides the complete functional example contract' {
-        foreach ($path in @('pyproject.toml','requirements-ci.in','requirements-ci.lock','project-manifest.json','governance.config.json','src/governed_paths/paths.py','tests/test_paths.py','tools/Test-Example.ps1')) {
+        foreach ($path in @('pyproject.toml','requirements-ci.in','requirements-ci.lock','requirements-runtime.lock','project-manifest.json','governance.config.json','src/governed_paths/paths.py','tests/test_paths.py','tools/Test-Example.ps1')) {
             Test-Path -LiteralPath (Join-Path $script:example $path) -PathType Leaf | Should -BeTrue
         }
         (Get-Content -LiteralPath (Join-Path $script:example 'project-manifest.json') -Raw | ConvertFrom-Json).projectType | Should -BeExactly 'python'
@@ -47,15 +47,15 @@ Describe 'Governed Python project support' {
         $script:driver | Should -Match 'PYTEST_DISABLE_PLUGIN_AUTOLOAD'
         $script:driver | Should -Match '(?s)"-c",\s+os\.devnull'
         $script:driver | Should -Match '"--config-file"'
-        $script:driver | Should -Match 'python-mypy\.ini'
-        $script:driver | Should -Match '"--isolated"'
+        $script:driver | Should -Match 'python-mypy\.ini|mypy_config'
+        $script:driver | Should -Match '"-I"'
         $script:driver | Should -Match '"--no-isolation"'
     }
 
     It 'fails mutations that remove representative trust controls' -ForEach @(
         @{ Pattern='PYTEST_DISABLE_PLUGIN_AUTOLOAD'; Replacement='PYTEST_PLUGIN_AUTOLOAD' },
         @{ Pattern='--config-file'; Replacement='--caller-config' },
-        @{ Pattern='safe_archive\(wheel\)'; Replacement='list()' },
+        @{ Pattern='inspect_wheel\(wheel, metadata\)'; Replacement='list()' },
         @{ Pattern='Blocked'; Replacement='Passed' }
     ) {
         $mutant = $script:driver -replace $Pattern, $Replacement
@@ -66,7 +66,7 @@ Describe 'Governed Python project support' {
     It 'rejects rooted and traversal paths in the reusable workflow' {
         $script:workflow | Should -Match 'IsPathRooted'
         $script:workflow | Should -Match '\\\.\\\.'
-        $script:workflow | Should -Match 'LinkType'
+        $script:workflow | Should -Match 'LinkType|ReparsePoint'
     }
 
     It 'preserves non-bypassable static-language applicability' {
