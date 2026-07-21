@@ -45,7 +45,7 @@ jobs:
     steps:
       - name: Checkout caller
         # actions/checkout v4.2.2 pinned by commit SHA.
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.sha }}
@@ -57,7 +57,7 @@ jobs:
       - name: Checkout trusted standards
         # job.workflow_* identifies the immutable repository and commit defining this reusable job.
         # These properties are available on GitHub.com but not GitHub Enterprise Server.
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: ${{ job.workflow_repository }}
           ref: ${{ job.workflow_sha }}

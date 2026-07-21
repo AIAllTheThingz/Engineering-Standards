@@ -15,7 +15,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout candidate implementation
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.sha }}
@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
 
       - name: Checkout immutable candidate harness
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: ${{ job.workflow_repository }}
           ref: ${{ job.workflow_sha }}
