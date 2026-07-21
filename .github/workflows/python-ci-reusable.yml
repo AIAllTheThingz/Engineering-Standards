@@ -19,7 +19,7 @@ jobs:
   python:
     name: Python validation
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       PYTHONNOUSERSITE: "1"
       PYTHONSAFEPATH: "1"
@@ -40,63 +40,74 @@ jobs:
           persist-credentials: false
           path: standards
 
-      - name: Reject unsafe project path
+      - name: Validate fixed runtime and project path
         shell: pwsh
         run: |
+          if ('${{ inputs.python-version }}' -cne '3.12.11') { throw 'python-version must be the reviewed exact version 3.12.11.' }
           $candidate = '${{ inputs.project-path }}'
           if ([IO.Path]::IsPathRooted($candidate) -or $candidate -match '(^|[\\/])\.\.([\\/]|$)') { throw 'project-path must be repository-relative without traversal.' }
           $root = (Resolve-Path -LiteralPath (Join-Path $env:GITHUB_WORKSPACE 'caller')).Path
-          $project = (Resolve-Path -LiteralPath (Join-Path $root $candidate)).Path
-          if ($project -eq $root -and $candidate -ne '.') { throw 'project-path resolved unexpectedly.' }
-          if ((Get-Item -LiteralPath $project).LinkType) { throw 'project-path must not be a link.' }
+          $projectItem = Get-Item -LiteralPath (Join-Path $root $candidate) -Force
+          if ($projectItem.LinkType -or ($projectItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'project-path must not be a link or reparse point.' }
+          $project = $projectItem.FullName
+          if (-not ($project -eq $root -or $project.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal))) { throw 'project-path escaped the caller checkout.' }
 
       - name: Set up exact Python runtime
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
-          python-version: ${{ inputs.python-version }}
-          cache: pip
-          cache-dependency-path: caller/${{ inputs.project-path }}/requirements-ci.lock
+          python-version: 3.12.11
 
-      - name: Install hash-locked binary toolchain
-        working-directory: caller/${{ inputs.project-path }}
-        run: "python -m pip install --no-input --only-binary=:all: --require-hashes --no-deps -r requirements-ci.lock"
+      - name: Install standards-owned hash-locked toolchain
+        shell: pwsh
+        run: |
+          $toolRoot = Join-Path $env:RUNNER_TEMP 'python-tools'
+          python -m venv $toolRoot
+          $toolPython = Join-Path $toolRoot 'bin/python'
+          & $toolPython -I -m pip install --no-input --only-binary=:all: --require-hashes --no-deps -r standards/examples/python-project/requirements-ci.lock
+          & $toolPython -I -m pip check
+          "TOOL_PYTHON=$toolPython" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "PYTHON_WORK_ROOT=$(Join-Path $env:RUNNER_TEMP 'python-functional')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Verify dependency closure
-        working-directory: caller/${{ inputs.project-path }}
-        run: python -m pip check
+      - name: Run trusted validator regression tests
+        id: regression
+        continue-on-error: true
+        run: >-
+          "$TOOL_PYTHON" -I -m pytest -c /dev/null --rootdir standards
+          -p no:cacheprovider standards/tests/python/python_project_validation_tests.py
 
       - name: Run governed functional validation
         id: functional
         continue-on-error: true
-        run: python standards/scripts/python-project-validation.py --project caller/${{ inputs.project-path }}
+        run: >-
+          "$TOOL_PYTHON" -I standards/scripts/python-project-validation.py
+          --project "caller/${{ inputs.project-path }}"
+          --work-root "$PYTHON_WORK_ROOT"
+          --tool-python "$TOOL_PYTHON"
+          --tool-lock standards/examples/python-project/requirements-ci.lock
+          --runtime-lock requirements-runtime.lock
+          --mypy-config standards/scripts/python-mypy.ini
 
-      - name: Normalize Python evidence paths
-        if: always()
-        shell: pwsh
-        run: ./standards/scripts/Normalize-EvidencePaths.ps1 -Path caller -EvidencePath '${{ inputs.project-path }}/evidence'
-
-      - name: Create completion evidence
+      - name: Create completion evidence in trusted workspace
         id: completion
         if: always()
         continue-on-error: true
         shell: pwsh
         run: |
-          $env:GIT_CEILING_DIRECTORIES = (Resolve-Path -LiteralPath 'caller/${{ inputs.project-path }}').Path
-          ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath 'caller/${{ inputs.project-path }}' -OutputPath 'evidence/local-completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary 'Governed Python static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' -CommandsExecuted @('python standards/scripts/python-project-validation.py --project caller/${{ inputs.project-path }}') -ArtifactPath @('evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json')
+          ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath (Join-Path $env:PYTHON_WORK_ROOT 'caller') -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary 'Governed Python static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' -CommandsExecuted @('python-project-validation.py') -ArtifactPath @('evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json') -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha '${{ job.workflow_sha }}'
 
       - name: Validate Python completion evidence
         id: evidence
         if: always()
         continue-on-error: true
         shell: pwsh
-        run: ./standards/actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path 'caller/${{ inputs.project-path }}' -EvidencePath 'evidence/local-completion-result.json'
+        run: ./standards/actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path $env:PYTHON_WORK_ROOT -EvidencePath 'evidence/completion-result.json'
 
       - name: Upload Python evidence before enforcement
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: python-evidence-${{ github.run_id }}
-          path: caller/${{ inputs.project-path }}/evidence/
+          path: ${{ runner.temp }}/python-functional/evidence/
           if-no-files-found: error
           retention-days: 30
 
@@ -104,4 +115,4 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          if ('${{ steps.functional.outcome }}' -ne 'success' -or '${{ steps.completion.outcome }}' -ne 'success' -or '${{ steps.evidence.outcome }}' -ne 'success') { throw 'Mandatory governed Python functional validation, completion generation, or evidence validation failed or was blocked.' }
+          if ('${{ steps.regression.outcome }}' -ne 'success' -or '${{ steps.functional.outcome }}' -ne 'success' -or '${{ steps.completion.outcome }}' -ne 'success' -or '${{ steps.evidence.outcome }}' -ne 'success') { throw 'Mandatory governed Python regression, functional, completion, or evidence validation failed or was blocked.' }
