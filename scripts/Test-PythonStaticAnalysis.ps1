@@ -25,7 +25,7 @@ try {
     $version=Invoke-BoundedProcess -FilePath $RuffPath -ArgumentList @('--version')
     if($version.exitCode -ne 0 -or $version.stdout.Trim() -ne 'ruff 0.15.22'){ throw "Trusted Ruff version mismatch; expected 'ruff 0.15.22'." }
     if($paths.Count){
-        $args=@('check','--isolated','--no-cache','--output-format','json','--select','E9,F,B,S','--ignore-noqa','--no-fix','--per-file-ignores','scripts/python-project-validation.py:S603')+$paths
+        $args=@('check','--isolated','--no-cache','--output-format','json','--select','E9,F,B,S','--ignore-noqa','--no-fix','--per-file-ignores','scripts/python-project-validation.py:S603,caller/scripts/python-project-validation.py:S603')+$paths
         $ruff=Invoke-BoundedProcess -FilePath $RuffPath -ArgumentList $args -TimeoutSeconds 60
         if($ruff.timedOut){ throw 'Ruff timed out.' }; if($ruff.exitCode -notin @(0,1)){ throw "Ruff failed: $($ruff.stderr)" }
         foreach($item in @($ruff.stdout|ConvertFrom-Json)){ $findings.Add([ordered]@{tool='Ruff';rule=$item.code;path=[IO.Path]::GetRelativePath($root,$item.filename).Replace('\','/');line=$item.location.row;message=$item.message}) }
