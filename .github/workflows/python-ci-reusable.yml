@@ -62,9 +62,12 @@ jobs:
         run: |
           $toolRoot = Join-Path $env:RUNNER_TEMP 'python-tools'
           python -m venv $toolRoot
-          $toolPython = Join-Path $toolRoot 'bin/python'
-          & $toolPython -I -m pip install --no-input --only-binary=:all: --require-hashes --no-deps -r standards/examples/python-project/requirements-ci.lock
-          & $toolPython -I -m pip check
+          $venvPython = Join-Path $toolRoot 'bin/python'
+          & $venvPython -I -m pip install --no-input --only-binary=:all: --require-hashes --no-deps -r standards/examples/python-project/requirements-ci.lock
+          & $venvPython -I -m pip check
+          $toolPython = Join-Path $toolRoot 'bin/python-isolated'
+          Copy-Item -LiteralPath $venvPython -Destination $toolPython
+          & $toolPython -I -c "import sys; assert sys.prefix == '$toolRoot'"
           "TOOL_PYTHON=$toolPython" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "PYTHON_WORK_ROOT=$(Join-Path $env:RUNNER_TEMP 'python-functional')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
