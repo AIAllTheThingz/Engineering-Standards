@@ -185,6 +185,7 @@ if ($completion) {
         'evidence/bash-formatting.json',
         'evidence/bash-tests.json',
         'evidence/bash-toolchain.json',
+        'evidence/bash-toolchain-bootstrap.json',
         'evidence/bash-project-sbom.cdx.json'
     )
     $completionArtifactPaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)

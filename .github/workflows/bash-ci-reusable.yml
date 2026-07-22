@@ -225,7 +225,7 @@ jobs:
             -RiskClassification High `
             -Summary 'Governed Bash syntax, ShellCheck, shfmt, Bats, toolchain provenance, and SBOM validation completed.' `
             -CommandsExecuted @('Install-BashProjectToolchain.py','bash-project-validation.py','Normalize-BashFunctionalEvidence.py') `
-            -ArtifactPath @('evidence/bash-syntax.json','evidence/bash-shellcheck.json','evidence/bash-formatting.json','evidence/bash-tests.json','evidence/bash-toolchain.json','evidence/bash-project-sbom.cdx.json') `
+            -ArtifactPath @('evidence/bash-syntax.json','evidence/bash-shellcheck.json','evidence/bash-formatting.json','evidence/bash-tests.json','evidence/bash-toolchain.json','evidence/bash-toolchain-bootstrap.json','evidence/bash-project-sbom.cdx.json') `
             -ArtifactName $artifactName `
             -Repository $env:GITHUB_REPOSITORY `
             -Branch $env:CALLER_REF_NAME `

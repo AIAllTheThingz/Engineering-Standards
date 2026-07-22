@@ -192,7 +192,7 @@ function New-ValidBashArtifactFixture {
             -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification High `
             -Summary 'Synthetic hosted Bash artifact verifier fixture.' `
             -CommandsExecuted @('Install-BashProjectToolchain.py','bash-project-validation.py','Normalize-BashFunctionalEvidence.py') `
-            -ArtifactPath @('evidence/bash-syntax.json','evidence/bash-shellcheck.json','evidence/bash-formatting.json','evidence/bash-tests.json','evidence/bash-toolchain.json','evidence/bash-project-sbom.cdx.json') `
+            -ArtifactPath @('evidence/bash-syntax.json','evidence/bash-shellcheck.json','evidence/bash-formatting.json','evidence/bash-tests.json','evidence/bash-toolchain.json','evidence/bash-toolchain-bootstrap.json','evidence/bash-project-sbom.cdx.json') `
             -ArtifactName 'bash-evidence-1' -Repository 'example-org/project' -Branch main -ValidatedCommitSha ('1' * 40) `
             -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha ('2' * 40) `
             -ValidationProfile bash-functional -ChecksExecuted @('BashSyntax','ShellCheck','shfmt','Bats','ToolchainProvenance','SBOM') `
