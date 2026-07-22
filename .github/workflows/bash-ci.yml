@@ -26,6 +26,6 @@ permissions:
 jobs:
   bash:
     name: Bash
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/bash-ci-reusable.yml@3e4746b9da2c20aeb974c4d4919698dd8e09b2ac
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/bash-ci-reusable.yml@48a5a75cbdd6f21338a50f9715d72373e164d758
     with:
       project-path: examples/bash-project
