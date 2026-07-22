@@ -170,6 +170,8 @@ exit 0
                     tests = json.loads((evidence / "bash-tests.json").read_text(encoding="utf-8"))
                     self.assertEqual("NotRun", tests["status"])
                     self.assertIsNone(tests["exitCode"])
+                    self.assertGreaterEqual(len(tests["failureReason"]), 10)
+                    self.assertEqual(tests["failureReason"], tests["notRunReason"])
                     self.assertFalse((self.root / "work" / "tmp" / "bats-ran").exists())
 
     def test_bats_timeout_is_failed_and_bounded(self) -> None:

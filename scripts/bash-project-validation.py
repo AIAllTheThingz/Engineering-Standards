@@ -517,7 +517,7 @@ def make_record(
         "exitCode": exit_code,
         "summary": f"{name} {status.lower()}.",
         "warnings": [],
-        "failureReason": reason if status == "Failed" else None,
+        "failureReason": reason if status in {"Failed", "NotRun"} else None,
         "blockedReason": reason if status == "Blocked" else None,
         "notRunReason": reason if status == "NotRun" else None,
         "artifactPaths": artifact_paths,
