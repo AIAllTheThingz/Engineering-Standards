@@ -21,7 +21,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import uuid
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -642,6 +641,8 @@ def identify_tool(
 
 def build_sbom(project_name: str, lock: dict[str, Any], lock_hash: str, bash_hash: str) -> dict[str, Any]:
     root_ref = f"pkg:generic/{project_name}@1.0.0"
+    serial_hex = hashlib.sha256((root_ref + lock_hash).encode()).hexdigest()[:32]
+    serial_uuid = f"{serial_hex[:8]}-{serial_hex[8:12]}-{serial_hex[12:16]}-{serial_hex[16:20]}-{serial_hex[20:]}"
     components = []
     dependencies = []
     for tool in lock["tools"]:
@@ -674,7 +675,7 @@ def build_sbom(project_name: str, lock: dict[str, Any], lock_hash: str, bash_has
     return {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
-        "serialNumber": f"urn:uuid:{uuid.uuid5(uuid.NAMESPACE_URL, root_ref + lock_hash)}",
+        "serialNumber": f"urn:uuid:{serial_uuid}",
         "version": 1,
         "metadata": {
             "timestamp": utc_now(),
