@@ -359,6 +359,26 @@ exit 0
             validator.write_failure_evidence(args, ValueError("overlap"))
         self.assertFalse((project / "new-evidence").exists())
 
+    def test_failure_evidence_uses_a_valid_minimal_cyclonedx_sbom(self) -> None:
+        project = self.make_project()
+        evidence = self.root / "evidence"
+        args = argparse.Namespace(
+            bash=Path("/usr/bin/bash"), shellcheck=self.root / "shellcheck", shfmt=self.root / "shfmt",
+            bats=self.root / "bats", caller_root=project, project=project, project_path_input=".",
+            work_root=self.root / "work", evidence_root=evidence, tool_lock=LOCK_PATH,
+            command_timeout_seconds=10, test_timeout_seconds=10,
+        )
+        validator.write_failure_evidence(args, ValueError("controlled early failure"))
+        sbom = json.loads((evidence / "bash-project-sbom.cdx.json").read_text(encoding="utf-8"))
+        self.assertEqual("CycloneDX", sbom["bomFormat"])
+        self.assertEqual("1.5", sbom["specVersion"])
+        serial = sbom["serialNumber"]
+        self.assertRegex(serial, r"^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+        self.assertEqual(str(UUID(serial.removeprefix("urn:uuid:"))), serial.removeprefix("urn:uuid:"))
+        self.assertEqual([], sbom["components"])
+        properties = {item["name"]: item["value"] for item in sbom["metadata"]["component"]["properties"]}
+        self.assertEqual("NotRun", properties["engineering-standards:status"])
+
     def test_symlink_hardlink_fifo_and_socket_entries_are_rejected(self) -> None:
         creators = {
             "symlink": lambda project: (project / "unsafe").symlink_to(self.root / "outside"),

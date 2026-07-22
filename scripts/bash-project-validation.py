@@ -687,6 +687,37 @@ def build_sbom(project_name: str, lock: dict[str, Any], lock_hash: str, bash_has
     }
 
 
+def build_failure_sbom(project_name: str) -> dict[str, Any]:
+    root_ref = "bash-project-validation-failure"
+    serial_hex = hashlib.sha256((root_ref + project_name).encode()).hexdigest()[:32]
+    serial_uuid = f"{serial_hex[:8]}-{serial_hex[8:12]}-{serial_hex[12:16]}-{serial_hex[16:20]}-{serial_hex[20:]}"
+    return {
+        "bomFormat": "CycloneDX",
+        "specVersion": "1.5",
+        "serialNumber": f"urn:uuid:{serial_uuid}",
+        "version": 1,
+        "metadata": {
+            "timestamp": utc_now(),
+            "tools": {"components": [{"type": "application", "name": "bash-project-validation", "version": "1.0.0"}]},
+            "component": {
+                "type": "application",
+                "name": project_name or "bash-project",
+                "version": "unknown",
+                "bom-ref": root_ref,
+                "properties": [
+                    {"name": "engineering-standards:status", "value": "NotRun"},
+                    {
+                        "name": "engineering-standards:reason",
+                        "value": "Project validation failed before the complete SBOM could be generated.",
+                    },
+                ],
+            },
+        },
+        "components": [],
+        "dependencies": [{"ref": root_ref, "dependsOn": []}],
+    }
+
+
 def execute(args: argparse.Namespace) -> int:
     _, original_project = resolve_caller_project(args.caller_root, args.project, args.project_path_input)
     project_root, work_root, evidence_root = ensure_distinct_roots(
@@ -1080,7 +1111,7 @@ def write_failure_evidence(args: argparse.Namespace, error: Exception) -> None:
     records = [structure]
     for phase, filename in PHASE_FILES.items():
         record = placeholder_record(phase, f"Not run because project validation failed: {error}", roots, executables)
-        write_json(evidence_root / filename, record if phase != "sbom" else {"status": "NotRun", "reason": record["notRunReason"]})
+        write_json(evidence_root / filename, record if phase != "sbom" else build_failure_sbom(args.project.name))
         records.append(record)
     hosted = make_record(
         "GitHub-hosted workflow execution",

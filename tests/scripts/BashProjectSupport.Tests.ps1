@@ -4,6 +4,7 @@ BeforeAll {
     $script:example = Join-Path $script:root 'examples/bash-project'
     $script:workflowPath = Join-Path $script:root '.github/workflows/bash-ci-reusable.yml'
     $script:workflow = Get-Content -LiteralPath $script:workflowPath -Raw
+    $script:entryWorkflow = Get-Content -LiteralPath (Join-Path $script:root '.github/workflows/bash-ci.yml') -Raw
     $script:driver = Get-Content -LiteralPath (Join-Path $script:root 'scripts/bash-project-validation.py') -Raw
     $script:installer = Get-Content -LiteralPath (Join-Path $script:root 'scripts/Install-BashProjectToolchain.py') -Raw
     $script:artifactVerifier = Get-Content -LiteralPath (Join-Path $script:root 'scripts/Test-BashWorkflowEvidenceArtifact.ps1') -Raw
@@ -403,6 +404,16 @@ raise SystemExit(2)
         $script:workflow | Should -Match 'python-version:\s*3\.12\.11'
         $script:workflow | Should -Match '--bash /usr/bin/bash'
         $script:workflow | Should -Not -Match 'pull_request_target|secrets\.|secrets:\s*inherit|contents:\s*write'
+    }
+
+    It 'triggers Bash CI for shared completion and evidence validation changes' {
+        foreach ($path in @(
+            'scripts/New-CompletionEvidence.ps1',
+            'scripts/GovernanceValidation.psm1',
+            'actions/validate-evidence/Invoke-EvidenceValidation.ps1'
+        )) {
+            $script:entryWorkflow | Should -Match ([regex]::Escape("- '$path'"))
+        }
     }
 
     It 'detects representative workflow-control mutations' -ForEach @(
