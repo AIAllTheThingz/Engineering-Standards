@@ -32,6 +32,7 @@ $ErrorActionPreference = 'Stop'
 if (-not $IsLinux) { throw 'The functional Bash example requires Linux with Ubuntu 24.04 semantics.' }
 $project = (Resolve-Path -LiteralPath $ProjectPath).Path
 $standardsRoot = (Resolve-Path -LiteralPath (Join-Path $project '../..')).Path
+Import-Module (Join-Path $standardsRoot 'scripts/GovernanceValidation.psm1') -Force
 $temporaryBase = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar)
 $temporaryRoot = Join-Path $temporaryBase ("governed-bash-" + [guid]::NewGuid().ToString('N'))
 $toolRoot = Join-Path $temporaryRoot 'tools'
@@ -55,7 +56,66 @@ try {
     )
     if ($Offline) { $installArguments += '--offline' }
     & python3 @installArguments
-    if ($LASTEXITCODE -ne 0) { throw "Bash toolchain installation failed with exit code $LASTEXITCODE." }
+    $installerExit = $LASTEXITCODE
+    if ($installerExit -ne 0) {
+        $destination = Join-Path $project 'evidence'
+        foreach ($evidenceName in @(
+            'bash-formatting.json',
+            'bash-project-sbom.cdx.json',
+            'bash-shellcheck.json',
+            'bash-syntax.json',
+            'bash-tests.json',
+            'bash-toolchain-bootstrap.json',
+            'bash-toolchain.json',
+            'local-completion-result.json',
+            'local-test-results.json'
+        )) {
+            $staleEvidence = Join-Path $destination $evidenceName
+            if (Test-Path -LiteralPath $staleEvidence -PathType Leaf) {
+                Remove-Item -LiteralPath $staleEvidence -Force
+            }
+        }
+        if (-not (Test-Path -LiteralPath $bootstrapEvidence -PathType Leaf)) {
+            throw "Bash toolchain installation failed with exit code $installerExit without producing bootstrap evidence."
+        }
+        $bootstrapValidation = @(Test-GovernanceJsonDocument -Path $bootstrapEvidence -Kind test-evidence)
+        $bootstrapFailures = @($bootstrapValidation | Where-Object status -eq 'Failed')
+        if ($bootstrapFailures.Count -gt 0) {
+            throw "Bash toolchain installation failed with exit code $installerExit and produced invalid bootstrap evidence: $($bootstrapFailures[0].message)"
+        }
+        $bootstrapRecord = Get-Content -LiteralPath $bootstrapEvidence -Raw | ConvertFrom-Json -AsHashtable
+        $expectedIdentity = [ordered]@{
+            schemaVersion = '1.1.0'
+            name = 'Bash functional toolchain bootstrap'
+            category = 'dependency'
+            requiredValidation = $true
+            evidenceSource = 'Automated'
+            toolName = 'bash-toolchain-bootstrap'
+            toolVersion = '1.0.0'
+        }
+        foreach ($identityField in $expectedIdentity.Keys) {
+            if (-not $bootstrapRecord.ContainsKey($identityField) -or $bootstrapRecord[$identityField] -cne $expectedIdentity[$identityField]) {
+                throw "Bash toolchain installation failed with exit code $installerExit and produced bootstrap evidence with invalid $identityField."
+            }
+        }
+        $bootstrapStatus = [string]$bootstrapRecord.status
+        if ($bootstrapStatus -cnotin @('Blocked','Failed')) {
+            throw "Bash toolchain installation failed with exit code $installerExit but bootstrap evidence reported '$bootstrapStatus'."
+        }
+        $reasonField = if ($bootstrapStatus -ceq 'Blocked') { 'blockedReason' } else { 'failureReason' }
+        $reason = if ($bootstrapRecord.ContainsKey($reasonField)) { [string]$bootstrapRecord[$reasonField] } else { '' }
+        if ([string]::IsNullOrWhiteSpace($reason) -or $reason.Length -lt 10) {
+            throw "Bash toolchain installation failed with exit code $installerExit but bootstrap evidence omitted a meaningful $reasonField."
+        }
+        if (($bootstrapStatus -ceq 'Blocked' -and ($null -ne $bootstrapRecord.exitCode -or $null -ne $bootstrapRecord.failureReason)) -or
+            ($bootstrapStatus -ceq 'Failed' -and ([int]$bootstrapRecord.exitCode -ne 1 -or $null -ne $bootstrapRecord.blockedReason))) {
+            throw "Bash toolchain installation failed with exit code $installerExit but bootstrap evidence contradicted its $bootstrapStatus status."
+        }
+        New-Item -ItemType Directory -Path $destination -Force | Out-Null
+        $publishedBootstrapEvidence = Join-Path $destination 'bash-toolchain-bootstrap.json'
+        Copy-Item -LiteralPath $bootstrapEvidence -Destination $publishedBootstrapEvidence -Force
+        throw "Bash toolchain installation failed with exit code $installerExit. $bootstrapStatus evidence was preserved: $reason"
+    }
     $paths = Get-Content -LiteralPath $pathsOutput -Raw | ConvertFrom-Json
 
     & python3 -I (Join-Path $standardsRoot 'scripts/bash-project-validation.py') `

@@ -44,6 +44,12 @@ evidence remains `NotRun` overall for GitHub-hosted execution; it never claims
 hosted validation. The hosted workflow uploads evidence before final
 enforcement and keeps caller and standards identity separate.
 
+When `-Offline` cannot find an exact locked artifact, the wrapper exits
+nonzero after preserving the installer's truthful `Blocked` record at
+`evidence/bash-toolchain-bootstrap.json`. It does not create functional phase
+or completion evidence for a validation that never started, and removes stale
+records from an earlier completed run.
+
 Caller Bats execution requires Linux Landlock. Local runs require ABI 1 or
 newer for filesystem isolation; hosted runs require ABI 4 or newer and also
 deny TCP connect and bind. The driver sets `no_new_privs`, permits writes only

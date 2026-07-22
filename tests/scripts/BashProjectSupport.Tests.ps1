@@ -6,6 +6,70 @@ BeforeAll {
     $script:driver = Get-Content -LiteralPath (Join-Path $script:root 'scripts/bash-project-validation.py') -Raw
     $script:installer = Get-Content -LiteralPath (Join-Path $script:root 'scripts/Install-BashProjectToolchain.py') -Raw
     $script:artifactVerifier = Get-Content -LiteralPath (Join-Path $script:root 'scripts/Test-BashWorkflowEvidenceArtifact.ps1') -Raw
+    $script:exampleWorkflow = Get-Content -LiteralPath (Join-Path $script:example '.github/workflows/governance.yml') -Raw
+    $script:exampleManifest = Get-Content -LiteralPath (Join-Path $script:example 'project-manifest.json') -Raw | ConvertFrom-Json -AsHashtable
+    $script:exampleConfig = Get-Content -LiteralPath (Join-Path $script:example 'governance.config.json') -Raw | ConvertFrom-Json -AsHashtable
+
+function Test-BashExampleWorkflowContract {
+    param(
+        [Parameter(Mandatory)][string]$Text,
+        [Parameter(Mandatory)][hashtable]$Manifest,
+        [Parameter(Mandatory)][hashtable]$Config
+    )
+    $findings = [Collections.Generic.List[string]]::new()
+    if ($Manifest.requiredWorkflows -ccontains 'bash') {
+        $job = [regex]::Match($Text, '(?ms)^  bash:\s*\r?\n(?<body>.*?)(?=^  [A-Za-z0-9_-]+:\s*(?:\r?\n|$)|\z)')
+        if (-not $job.Success) {
+            $findings.Add('missing-bash-job')
+            return @($findings)
+        }
+        $body = $job.Groups['body'].Value
+        $callerName = [regex]::Match($body, '(?m)^    name:\s*(?<name>\S.*?)\s*$')
+        $expectedCheck = 'Bash / Bash validation'
+        if (-not $callerName.Success -or $callerName.Groups['name'].Value -cne 'Bash' -or
+            $Config.requiredCheckNames -cnotcontains $expectedCheck -or
+            $Config.workflowInterface.requiredCheckNames -cnotcontains $expectedCheck) {
+            $findings.Add('required-bash-check')
+        }
+        $uses = [regex]::Match($body, '(?m)^    uses:\s*(?<value>\S+)\s*$')
+        if (-not $uses.Success -or $uses.Groups['value'].Value -cnotmatch '^AIAllTheThingz/Engineering-Standards/\.github/workflows/bash-ci-reusable\.yml@[0-9a-f]{40}$') {
+            $findings.Add('immutable-bash-reference')
+        }
+        if ($body -cnotmatch '(?m)^      project-path:\s*\.\s*$') {
+            $findings.Add('bash-project-path')
+        }
+    }
+    @($findings)
+}
+
+function Initialize-BashExampleWrapperFixture {
+    $root = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+    $example = Join-Path $root 'examples/bash-project'
+    New-Item -ItemType Directory -Path (Join-Path $root 'scripts'),(Join-Path $example 'tools') -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $script:root 'scripts/Install-BashProjectToolchain.py') -Destination (Join-Path $root 'scripts')
+    Copy-Item -LiteralPath (Join-Path $script:root 'scripts/GovernanceValidation.psm1') -Destination (Join-Path $root 'scripts')
+    Copy-Item -LiteralPath (Join-Path $script:example 'bash-toolchain.lock.json') -Destination $example
+    Copy-Item -LiteralPath (Join-Path $script:example 'tools/Test-Example.ps1') -Destination (Join-Path $example 'tools')
+    Copy-Item -LiteralPath (Join-Path $script:example 'evidence') -Destination $example -Recurse
+    [pscustomobject]@{ Root=$root; Example=$example; Installer=(Join-Path $root 'scripts/Install-BashProjectToolchain.py') }
+}
+
+function Invoke-BashExampleOfflineFixture {
+    param([Parameter(Mandatory)][psobject]$Fixture)
+    $cache = Join-Path $Fixture.Root 'cache'
+    $temporary = Join-Path $Fixture.Root 'temporary'
+    New-Item -ItemType Directory -Path $cache,$temporary -Force | Out-Null
+    $savedTemporary = $env:TMPDIR
+    try {
+        $env:TMPDIR = $temporary
+        $output = @(& pwsh -NoProfile -File (Join-Path $Fixture.Example 'tools/Test-Example.ps1') -ProjectPath $Fixture.Example -ToolCache $cache -Offline 2>&1)
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        $env:TMPDIR = $savedTemporary
+    }
+    [pscustomobject]@{ ExitCode=$exitCode; Output=($output -join "`n"); Temporary=$temporary }
+}
 
 function Test-BashWorkflowControls {
     param([Parameter(Mandatory)][string]$Text)
@@ -145,6 +209,110 @@ Describe 'Governed Bash project support' {
             Test-Path -LiteralPath (Join-Path $script:example $path) -PathType Leaf | Should -BeTrue
         }
         (Get-Content -LiteralPath (Join-Path $script:example 'project-manifest.json') -Raw | ConvertFrom-Json).projectType | Should -BeExactly 'bash'
+    }
+
+    It 'binds the required Bash workflow to the expected immutable downstream check' {
+        @(Test-BashExampleWorkflowContract -Text $script:exampleWorkflow -Manifest $script:exampleManifest -Config $script:exampleConfig).Count | Should -Be 0
+    }
+
+    It 'detects a missing Bash job when the manifest requires Bash' {
+        $mutant = [regex]::Replace($script:exampleWorkflow, '(?ms)^  bash:\s*\r?\n.*\z', '')
+        @(Test-BashExampleWorkflowContract -Text $mutant -Manifest $script:exampleManifest -Config $script:exampleConfig) |
+            Should -Contain 'missing-bash-job'
+    }
+
+    It 'detects a Bash caller that cannot produce the required check name' {
+        $mutant = $script:exampleWorkflow -replace '(?m)^    name:\s*Bash\s*$', '    name: Shell'
+        @(Test-BashExampleWorkflowContract -Text $mutant -Manifest $script:exampleManifest -Config $script:exampleConfig) |
+            Should -Contain 'required-bash-check'
+    }
+
+    It 'rejects non-immutable Bash reusable workflow reference <Reference>' -ForEach @(
+        @{ Reference='main' },
+        @{ Reference='v1.1.0' },
+        @{ Reference='9872907' },
+        @{ Reference='refs/heads/feature/bash' }
+    ) {
+        $mutant = [regex]::Replace($script:exampleWorkflow, '(?<=bash-ci-reusable\.yml@)[^\r\n]+', $Reference)
+        @(Test-BashExampleWorkflowContract -Text $mutant -Manifest $script:exampleManifest -Config $script:exampleConfig) |
+            Should -Contain 'immutable-bash-reference'
+    }
+
+    It 'rejects an incorrect downstream Bash project path' {
+        $mutant = $script:exampleWorkflow -replace '(?m)^      project-path:\s*\.\s*$', '      project-path: examples/bash-project'
+        @(Test-BashExampleWorkflowContract -Text $mutant -Manifest $script:exampleManifest -Config $script:exampleConfig) |
+            Should -Contain 'bash-project-path'
+    }
+
+    It 'preserves truthful Blocked bootstrap evidence for an empty offline cache' -Skip:(-not $IsLinux) {
+        $fixture = Initialize-BashExampleWrapperFixture
+        $result = Invoke-BashExampleOfflineFixture -Fixture $fixture
+        $evidencePath = Join-Path $fixture.Example 'evidence/bash-toolchain-bootstrap.json'
+        $result.ExitCode | Should -Not -Be 0
+        Test-Path -LiteralPath $evidencePath -PathType Leaf | Should -BeTrue
+        $record = Get-Content -LiteralPath $evidencePath -Raw | ConvertFrom-Json
+        $record.status | Should -BeExactly 'Blocked'
+        $record.blockedReason | Should -Match 'offline cache is missing'
+        $record.exitCode | Should -BeNullOrEmpty
+        $result.Output | Should -Match 'exit code 2'
+        $result.Output | Should -Match ([regex]::Escape($record.blockedReason))
+        @(Get-ChildItem -LiteralPath (Join-Path $fixture.Example 'evidence') -File -Filter '*.json').Count | Should -Be 1
+        Test-Path -LiteralPath (Join-Path $fixture.Example 'evidence/bash-tests.json') | Should -BeFalse
+        Test-Path -LiteralPath (Join-Path $fixture.Example 'evidence/local-completion-result.json') | Should -BeFalse
+        @(Get-ChildItem -LiteralPath $result.Temporary -Directory -Filter 'governed-bash-*').Count | Should -Be 0
+    }
+
+    It 'fails closed when nonzero bootstrap evidence is <EvidenceMode>' -ForEach @(
+        @{ EvidenceMode='missing' },
+        @{ EvidenceMode='malformed' },
+        @{ EvidenceMode='incomplete' },
+        @{ EvidenceMode='wrong-identity' }
+    ) -Skip:(-not $IsLinux) {
+        $fixture = Initialize-BashExampleWrapperFixture
+        $stub = @"
+import json
+import pathlib
+import sys
+evidence = pathlib.Path(sys.argv[sys.argv.index('--evidence') + 1])
+mode = '$EvidenceMode'
+if mode == 'malformed':
+    evidence.write_text('{invalid', encoding='utf-8')
+elif mode == 'incomplete':
+    evidence.write_text(json.dumps({'status': 'Blocked', 'blockedReason': '0123456789'}), encoding='utf-8')
+elif mode == 'wrong-identity':
+    evidence.write_text(json.dumps({
+        'schemaVersion': '1.1.0',
+        'name': 'Untrusted bootstrap record',
+        'category': 'dependency',
+        'status': 'Blocked',
+        'requiredValidation': True,
+        'evidenceSource': 'Automated',
+        'command': 'synthetic installer',
+        'workingDirectory': '.',
+        'startedAtUtc': '2026-07-22T00:00:00Z',
+        'completedAtUtc': '2026-07-22T00:00:01Z',
+        'durationSeconds': 1,
+        'runtime': 'CPython 3.12.0',
+        'toolName': 'bash-toolchain-bootstrap',
+        'toolVersion': '1.0.0',
+        'exitCode': None,
+        'summary': 'Synthetic blocked bootstrap record.',
+        'warnings': [],
+        'failureReason': None,
+        'blockedReason': 'Synthetic bootstrap failure reason.',
+        'details': {'sanitizedOutput': 'Synthetic bootstrap failure reason.'}
+    }), encoding='utf-8')
+print('synthetic offline bootstrap failure', file=sys.stderr)
+raise SystemExit(2)
+"@
+        Set-Content -LiteralPath $fixture.Installer -Value $stub -Encoding utf8
+        $result = Invoke-BashExampleOfflineFixture -Fixture $fixture
+        $result.ExitCode | Should -Not -Be 0
+        Test-Path -LiteralPath (Join-Path $fixture.Example 'evidence/bash-toolchain-bootstrap.json') | Should -BeFalse
+        Test-Path -LiteralPath (Join-Path $fixture.Example 'evidence/bash-tests.json') | Should -BeFalse
+        Test-Path -LiteralPath (Join-Path $fixture.Example 'evidence/local-completion-result.json') | Should -BeFalse
+        @(Get-ChildItem -LiteralPath (Join-Path $fixture.Example 'evidence') -File -Filter '*.json').Count | Should -Be 0
+        @(Get-ChildItem -LiteralPath $result.Temporary -Directory -Filter 'governed-bash-*').Count | Should -Be 0
     }
 
     It 'locks exact functional tools separately and keeps ShellCheck consistent with the central lock' {

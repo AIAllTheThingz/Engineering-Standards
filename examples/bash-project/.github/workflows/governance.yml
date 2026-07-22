@@ -12,3 +12,9 @@ jobs:
     with:
       project-path: .
       governance-version: 1.1.0
+
+  bash:
+    name: Bash
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/bash-ci-reusable.yml@98729075cdd6c3ac18454db02c9d79ed95eb1f76
+    with:
+      project-path: .
