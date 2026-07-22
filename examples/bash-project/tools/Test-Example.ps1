@@ -154,6 +154,7 @@ try {
         'evidence/bash-formatting.json',
         'evidence/bash-tests.json',
         'evidence/bash-toolchain.json',
+        'evidence/bash-toolchain-bootstrap.json',
         'evidence/bash-project-sbom.cdx.json'
     )
     & (Join-Path $standardsRoot 'scripts/New-CompletionEvidence.ps1') `
@@ -163,7 +164,7 @@ try {
         -TestResultPath 'evidence/local-test-results.json' `
         -GovernanceVersion '1.1.0' `
         -RiskClassification Moderate `
-        -Summary 'Local governed Bash syntax, ShellCheck, formatting, Bats, toolchain, and SBOM validation completed; hosted execution was not run.' `
+        -Summary 'Local governed Bash syntax, ShellCheck, formatting, Bats, toolchain, and SBOM validation completed against the recorded clean source commit; hosted execution was not run.' `
         -CommandsExecuted @('Install-BashProjectToolchain.py','bash-project-validation.py','Normalize-BashFunctionalEvidence.py') `
         -CommandsNotExecuted @('GitHub-hosted Bash workflow execution') `
         -ArtifactPath $artifacts `

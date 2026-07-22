@@ -46,6 +46,15 @@ the validated content to its full `HEAD` commit. The hosted workflow uploads
 only normalized, completion-validated evidence before final enforcement and
 keeps caller and standards identity separate.
 
+The checked-in local completion record is generated from that clean source
+commit before the evidence-only and immutable self-pin commits that contain it.
+Its `validatedCommitSha` may therefore be an ancestor of the reviewed head only
+when every intervening path is generated example evidence or one of the three
+Bash self-reference workflows. The record leaves `evidenceCommitSha` null
+because a file cannot embed the hash of the commit containing its own bytes.
+Regenerate the record whenever any validated source, wrapper, or workflow
+implementation changes.
+
 When `-Offline` cannot find an exact locked artifact, the wrapper exits
 nonzero after preserving the installer's truthful `Blocked` record at
 `evidence/bash-toolchain-bootstrap.json`. It does not create functional phase

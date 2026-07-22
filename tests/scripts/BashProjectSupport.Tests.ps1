@@ -109,6 +109,7 @@ function Test-BashExampleWrapperControls {
     if (-not $Text.Contains('git -C $project rev-parse --verify HEAD') -or
         -not $Text.Contains('git -C $project status --porcelain --untracked-files=all -- .') -or
         -not $Text.Contains('-ValidatedCommitSha $validatedCommitSha')) { $failures.Add('local-commit-identity') }
+    if ($Text -notmatch '(?ms)\$artifacts\s*=\s*@\(.*?''evidence/bash-toolchain-bootstrap\.json''.*?\)') { $failures.Add('local-bootstrap-binding') }
     if (-not $Text.Contains("-CommandsNotExecuted @('GitHub-hosted Bash workflow execution')")) { $failures.Add('hosted-notrun-command') }
     @($failures)
 }
@@ -291,11 +292,24 @@ Describe 'Governed Bash project support' {
         $completion.validatedCommitSha | Should -BeExactly $completion.commitSha
         $completion.status | Should -BeExactly 'NotRun'
         @($completion.commandsNotExecuted) | Should -Contain 'GitHub-hosted Bash workflow execution'
+        @($completion.artifacts.path) | Should -Contain 'evidence/bash-toolchain-bootstrap.json'
+        $changedAfterValidation = @(& git -C $script:root diff --name-only "$($completion.validatedCommitSha)..HEAD" --)
+        $LASTEXITCODE | Should -Be 0
+        $allowedAfterValidation = @(
+            '.github/workflows/bash-ci.yml',
+            'workflows/bash-ci.yml',
+            'examples/bash-project/.github/workflows/governance.yml'
+        )
+        @($changedAfterValidation | Where-Object {
+            -not $_.StartsWith('examples/bash-project/evidence/', [StringComparison]::Ordinal) -and
+            $allowedAfterValidation -cnotcontains $_
+        }) | Should -BeNullOrEmpty
     }
 
     It 'detects local completion identity and NotRun metadata mutations' -ForEach @(
         @{ Pattern='git -C $project rev-parse --verify HEAD'; Expected='local-commit-identity' },
         @{ Pattern='git -C $project status --porcelain --untracked-files=all -- .'; Expected='local-commit-identity' },
+        @{ Pattern="'evidence/bash-toolchain-bootstrap.json',"; Expected='local-bootstrap-binding' },
         @{ Pattern="-CommandsNotExecuted @('GitHub-hosted Bash workflow execution')"; Expected='hosted-notrun-command' }
     ) {
         $mutant = $script:exampleWrapper.Replace($Pattern, 'CONTROL_REMOVED')
