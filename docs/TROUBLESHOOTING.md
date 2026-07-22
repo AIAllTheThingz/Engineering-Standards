@@ -137,6 +137,11 @@ the independent artifact metadata JSON. Run
 name and ID, expected conclusion, and controlled-failure phase before making a
 hosted success or expected-failure claim.
 
+If the hosted toolchain bootstrap is `Blocked` or `Failed`, the workflow
+normalizes and uploads its bootstrap record under the usual Bash artifact name
+before final enforcement fails the job. Completion and functional phase records
+are intentionally absent because those phases did not run.
+
 The trusted driver requires Linux Landlock ABI 1 or newer for local filesystem
 isolation. Hosted execution requires ABI 4 or newer so TCP connect and bind can
 also be denied. An unsupported kernel is `Blocked`; do not disable the sandbox

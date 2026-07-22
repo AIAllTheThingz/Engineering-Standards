@@ -11,6 +11,7 @@ governed_path_resolve() {
   local relative_path=$2
   local resolved_root
   local resolved_path
+  local candidate_path
   local part
   local -a components=()
 
@@ -27,6 +28,10 @@ governed_path_resolve() {
     fi
   done
 
+  if [[ -L $requested_root ]]; then
+    printf 'repository root must be a real directory\n' >&2
+    return 66
+  fi
   if ! resolved_root=$(realpath -e -- "$requested_root"); then
     printf 'repository root could not be resolved\n' >&2
     return 66
@@ -35,6 +40,14 @@ governed_path_resolve() {
     printf 'repository root must be a real directory\n' >&2
     return 66
   fi
+  candidate_path=$resolved_root
+  for part in "${components[@]}"; do
+    candidate_path+="/$part"
+    if [[ -L $candidate_path ]]; then
+      printf 'candidate path must not contain symbolic links\n' >&2
+      return 68
+    fi
+  done
   if ! resolved_path=$(realpath -m -- "$resolved_root/$relative_path"); then
     printf 'candidate path could not be resolved\n' >&2
     return 67

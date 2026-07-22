@@ -95,10 +95,14 @@ function Test-BashWorkflowControls {
         -not $Text.Contains('-ExpectedCommitSha $env:CALLER_COMMIT_SHA') -or
         -not $Text.Contains('-ExpectedRepository $env:GITHUB_REPOSITORY') -or
         -not $Text.Contains('-ExpectedRefName $env:CALLER_REF_NAME')) { $failures.Add('caller-source-identity') }
-    if ($Text.IndexOf('Upload Bash evidence before enforcement') -lt 0 -or $Text.IndexOf('Upload Bash evidence before enforcement') -gt $Text.IndexOf('Enforce governed Bash validation')) { $failures.Add('evidence-order') }
-    if ($Text -notmatch "(?ms)- name: Create Bash completion evidence in trusted workspace\s+id: completion\s+if: always\(\) && steps\.normalization\.outcome == 'success'" -or
-        $Text -notmatch "(?ms)- name: Validate Bash completion evidence\s+id: evidence\s+if: always\(\) && steps\.normalization\.outcome == 'success' && steps\.completion\.outcome == 'success'" -or
-        $Text -notmatch "(?ms)- name: Upload Bash evidence before enforcement\s+id: upload\s+if: always\(\) && steps\.normalization\.outcome == 'success' && steps\.completion\.outcome == 'success' && steps\.evidence\.outcome == 'success'") { $failures.Add('unsafe-evidence-upload') }
+    if ($Text.IndexOf('Upload Bash evidence before enforcement') -lt 0 -or $Text.IndexOf('Upload Bash evidence before enforcement') -gt $Text.IndexOf('Enforce governed Bash validation') -or
+        $Text.IndexOf('Upload Bash bootstrap failure evidence before enforcement') -lt 0 -or $Text.IndexOf('Upload Bash bootstrap failure evidence before enforcement') -gt $Text.IndexOf('Enforce governed Bash validation')) { $failures.Add('evidence-order') }
+    if ($Text -notmatch "(?ms)- name: Create Bash completion evidence in trusted workspace\s+id: completion\s+if: always\(\) && steps\.bootstrap\.outcome == 'success' && steps\.normalization\.outcome == 'success'" -or
+        $Text -notmatch "(?ms)- name: Validate Bash completion evidence\s+id: evidence\s+if: always\(\) && steps\.bootstrap\.outcome == 'success' && steps\.normalization\.outcome == 'success' && steps\.completion\.outcome == 'success'" -or
+        $Text -notmatch "(?ms)- name: Upload Bash evidence before enforcement\s+id: upload\s+if: always\(\) && steps\.bootstrap\.outcome == 'success' && steps\.normalization\.outcome == 'success' && steps\.completion\.outcome == 'success' && steps\.evidence\.outcome == 'success'") { $failures.Add('unsafe-evidence-upload') }
+    if ($Text -notmatch "(?ms)- name: Upload Bash bootstrap failure evidence before enforcement\s+id: bootstrap_failure_upload\s+if: always\(\) && steps\.bootstrap\.outcome != 'success' && steps\.staging\.outcome == 'success' && steps\.normalization\.outcome == 'success'" -or
+        -not $Text.Contains("`$bootstrapFailed = `$outcomes.bootstrap -cne 'success'") -or
+        -not $Text.Contains("bootstrapFailureUpload = '`${{ steps.bootstrap_failure_upload.outcome }}'")) { $failures.Add('unsafe-bootstrap-failure-upload') }
     if ($Text -match '--(?:bash|shellcheck|shfmt|bats)\s+"?\$CALLER') { $failures.Add('caller-tool-path') }
     @($failures)
 }
@@ -107,7 +111,7 @@ function Test-BashExampleWrapperControls {
     param([Parameter(Mandatory)][string]$Text)
     $failures = [Collections.Generic.List[string]]::new()
     if (-not $Text.Contains('git -C $project rev-parse --verify HEAD') -or
-        -not $Text.Contains('git -C $project status --porcelain --untracked-files=all -- .') -or
+        -not $Text.Contains('git -C $standardsRoot status --porcelain --untracked-files=all -- .') -or
         -not $Text.Contains('-ValidatedCommitSha $validatedCommitSha')) { $failures.Add('local-commit-identity') }
     if ($Text -notmatch '(?ms)\$artifacts\s*=\s*@\(.*?''evidence/bash-toolchain-bootstrap\.json''.*?\)') { $failures.Add('local-bootstrap-binding') }
     if (-not $Text.Contains("-CommandsNotExecuted @('GitHub-hosted Bash workflow execution')")) { $failures.Add('hosted-notrun-command') }
@@ -308,7 +312,7 @@ Describe 'Governed Bash project support' {
 
     It 'detects local completion identity and NotRun metadata mutations' -ForEach @(
         @{ Pattern='git -C $project rev-parse --verify HEAD'; Expected='local-commit-identity' },
-        @{ Pattern='git -C $project status --porcelain --untracked-files=all -- .'; Expected='local-commit-identity' },
+        @{ Pattern='git -C $standardsRoot status --porcelain --untracked-files=all -- .'; Expected='local-commit-identity' },
         @{ Pattern="'evidence/bash-toolchain-bootstrap.json',"; Expected='local-bootstrap-binding' },
         @{ Pattern="-CommandsNotExecuted @('GitHub-hosted Bash workflow execution')"; Expected='hosted-notrun-command' }
     ) {
@@ -440,8 +444,10 @@ raise SystemExit(2)
         @{ Name='caller source identity removal'; Mutate={ param($text) $text.Replace('github.event.pull_request.head.sha || github.sha','github.sha') }; Expected='caller-source-identity' },
         @{ Name='caller-selected tool path'; Mutate={ param($text) $text.Replace('--shellcheck "$TRUSTED_SHELLCHECK"','--shellcheck "$CALLER_SHELLCHECK"') }; Expected='caller-tool-path' },
         @{ Name='evidence after enforcement'; Mutate={ param($text) $text.Replace('Upload Bash evidence before enforcement','Late evidence upload').Replace('Enforce governed Bash validation','Upload Bash evidence before enforcement') }; Expected='evidence-order' },
-        @{ Name='completion copies unnormalized evidence'; Mutate={ param($text) $text.Replace("if: always() && steps.normalization.outcome == 'success'",'if: always()') }; Expected='unsafe-evidence-upload' },
-        @{ Name='upload ignores evidence safety gates'; Mutate={ param($text) $text.Replace("if: always() && steps.normalization.outcome == 'success' && steps.completion.outcome == 'success' && steps.evidence.outcome == 'success'",'if: always()') }; Expected='unsafe-evidence-upload' }
+        @{ Name='completion copies unnormalized evidence'; Mutate={ param($text) $text.Replace("if: always() && steps.bootstrap.outcome == 'success' && steps.normalization.outcome == 'success'",'if: always()') }; Expected='unsafe-evidence-upload' },
+        @{ Name='upload ignores evidence safety gates'; Mutate={ param($text) $text.Replace("if: always() && steps.bootstrap.outcome == 'success' && steps.normalization.outcome == 'success' && steps.completion.outcome == 'success' && steps.evidence.outcome == 'success'",'if: always()') }; Expected='unsafe-evidence-upload' },
+        @{ Name='bootstrap failure upload ignores preservation gates'; Mutate={ param($text) $text.Replace("if: always() && steps.bootstrap.outcome != 'success' && steps.staging.outcome == 'success' && steps.normalization.outcome == 'success'",'if: always()') }; Expected='unsafe-bootstrap-failure-upload' },
+        @{ Name='bootstrap failure upload is not enforced'; Mutate={ param($text) $text.Replace("`$bootstrapFailed = `$outcomes.bootstrap -cne 'success'",'$bootstrapFailed = $false') }; Expected='unsafe-bootstrap-failure-upload' }
     ) {
         $mutant = & $Mutate $script:workflow
         @(Test-BashWorkflowControls -Text $mutant) | Should -Contain $Expected

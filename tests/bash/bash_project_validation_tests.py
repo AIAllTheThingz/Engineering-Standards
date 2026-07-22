@@ -19,6 +19,7 @@ from uuid import UUID
 ROOT = Path(__file__).resolve().parents[2]
 VALIDATOR_PATH = ROOT / "scripts" / "bash-project-validation.py"
 INSTALLER_PATH = ROOT / "scripts" / "Install-BashProjectToolchain.py"
+NORMALIZER_PATH = ROOT / "scripts" / "Normalize-BashFunctionalEvidence.py"
 LOCK_PATH = ROOT / "examples" / "bash-project" / "bash-toolchain.lock.json"
 
 
@@ -33,6 +34,7 @@ def load_module(name: str, path: Path):
 
 validator = load_module("bash_project_validation", VALIDATOR_PATH)
 installer = load_module("install_bash_project_toolchain", INSTALLER_PATH)
+normalizer = load_module("normalize_bash_functional_evidence", NORMALIZER_PATH)
 
 
 class BashProjectValidationTests(unittest.TestCase):
@@ -429,6 +431,77 @@ exit 0
         value = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         value.bind(str(project / "unsafe"))
         return value
+
+
+class BashEvidenceNormalizerTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory(prefix="bash-normalizer-tests-")
+        self.root = Path(self.temporary.name)
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    def bootstrap_record(self, status: str) -> dict[str, object]:
+        return {
+            "schemaVersion": "1.1.0",
+            "name": "Bash functional toolchain bootstrap",
+            "category": "dependency",
+            "status": status,
+            "requiredValidation": True,
+            "evidenceSource": "Automated",
+            "command": "python3 -I scripts/Install-BashProjectToolchain.py --lock <lock>",
+            "workingDirectory": ".",
+            "startedAtUtc": "2026-07-22T00:00:00Z",
+            "completedAtUtc": "2026-07-22T00:00:01Z",
+            "durationSeconds": 1,
+            "runtime": "CPython 3.12.11",
+            "toolName": "bash-toolchain-bootstrap",
+            "toolVersion": "1.0.0",
+            "exitCode": None if status == "Blocked" else 1,
+            "summary": f"Bootstrap {status.lower()}.",
+            "warnings": [],
+            "failureReason": "Synthetic failed bootstrap reason." if status == "Failed" else None,
+            "blockedReason": "Synthetic blocked bootstrap reason." if status == "Blocked" else None,
+            "details": {"sanitizedOutput": "Synthetic bootstrap output."},
+        }
+
+    def write_bootstrap(self, record: dict[str, object]) -> Path:
+        path = self.root / normalizer.BOOTSTRAP_FILE
+        path.write_text(json.dumps(record), encoding="utf-8")
+        return path
+
+    def test_normalizes_canonical_blocked_and_failed_bootstrap_only_evidence(self) -> None:
+        for status in ("Blocked", "Failed"):
+            with self.subTest(status=status):
+                path = self.write_bootstrap(self.bootstrap_record(status))
+                normalizer.normalize_evidence(self.root)
+                record = json.loads(path.read_text(encoding="utf-8"))
+                self.assertEqual(status, record["status"])
+                self.assertEqual("bash-toolchain-bootstrap", record["details"]["toolName"])
+                self.assertEqual("bash-toolchain-bootstrap/1.0.0", record["toolVersion"])
+
+    def test_rejects_nonfailure_or_contradictory_bootstrap_only_evidence(self) -> None:
+        cases = []
+        passed = self.bootstrap_record("Passed")
+        passed["exitCode"] = 0
+        cases.append(("Passed", passed))
+        blocked = self.bootstrap_record("Blocked")
+        blocked["blockedReason"] = "short"
+        cases.append(("blocked reason", blocked))
+        failed = self.bootstrap_record("Failed")
+        failed["exitCode"] = None
+        cases.append(("failed fields", failed))
+        for name, record in cases:
+            with self.subTest(case=name):
+                self.write_bootstrap(record)
+                with self.assertRaises(ValueError):
+                    normalizer.normalize_evidence(self.root)
+
+    def test_full_evidence_requires_bootstrap_record(self) -> None:
+        for name in normalizer.REQUIRED_FILES - {normalizer.BOOTSTRAP_FILE}:
+            (self.root / name).write_text("{}\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, normalizer.BOOTSTRAP_FILE):
+            normalizer.normalize_evidence(self.root)
 
 
 class BashInstallerSafetyTests(unittest.TestCase):

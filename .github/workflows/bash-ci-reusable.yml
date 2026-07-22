@@ -203,7 +203,7 @@ jobs:
 
       - name: Create Bash completion evidence in trusted workspace
         id: completion
-        if: always() && steps.normalization.outcome == 'success'
+        if: always() && steps.bootstrap.outcome == 'success' && steps.normalization.outcome == 'success'
         continue-on-error: true
         shell: pwsh
         run: |
@@ -239,7 +239,7 @@ jobs:
 
       - name: Validate Bash completion evidence
         id: evidence
-        if: always() && steps.normalization.outcome == 'success' && steps.completion.outcome == 'success'
+        if: always() && steps.bootstrap.outcome == 'success' && steps.normalization.outcome == 'success' && steps.completion.outcome == 'success'
         continue-on-error: true
         shell: pwsh
         run: ./standards/actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path $env:BASH_COMPLETION_ROOT -EvidencePath 'evidence/completion-result.json' -ExpectedCommitSha $env:CALLER_COMMIT_SHA -ExpectedRepository $env:GITHUB_REPOSITORY -ExpectedRefName $env:CALLER_REF_NAME -OutputJson "$env:BASH_COMPLETION_ROOT/evidence/evidence-validation.json"
@@ -262,9 +262,19 @@ jobs:
           }
           $outcomes | ConvertTo-Json | Set-Content -LiteralPath "$env:BASH_COMPLETION_ROOT/evidence/step-outcomes.json" -Encoding utf8
 
+      - name: Upload Bash bootstrap failure evidence before enforcement
+        id: bootstrap_failure_upload
+        if: always() && steps.bootstrap.outcome != 'success' && steps.staging.outcome == 'success' && steps.normalization.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: bash-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/bash-functional/evidence/
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Upload Bash evidence before enforcement
         id: upload
-        if: always() && steps.normalization.outcome == 'success' && steps.completion.outcome == 'success' && steps.evidence.outcome == 'success'
+        if: always() && steps.bootstrap.outcome == 'success' && steps.normalization.outcome == 'success' && steps.completion.outcome == 'success' && steps.evidence.outcome == 'success'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: bash-evidence-${{ github.run_id }}
@@ -288,6 +298,24 @@ jobs:
             completion = '${{ steps.completion.outcome }}'
             evidence = '${{ steps.evidence.outcome }}'
             upload = '${{ steps.upload.outcome }}'
+          }
+          $bootstrapFailed = $outcomes.bootstrap -cne 'success'
+          if ($bootstrapFailed) {
+            $preservationOutcomes = [ordered]@{
+              initialize = $outcomes.initialize
+              boundary = $outcomes.boundary
+              python = $outcomes.python
+              regression = $outcomes.regression
+              staging = $outcomes.staging
+              normalization = $outcomes.normalization
+              bootstrapFailureUpload = '${{ steps.bootstrap_failure_upload.outcome }}'
+            }
+            $preservationFailures = @($preservationOutcomes.GetEnumerator() | Where-Object Value -ne 'success')
+            if ($preservationFailures.Count -gt 0) {
+              $summary = ($preservationFailures | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ', '
+              throw "Bash bootstrap evidence preservation failed closed: $summary"
+            }
+            throw "Mandatory governed Bash validation failed closed: bootstrap=$($outcomes.bootstrap)"
           }
           $failed = @($outcomes.GetEnumerator() | Where-Object Value -ne 'success')
           if ($failed.Count -gt 0) {

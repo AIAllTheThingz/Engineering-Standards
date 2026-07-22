@@ -25,7 +25,8 @@ Require an existing regular file:
 ./cmd/governed-path --require-file ./fixtures/repository "nested/space name.txt"
 ```
 
-Absolute paths, empty components, `.` and `..` components, symlink escapes,
+Absolute paths, empty components, `.` and `..` components, symlink components
+(including links whose targets remain inside the repository),
 missing required files, unsupported options, and failed child commands return a
 nonzero status. Arguments remain arrays or individually quoted expansions;
 the example does not use `eval` or predictable temporary paths.

@@ -50,6 +50,34 @@ function rejects_a_missing_required_file { # @test
   [[ $output == *'existing regular file'* ]]
 }
 
+function rejects_a_symlink_to_an_in_root_file { # @test
+  local temporary_repository="$BATS_TEST_TMPDIR/file-symlink-repository"
+  mkdir -p "$temporary_repository"
+  printf 'fixture\n' > "$temporary_repository/target.txt"
+  ln -s target.txt "$temporary_repository/alias.txt"
+  run "$utility" --require-file "$temporary_repository" 'alias.txt'
+  [ "$status" -ne 0 ]
+  [[ $output == *'must not contain symbolic links'* ]]
+}
+
+function rejects_a_symlinked_directory_component { # @test
+  local temporary_repository="$BATS_TEST_TMPDIR/directory-symlink-repository"
+  mkdir -p "$temporary_repository/real"
+  printf 'fixture\n' > "$temporary_repository/real/target.txt"
+  ln -s real "$temporary_repository/alias"
+  run "$utility" --require-file "$temporary_repository" 'alias/target.txt'
+  [ "$status" -ne 0 ]
+  [[ $output == *'must not contain symbolic links'* ]]
+}
+
+function rejects_a_symlinked_repository_root { # @test
+  local root_alias="$BATS_TEST_TMPDIR/repository-root-alias"
+  ln -s "$repository_root" "$root_alias"
+  run "$utility" --require-file "$root_alias" 'alpha.txt'
+  [ "$status" -ne 0 ]
+  [[ $output == *'repository root must be a real directory'* ]]
+}
+
 function propagates_a_child_command_failure { # @test
   mkdir -p "$BATS_TEST_TMPDIR/bin"
   printf '#!/usr/bin/env bash\nexit 73\n' > "$BATS_TEST_TMPDIR/bin/realpath"

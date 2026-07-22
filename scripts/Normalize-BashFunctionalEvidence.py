@@ -9,12 +9,14 @@ from pathlib import Path
 from typing import Any
 
 CANONICAL_STATUSES = {"Passed", "Failed", "Blocked", "NotRun", "NotApplicable"}
+BOOTSTRAP_FILE = "bash-toolchain-bootstrap.json"
 REQUIRED_FILES = {
     "bash-syntax.json",
     "bash-shellcheck.json",
     "bash-formatting.json",
     "bash-tests.json",
     "bash-toolchain.json",
+    BOOTSTRAP_FILE,
     "bash-project-sbom.cdx.json",
     "local-test-results.json",
 }
@@ -83,16 +85,52 @@ def normalize_document(value: Any) -> Any:
     return value
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--evidence", type=Path, required=True)
-    args = parser.parse_args()
-    root = args.evidence.resolve(strict=True)
+def validate_bootstrap_failure(document: Any) -> None:
+    if not isinstance(document, dict):
+        raise ValueError("bootstrap-only evidence must be a JSON object")
+    expected = {
+        "schemaVersion": "1.1.0",
+        "name": "Bash functional toolchain bootstrap",
+        "category": "dependency",
+        "evidenceSource": "Automated",
+        "toolName": "bash-toolchain-bootstrap",
+        "toolVersion": "1.0.0",
+    }
+    for field, value in expected.items():
+        if document.get(field) != value:
+            raise ValueError(f"bootstrap-only evidence has invalid {field}")
+    if document.get("requiredValidation") is not True:
+        raise ValueError("bootstrap-only evidence must be a required validation")
+
+    status = document.get("status")
+    if status == "Blocked":
+        reason = document.get("blockedReason")
+        if not isinstance(reason, str) or len(reason.strip()) < 10:
+            raise ValueError("blocked bootstrap-only evidence requires a meaningful blockedReason")
+        if document.get("exitCode") is not None or document.get("failureReason") is not None:
+            raise ValueError("blocked bootstrap-only evidence has contradictory failure fields")
+    elif status == "Failed":
+        reason = document.get("failureReason")
+        if not isinstance(reason, str) or len(reason.strip()) < 10:
+            raise ValueError("failed bootstrap-only evidence requires a meaningful failureReason")
+        exit_code = document.get("exitCode")
+        if type(exit_code) is not int or exit_code != 1 or document.get("blockedReason") is not None:
+            raise ValueError("failed bootstrap-only evidence has contradictory failure fields")
+    else:
+        raise ValueError("bootstrap-only evidence must report Blocked or Failed")
+
+
+def normalize_evidence(root: Path) -> None:
+    root = root.resolve(strict=True)
+    json_names = {path.name for path in root.glob("*.json") if path.is_file()}
+    bootstrap_only = json_names == {BOOTSTRAP_FILE}
     missing = sorted(name for name in REQUIRED_FILES if not (root / name).is_file())
-    if missing:
+    if missing and not bootstrap_only:
         raise ValueError(f"required Bash evidence is missing: {', '.join(missing)}")
     for path in sorted(root.glob("*.json")):
         document = json.loads(path.read_text(encoding="utf-8"))
+        if bootstrap_only:
+            validate_bootstrap_failure(document)
         if path.name.endswith("sbom.cdx.json") or path.name == "completion-result.json":
             normalized = document
         else:
@@ -103,6 +141,13 @@ def main() -> int:
         if TOKEN_PATTERN.search(rendered):
             raise ValueError(f"credential-like value found in {path.name}")
         path.write_text(rendered, encoding="utf-8")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--evidence", type=Path, required=True)
+    args = parser.parse_args()
+    normalize_evidence(args.evidence)
     return 0
 
 

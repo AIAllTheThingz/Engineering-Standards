@@ -140,9 +140,9 @@ try {
     if ($gitExitCode -ne 0 -or $validatedCommitSha -cnotmatch '^[0-9a-f]{40}$') {
         throw 'Local Bash completion evidence requires a Git checkout with a valid HEAD commit.'
     }
-    $gitStatus = @(& git -C $project status --porcelain --untracked-files=all -- . 2>$null)
+    $gitStatus = @(& git -C $standardsRoot status --porcelain --untracked-files=all -- . 2>$null)
     if ($LASTEXITCODE -ne 0 -or $gitStatus.Count -gt 0) {
-        throw 'Local Bash completion evidence requires a clean Bash example worktree.'
+        throw 'Local Bash completion evidence requires a clean repository worktree.'
     }
 
     New-Item -ItemType Directory -Path (Join-Path $completionRoot 'caller'),(Join-Path $completionRoot 'evidence') -Force | Out-Null
