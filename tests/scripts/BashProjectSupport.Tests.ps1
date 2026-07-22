@@ -102,7 +102,7 @@ function New-ValidBashArtifactFixture {
     }
     try {
         $env:GITHUB_RUN_ID = '1'; $env:GITHUB_RUN_ATTEMPT = '1'; $env:GITHUB_WORKFLOW = 'Bash example CI'
-        $env:GITHUB_SHA = ('1' * 40); $env:GITHUB_REF_NAME = 'main'; $env:GITHUB_REPOSITORY = 'example-org/project'
+        $env:GITHUB_SHA = ('1' * 40); $env:GITHUB_REF_NAME = '79/merge'; $env:GITHUB_REPOSITORY = 'example-org/project'
         & (Join-Path $script:root 'scripts/New-CompletionEvidence.ps1') `
             -RepositoryPath $workspace -SourceRepositoryPath $caller -OutputPath 'evidence/completion-result.json' `
             -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification High `
@@ -113,6 +113,8 @@ function New-ValidBashArtifactFixture {
             -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha ('2' * 40) `
             -ValidationProfile bash-functional -ChecksExecuted @('BashSyntax','ShellCheck','shfmt','Bats','ToolchainProvenance','SBOM') `
             -EvidenceExecutionContext GitHubActions | Out-Null
+        (Get-Content -LiteralPath (Join-Path $artifact 'completion-result.json') -Raw | ConvertFrom-Json).branch |
+            Should -BeExactly 'main'
         & (Join-Path $script:root 'actions/validate-evidence/Invoke-EvidenceValidation.ps1') `
             -Path $workspace -EvidencePath 'evidence/completion-result.json' `
             -ExpectedCommitSha ('1' * 40) -ExpectedRepository 'example-org/project' -ExpectedRefName main `
@@ -135,7 +137,7 @@ Describe 'Governed Bash project support' {
         foreach ($path in @(
             'README.md','AGENTS.md','project-manifest.json','governance.config.json','bash-toolchain.lock.json',
             '.github/workflows/governance.yml',
-            'bin/governed-path','lib/governed_path.sh','spec/governed_path.bats','tools/Test-Example.ps1'
+            'cmd/governed-path','lib/governed_path.sh','spec/governed_path.bats','tools/Test-Example.ps1'
         )) {
             Test-Path -LiteralPath (Join-Path $script:example $path) -PathType Leaf | Should -BeTrue
         }

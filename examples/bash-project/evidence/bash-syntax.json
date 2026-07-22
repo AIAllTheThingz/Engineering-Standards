@@ -7,10 +7,10 @@
   "evidenceSource": "Automated",
   "command": "<bash> --noprofile --norc -n <declared-bash-files>",
   "workingDirectory": ".",
-  "startedAtUtc": "2026-07-22T00:18:53.374602Z",
-  "completedAtUtc": "2026-07-22T00:18:53.374621Z",
+  "startedAtUtc": "2026-07-22T03:03:19.381572Z",
+  "completedAtUtc": "2026-07-22T03:03:19.381593Z",
   "durationSeconds": 0.018,
-  "runtime": "CPython 3.12.3",
+  "runtime": "CPython 3.12.11",
   "toolVersion": "GNU Bash/5.2.21",
   "exitCode": 0,
   "summary": "Bash syntax passed.",
@@ -22,9 +22,9 @@
     "bash-syntax.json"
   ],
   "details": {
-    "sanitizedOutput": "bin/governed-path: syntax passed\nlib/governed_path.sh: syntax passed\nspec/governed_path.bats: syntax passed",
+    "sanitizedOutput": "cmd/governed-path: syntax passed\nlib/governed_path.sh: syntax passed\nspec/governed_path.bats: syntax passed",
     "files": [
-      "bin/governed-path",
+      "cmd/governed-path",
       "lib/governed_path.sh",
       "spec/governed_path.bats"
     ],

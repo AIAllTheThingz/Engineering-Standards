@@ -11,7 +11,7 @@ setup() {
     cd -- "${BATS_TEST_FILENAME%/*}/.." && pwd -P
   )
   repository_root="$project_root/fixtures/repository"
-  utility="$project_root/bin/governed-path"
+  utility="$project_root/cmd/governed-path"
 }
 
 function resolves_an_existing_relative_path { # @test

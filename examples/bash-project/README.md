@@ -16,13 +16,13 @@ semantics are not claimed as supported.
 Resolve an existing or not-yet-created repository-relative path:
 
 ```bash
-./bin/governed-path ./fixtures/repository nested/new-file.txt
+./cmd/governed-path ./fixtures/repository nested/new-file.txt
 ```
 
 Require an existing regular file:
 
 ```bash
-./bin/governed-path --require-file ./fixtures/repository "nested/space name.txt"
+./cmd/governed-path --require-file ./fixtures/repository "nested/space name.txt"
 ```
 
 Absolute paths, empty components, `.` and `..` components, symlink escapes,

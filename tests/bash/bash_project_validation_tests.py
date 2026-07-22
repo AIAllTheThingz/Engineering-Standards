@@ -49,7 +49,7 @@ class BashProjectValidationTests(unittest.TestCase):
 
     def make_project(self, marker: str = "") -> Path:
         project = self.root / "project"
-        for directory in ("bin", "lib", "spec"):
+        for directory in ("cmd", "lib", "spec"):
             (project / directory).mkdir(parents=True, exist_ok=True)
         (project / "README.md").write_text("# Fixture\n\nSupported Bash 5.2.\n", encoding="utf-8")
         (project / "AGENTS.md").write_text("# Fixture instructions\n", encoding="utf-8")
@@ -72,7 +72,7 @@ class BashProjectValidationTests(unittest.TestCase):
             source += "if\n"
         else:
             source += f"# {source_marker}\n" if source_marker else ""
-        (project / "bin" / "fixture").write_text(source, encoding="utf-8")
+        (project / "cmd" / "fixture").write_text(source, encoding="utf-8")
         (project / "lib" / "fixture.sh").write_text(
             "#!/usr/bin/env bash\nfixture_value() {\n  printf 'fixture\\n'\n}\n",
             encoding="utf-8",
@@ -203,7 +203,7 @@ exit 0
 
     def test_bats_sandbox_denies_project_and_external_file_mutation(self) -> None:
         project = self.make_project()
-        original = (project / "bin" / "fixture").read_text(encoding="utf-8")
+        original = (project / "cmd" / "fixture").read_text(encoding="utf-8")
         protected = self.root / "runner-command-file"
         protected.write_text("trusted\n", encoding="utf-8")
         tools = self.make_fake_tools()
@@ -211,8 +211,8 @@ exit 0
             "#!/usr/bin/env bash\n"
             "if [[ ${1-} == --version ]]; then printf 'Bats 1.13.0\\n'; exit 0; fi\n"
             "spec=${@: -1}\nproject=${spec%/spec/*}\n"
-            "chmod 700 \"$project/bin/fixture\"\n"
-            "printf hostile >> \"$project/bin/fixture\" 2>/dev/null || true\n"
+            "chmod 700 \"$project/cmd/fixture\"\n"
+            "printf hostile >> \"$project/cmd/fixture\" 2>/dev/null || true\n"
             f"printf poisoned >> '{protected}' 2>/dev/null || true\n"
             "printf '1..1\\nok 1 sandbox\\n'\n",
             encoding="utf-8",
@@ -226,7 +226,7 @@ exit 0
         )
         self.assertEqual(0, validator.execute(args))
         self.assertEqual("trusted\n", protected.read_text(encoding="utf-8"))
-        self.assertEqual(original, (self.root / "work" / "caller" / "bin" / "fixture").read_text(encoding="utf-8"))
+        self.assertEqual(original, (self.root / "work" / "caller" / "cmd" / "fixture").read_text(encoding="utf-8"))
 
     def test_caller_cannot_precreate_or_tamper_with_reserved_evidence(self) -> None:
         project = self.make_project()
@@ -264,7 +264,7 @@ exit 0
         sentinel = self.root / "sentinel"
         injection = self.root / "injection.sh"
         injection.write_text(f"printf injected >{sentinel}\n", encoding="utf-8")
-        shadow = project / "bin" / "shellcheck"
+        shadow = project / "cmd" / "shellcheck"
         shadow.write_text(f"#!/usr/bin/env bash\nprintf shadowed >{sentinel}\n", encoding="utf-8")
         shadow.chmod(0o700)
         old = {name: os.environ.get(name) for name in ("BASH_ENV", "ENV", "BATS_LIB_PATH", "SHELLCHECK_OPTS")}
@@ -316,7 +316,7 @@ exit 0
 
     def test_shellcheck_suppression_directive_is_rejected(self) -> None:
         project = self.make_project()
-        with (project / "bin" / "fixture").open("a", encoding="utf-8") as stream:
+        with (project / "cmd" / "fixture").open("a", encoding="utf-8") as stream:
             stream.write("# shellcheck disable=SC2086\n")
         tools = self.make_fake_tools()
         args = argparse.Namespace(

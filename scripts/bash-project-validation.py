@@ -561,7 +561,7 @@ def validate_structure(project: Path) -> tuple[list[Path], list[Path]]:
     missing = sorted(path for path in REQUIRED_PROJECT_FILES if not (project / path).is_file())
     if missing:
         raise ValueError(f"governed Bash project is missing required files: {', '.join(missing)}")
-    for directory in ("bin", "lib", "spec"):
+    for directory in ("cmd", "lib", "spec"):
         if not (project / directory).is_dir():
             raise ValueError(f"governed Bash project is missing {directory}/")
     manifest = load_json(project / "project-manifest.json")
@@ -574,7 +574,7 @@ def validate_structure(project: Path) -> tuple[list[Path], list[Path]]:
     if "Bash 5.2" not in (project / "README.md").read_text(encoding="utf-8"):
         raise ValueError("README must declare supported Bash 5.2")
     bash_files = sorted(
-        [path for path in (project / "bin").iterdir() if path.is_file()]
+        [path for path in (project / "cmd").iterdir() if path.is_file()]
         + list((project / "lib").glob("*.sh"))
     )
     bats_files = sorted((project / "spec").glob("*.bats"))
@@ -603,7 +603,7 @@ def validate_structure(project: Path) -> tuple[list[Path], list[Path]]:
             first_line = stream.readline(256)
         shebang_marks_bash = first_line.startswith((b"#!/usr/bin/env bash", b"#!/usr/bin/bash", b"#!/usr/bin/env bats"))
         if suffix_marks_bash or shebang_marks_bash:
-            raise ValueError(f"Bash-executable content exists outside declared bin, lib, or spec paths: {path.relative_to(project)}")
+            raise ValueError(f"Bash-executable content exists outside declared cmd, lib, or spec paths: {path.relative_to(project)}")
     return bash_files, bats_files
 
 
