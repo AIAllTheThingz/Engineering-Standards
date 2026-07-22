@@ -18,6 +18,10 @@ function Test-BashWorkflowControls {
         if ($use.Groups['value'].Value -notmatch '@[0-9a-f]{40}$') { $failures.Add('immutable-actions'); break }
     }
     if ($Text -notmatch 'job\.workflow_sha' -or $Text -notmatch 'job\.workflow_repository') { $failures.Add('trusted-workflow-identity') }
+    if (-not $Text.Contains('ref: ${{ github.event.pull_request.head.sha || github.sha }}') -or
+        -not $Text.Contains('CALLER_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}') -or
+        -not $Text.Contains('CALLER_REF_NAME: ${{ github.event.pull_request.head.ref || github.ref_name }}') -or
+        -not $Text.Contains('-ValidatedCommitSha $env:CALLER_COMMIT_SHA')) { $failures.Add('caller-source-identity') }
     if ($Text.IndexOf('Upload Bash evidence before enforcement') -lt 0 -or $Text.IndexOf('Upload Bash evidence before enforcement') -gt $Text.IndexOf('Enforce governed Bash validation')) { $failures.Add('evidence-order') }
     if ($Text -match '--(?:bash|shellcheck|shfmt|bats)\s+"?\$CALLER') { $failures.Add('caller-tool-path') }
     @($failures)
@@ -193,6 +197,7 @@ Describe 'Governed Bash project support' {
         @{ Name='extra mutable action'; Mutate={ param($text) $text + "`n      - uses: example/action@main`n" }; Expected='immutable-actions' },
         @{ Name='OIDC permission added'; Mutate={ param($text) $text -replace 'permissions:\r?\n  contents: read',"permissions:`n  contents: read`n  id-token: write" }; Expected='prohibited-authority' },
         @{ Name='trusted identity removal'; Mutate={ param($text) $text -replace 'job\.workflow_sha','github.sha' }; Expected='trusted-workflow-identity' },
+        @{ Name='caller source identity removal'; Mutate={ param($text) $text.Replace('github.event.pull_request.head.sha || github.sha','github.sha') }; Expected='caller-source-identity' },
         @{ Name='caller-selected tool path'; Mutate={ param($text) $text.Replace('--shellcheck "$TRUSTED_SHELLCHECK"','--shellcheck "$CALLER_SHELLCHECK"') }; Expected='caller-tool-path' },
         @{ Name='evidence after enforcement'; Mutate={ param($text) $text.Replace('Upload Bash evidence before enforcement','Late evidence upload').Replace('Enforce governed Bash validation','Upload Bash evidence before enforcement') }; Expected='evidence-order' }
     ) {
