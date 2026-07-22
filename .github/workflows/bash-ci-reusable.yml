@@ -49,6 +49,15 @@ jobs:
           $completionRoot = Join-Path $env:RUNNER_TEMP 'bash-completion'
           $pathsOutput = Join-Path $env:RUNNER_TEMP 'bash-tool-paths.json'
           $bootstrapEvidence = Join-Path $env:RUNNER_TEMP 'bash-toolchain-bootstrap.json'
+          $event = Get-Content -LiteralPath $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
+          $callerCommitSha = [string]$env:GITHUB_SHA
+          $callerRefName = [string]$env:GITHUB_REF_NAME
+          if ($null -ne $event.pull_request) {
+            $callerCommitSha = [string]$event.pull_request.head.sha
+            $callerRefName = [string]$event.pull_request.head.ref
+          }
+          if ($callerCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'Caller commit identity is missing or malformed.' }
+          if ([string]::IsNullOrWhiteSpace($callerRefName) -or $callerRefName -match '[\r\n]') { throw 'Caller branch identity is missing or malformed.' }
           New-Item -ItemType Directory -Path $cacheRoot,$functionalRoot,(Join-Path $completionRoot 'evidence') -Force | Out-Null
           $now = (Get-Date).ToUniversalTime().ToString('o')
           [ordered]@{
@@ -79,7 +88,9 @@ jobs:
             "BASH_EVIDENCE_ROOT=$evidenceRoot",
             "BASH_COMPLETION_ROOT=$completionRoot",
             "BASH_PATHS_OUTPUT=$pathsOutput",
-            "BASH_BOOTSTRAP_EVIDENCE=$bootstrapEvidence"
+            "BASH_BOOTSTRAP_EVIDENCE=$bootstrapEvidence",
+            "CALLER_COMMIT_SHA=$callerCommitSha",
+            "CALLER_REF_NAME=$callerRefName"
           ) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Validate fixed runtime policy and project path
@@ -177,8 +188,6 @@ jobs:
         if: always()
         continue-on-error: true
         shell: pwsh
-        env:
-          CALLER_REF_NAME: ${{ github.event.pull_request.head.ref || github.ref_name }}
         run: |
           New-Item -ItemType Directory -Path $env:BASH_EVIDENCE_ROOT -Force | Out-Null
           Copy-Item -LiteralPath $env:BASH_BOOTSTRAP_EVIDENCE -Destination (Join-Path $env:BASH_EVIDENCE_ROOT 'bash-toolchain-bootstrap.json') -Force
@@ -197,9 +206,6 @@ jobs:
         if: always()
         continue-on-error: true
         shell: pwsh
-        env:
-          CALLER_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          CALLER_REF_NAME: ${{ github.event.pull_request.head.ref || github.ref_name }}
         run: |
           $callerStage = Join-Path $env:BASH_COMPLETION_ROOT 'caller'
           $evidenceStage = Join-Path $env:BASH_COMPLETION_ROOT 'evidence'
