@@ -7,9 +7,9 @@
   "evidenceSource": "Automated",
   "command": "<bats> --tap --timing ./caller/spec/governed_path.bats",
   "workingDirectory": ".",
-  "startedAtUtc": "2026-07-22T03:03:20.179414Z",
-  "completedAtUtc": "2026-07-22T03:03:20.179434Z",
-  "durationSeconds": 0.573,
+  "startedAtUtc": "2026-07-22T13:44:09.634461Z",
+  "completedAtUtc": "2026-07-22T13:44:09.634480Z",
+  "durationSeconds": 0.475,
   "runtime": "CPython 3.12.11",
   "toolVersion": "Bats/1.13.0",
   "exitCode": 0,
@@ -22,7 +22,7 @@
     "bash-tests.json"
   ],
   "details": {
-    "sanitizedOutput": "1..7\nok 1 resolves_an_existing_relative_path in 29ms\nok 2 preserves_spaces_as_one_argument in 29ms\nok 3 accepts_a_nonexistent_path_within_the_boundary in 26ms\nok 4 rejects_traversal in 23ms\nok 5 rejects_an_absolute_candidate in 21ms\nok 6 rejects_a_missing_required_file in 23ms\nok 7 propagates_a_child_command_failure in 31ms\n",
+    "sanitizedOutput": "1..7\nok 1 resolves_an_existing_relative_path in 25ms\nok 2 preserves_spaces_as_one_argument in 21ms\nok 3 accepts_a_nonexistent_path_within_the_boundary in 21ms\nok 4 rejects_traversal in 16ms\nok 5 rejects_an_absolute_candidate in 16ms\nok 6 rejects_a_missing_required_file in 23ms\nok 7 propagates_a_child_command_failure in 22ms\n",
     "specFiles": [
       "spec/governed_path.bats"
     ],

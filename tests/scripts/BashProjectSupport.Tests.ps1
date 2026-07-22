@@ -174,6 +174,7 @@ function New-ValidBashArtifactFixture {
     $hosted.requiredValidation = $true
     $hosted.exitCode = 0
     $hosted.summary = 'GitHub-hosted Bash workflow execution passed.'
+    $hosted.failureReason = $null
     $hosted.notRunReason = $null
     $hosted.details.sanitizedOutput = 'Hosted execution is active.'
     $tests | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath (Join-Path $artifact 'local-test-results.json') -Encoding utf8
