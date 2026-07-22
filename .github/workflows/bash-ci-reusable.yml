@@ -242,7 +242,7 @@ jobs:
         if: always()
         continue-on-error: true
         shell: pwsh
-        run: ./standards/actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path $env:BASH_COMPLETION_ROOT -EvidencePath 'evidence/completion-result.json' -OutputJson "$env:BASH_COMPLETION_ROOT/evidence/evidence-validation.json"
+        run: ./standards/actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path $env:BASH_COMPLETION_ROOT -EvidencePath 'evidence/completion-result.json' -ExpectedCommitSha $env:CALLER_COMMIT_SHA -ExpectedRepository $env:GITHUB_REPOSITORY -ExpectedRefName $env:CALLER_REF_NAME -OutputJson "$env:BASH_COMPLETION_ROOT/evidence/evidence-validation.json"
 
       - name: Record Bash validation outcomes
         if: always()

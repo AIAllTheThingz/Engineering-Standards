@@ -24,7 +24,10 @@ function Test-BashWorkflowControls {
         -not $Text.Contains('$callerRefName = [string]$event.pull_request.head.ref') -or
         -not $Text.Contains('CALLER_COMMIT_SHA=$callerCommitSha') -or
         -not $Text.Contains('CALLER_REF_NAME=$callerRefName') -or
-        -not $Text.Contains('-ValidatedCommitSha $env:CALLER_COMMIT_SHA')) { $failures.Add('caller-source-identity') }
+        -not $Text.Contains('-ValidatedCommitSha $env:CALLER_COMMIT_SHA') -or
+        -not $Text.Contains('-ExpectedCommitSha $env:CALLER_COMMIT_SHA') -or
+        -not $Text.Contains('-ExpectedRepository $env:GITHUB_REPOSITORY') -or
+        -not $Text.Contains('-ExpectedRefName $env:CALLER_REF_NAME')) { $failures.Add('caller-source-identity') }
     if ($Text.IndexOf('Upload Bash evidence before enforcement') -lt 0 -or $Text.IndexOf('Upload Bash evidence before enforcement') -gt $Text.IndexOf('Enforce governed Bash validation')) { $failures.Add('evidence-order') }
     if ($Text -match '--(?:bash|shellcheck|shfmt|bats)\s+"?\$CALLER') { $failures.Add('caller-tool-path') }
     @($failures)
