@@ -15,6 +15,6 @@ jobs:
 
   bash:
     name: Bash
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/bash-ci-reusable.yml@d62f5c5dc47d9a35538da7d6e216563d7a56fdae
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/bash-ci-reusable.yml@28e312386f07741f03d198812437be56d1d9b9bb
     with:
       project-path: .
