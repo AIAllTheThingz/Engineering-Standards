@@ -1,0 +1,31 @@
+name: Bash example CI
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/bash-ci*.yml'
+      - 'workflows/bash-ci.yml'
+      - 'examples/bash-project/**'
+      - 'scripts/Install-BashProjectToolchain.py'
+      - 'scripts/bash-project-validation.py'
+      - 'scripts/Normalize-BashFunctionalEvidence.py'
+      - 'scripts/Test-BashWorkflowEvidenceArtifact.ps1'
+      - 'tests/bash/**'
+      - 'tests/scripts/BashProjectSupport.Tests.ps1'
+      - 'agents/AGENTS_Bash.md'
+      - 'docs/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bash:
+    name: Bash
+    uses: ./.github/workflows/bash-ci-reusable.yml
+    with:
+      project-path: examples/bash-project

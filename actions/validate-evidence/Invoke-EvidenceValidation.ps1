@@ -33,7 +33,13 @@ if ($results.Count -eq 0 -and -not (Test-Path -LiteralPath $full -PathType Leaf)
 }
 
 if ($results.Count -eq 0) {
-    foreach ($item in @(Test-GovernanceJsonDocument -Path $full -Kind 'completion-result')) { $results.Add($item) }
+    foreach ($item in @(Test-GovernanceJsonDocument -Path $full -Kind 'completion-result')) {
+        if ([IO.Path]::IsPathRooted([string]$item.path) -and
+            [string]$item.path -eq [string]$full) {
+            $item.path = $EvidencePath.Replace('\\','/')
+        }
+        $results.Add($item)
+    }
 }
 
 if (-not @($results | Where-Object status -eq 'Failed')) {

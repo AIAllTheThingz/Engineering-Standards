@@ -23,7 +23,7 @@ try {
     foreach($file in @($files|Where-Object{-not $_.excluded})){
         $syntax=Invoke-BoundedProcess -FilePath $BashPath -ArgumentList @('--noprofile','--norc','-n',$file.path) -TimeoutSeconds 30 -Environment @{BASH_ENV='';ENV='';SHELLOPTS=''}
         if($syntax.timedOut){throw "Bash parsing timed out for '$($file.relativePath)'."}; if($syntax.exitCode -ne 0){$findings.Add([ordered]@{tool='Bash';rule='SyntaxError';path=$file.relativePath;line=0;message=$syntax.stderr.Trim()})}
-        $shell=Invoke-BoundedProcess -FilePath $ShellCheckPath -ArgumentList @('--format=json1','--severity=warning','--external-sources=false','--source-path=SCRIPTDIR','--rcfile=/dev/null','--enable=all',$file.path) -TimeoutSeconds 30
+        $shell=Invoke-BoundedProcess -FilePath $ShellCheckPath -ArgumentList @('--format=json1','--severity=warning','--source-path=SCRIPTDIR','--rcfile=/dev/null','--enable=all',$file.path) -TimeoutSeconds 30
         if($shell.timedOut){throw "ShellCheck timed out for '$($file.relativePath)'."}; if($shell.exitCode -notin @(0,1)){throw "ShellCheck failed: $($shell.stderr)"}
         if($shell.stdout.Trim()){foreach($comment in @(($shell.stdout|ConvertFrom-Json).comments)){ $findings.Add([ordered]@{tool='ShellCheck';rule="SC$($comment.code)";path=$file.relativePath;line=$comment.line;message=$comment.message}) }}
         foreach($line in Get-Content -LiteralPath $file.path){if($line -match 'shellcheck\s+(?:disable|source)='){$findings.Add([ordered]@{tool='Validator';rule='BASH001';path=$file.relativePath;line=0;message='ShellCheck suppression or source directives are not permitted in the mandatory baseline.'});break}}

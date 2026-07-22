@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.1.0",
+  "name": "Bash functional toolchain bootstrap",
+  "category": "dependency",
+  "status": "Passed",
+  "requiredValidation": true,
+  "evidenceSource": "Automated",
+  "command": "python3 -I scripts/Install-BashProjectToolchain.py --lock <lock> --cache <isolated-cache> --tool-root <isolated-tools>",
+  "workingDirectory": ".",
+  "startedAtUtc": "2026-07-22T00:18:51.270770Z",
+  "completedAtUtc": "2026-07-22T00:18:51.820738Z",
+  "durationSeconds": 0.55,
+  "runtime": "CPython 3.12.3",
+  "toolVersion": "bash-toolchain-bootstrap/1.0.0",
+  "exitCode": 0,
+  "summary": "Bash functional toolchain bootstrap passed.",
+  "warnings": [],
+  "failureReason": null,
+  "blockedReason": null,
+  "details": {
+    "sanitizedOutput": "Exact artifacts were verified and installed.",
+    "installed": [
+      {
+        "name": "ShellCheck",
+        "version": "0.11.0",
+        "artifactFile": "shellcheck-v0.11.0.linux.x86_64.tar.xz",
+        "artifactSha256": "8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198",
+        "executableSha256": "4da528ddb3a4d1b7b24a59d4e16eb2f5fd960f4bd9a3708a15baddbdf1d5a55b",
+        "sourceUrl": "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz",
+        "installationKind": "tar-xz",
+        "licenseSpdx": "GPL-3.0-only",
+        "purl": "pkg:github/koalaman/shellcheck@v0.11.0",
+        "runnerArchitecture": "linux-x86_64",
+        "versionOutput": "ShellCheck - shell script analysis tool\nversion: 0.11.0\nlicense: GNU General Public License, version 3\nwebsite: https://www.shellcheck.net"
+      },
+      {
+        "name": "shfmt",
+        "version": "3.13.1",
+        "artifactFile": "shfmt_v3.13.1_linux_amd64",
+        "artifactSha256": "fb096c5d1ac6beabbdbaa2874d025badb03ee07929f0c9ff67563ce8c75398b1",
+        "executableSha256": "fb096c5d1ac6beabbdbaa2874d025badb03ee07929f0c9ff67563ce8c75398b1",
+        "sourceUrl": "https://github.com/mvdan/sh/releases/download/v3.13.1/shfmt_v3.13.1_linux_amd64",
+        "installationKind": "raw-executable",
+        "licenseSpdx": "BSD-3-Clause",
+        "purl": "pkg:github/mvdan/sh@v3.13.1",
+        "runnerArchitecture": "linux-x86_64",
+        "versionOutput": "v3.13.1"
+      },
+      {
+        "name": "Bats",
+        "version": "1.13.0",
+        "artifactFile": "bats-1.13.0.tgz",
+        "artifactSha256": "b7ae290dbc7e44709d5e3430698f3048a978bef871c6063f5fca49a20e5aaf58",
+        "executableSha256": "6b04c75d2657f2059dcd239a59be892d56c6b4603afdf1bc90a63f9ecbf70a7c",
+        "sourceUrl": "https://registry.npmjs.org/bats/-/bats-1.13.0.tgz",
+        "installationKind": "tar-gzip",
+        "licenseSpdx": "MIT",
+        "purl": "pkg:npm/bats@1.13.0",
+        "runnerArchitecture": "linux-x86_64",
+        "versionOutput": "Bats 1.13.0"
+      }
+    ],
+    "lockSha256": "d7ecdf0e0dc4f032692015b8ea3779e5f2ab424982f3f5aa8e84a4082d1a72b9",
+    "toolName": "bash-toolchain-bootstrap",
+    "toolVersion": "1.0.0"
+  }
+}

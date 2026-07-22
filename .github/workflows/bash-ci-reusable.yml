@@ -1,0 +1,288 @@
+name: Governed Bash CI reusable
+
+on:
+  workflow_call:
+    inputs:
+      project-path:
+        type: string
+        required: false
+        default: .
+
+permissions:
+  contents: read
+
+jobs:
+  bash:
+    name: Bash validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      PYTHONNOUSERSITE: "1"
+      PYTHONSAFEPATH: "1"
+    steps:
+      - name: Checkout caller without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          path: caller
+
+      - name: Checkout immutable standards implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          persist-credentials: false
+          path: standards
+
+      - name: Initialize Bash evidence workspace
+        id: initialize
+        shell: pwsh
+        run: |
+          $functionalRoot = Join-Path $env:RUNNER_TEMP 'bash-functional'
+          $cacheRoot = Join-Path $env:RUNNER_TEMP 'bash-tool-cache'
+          $toolRoot = Join-Path $env:RUNNER_TEMP 'bash-tools'
+          $workRoot = Join-Path $env:RUNNER_TEMP 'bash-work'
+          $evidenceRoot = Join-Path $functionalRoot 'evidence'
+          $completionRoot = Join-Path $env:RUNNER_TEMP 'bash-completion'
+          $pathsOutput = Join-Path $env:RUNNER_TEMP 'bash-tool-paths.json'
+          $bootstrapEvidence = Join-Path $env:RUNNER_TEMP 'bash-toolchain-bootstrap.json'
+          New-Item -ItemType Directory -Path $cacheRoot,$functionalRoot,(Join-Path $completionRoot 'evidence') -Force | Out-Null
+          $now = (Get-Date).ToUniversalTime().ToString('o')
+          [ordered]@{
+            schemaVersion = '1.1.0'
+            name = 'Bash functional toolchain bootstrap'
+            category = 'dependency'
+            status = 'NotRun'
+            requiredValidation = $true
+            evidenceSource = 'Automated'
+            command = 'python3 -I scripts/Install-BashProjectToolchain.py --lock <lock> --cache <isolated-cache> --tool-root <isolated-tools>'
+            workingDirectory = '.'
+            startedAtUtc = $now
+            completedAtUtc = $now
+            durationSeconds = 0
+            runtime = 'Not observed'
+            toolName = 'bash-toolchain-bootstrap'
+            toolVersion = '1.0.0'
+            exitCode = $null
+            summary = 'Bash functional toolchain bootstrap has not run.'
+            warnings = @()
+            notRunReason = 'The bootstrap step did not complete.'
+            details = [ordered]@{ sanitizedOutput = 'The bootstrap step did not complete.' }
+          } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $bootstrapEvidence -Encoding utf8
+          @(
+            "BASH_CACHE_ROOT=$cacheRoot",
+            "BASH_TOOL_ROOT=$toolRoot",
+            "BASH_WORK_ROOT=$workRoot",
+            "BASH_EVIDENCE_ROOT=$evidenceRoot",
+            "BASH_COMPLETION_ROOT=$completionRoot",
+            "BASH_PATHS_OUTPUT=$pathsOutput",
+            "BASH_BOOTSTRAP_EVIDENCE=$bootstrapEvidence"
+          ) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Validate fixed runtime policy and project path
+        id: boundary
+        continue-on-error: true
+        shell: pwsh
+        env:
+          CALLER_PROJECT_PATH: ${{ inputs.project-path }}
+        run: |
+          $candidate = $env:CALLER_PROJECT_PATH
+          if ([string]::IsNullOrWhiteSpace($candidate) -or [IO.Path]::IsPathRooted($candidate) -or $candidate -match '(^|[\\/])\.\.([\\/]|$)') {
+            throw 'project-path must be nonempty, repository-relative, and traversal-free.'
+          }
+          $callerRoot = (Resolve-Path -LiteralPath (Join-Path $env:GITHUB_WORKSPACE 'caller')).Path
+          $current = $callerRoot
+          foreach ($component in @($candidate.Replace('\','/').Split('/', [StringSplitOptions]::RemoveEmptyEntries))) {
+            if ($component -eq '.') { continue }
+            $current = Join-Path $current $component
+            $componentItem = Get-Item -LiteralPath $current -Force
+            if ($componentItem.LinkType -or ($componentItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+              throw 'project-path must not contain a link or reparse-point component.'
+            }
+          }
+          $projectItem = Get-Item -LiteralPath $current -Force
+          if (-not $projectItem.PSIsContainer -or $projectItem.LinkType -or ($projectItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+            throw 'project-path must identify a real directory, not a link or reparse point.'
+          }
+          $project = (Resolve-Path -LiteralPath $projectItem.FullName).Path
+          if (-not ($project -eq $callerRoot -or $project.StartsWith($callerRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal))) {
+            throw 'project-path escaped the caller checkout.'
+          }
+          if ((Resolve-Path -LiteralPath /usr/bin/bash).Path -cne '/usr/bin/bash') { throw 'The trusted Bash interpreter must be /usr/bin/bash.' }
+
+      - name: Set up exact trusted Python runtime
+        id: python
+        if: always()
+        continue-on-error: true
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.12.11
+
+      - name: Bootstrap hash-verified Bash toolchain
+        id: bootstrap
+        if: always()
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $version = & python -I -c 'import platform; print(platform.python_version())'
+          if ($LASTEXITCODE -ne 0 -or $version -cne '3.12.11') { throw 'Trusted orchestration requires exact Python 3.12.11.' }
+          & python -I standards/scripts/Install-BashProjectToolchain.py `
+            --lock standards/examples/bash-project/bash-toolchain.lock.json `
+            --cache $env:BASH_CACHE_ROOT `
+            --tool-root $env:BASH_TOOL_ROOT `
+            --evidence $env:BASH_BOOTSTRAP_EVIDENCE `
+            --paths-output $env:BASH_PATHS_OUTPUT
+          if ($LASTEXITCODE -ne 0) { throw "Bash toolchain bootstrap failed with exit code $LASTEXITCODE." }
+          $paths = Get-Content -LiteralPath $env:BASH_PATHS_OUTPUT -Raw | ConvertFrom-Json
+          @(
+            "TRUSTED_PYTHON=$((Get-Command python).Source)",
+            "TRUSTED_SHELLCHECK=$($paths.shellcheck)",
+            "TRUSTED_SHFMT=$($paths.shfmt)",
+            "TRUSTED_BATS=$($paths.bats)"
+          ) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Run governed functional Bash validation
+        id: functional
+        if: always() && steps.boundary.outcome == 'success' && steps.python.outcome == 'success' && steps.bootstrap.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        env:
+          CALLER_PROJECT_PATH: ${{ inputs.project-path }}
+        run: |
+          "$TRUSTED_PYTHON" -I standards/scripts/bash-project-validation.py \
+            --bash /usr/bin/bash \
+            --shellcheck "$TRUSTED_SHELLCHECK" \
+            --shfmt "$TRUSTED_SHFMT" \
+            --bats "$TRUSTED_BATS" \
+            --caller-root "$GITHUB_WORKSPACE/caller" \
+            --project "$GITHUB_WORKSPACE/caller/$CALLER_PROJECT_PATH" \
+            --project-path-input "$CALLER_PROJECT_PATH" \
+            --work-root "$BASH_WORK_ROOT" \
+            --evidence-root "$BASH_EVIDENCE_ROOT" \
+            --tool-lock "$GITHUB_WORKSPACE/standards/examples/bash-project/bash-toolchain.lock.json"
+
+      - name: Run trusted Bash validator regression tests
+        id: regression
+        if: always() && steps.python.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          "$TRUSTED_PYTHON" -I standards/tests/bash/bash_project_validation_tests.py
+
+      - name: Stage bootstrap provenance
+        id: staging
+        if: always()
+        continue-on-error: true
+        shell: pwsh
+        env:
+          CALLER_REF_NAME: ${{ github.head_ref || github.ref_name }}
+        run: |
+          New-Item -ItemType Directory -Path $env:BASH_EVIDENCE_ROOT -Force | Out-Null
+          Copy-Item -LiteralPath $env:BASH_BOOTSTRAP_EVIDENCE -Destination (Join-Path $env:BASH_EVIDENCE_ROOT 'bash-toolchain-bootstrap.json') -Force
+
+      - name: Normalize Bash functional evidence
+        id: normalization
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: >-
+          "$TRUSTED_PYTHON" -I standards/scripts/Normalize-BashFunctionalEvidence.py
+          --evidence "$BASH_EVIDENCE_ROOT"
+
+      - name: Create Bash completion evidence in trusted workspace
+        id: completion
+        if: always()
+        continue-on-error: true
+        shell: pwsh
+        env:
+          CALLER_REF_NAME: ${{ github.head_ref || github.ref_name }}
+        run: |
+          $callerStage = Join-Path $env:BASH_COMPLETION_ROOT 'caller'
+          $evidenceStage = Join-Path $env:BASH_COMPLETION_ROOT 'evidence'
+          New-Item -ItemType Directory -Path $callerStage,$evidenceStage -Force | Out-Null
+          $isolatedCaller = Join-Path $env:BASH_WORK_ROOT 'caller'
+          if (Test-Path -LiteralPath $isolatedCaller -PathType Container) {
+            Get-ChildItem -LiteralPath $isolatedCaller -Force | Copy-Item -Destination $callerStage -Recurse -Force
+          }
+          Get-ChildItem -LiteralPath $env:BASH_EVIDENCE_ROOT -File | Copy-Item -Destination $evidenceStage -Force
+          $artifactName = "bash-evidence-$env:GITHUB_RUN_ID"
+          & ./standards/scripts/New-CompletionEvidence.ps1 `
+            -RepositoryPath $env:BASH_COMPLETION_ROOT `
+            -SourceRepositoryPath $callerStage `
+            -OutputPath 'evidence/completion-result.json' `
+            -TestResultPath 'evidence/local-test-results.json' `
+            -GovernanceVersion 1.1.0 `
+            -RiskClassification High `
+            -Summary 'Governed Bash syntax, ShellCheck, shfmt, Bats, toolchain provenance, and SBOM validation completed.' `
+            -CommandsExecuted @('Install-BashProjectToolchain.py','bash-project-validation.py','Normalize-BashFunctionalEvidence.py') `
+            -ArtifactPath @('evidence/bash-syntax.json','evidence/bash-shellcheck.json','evidence/bash-formatting.json','evidence/bash-tests.json','evidence/bash-toolchain.json','evidence/bash-project-sbom.cdx.json') `
+            -ArtifactName $artifactName `
+            -Repository $env:GITHUB_REPOSITORY `
+            -Branch $env:CALLER_REF_NAME `
+            -ValidatedCommitSha $env:GITHUB_SHA `
+            -StandardsRepository '${{ job.workflow_repository }}' `
+            -StandardsWorkflowSha '${{ job.workflow_sha }}' `
+            -ValidationProfile 'bash-functional' `
+            -ChecksExecuted @('BashSyntax','ShellCheck','shfmt','Bats','ToolchainProvenance','SBOM')
+          if (-not (Test-Path -LiteralPath (Join-Path $evidenceStage 'completion-result.json') -PathType Leaf)) { throw 'Bash completion evidence was not created.' }
+          $global:LASTEXITCODE = 0
+
+      - name: Validate Bash completion evidence
+        id: evidence
+        if: always()
+        continue-on-error: true
+        shell: pwsh
+        run: ./standards/actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path $env:BASH_COMPLETION_ROOT -EvidencePath 'evidence/completion-result.json' -OutputJson "$env:BASH_COMPLETION_ROOT/evidence/evidence-validation.json"
+
+      - name: Record Bash validation outcomes
+        if: always()
+        shell: pwsh
+        run: |
+          $outcomes = [ordered]@{
+            initialize = '${{ steps.initialize.outcome }}'
+            boundary = '${{ steps.boundary.outcome }}'
+            python = '${{ steps.python.outcome }}'
+            bootstrap = '${{ steps.bootstrap.outcome }}'
+            functional = '${{ steps.functional.outcome }}'
+            regression = '${{ steps.regression.outcome }}'
+            staging = '${{ steps.staging.outcome }}'
+            normalization = '${{ steps.normalization.outcome }}'
+            completion = '${{ steps.completion.outcome }}'
+            evidence = '${{ steps.evidence.outcome }}'
+          }
+          $outcomes | ConvertTo-Json | Set-Content -LiteralPath "$env:BASH_COMPLETION_ROOT/evidence/step-outcomes.json" -Encoding utf8
+
+      - name: Upload Bash evidence before enforcement
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: bash-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/bash-completion/evidence/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce governed Bash validation
+        if: always()
+        shell: pwsh
+        run: |
+          $outcomes = [ordered]@{
+            initialize = '${{ steps.initialize.outcome }}'
+            boundary = '${{ steps.boundary.outcome }}'
+            python = '${{ steps.python.outcome }}'
+            bootstrap = '${{ steps.bootstrap.outcome }}'
+            functional = '${{ steps.functional.outcome }}'
+            regression = '${{ steps.regression.outcome }}'
+            staging = '${{ steps.staging.outcome }}'
+            normalization = '${{ steps.normalization.outcome }}'
+            completion = '${{ steps.completion.outcome }}'
+            evidence = '${{ steps.evidence.outcome }}'
+            upload = '${{ steps.upload.outcome }}'
+          }
+          $failed = @($outcomes.GetEnumerator() | Where-Object Value -ne 'success')
+          if ($failed.Count -gt 0) {
+            $summary = ($failed | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ', '
+            throw "Mandatory governed Bash validation failed closed: $summary"
+          }

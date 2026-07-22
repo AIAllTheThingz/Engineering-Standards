@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "1.1.0",
+  "name": "Bash tests",
+  "category": "unit",
+  "status": "Passed",
+  "requiredValidation": true,
+  "evidenceSource": "Automated",
+  "command": "<bats> --tap --timing ./caller/spec/governed_path.bats",
+  "workingDirectory": ".",
+  "startedAtUtc": "2026-07-22T00:18:54.126923Z",
+  "completedAtUtc": "2026-07-22T00:18:54.126950Z",
+  "durationSeconds": 0.523,
+  "runtime": "CPython 3.12.3",
+  "toolVersion": "Bats/1.13.0",
+  "exitCode": 0,
+  "summary": "Bash tests passed.",
+  "warnings": [],
+  "failureReason": null,
+  "blockedReason": null,
+  "notRunReason": null,
+  "artifactPaths": [
+    "bash-tests.json"
+  ],
+  "details": {
+    "sanitizedOutput": "1..7\nok 1 resolves_an_existing_relative_path in 19ms\nok 2 preserves_spaces_as_one_argument in 23ms\nok 3 accepts_a_nonexistent_path_within_the_boundary in 27ms\nok 4 rejects_traversal in 17ms\nok 5 rejects_an_absolute_candidate in 22ms\nok 6 rejects_a_missing_required_file in 23ms\nok 7 propagates_a_child_command_failure in 30ms\n",
+    "specFiles": [
+      "spec/governed_path.bats"
+    ],
+    "timedOut": false,
+    "projectReadOnly": true,
+    "landlockAbi": 1,
+    "filesystemSandboxed": true,
+    "tcpConnectAndBindRestricted": false,
+    "toolName": "Bats",
+    "toolVersion": "1.13.0"
+  }
+}

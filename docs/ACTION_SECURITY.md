@@ -79,6 +79,30 @@ syntax mode and ShellCheck; they are never sourced or executed. Caller Ruff and
 ShellCheck configuration, suppressions, plugins, source directives, executable
 paths, and PATH shadows cannot replace the trusted baseline.
 
+The dedicated Bash functional workflow is a separate, explicitly executing
+boundary. It runs on Ubuntu 24.04 with only `contents: read`, receives no
+secrets or environment, checks out without credentials, and installs exact
+hash-verified ShellCheck, shfmt, and Bats artifacts. A trusted Python driver
+rejects absolute or traversing project paths, symbolic and hard links, special
+files, excessive content, root overlap, startup hooks, caller tool
+configuration, and executable shadows. It then copies accepted content into a
+read-only isolated workspace, constructs a fixed allowlisted environment,
+applies file and output limits, enables `no_new_privs`, uses Linux Landlock to
+allow only reviewed read and write roots, and combines process-group timeouts
+with subreaper cleanup for detached descendants. Hosted execution requires
+Landlock ABI 4 or newer and denies TCP connect and bind operations; it does not
+claim a broader network namespace. Only the declared Bats entry point executes
+after all non-executing gates pass.
+
+Functional evidence is written outside caller content and uploaded before
+final enforcement. Bootstrap, phase, completion, evidence-validation, and
+step-outcome records fail closed when absent, blocked, cancelled, or
+unexpectedly skipped. The artifact verifier binds repository, commit, branch,
+run, artifact name and ID, API digest, original ZIP contents, exact tool
+versions and hashes, SBOM, expected conclusion, and controlled-failure phase
+while rejecting workstation paths,
+credentials, startup-variable values, and token-like content.
+
 The aggregate registry declares the `downstream` profile as non-executing and
 the `standards-maintainer` profile as repository-code executing. Candidate
 maintainer mode is accepted only in GitHub Actions for the exact central

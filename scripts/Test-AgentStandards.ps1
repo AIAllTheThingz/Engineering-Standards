@@ -1179,7 +1179,7 @@ if ($pythonAgents) {
 }
 
 if ($bashAgents) {
-    Test-MinimumSemanticVersion -Text $bashAgents -MinimumVersion '1.0.0' -Message 'Bash standard declares a valid semantic version at least 1.0.0.' -RelativePath 'agents/AGENTS_Bash.md'
+    Test-MinimumSemanticVersion -Text $bashAgents -MinimumVersion '1.1.0' -Message 'Bash standard declares a valid semantic version at least 1.1.0.' -RelativePath 'agents/AGENTS_Bash.md'
     foreach ($heading in @('Purpose','Applicability And Inheritance','Normative Terminology','Required Discovery','Risk Classification','Shell Identity And Compatibility','Architecture And Script Structure','Strict And Failure Behavior','Quoting And Expansion','Configuration And Secret Handling','Input Validation And Trust Boundaries','Error Handling And Logging','Command Execution','Filesystem And Destructive Operations','Temporary Resources And Cleanup','Downloads And Supply Chain','Network And Integration Behavior','Concurrency And Lifecycle','Testing Requirements','Static-Analysis Requirements','Packaging And Distribution','Deployment And Operational Requirements','Validation Commands','Evidence Requirements','Rollback Requirements','Exceptions','Cross-Standard Handoffs','Related Documents','Revision History')) {
         Test-Contains $bashAgents "(?im)^## $([regex]::Escape($heading))\s*$" "Bash standard includes required section '$heading'." 'agents/AGENTS_Bash.md'
     }
@@ -1195,6 +1195,10 @@ if ($bashAgents) {
         @{ Pattern='MUST preserve command and pipeline failure exit codes'; Message='Bash standard preserves failure propagation.' },
         @{ Pattern='MUST cover syntax, positive, negative, boundary, destructive-target, quoting, signal, cleanup, pipeline, command-failure, and failure-path behavior'; Message='Bash standard mandates negative-path testing.' },
         @{ Pattern='Missing tools or environments MUST be reported as `NotRun` or `Blocked`'; Message='Bash standard preserves missing-tool status semantics.' },
+        @{ Pattern='GNU Bash 5\.2 on Ubuntu 24\.04 x86-64 with ShellCheck 0\.11\.0, shfmt 3\.13\.1, and Bats 1\.13\.0'; Message='Bash standard pins the supported functional baseline.' },
+        @{ Pattern='Functional validation MUST run only declared test entry points'; Message='Bash standard defines the functional execution boundary.' },
+        @{ Pattern='\.github/workflows/bash-ci-reusable\.yml'; Message='Bash standard documents the reusable functional workflow.' },
+        @{ Pattern='Local runs MUST record hosted execution as `NotRun`'; Message='Bash standard distinguishes local and hosted evidence.' },
         @{ Pattern='AGENTS_Infrastructure\.md'; Message='Bash standard hands off infrastructure work.' },
         @{ Pattern='AGENTS_Integration\.md'; Message='Bash standard hands off integration work.' },
         @{ Pattern='AGENTS_WorkerService\.md'; Message='Bash standard hands off worker work.' },

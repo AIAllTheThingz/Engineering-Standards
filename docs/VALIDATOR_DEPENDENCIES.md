@@ -7,12 +7,19 @@ with `--only-binary=:all: --require-hashes --no-deps`. This preserves the
 non-executing downstream static boundary while giving the isolated functional
 workflow reviewed pytest, mypy, pip-audit, build, backend, and SBOM tooling.
 
+Functional Bash dependencies are also separate from the central static
+validator lock. `examples/bash-project/bash-toolchain.lock.json` pins official
+Linux x86-64 artifacts and SHA-256 values for ShellCheck 0.11.0, shfmt 3.13.1,
+and Bats 1.13.0. The standards-owned installer performs bounded, link-rejecting
+extraction into a new isolated root and verifies actual versions before the
+functional driver may execute caller tests.
+
 | Field | Value |
 | --- | --- |
 | Status | Active |
-| Model version | 1.0.0 |
+| Model version | 1.1.0 |
 | Owner role | Engineering Standards Maintainers |
-| Last reviewed | 2026-07-15 |
+| Last reviewed | 2026-07-21 |
 
 ## Purpose
 
@@ -173,11 +180,26 @@ checked with the observed runner Bash in `--noprofile --norc -n` mode after
 clearing startup variables. The `ubuntu-24.04` label is versioned but is not an
 immutable image digest, so Bash version and executable SHA-256 are evidence.
 
-The offline cache now requires the exact Ruff wheel and ShellCheck archive in
-addition to the existing packages. Missing offline artifacts are `Blocked`;
-hash mismatch, unsafe archive layout or links, destination reuse, and installed
-version mismatch are `Failed`. Python unit tests, Bash functional tests, and
-language workflow families remain deferred.
+The central static offline cache requires the exact Ruff wheel and ShellCheck
+archive in addition to the existing packages. The separate Bash functional
+cache requires all three artifacts declared in
+`examples/bash-project/bash-toolchain.lock.json`. Missing offline artifacts or
+an unavailable approved source are `Blocked`; malformed locks, hash mismatch,
+unsafe archive layout or links, destination reuse, and installed-version
+mismatch are `Failed`. Neither bootstrap path converts these outcomes to a
+pass or falls back to a runner-provided tool.
+
+The governed Bash example runs the same installation and validation path used
+by hosted CI:
+
+```powershell
+pwsh -NoProfile -File examples/bash-project/tools/Test-Example.ps1
+```
+
+Use `-ToolCache <path> -Offline` only with a previously populated reviewed
+cache. Local completion evidence honestly keeps GitHub-hosted execution as
+`NotRun`; hosted evidence is trusted only after artifact identity and contents
+are independently verified.
 
 These files describe the environment that actually ran. Checked-in local
 evidence does not prove a GitHub-hosted run. GitHub evidence becomes release

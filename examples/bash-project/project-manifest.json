@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.2.0",
+  "projectName": "bash-project",
+  "repository": "example-org/bash-project",
+  "description": "Functional governed Bash utility with safe repository-relative path validation.",
+  "projectType": "bash",
+  "technologies": ["bash", "github-actions"],
+  "governanceVersion": "1.1.0",
+  "riskClassification": "Moderate",
+  "dataClassification": "Internal",
+  "owners": [
+    {
+      "type": "github-team",
+      "identifier": "@example-org/engineering",
+      "responsibility": "Owns governance-sensitive Bash review and approval.",
+      "escalation": "SECURITY.md"
+    }
+  ],
+  "environments": [{"name": "local", "type": "development", "production": false}],
+  "applicableStandards": ["agents/AGENTS_Base.md", "agents/AGENTS_Bash.md"],
+  "requiredWorkflows": ["governance", "bash"],
+  "externalIntegrations": [],
+  "secretsProvider": "none-required-for-example",
+  "productionApprovalRequired": false,
+  "evidence": {
+    "local": {
+      "completion": "evidence/local-completion-result.json",
+      "tests": "evidence/local-test-results.json"
+    },
+    "hosted": {
+      "workspace": "evidence",
+      "completion": "completion-result.json",
+      "tests": "local-test-results.json",
+      "artifactNamePattern": "bash-evidence-${run_id}"
+    }
+  },
+  "exceptions": [],
+  "governanceCommitSha": "80c46e552a4960e09335b50ca02d3f19c7afa168",
+  "workflowInterfaceVersion": "1.0.0",
+  "repositoryOwnerType": "Organization",
+  "standardsConsumption": {
+    "mode": "central-reference",
+    "sourceRepository": "AIAllTheThingz/Engineering-Standards",
+    "sourceCommitSha": "80c46e552a4960e09335b50ca02d3f19c7afa168"
+  }
+}

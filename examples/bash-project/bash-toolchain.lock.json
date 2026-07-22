@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "1.0.0",
+  "supportedRunner": {
+    "os": "ubuntu-24.04",
+    "architecture": "x86_64"
+  },
+  "bashRuntime": {
+    "executable": "/usr/bin/bash",
+    "requiredMajor": 5,
+    "requiredMinor": 2
+  },
+  "tools": [
+    {
+      "name": "ShellCheck",
+      "version": "0.11.0",
+      "sourceUrl": "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz",
+      "artifactFile": "shellcheck-v0.11.0.linux.x86_64.tar.xz",
+      "sha256": "8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198",
+      "installationKind": "tar-xz",
+      "archiveRoot": "shellcheck-v0.11.0",
+      "expectedExecutablePath": "shellcheck-v0.11.0/shellcheck",
+      "licenseSpdx": "GPL-3.0-only",
+      "purl": "pkg:github/koalaman/shellcheck@v0.11.0",
+      "runnerArchitecture": "linux-x86_64"
+    },
+    {
+      "name": "shfmt",
+      "version": "3.13.1",
+      "sourceUrl": "https://github.com/mvdan/sh/releases/download/v3.13.1/shfmt_v3.13.1_linux_amd64",
+      "artifactFile": "shfmt_v3.13.1_linux_amd64",
+      "sha256": "fb096c5d1ac6beabbdbaa2874d025badb03ee07929f0c9ff67563ce8c75398b1",
+      "installationKind": "raw-executable",
+      "archiveRoot": null,
+      "expectedExecutablePath": "shfmt",
+      "licenseSpdx": "BSD-3-Clause",
+      "purl": "pkg:github/mvdan/sh@v3.13.1",
+      "runnerArchitecture": "linux-x86_64"
+    },
+    {
+      "name": "Bats",
+      "version": "1.13.0",
+      "sourceUrl": "https://registry.npmjs.org/bats/-/bats-1.13.0.tgz",
+      "artifactFile": "bats-1.13.0.tgz",
+      "sha256": "b7ae290dbc7e44709d5e3430698f3048a978bef871c6063f5fca49a20e5aaf58",
+      "installationKind": "tar-gzip",
+      "archiveRoot": "package",
+      "expectedExecutablePath": "package/bin/bats",
+      "licenseSpdx": "MIT",
+      "purl": "pkg:npm/bats@1.13.0",
+      "runnerArchitecture": "linux-x86_64"
+    }
+  ]
+}
