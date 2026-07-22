@@ -21,6 +21,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import uuid
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -673,7 +674,7 @@ def build_sbom(project_name: str, lock: dict[str, Any], lock_hash: str, bash_has
     return {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
-        "serialNumber": f"urn:uuid:{hashlib.sha256((root_ref + lock_hash).encode()).hexdigest()[:32]}",
+        "serialNumber": f"urn:uuid:{uuid.uuid5(uuid.NAMESPACE_URL, root_ref + lock_hash)}",
         "version": 1,
         "metadata": {
             "timestamp": utc_now(),

@@ -14,6 +14,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from uuid import UUID
 
 ROOT = Path(__file__).resolve().parents[2]
 VALIDATOR_PATH = ROOT / "scripts" / "bash-project-validation.py"
@@ -148,6 +149,9 @@ exit 0
         self.assertEqual(0, code)
         for name in ("bash-syntax.json", "bash-shellcheck.json", "bash-formatting.json", "bash-tests.json"):
             self.assertEqual("Passed", json.loads((evidence / name).read_text(encoding="utf-8"))["status"])
+        serial = json.loads((evidence / "bash-project-sbom.cdx.json").read_text(encoding="utf-8"))["serialNumber"]
+        self.assertRegex(serial, r"^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+        self.assertEqual(serial.removeprefix("urn:uuid:"), str(UUID(serial.removeprefix("urn:uuid:"))))
 
     def test_syntax_shellcheck_formatting_and_bats_failures_propagate(self) -> None:
         expectations = {

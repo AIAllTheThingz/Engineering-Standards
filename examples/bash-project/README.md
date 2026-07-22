@@ -41,8 +41,10 @@ pwsh -NoProfile -File tools/Test-Example.ps1
 The wrapper uses the same standards-owned installer, trusted driver, exact
 commands, isolated copy, and evidence normalization as hosted CI. Local
 evidence remains `NotRun` overall for GitHub-hosted execution; it never claims
-hosted validation. The hosted workflow uploads evidence before final
-enforcement and keeps caller and standards identity separate.
+hosted validation. Completion evidence requires a clean Git checkout and binds
+the validated content to its full `HEAD` commit. The hosted workflow uploads
+only normalized, completion-validated evidence before final enforcement and
+keeps caller and standards identity separate.
 
 When `-Offline` cannot find an exact locked artifact, the wrapper exits
 nonzero after preserving the installer's truthful `Blocked` record at

@@ -134,6 +134,17 @@ try {
     & python3 -I (Join-Path $standardsRoot 'scripts/Normalize-BashFunctionalEvidence.py') --evidence $evidenceRoot
     if ($LASTEXITCODE -ne 0) { throw 'Bash evidence normalization failed.' }
 
+    $commitOutput = @(& git -C $project rev-parse --verify HEAD 2>$null)
+    $gitExitCode = $LASTEXITCODE
+    $validatedCommitSha = ($commitOutput -join '').Trim()
+    if ($gitExitCode -ne 0 -or $validatedCommitSha -cnotmatch '^[0-9a-f]{40}$') {
+        throw 'Local Bash completion evidence requires a Git checkout with a valid HEAD commit.'
+    }
+    $gitStatus = @(& git -C $project status --porcelain --untracked-files=all -- . 2>$null)
+    if ($LASTEXITCODE -ne 0 -or $gitStatus.Count -gt 0) {
+        throw 'Local Bash completion evidence requires a clean Bash example worktree.'
+    }
+
     New-Item -ItemType Directory -Path (Join-Path $completionRoot 'caller'),(Join-Path $completionRoot 'evidence') -Force | Out-Null
     Get-ChildItem -LiteralPath (Join-Path $workRoot 'caller') -Force | Copy-Item -Destination (Join-Path $completionRoot 'caller') -Recurse -Force
     Get-ChildItem -LiteralPath $evidenceRoot -File | Copy-Item -Destination (Join-Path $completionRoot 'evidence') -Force
@@ -154,10 +165,11 @@ try {
         -RiskClassification Moderate `
         -Summary 'Local governed Bash syntax, ShellCheck, formatting, Bats, toolchain, and SBOM validation completed; hosted execution was not run.' `
         -CommandsExecuted @('Install-BashProjectToolchain.py','bash-project-validation.py','Normalize-BashFunctionalEvidence.py') `
+        -CommandsNotExecuted @('GitHub-hosted Bash workflow execution') `
         -ArtifactPath $artifacts `
         -Repository 'example-org/bash-project' `
         -Branch 'local' `
-        -ValidatedCommitSha 'unknown'
+        -ValidatedCommitSha $validatedCommitSha
 
     $destination = Join-Path $project 'evidence'
     New-Item -ItemType Directory -Path $destination -Force | Out-Null

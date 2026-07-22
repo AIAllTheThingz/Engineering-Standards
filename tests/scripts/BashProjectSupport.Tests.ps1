@@ -1,11 +1,13 @@
 BeforeAll {
     $script:root = (Resolve-Path "$PSScriptRoot/../..").Path
+    Import-Module (Join-Path $script:root 'scripts/GovernanceValidation.psm1') -Force
     $script:example = Join-Path $script:root 'examples/bash-project'
     $script:workflowPath = Join-Path $script:root '.github/workflows/bash-ci-reusable.yml'
     $script:workflow = Get-Content -LiteralPath $script:workflowPath -Raw
     $script:driver = Get-Content -LiteralPath (Join-Path $script:root 'scripts/bash-project-validation.py') -Raw
     $script:installer = Get-Content -LiteralPath (Join-Path $script:root 'scripts/Install-BashProjectToolchain.py') -Raw
     $script:artifactVerifier = Get-Content -LiteralPath (Join-Path $script:root 'scripts/Test-BashWorkflowEvidenceArtifact.ps1') -Raw
+    $script:exampleWrapper = Get-Content -LiteralPath (Join-Path $script:example 'tools/Test-Example.ps1') -Raw
     $script:exampleWorkflow = Get-Content -LiteralPath (Join-Path $script:example '.github/workflows/governance.yml') -Raw
     $script:exampleManifest = Get-Content -LiteralPath (Join-Path $script:example 'project-manifest.json') -Raw | ConvertFrom-Json -AsHashtable
     $script:exampleConfig = Get-Content -LiteralPath (Join-Path $script:example 'governance.config.json') -Raw | ConvertFrom-Json -AsHashtable
@@ -93,7 +95,20 @@ function Test-BashWorkflowControls {
         -not $Text.Contains('-ExpectedRepository $env:GITHUB_REPOSITORY') -or
         -not $Text.Contains('-ExpectedRefName $env:CALLER_REF_NAME')) { $failures.Add('caller-source-identity') }
     if ($Text.IndexOf('Upload Bash evidence before enforcement') -lt 0 -or $Text.IndexOf('Upload Bash evidence before enforcement') -gt $Text.IndexOf('Enforce governed Bash validation')) { $failures.Add('evidence-order') }
+    if ($Text -notmatch "(?ms)- name: Create Bash completion evidence in trusted workspace\s+id: completion\s+if: always\(\) && steps\.normalization\.outcome == 'success'" -or
+        $Text -notmatch "(?ms)- name: Validate Bash completion evidence\s+id: evidence\s+if: always\(\) && steps\.normalization\.outcome == 'success' && steps\.completion\.outcome == 'success'" -or
+        $Text -notmatch "(?ms)- name: Upload Bash evidence before enforcement\s+id: upload\s+if: always\(\) && steps\.normalization\.outcome == 'success' && steps\.completion\.outcome == 'success' && steps\.evidence\.outcome == 'success'") { $failures.Add('unsafe-evidence-upload') }
     if ($Text -match '--(?:bash|shellcheck|shfmt|bats)\s+"?\$CALLER') { $failures.Add('caller-tool-path') }
+    @($failures)
+}
+
+function Test-BashExampleWrapperControls {
+    param([Parameter(Mandatory)][string]$Text)
+    $failures = [Collections.Generic.List[string]]::new()
+    if (-not $Text.Contains('git -C $project rev-parse --verify HEAD') -or
+        -not $Text.Contains('git -C $project status --porcelain --untracked-files=all -- .') -or
+        -not $Text.Contains('-ValidatedCommitSha $validatedCommitSha')) { $failures.Add('local-commit-identity') }
+    if (-not $Text.Contains("-CommandsNotExecuted @('GitHub-hosted Bash workflow execution')")) { $failures.Add('hosted-notrun-command') }
     @($failures)
 }
 
@@ -262,6 +277,29 @@ Describe 'Governed Bash project support' {
         @(Get-ChildItem -LiteralPath $result.Temporary -Directory -Filter 'governed-bash-*').Count | Should -Be 0
     }
 
+    It 'binds the local wrapper to a clean commit and records hosted validation as not run' {
+        @(Test-BashExampleWrapperControls -Text $script:exampleWrapper).Count | Should -Be 0
+    }
+
+    It 'keeps checked-in local completion evidence valid and honestly NotRun' {
+        $completionPath = Join-Path $script:example 'evidence/local-completion-result.json'
+        @((Test-GovernanceJsonDocument -Path $completionPath -Kind completion-result) | Where-Object status -EQ Failed).Count | Should -Be 0
+        $completion = Get-Content -LiteralPath $completionPath -Raw | ConvertFrom-Json
+        $completion.commitSha | Should -Match '^[0-9a-f]{40}$'
+        $completion.validatedCommitSha | Should -BeExactly $completion.commitSha
+        $completion.status | Should -BeExactly 'NotRun'
+        @($completion.commandsNotExecuted) | Should -Contain 'GitHub-hosted Bash workflow execution'
+    }
+
+    It 'detects local completion identity and NotRun metadata mutations' -ForEach @(
+        @{ Pattern='git -C $project rev-parse --verify HEAD'; Expected='local-commit-identity' },
+        @{ Pattern='git -C $project status --porcelain --untracked-files=all -- .'; Expected='local-commit-identity' },
+        @{ Pattern="-CommandsNotExecuted @('GitHub-hosted Bash workflow execution')"; Expected='hosted-notrun-command' }
+    ) {
+        $mutant = $script:exampleWrapper.Replace($Pattern, 'CONTROL_REMOVED')
+        @(Test-BashExampleWrapperControls -Text $mutant) | Should -Contain $Expected
+    }
+
     It 'fails closed when nonzero bootstrap evidence is <EvidenceMode>' -ForEach @(
         @{ EvidenceMode='missing' },
         @{ EvidenceMode='malformed' },
@@ -375,7 +413,9 @@ raise SystemExit(2)
         @{ Name='trusted identity removal'; Mutate={ param($text) $text -replace 'job\.workflow_sha','github.sha' }; Expected='trusted-workflow-identity' },
         @{ Name='caller source identity removal'; Mutate={ param($text) $text.Replace('github.event.pull_request.head.sha || github.sha','github.sha') }; Expected='caller-source-identity' },
         @{ Name='caller-selected tool path'; Mutate={ param($text) $text.Replace('--shellcheck "$TRUSTED_SHELLCHECK"','--shellcheck "$CALLER_SHELLCHECK"') }; Expected='caller-tool-path' },
-        @{ Name='evidence after enforcement'; Mutate={ param($text) $text.Replace('Upload Bash evidence before enforcement','Late evidence upload').Replace('Enforce governed Bash validation','Upload Bash evidence before enforcement') }; Expected='evidence-order' }
+        @{ Name='evidence after enforcement'; Mutate={ param($text) $text.Replace('Upload Bash evidence before enforcement','Late evidence upload').Replace('Enforce governed Bash validation','Upload Bash evidence before enforcement') }; Expected='evidence-order' },
+        @{ Name='completion copies unnormalized evidence'; Mutate={ param($text) $text.Replace("if: always() && steps.normalization.outcome == 'success'",'if: always()') }; Expected='unsafe-evidence-upload' },
+        @{ Name='upload ignores evidence safety gates'; Mutate={ param($text) $text.Replace("if: always() && steps.normalization.outcome == 'success' && steps.completion.outcome == 'success' && steps.evidence.outcome == 'success'",'if: always()') }; Expected='unsafe-evidence-upload' }
     ) {
         $mutant = & $Mutate $script:workflow
         @(Test-BashWorkflowControls -Text $mutant) | Should -Contain $Expected
