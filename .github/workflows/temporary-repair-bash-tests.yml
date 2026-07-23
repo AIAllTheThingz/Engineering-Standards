@@ -29,14 +29,18 @@ jobs:
           path = Path('tests/scripts/BashProjectSupport.Tests.ps1')
           text = path.read_text(encoding='utf-8')
 
-          replacements = {
-              "if: always() && steps.bootstrap.outcome == 'success' && steps.normalization.outcome == 'success'":
-                  "if: always() && steps.bootstrap.outcome == 'success' && steps.regression.outcome == 'success' && steps.normalization.outcome == 'success'",
-              "if: always() && steps.bootstrap.outcome == 'success' && steps.normalization.outcome == 'success' && steps.completion.outcome == 'success' && steps.evidence.outcome == 'success'":
+          replacements = [
+              (
+                  "if: always() && steps.bootstrap.outcome == 'success' && steps.normalization.outcome == 'success' && steps.completion.outcome == 'success' && steps.evidence.outcome == 'success'",
                   "if: always() && steps.bootstrap.outcome == 'success' && steps.regression.outcome == 'success' && steps.normalization.outcome == 'success' && steps.completion.outcome == 'success' && steps.evidence.outcome == 'success'",
-          }
+              ),
+              (
+                  "if: always() && steps.bootstrap.outcome == 'success' && steps.normalization.outcome == 'success'",
+                  "if: always() && steps.bootstrap.outcome == 'success' && steps.regression.outcome == 'success' && steps.normalization.outcome == 'success'",
+              ),
+          ]
 
-          for old, new in replacements.items():
+          for old, new in replacements:
               count = text.count(old)
               if count != 1:
                   raise SystemExit(f'Expected exactly one stale assertion for {old!r}, found {count}.')
