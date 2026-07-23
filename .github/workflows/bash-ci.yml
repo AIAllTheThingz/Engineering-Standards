@@ -73,44 +73,8 @@ jobs:
           if support_text.count(old_scope) != 1:
               raise SystemExit('Expected local evidence freshness scope anchor was not found exactly once.')
           support.write_text(support_text.replace(old_scope, new_scope), encoding='utf-8')
-
-          Path('.github/workflows/bash-ci.yml').write_text("""name: Bash example CI
-
-on:
-  pull_request:
-    paths:
-      - '.github/workflows/bash-ci*.yml'
-      - 'workflows/bash-ci.yml'
-      - 'examples/bash-project/**'
-      - 'scripts/Install-BashProjectToolchain.py'
-      - 'scripts/bash-project-validation.py'
-      - 'scripts/Normalize-BashFunctionalEvidence.py'
-      - 'scripts/New-CompletionEvidence.ps1'
-      - 'scripts/GovernanceValidation.psm1'
-      - 'scripts/Test-BashWorkflowEvidenceArtifact.ps1'
-      - 'actions/validate-evidence/Invoke-EvidenceValidation.ps1'
-      - 'tests/bash/**'
-      - 'tests/scripts/BashProjectSupport.Tests.ps1'
-      - 'tests/scripts/BashExampleCleanup.Tests.ps1'
-      - 'agents/AGENTS_Bash.md'
-      - 'docs/**'
-      - 'README.md'
-      - 'CHANGELOG.md'
-  push:
-    branches: [master]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-jobs:
-  bash:
-    name: Bash
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/bash-ci-reusable.yml@d55bb8e6778030f5490e900ba52ba99ac6403827
-    with:
-      project-path: examples/bash-project
-""", encoding='utf-8')
           PY
+          git show 3e17d4b81ba10f9035e0c41d7278e78ae9aa2506:.github/workflows/bash-ci.yml > .github/workflows/bash-ci.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add tests/scripts/BashExampleCleanup.Tests.ps1 tests/scripts/BashProjectSupport.Tests.ps1 .github/workflows/bash-ci.yml
