@@ -6,7 +6,7 @@ BeforeAll {
 Describe 'Bash example temporary cleanup' {
     It 'restores owner access before removing sandbox output' {
         $chmodIndex = $script:wrapper.IndexOf('& chmod -R u+rwX -- $resolvedTemporary')
-        $removeIndex = $script:wrapper.IndexOf('Remove-Item -LiteralPath $resolvedTemporary -Recurse -Force')
+        $removeIndex = $script:wrapper.IndexOf('& rm -rf -- $resolvedTemporary')
         ($chmodIndex -ge 0) | Should -BeTrue
         ($removeIndex -gt $chmodIndex) | Should -BeTrue
     }

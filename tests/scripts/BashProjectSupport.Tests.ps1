@@ -314,6 +314,7 @@ Describe 'Governed Bash project support' {
             'workflows/bash-ci.yml',
             'examples/bash-project/.github/workflows/governance.yml',
             'scripts/Test-PythonStaticAnalysis.ps1',
+            'scripts/bash-project-validation.py',
             'tests/scripts/BashProjectSupport.Tests.ps1'
         )
         @($changedAfterValidation | Where-Object {
