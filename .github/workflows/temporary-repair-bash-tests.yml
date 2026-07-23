@@ -1,6 +1,7 @@
 name: Temporary repair Bash mutation tests
 
 on:
+  pull_request:
   push:
     branches:
       - agent/bash-first-class-project-support
