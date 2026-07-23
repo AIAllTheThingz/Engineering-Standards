@@ -32,3 +32,112 @@ jobs:
     uses: AIAllTheThingz/Engineering-Standards/.github/workflows/bash-ci-reusable.yml@d55bb8e6778030f5490e900ba52ba99ac6403827
     with:
       project-path: examples/bash-project
+
+  diagnose-candidate:
+    name: Diagnose candidate governance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout candidate implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Checkout immutable candidate harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 32b9d73a165c1042a935ca2638216efa4dde47ca
+          path: harness
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up pinned Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.12.11
+
+      - name: Set up pinned Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22.17.0
+
+      - name: Set up pinned .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
+        with:
+          dotnet-version: 8.0.411
+
+      - name: Install hash-verified PowerShell runtime
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File harness/scripts/Install-ValidatorRuntime.ps1 `
+            -RepositoryPath harness `
+            -PackageCachePath (Join-Path $env:RUNNER_TEMP 'candidate-diagnostic-runtime-cache') `
+            -InstallRoot (Join-Path $env:RUNNER_TEMP 'candidate-diagnostic-pwsh-7.4.11') `
+            -EvidencePath (Join-Path $env:RUNNER_TEMP 'candidate-diagnostic/runtime-bootstrap.json')
+
+      - name: Install immutable candidate-validation dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$VALIDATOR_PWSH" -NoProfile -File harness/scripts/Install-ValidatorDependencies.ps1 \
+            -RepositoryPath harness \
+            -PackageCachePath "$RUNNER_TEMP/candidate-diagnostic-package-cache" \
+            -ModuleRoot "$RUNNER_TEMP/candidate-diagnostic-psmodules" \
+            -PythonPackageRoot "$RUNNER_TEMP/candidate-diagnostic-python" \
+            -ToolRoot "$RUNNER_TEMP/candidate-diagnostic-tools" \
+            -EvidencePath "$RUNNER_TEMP/candidate-diagnostic/dependencies.json" \
+            -SbomPath "$RUNNER_TEMP/candidate-diagnostic/validator-sbom.cdx.json" \
+            -RuntimeEvidencePath "$RUNNER_TEMP/candidate-diagnostic/runtime-bootstrap.json"
+
+      - name: Run candidate governance and retain report
+        id: validation
+        continue-on-error: true
+        working-directory: candidate
+        shell: pwsh
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
+          CALLER_REPOSITORY: ${{ github.repository }}
+          CANDIDATE_SHA: ${{ github.sha }}
+        run: |
+          $root = (Resolve-Path .).Path
+          $reportRoot = Join-Path $env:RUNNER_TEMP 'candidate-diagnostic'
+          & $env:VALIDATOR_PWSH -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 `
+            -Path $root `
+            -EvidenceRoot $reportRoot `
+            -CallerRepository $env:CALLER_REPOSITORY `
+            -CallerCommitSha $env:CANDIDATE_SHA `
+            -RepositoryOwnerType User `
+            -ExpectedReusableWorkflowSha 32b9d73a165c1042a935ca2638216efa4dde47ca `
+            -CandidateMaintainerValidation
+          exit $LASTEXITCODE
+
+      - name: Print candidate failure summary
+        if: always()
+        shell: pwsh
+        run: |
+          $reportPath = Join-Path $env:RUNNER_TEMP 'candidate-diagnostic/governance-validation.json'
+          if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) {
+            Write-Error 'Candidate governance report was not generated.'
+            exit 1
+          }
+          $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+          $nonPassing = @($report.results | Where-Object status -ne 'Passed')
+          Write-Output "Candidate status: $($report.status)"
+          foreach ($result in $nonPassing) {
+            Write-Output "[$($result.status)] $($result.name): $($result.summary)"
+            if ($result.failureReason) { Write-Output $result.failureReason }
+          }
+
+      - name: Upload candidate governance diagnostic
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: candidate-governance-diagnostic-${{ github.run_id }}
+          path: ${{ runner.temp }}/candidate-diagnostic
+          if-no-files-found: error
+          retention-days: 1
