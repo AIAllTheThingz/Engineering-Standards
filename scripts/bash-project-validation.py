@@ -61,15 +61,14 @@ class LandlockPathBeneathAttr(ctypes.Structure):
 
 IGNORED_COPY_NAMES = {
     ".bats-cache",
-    ".batsrc",
     ".cache",
     ".git",
     ".pytest_cache",
-    ".shellcheckrc",
     "evidence",
     "generated",
     "output",
 }
+PROHIBITED_CALLER_TOOL_CONFIG_NAMES = {".batsrc", ".shellcheckrc"}
 UNSAFE_ENVIRONMENT_VARIABLES = {
     "BASH_ENV",
     "ENV",
@@ -334,6 +333,8 @@ def inspect_project_tree(root: Path) -> None:
             info = path.lstat()
             mode = info.st_mode
             relative = path.relative_to(root)
+            if name in PROHIBITED_CALLER_TOOL_CONFIG_NAMES:
+                raise ValueError(f"project contains prohibited caller tool configuration: {relative}")
             if stat.S_ISLNK(mode):
                 raise ValueError(f"project contains a symbolic link: {relative}")
             if not (stat.S_ISDIR(mode) or stat.S_ISREG(mode)):

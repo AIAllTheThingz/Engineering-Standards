@@ -168,6 +168,16 @@ exit 0
                     validator.reject_undeclared_bash_content(project)
                 hidden.unlink()
 
+    def test_caller_tool_configuration_is_rejected_before_copy(self) -> None:
+        project = self.make_project()
+        for name in (".batsrc", ".shellcheckrc"):
+            with self.subTest(name=name):
+                config = project / name
+                config.write_text("caller-controlled configuration\n", encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "prohibited caller tool configuration"):
+                    validator.inspect_project_tree(project)
+                config.unlink()
+
     def test_syntax_shellcheck_formatting_and_bats_failures_propagate(self) -> None:
         expectations = {
             "SYNTAX_FAIL": "bash-syntax.json",
