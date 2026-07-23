@@ -29,7 +29,9 @@ jobs:
           example="$source_root/examples/bash-project"
           log="$RUNNER_TEMP/bash-evidence-generation.log"
           set +e
-          pwsh -NoProfile -File "$example/tools/Test-Example.ps1" \
+          env -u GITHUB_ACTIONS -u GITHUB_RUN_ID -u GITHUB_RUN_ATTEMPT \
+            -u GITHUB_WORKFLOW -u GITHUB_SHA -u GITHUB_REF_NAME -u GITHUB_REPOSITORY \
+            pwsh -NoProfile -File "$example/tools/Test-Example.ps1" \
             -ProjectPath "$example" -ToolCache "$cache" 2>&1 | tee "$log"
           generator_exit=${PIPESTATUS[0]}
           set -e
