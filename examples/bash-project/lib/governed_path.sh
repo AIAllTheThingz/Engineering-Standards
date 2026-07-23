@@ -19,6 +19,10 @@ governed_path_resolve() {
     printf 'root and a nonempty relative path are required\n' >&2
     return 65
   fi
+  if [[ $relative_path == */ ]]; then
+    printf 'relative path contains an unsafe component\n' >&2
+    return 65
+  fi
 
   IFS='/' read -r -a components <<< "$relative_path"
   for part in "${components[@]}"; do
