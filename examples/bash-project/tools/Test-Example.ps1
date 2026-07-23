@@ -180,6 +180,8 @@ try {
 finally {
     $resolvedTemporary = [IO.Path]::GetFullPath($temporaryRoot)
     if ($resolvedTemporary.StartsWith($temporaryBase + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal) -and (Test-Path -LiteralPath $resolvedTemporary)) {
+        & chmod -R u+rwX -- $resolvedTemporary 2>$null
+        $global:LASTEXITCODE = 0
         Remove-Item -LiteralPath $resolvedTemporary -Recurse -Force
     }
 }
