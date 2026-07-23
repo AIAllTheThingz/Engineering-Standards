@@ -138,9 +138,11 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: |
-          $version = & python -I -c 'import platform; print(platform.python_version())'
+          $trustedPython = (Get-Command python -CommandType Application -ErrorAction Stop).Source
+          "TRUSTED_PYTHON=$trustedPython" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $version = & $trustedPython -I -c 'import platform; print(platform.python_version())'
           if ($LASTEXITCODE -ne 0 -or $version -cne '3.12.11') { throw 'Trusted orchestration requires exact Python 3.12.11.' }
-          & python -I standards/scripts/Install-BashProjectToolchain.py `
+          & $trustedPython -I standards/scripts/Install-BashProjectToolchain.py `
             --lock standards/examples/bash-project/bash-toolchain.lock.json `
             --cache $env:BASH_CACHE_ROOT `
             --tool-root $env:BASH_TOOL_ROOT `
@@ -149,7 +151,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Bash toolchain bootstrap failed with exit code $LASTEXITCODE." }
           $paths = Get-Content -LiteralPath $env:BASH_PATHS_OUTPUT -Raw | ConvertFrom-Json
           @(
-            "TRUSTED_PYTHON=$((Get-Command python).Source)",
             "TRUSTED_SHELLCHECK=$($paths.shellcheck)",
             "TRUSTED_SHFMT=$($paths.shfmt)",
             "TRUSTED_BATS=$($paths.bats)"
@@ -305,7 +306,6 @@ jobs:
               initialize = $outcomes.initialize
               boundary = $outcomes.boundary
               python = $outcomes.python
-              regression = $outcomes.regression
               staging = $outcomes.staging
               normalization = $outcomes.normalization
               bootstrapFailureUpload = '${{ steps.bootstrap_failure_upload.outcome }}'

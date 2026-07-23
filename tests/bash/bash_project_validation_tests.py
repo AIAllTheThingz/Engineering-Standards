@@ -157,6 +157,17 @@ exit 0
         self.assertRegex(serial, r"^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
         self.assertEqual(serial.removeprefix("urn:uuid:"), str(UUID(serial.removeprefix("urn:uuid:"))))
 
+    def test_ignored_directories_cannot_hide_undeclared_bash_content(self) -> None:
+        project = self.make_project()
+        for directory in ("evidence", "generated", "output"):
+            with self.subTest(directory=directory):
+                hidden = project / directory / "hook.sh"
+                hidden.parent.mkdir(exist_ok=True)
+                hidden.write_text("#!/usr/bin/env bash\ntrue\n", encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "outside declared"):
+                    validator.reject_undeclared_bash_content(project)
+                hidden.unlink()
+
     def test_syntax_shellcheck_formatting_and_bats_failures_propagate(self) -> None:
         expectations = {
             "SYNTAX_FAIL": "bash-syntax.json",

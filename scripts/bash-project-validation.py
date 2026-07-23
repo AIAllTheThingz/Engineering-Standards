@@ -349,6 +349,32 @@ def inspect_project_tree(root: Path) -> None:
                 raise ValueError(f"project path escapes its root: {relative}")
 
 
+def reject_undeclared_bash_content(project: Path) -> None:
+    for current, directories, files in os.walk(project, followlinks=False):
+        directories[:] = [name for name in directories if name != ".git"]
+        for name in files:
+            path = Path(current) / name
+            relative = path.relative_to(project)
+            parts = relative.parts
+            declared = len(parts) == 2 and (
+                parts[0] == "cmd"
+                or (parts[0] == "lib" and path.suffix.lower() == ".sh")
+                or (parts[0] == "spec" and path.suffix.lower() == ".bats")
+            )
+            if declared:
+                continue
+            suffix_marks_bash = path.suffix.lower() in {".sh", ".bash", ".bats"}
+            with path.open("rb") as stream:
+                first_line = stream.readline(256)
+            shebang_marks_bash = first_line.startswith(
+                (b"#!/usr/bin/env bash", b"#!/usr/bin/bash", b"#!/usr/bin/env bats")
+            )
+            if suffix_marks_bash or shebang_marks_bash:
+                raise ValueError(
+                    f"Bash-executable content exists outside declared cmd, lib, or spec paths: {relative}"
+                )
+
+
 def copy_project(source: Path, destination: Path) -> None:
     if destination.exists():
         raise ValueError("work root must be new and empty")
@@ -594,16 +620,7 @@ def validate_structure(project: Path) -> tuple[list[Path], list[Path]]:
         first_line = path.read_text(encoding="utf-8").splitlines()[0]
         if first_line != "#!/usr/bin/env bats":
             raise ValueError(f"Bats file has an unsupported shebang: {path.relative_to(project)}")
-    declared = {path.resolve() for path in [*bash_files, *bats_files]}
-    for path in project.rglob("*"):
-        if not path.is_file() or path.resolve() in declared:
-            continue
-        suffix_marks_bash = path.suffix.lower() in {".sh", ".bash", ".bats"}
-        with path.open("rb") as stream:
-            first_line = stream.readline(256)
-        shebang_marks_bash = first_line.startswith((b"#!/usr/bin/env bash", b"#!/usr/bin/bash", b"#!/usr/bin/env bats"))
-        if suffix_marks_bash or shebang_marks_bash:
-            raise ValueError(f"Bash-executable content exists outside declared cmd, lib, or spec paths: {path.relative_to(project)}")
+    reject_undeclared_bash_content(project)
     return bash_files, bats_files
 
 
@@ -735,6 +752,7 @@ def execute(args: argparse.Namespace) -> int:
     records: list[dict[str, Any]] = []
     phase_records: dict[str, Any] = {}
     inspect_project_tree(project_root)
+    reject_undeclared_bash_content(project_root)
     isolated_project = work_root / "caller"
     copy_project(project_root, isolated_project)
     env = trusted_env(work_root / "home", work_root / "tmp")
