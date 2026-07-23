@@ -15,6 +15,6 @@ permissions:
 jobs:
   bash:
     name: Bash validation
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/bash-ci-reusable.yml@122e5f4cb335300dd74fbed62ec4d38ac4a8a0d8
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/bash-ci-reusable.yml@6641586c79b7bdf5dd108b8266d8005982441256
     with:
       project-path: ${{ inputs.project-path }}
