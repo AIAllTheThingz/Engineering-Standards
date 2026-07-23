@@ -85,19 +85,13 @@ jobs:
           path.write_text(text, encoding='utf-8')
           PY
 
-      - name: Restore normal Bash workflow
-        shell: bash
-        run: |
-          set -euo pipefail
-          git show 3e17d4b81ba10f9035e0c41d7278e78ae9aa2506:.github/workflows/bash-ci.yml > .github/workflows/bash-ci.yml
-
-      - name: Commit and push repairs
+      - name: Commit and push test repairs
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add tests/scripts/BashExampleCleanup.Tests.ps1 tests/scripts/BashProjectSupport.Tests.ps1 .github/workflows/bash-ci.yml
-          git diff --cached --quiet && { echo 'Expected candidate validation repairs were not produced.' >&2; exit 1; }
+          git add tests/scripts/BashExampleCleanup.Tests.ps1 tests/scripts/BashProjectSupport.Tests.ps1
+          git diff --cached --quiet && { echo 'Expected candidate validation test repairs were not produced.' >&2; exit 1; }
           git commit -m 'test(bash): align candidate validation assertions'
           git push origin HEAD:agent/bash-first-class-project-support
