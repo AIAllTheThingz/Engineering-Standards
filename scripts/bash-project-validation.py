@@ -421,7 +421,6 @@ def _limit_child(
     if landlock_version is not None:
         apply_landlock(landlock_version, read_only_roots or [], read_write_roots or [], deny_tcp)
 
-
 def run_command(
     command: list[str],
     cwd: Path,
