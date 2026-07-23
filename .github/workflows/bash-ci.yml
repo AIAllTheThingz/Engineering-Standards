@@ -24,66 +24,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   bash:
     name: Bash
-    permissions:
-      contents: read
     uses: AIAllTheThingz/Engineering-Standards/.github/workflows/bash-ci-reusable.yml@d55bb8e6778030f5490e900ba52ba99ac6403827
     with:
       project-path: examples/bash-project
-
-  repair-ruff-compatibility:
-    name: Repair trusted Ruff compatibility
-    if: github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout repair branch
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          ref: agent/bash-first-class-project-support
-          fetch-depth: 0
-          persist-credentials: true
-
-      - name: Restore reviewed subprocess call site
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-
-          validator = Path('scripts/bash-project-validation.py')
-          text = validator.read_text(encoding='utf-8')
-          old = "        apply_landlock(landlock_version, read_only_roots or [], read_write_roots or [], deny_tcp)\n\n\ndef run_command("
-          new = "        apply_landlock(landlock_version, read_only_roots or [], read_write_roots or [], deny_tcp)\n\ndef run_command("
-          if text.count(old) != 1:
-              raise SystemExit('Expected run_command spacing anchor was not found exactly once.')
-          validator.write_text(text.replace(old, new), encoding='utf-8')
-
-          static = Path('scripts/Test-PythonStaticAnalysis.ps1')
-          static_text = static.read_text(encoding='utf-8')
-          old_allow = 'scripts/bash-project-validation.py:434'
-          new_allow = 'scripts/bash-project-validation.py:433'
-          if static_text.count(old_allow) != 1:
-              raise SystemExit('Expected Bash Ruff allowlist entry was not found exactly once.')
-          static.write_text(static_text.replace(old_allow, new_allow), encoding='utf-8')
-
-          call_line = next(
-              number
-              for number, line in enumerate(validator.read_text(encoding='utf-8').splitlines(), start=1)
-              if 'process = subprocess.Popen(' in line
-          )
-          if call_line != 433:
-              raise SystemExit(f'Expected subprocess.Popen at line 433, found {call_line}.')
-          PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add scripts/bash-project-validation.py scripts/Test-PythonStaticAnalysis.ps1
-          git diff --cached --quiet && { echo 'Expected Ruff compatibility changes were not produced.' >&2; exit 1; }
-          git commit -m 'fix(bash): restore trusted Ruff call-site compatibility'
-          git push origin HEAD:agent/bash-first-class-project-support
