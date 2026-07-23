@@ -349,32 +349,6 @@ def inspect_project_tree(root: Path) -> None:
                 raise ValueError(f"project path escapes its root: {relative}")
 
 
-def reject_undeclared_bash_content(project: Path) -> None:
-    for current, directories, files in os.walk(project, followlinks=False):
-        directories[:] = [name for name in directories if name != ".git"]
-        for name in files:
-            path = Path(current) / name
-            relative = path.relative_to(project)
-            parts = relative.parts
-            declared = len(parts) == 2 and (
-                parts[0] == "cmd"
-                or (parts[0] == "lib" and path.suffix.lower() == ".sh")
-                or (parts[0] == "spec" and path.suffix.lower() == ".bats")
-            )
-            if declared:
-                continue
-            suffix_marks_bash = path.suffix.lower() in {".sh", ".bash", ".bats"}
-            with path.open("rb") as stream:
-                first_line = stream.readline(256)
-            shebang_marks_bash = first_line.startswith(
-                (b"#!/usr/bin/env bash", b"#!/usr/bin/bash", b"#!/usr/bin/env bats")
-            )
-            if suffix_marks_bash or shebang_marks_bash:
-                raise ValueError(
-                    f"Bash-executable content exists outside declared cmd, lib, or spec paths: {relative}"
-                )
-
-
 def copy_project(source: Path, destination: Path) -> None:
     if destination.exists():
         raise ValueError("work root must be new and empty")
@@ -492,6 +466,32 @@ def run_command(
         captured = f"Command exceeded {timeout_seconds} seconds.\n{captured}"
         return 124, captured, time.monotonic() - started, True
     return process.returncode, captured, time.monotonic() - started, False
+
+
+def reject_undeclared_bash_content(project: Path) -> None:
+    for current, directories, files in os.walk(project, followlinks=False):
+        directories[:] = [name for name in directories if name != ".git"]
+        for name in files:
+            path = Path(current) / name
+            relative = path.relative_to(project)
+            parts = relative.parts
+            declared = len(parts) == 2 and (
+                parts[0] == "cmd"
+                or (parts[0] == "lib" and path.suffix.lower() == ".sh")
+                or (parts[0] == "spec" and path.suffix.lower() == ".bats")
+            )
+            if declared:
+                continue
+            suffix_marks_bash = path.suffix.lower() in {".sh", ".bash", ".bats"}
+            with path.open("rb") as stream:
+                first_line = stream.readline(256)
+            shebang_marks_bash = first_line.startswith(
+                (b"#!/usr/bin/env bash", b"#!/usr/bin/bash", b"#!/usr/bin/env bats")
+            )
+            if suffix_marks_bash or shebang_marks_bash:
+                raise ValueError(
+                    f"Bash-executable content exists outside declared cmd, lib, or spec paths: {relative}"
+                )
 
 
 def sanitize(value: str, roots: list[Path], executables: dict[str, Path]) -> str:
