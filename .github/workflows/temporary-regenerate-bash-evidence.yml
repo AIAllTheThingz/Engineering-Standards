@@ -1,0 +1,75 @@
+name: Temporary regenerate Bash local evidence
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_SHA: 5b3da11ed7780e192f3313c6d92a968554c2477c
+    steps:
+      - name: Generate and commit clean local evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$RUNNER_TEMP/repair-repo"
+          source_root="$RUNNER_TEMP/bash-evidence-source"
+          cache="$RUNNER_TEMP/bash-tool-cache"
+          git clone --quiet --no-tags --branch agent/bash-first-class-project-support \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$repo"
+          cd "$repo"
+          git worktree add --detach "$source_root" "$SOURCE_SHA" >/dev/null
+          example="$source_root/examples/bash-project"
+          log="$RUNNER_TEMP/bash-evidence-generation.log"
+          set +e
+          env -u GITHUB_ACTIONS -u GITHUB_RUN_ID -u GITHUB_RUN_ATTEMPT \
+            -u GITHUB_WORKFLOW -u GITHUB_SHA -u GITHUB_REF_NAME -u GITHUB_REPOSITORY \
+            pwsh -NoProfile -File "$example/tools/Test-Example.ps1" \
+            -ProjectPath "$example" -ToolCache "$cache" 2>&1 | tee "$log"
+          generator_exit=${PIPESTATUS[0]}
+          set -e
+          if [[ $generator_exit -ne 0 ]]; then
+            echo '--- Bash evidence generator failure ---' >&2
+            tail -n 80 "$log" >&2
+            exit "$generator_exit"
+          fi
+          destination="$repo/examples/bash-project/evidence"
+          required=(
+            bash-formatting.json
+            bash-project-sbom.cdx.json
+            bash-shellcheck.json
+            bash-syntax.json
+            bash-tests.json
+            bash-toolchain-bootstrap.json
+            bash-toolchain.json
+            local-completion-result.json
+            local-test-results.json
+          )
+          for name in "${required[@]}"; do
+            test -f "$example/evidence/$name"
+            cp "$example/evidence/$name" "$destination/$name"
+          done
+          python3 - "$destination/local-completion-result.json" "$SOURCE_SHA" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          record = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8-sig'))
+          assert record['validatedCommitSha'] == sys.argv[2]
+          assert record['commitSha'] == sys.argv[2]
+          assert record['status'] == 'NotRun'
+          assert 'GitHub-hosted Bash workflow execution' in record['commandsNotExecuted']
+          PY
+          rm -f "$repo/.github/workflows/temporary-regenerate-bash-evidence.yml"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add examples/bash-project/evidence .github/workflows/temporary-regenerate-bash-evidence.yml
+          git diff --cached --quiet && { echo 'Expected evidence changes were not produced.' >&2; exit 1; }
+          git commit -m 'test(bash): refresh final local evidence'
+          git push origin HEAD:agent/bash-first-class-project-support
