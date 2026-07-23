@@ -20,7 +20,7 @@ on:
       - 'README.md'
       - 'CHANGELOG.md'
   push:
-    branches: [master]
+    branches: [master, agent/bash-first-class-project-support]
   workflow_dispatch:
 
 permissions:
@@ -49,12 +49,13 @@ jobs:
           ref: agent/bash-first-class-project-support
           fetch-depth: 0
 
-      - name: Patch freshness allowlist and restore workflow
+      - name: Patch freshness allowlist and restore workflows
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
+
           path = Path('tests/scripts/BashProjectSupport.Tests.ps1')
           text = path.read_text(encoding='utf-8')
           old = """            'examples/bash-project/.github/workflows/governance.yml',
@@ -67,11 +68,67 @@ jobs:
           if text.count(old) != 1:
               raise SystemExit('Expected freshness allowlist anchor was not found exactly once.')
           path.write_text(text.replace(old, new), encoding='utf-8')
+
+          Path('.github/workflows/bash-ci.yml').write_text("""name: Bash example CI
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/bash-ci*.yml'
+      - 'workflows/bash-ci.yml'
+      - 'examples/bash-project/**'
+      - 'scripts/Install-BashProjectToolchain.py'
+      - 'scripts/bash-project-validation.py'
+      - 'scripts/Normalize-BashFunctionalEvidence.py'
+      - 'scripts/New-CompletionEvidence.ps1'
+      - 'scripts/GovernanceValidation.psm1'
+      - 'scripts/Test-BashWorkflowEvidenceArtifact.ps1'
+      - 'actions/validate-evidence/Invoke-EvidenceValidation.ps1'
+      - 'tests/bash/**'
+      - 'tests/scripts/BashProjectSupport.Tests.ps1'
+      - 'agents/AGENTS_Bash.md'
+      - 'docs/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bash:
+    name: Bash
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/bash-ci-reusable.yml@d55bb8e6778030f5490e900ba52ba99ac6403827
+    with:
+      project-path: examples/bash-project
+""", encoding='utf-8')
+
+          Path('.github/workflows/pr-governance.yml').write_text("""name: Pull Request Governance
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+      - ready_for_review
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  validate:
+    name: Validate pull request governance record
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/pr-governance-reusable.yml@25bd1d055d345b29f756b100e6fd288db000f804
+""", encoding='utf-8')
           PY
-          git show HEAD^:.github/workflows/bash-ci.yml > .github/workflows/bash-ci.yml
           rm -f .github/workflows/temporary-fix-bash-evidence-scope.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add tests/scripts/BashProjectSupport.Tests.ps1 .github/workflows/bash-ci.yml .github/workflows/temporary-fix-bash-evidence-scope.yml
+          git add tests/scripts/BashProjectSupport.Tests.ps1 .github/workflows/bash-ci.yml .github/workflows/pr-governance.yml .github/workflows/temporary-fix-bash-evidence-scope.yml
           git commit -m 'test(bash): exempt unrelated static validator from evidence freshness'
           git push origin HEAD:agent/bash-first-class-project-support
