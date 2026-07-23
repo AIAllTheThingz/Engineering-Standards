@@ -21,77 +21,15 @@ on:
       - 'README.md'
       - 'CHANGELOG.md'
   push:
-    branches: [master, agent/bash-first-class-project-support]
+    branches: [master]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   bash:
     name: Bash
-    permissions:
-      contents: read
     uses: AIAllTheThingz/Engineering-Standards/.github/workflows/bash-ci-reusable.yml@d55bb8e6778030f5490e900ba52ba99ac6403827
     with:
       project-path: examples/bash-project
-
-  repair-candidate-validation:
-    name: Repair candidate validation assertions
-    if: github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout repair branch
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          ref: agent/bash-first-class-project-support
-          fetch-depth: 0
-          persist-credentials: true
-
-      - name: Align cleanup assertion
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('tests/scripts/BashExampleCleanup.Tests.ps1')
-          text = path.read_text(encoding='utf-8')
-          text = text.replace(
-              "$removeIndex = $script:wrapper.IndexOf('Remove-Item -LiteralPath $resolvedTemporary -Recurse -Force')",
-              "$removeIndex = $script:wrapper.IndexOf('& rm -rf -- $resolvedTemporary')",
-          )
-          if "& rm -rf -- $resolvedTemporary" not in text:
-              raise SystemExit('Cleanup assertion was not aligned.')
-          path.write_text(text, encoding='utf-8')
-          PY
-
-      - name: Align evidence freshness scope
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('tests/scripts/BashProjectSupport.Tests.ps1')
-          text = path.read_text(encoding='utf-8')
-          anchor = "            'scripts/Test-PythonStaticAnalysis.ps1',\n"
-          addition = anchor + "            'scripts/bash-project-validation.py',\n"
-          if "            'scripts/bash-project-validation.py',\n" not in text:
-              text = text.replace(anchor, addition, 1)
-          if "            'scripts/bash-project-validation.py',\n" not in text:
-              raise SystemExit('Bash validator was not added to the freshness scope.')
-          path.write_text(text, encoding='utf-8')
-          PY
-
-      - name: Commit and push test repairs
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add tests/scripts/BashExampleCleanup.Tests.ps1 tests/scripts/BashProjectSupport.Tests.ps1
-          git diff --cached --quiet && { echo 'Expected candidate validation test repairs were not produced.' >&2; exit 1; }
-          git commit -m 'test(bash): align candidate validation assertions'
-          git push origin HEAD:agent/bash-first-class-project-support
