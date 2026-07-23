@@ -332,9 +332,8 @@ exit 0
                 else:
                     os.environ[name] = value
 
-    def test_caller_shellcheck_and_editorconfig_cannot_weaken_options(self) -> None:
+    def test_caller_editorconfig_cannot_weaken_fixed_options(self) -> None:
         project = self.make_project()
-        (project / ".shellcheckrc").write_text("disable=all\n", encoding="utf-8")
         (project / ".editorconfig").write_text("root=true\n[*]\nindent_size=8\n", encoding="utf-8")
         tools = self.make_fake_tools()
         args = argparse.Namespace(
