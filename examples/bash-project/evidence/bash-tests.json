@@ -7,10 +7,10 @@
   "evidenceSource": "Automated",
   "command": "<bats> --tap --timing ./caller/spec/governed_path.bats",
   "workingDirectory": ".",
-  "startedAtUtc": "2026-07-22T22:53:38.674398Z",
-  "completedAtUtc": "2026-07-22T22:53:38.674415Z",
-  "durationSeconds": 0.725,
-  "runtime": "CPython 3.12.11",
+  "startedAtUtc": "2026-07-23T00:07:27.600287Z",
+  "completedAtUtc": "2026-07-23T00:07:27.600317Z",
+  "durationSeconds": 0.83,
+  "runtime": "CPython 3.12.3",
   "toolVersion": "Bats/1.13.0",
   "exitCode": 0,
   "summary": "Bash tests passed.",
@@ -22,7 +22,7 @@
     "bash-tests.json"
   ],
   "details": {
-    "sanitizedOutput": "1..10\nok 1 resolves_an_existing_relative_path in 25ms\nok 2 preserves_spaces_as_one_argument in 23ms\nok 3 accepts_a_nonexistent_path_within_the_boundary in 23ms\nok 4 rejects_traversal in 20ms\nok 5 rejects_an_absolute_candidate in 18ms\nok 6 rejects_a_missing_required_file in 24ms\nok 7 rejects_a_symlink_to_an_in_root_file in 28ms\nok 8 rejects_a_symlinked_directory_component in 24ms\nok 9 rejects_a_symlinked_repository_root in 19ms\nok 10 propagates_a_child_command_failure in 22ms\n",
+    "sanitizedOutput": "1..10\nok 1 resolves_an_existing_relative_path in 25ms\nok 2 preserves_spaces_as_one_argument in 27ms\nok 3 accepts_a_nonexistent_path_within_the_boundary in 26ms\nok 4 rejects_traversal in 21ms\nok 5 rejects_an_absolute_candidate in 19ms\nok 6 rejects_a_missing_required_file in 23ms\nok 7 rejects_a_symlink_to_an_in_root_file in 29ms\nok 8 rejects_a_symlinked_directory_component in 26ms\nok 9 rejects_a_symlinked_repository_root in 26ms\nok 10 propagates_a_child_command_failure in 28ms\n",
     "specFiles": [
       "spec/governed_path.bats"
     ],
