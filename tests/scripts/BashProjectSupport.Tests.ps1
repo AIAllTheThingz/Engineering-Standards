@@ -97,9 +97,9 @@ function Test-BashWorkflowControls {
         -not $Text.Contains('-ExpectedRefName $env:CALLER_REF_NAME')) { $failures.Add('caller-source-identity') }
     if ($Text.IndexOf('Upload Bash evidence before enforcement') -lt 0 -or $Text.IndexOf('Upload Bash evidence before enforcement') -gt $Text.IndexOf('Enforce governed Bash validation') -or
         $Text.IndexOf('Upload Bash bootstrap failure evidence before enforcement') -lt 0 -or $Text.IndexOf('Upload Bash bootstrap failure evidence before enforcement') -gt $Text.IndexOf('Enforce governed Bash validation')) { $failures.Add('evidence-order') }
-    if ($Text -notmatch "(?ms)- name: Create Bash completion evidence in trusted workspace\s+id: completion\s+if: always\(\) && steps\.bootstrap\.outcome == 'success' && steps\.normalization\.outcome == 'success'" -or
+    if ($Text -notmatch "(?ms)- name: Create Bash completion evidence in trusted workspace\s+id: completion\s+if: always\(\) && steps\.bootstrap\.outcome == 'success' && steps\.regression\.outcome == 'success' && steps\.normalization\.outcome == 'success'" -or
         $Text -notmatch "(?ms)- name: Validate Bash completion evidence\s+id: evidence\s+if: always\(\) && steps\.bootstrap\.outcome == 'success' && steps\.normalization\.outcome == 'success' && steps\.completion\.outcome == 'success'" -or
-        $Text -notmatch "(?ms)- name: Upload Bash evidence before enforcement\s+id: upload\s+if: always\(\) && steps\.bootstrap\.outcome == 'success' && steps\.normalization\.outcome == 'success' && steps\.completion\.outcome == 'success' && steps\.evidence\.outcome == 'success'") { $failures.Add('unsafe-evidence-upload') }
+        $Text -notmatch "(?ms)- name: Upload Bash evidence before enforcement\s+id: upload\s+if: always\(\) && steps\.bootstrap\.outcome == 'success' && steps\.regression\.outcome == 'success' && steps\.normalization\.outcome == 'success' && steps\.completion\.outcome == 'success' && steps\.evidence\.outcome == 'success'") { $failures.Add('unsafe-evidence-upload') }
     if ($Text -notmatch "(?ms)- name: Upload Bash bootstrap failure evidence before enforcement\s+id: bootstrap_failure_upload\s+if: always\(\) && steps\.bootstrap\.outcome != 'success' && steps\.staging\.outcome == 'success' && steps\.normalization\.outcome == 'success'" -or
         -not $Text.Contains("`$bootstrapFailed = `$outcomes.bootstrap -cne 'success'") -or
         -not $Text.Contains("bootstrapFailureUpload = '`${{ steps.bootstrap_failure_upload.outcome }}'")) { $failures.Add('unsafe-bootstrap-failure-upload') }
@@ -425,7 +425,7 @@ raise SystemExit(2)
         $script:driver | Should -Match 'execution_gate'
     }
 
-    It 'uses immutable least-privilege workflow controls and uploads before enforcement' {
+    It 'gates Bash completion and evidence upload on successful regression tests' {
         @(Test-BashWorkflowControls -Text $script:workflow).Count | Should -Be 0
         $script:workflow | Should -Match 'runs-on:\s*ubuntu-24\.04'
         $script:workflow | Should -Match 'python-version:\s*3\.12\.11'
