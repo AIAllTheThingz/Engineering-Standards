@@ -845,7 +845,7 @@ def execute(args: argparse.Namespace) -> int:
     phase_records["toolchain"] = tool_record
     records.append(tool_record)
 
-    source_files = [*bash_files, *bats_files]
+    source_files = bash_files
     syntax_outputs: list[str] = []
     syntax_duration = 0.0
     syntax_code = 0
@@ -962,7 +962,7 @@ def execute(args: argparse.Namespace) -> int:
         record["status"] == "Passed"
         for record in (bash_record, tool_record, syntax_record, shellcheck_record, formatting_record)
     )
-    make_read_only(isolated_project, set(source_files))
+    make_read_only(isolated_project, set([*bash_files, *bats_files]))
     if execution_gate:
         bats_command = [
             str(args.bats.resolve(strict=True)),
@@ -1074,9 +1074,15 @@ def write_failure_evidence(args: argparse.Namespace, error: Exception) -> None:
     evidence_root = args.evidence_root.absolute()
     reject_symlink_components(evidence_root.parent)
     evidence_resolved = evidence_root.resolve(strict=False)
+    lexical_project = args.project.absolute()
+    try:
+        resolved_project = lexical_project.resolve(strict=False)
+    except (OSError, RuntimeError):
+        resolved_project = lexical_project
     protected_roots = [
         args.caller_root.resolve(strict=True),
-        args.project.resolve(strict=True),
+        lexical_project,
+        resolved_project,
         args.work_root.absolute().resolve(strict=False),
         args.tool_lock.resolve(strict=True).parent,
     ]

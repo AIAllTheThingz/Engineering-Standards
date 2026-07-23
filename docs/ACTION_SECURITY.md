@@ -74,8 +74,9 @@ Downstream manifests, configuration, paths, and files remain untrusted. The aggr
 
 Python and Bash static validation preserves this boundary. Python files are
 parsed as text by the trusted standard-library AST helper and Ruff; they are
-never imported or executed. Bash files are passed only to Bash no-execution
-syntax mode and ShellCheck; they are never sourced or executed. Caller Ruff and
+never imported or executed. Bash source files are passed only to Bash
+no-execution syntax mode and ShellCheck; standard Bats specs are reserved for
+the exact Bats runtime inside the functional sandbox. Caller Ruff and
 ShellCheck configuration, suppressions, plugins, source directives, executable
 paths, and PATH shadows cannot replace the trusted baseline.
 
@@ -97,7 +98,9 @@ after all non-executing gates pass.
 Functional evidence is written outside caller content and uploaded before
 final enforcement. Bootstrap, phase, completion, evidence-validation, and
 step-outcome records fail closed when absent, blocked, cancelled, or
-unexpectedly skipped. The artifact verifier binds repository, commit, branch,
+unexpectedly skipped. Invalid, missing, traversing, or linked project paths
+produce sanitized boundary-failure evidence when the trusted runtime and
+toolchain are available. The artifact verifier binds repository, commit, branch,
 run, artifact name and ID, API digest, original ZIP contents, exact tool
 versions and hashes, SBOM, expected conclusion, and controlled-failure phase
 while rejecting workstation paths,

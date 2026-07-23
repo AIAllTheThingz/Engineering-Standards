@@ -100,7 +100,7 @@ Missing tools or environments MUST be reported as `NotRun` or `Blocked` with an 
 
 The supported functional baseline is GNU Bash 5.2 on Ubuntu 24.04 x86-64 with ShellCheck 0.11.0, shfmt 3.13.1, and Bats 1.13.0. Exact sources and SHA-256 values are declared in `examples/bash-project/bash-toolchain.lock.json`. Other shells, Bash versions, operating systems, architectures, and BSD utility semantics require their own execution evidence and are not implied by this baseline.
 
-Functional validation MUST run only declared test entry points after syntax, ShellCheck, formatting, toolchain, path, archive, and filesystem trust-boundary gates pass. It MUST use an isolated read-only project copy, a fixed allowlisted environment, bounded files and output, explicit timeouts, Linux Landlock filesystem rules, `no_new_privs`, subreaper cleanup, and child process-group termination. Hosted execution MUST require Landlock ABI 4 or newer and deny TCP connect and bind operations. It MUST reject symbolic links, hard links, traversal, special files, root overlap, caller tool configuration, startup hooks, and executable shadows before caller Bash code executes.
+Functional validation MUST run only declared test entry points after syntax, ShellCheck, formatting, toolchain, path, archive, and filesystem trust-boundary gates pass. Bash syntax, ShellCheck, and shfmt gates apply to declared `cmd/` and `lib/*.sh` sources; standard `spec/*.bats` syntax is parsed and executed only by the exact Bats runtime after those gates pass. It MUST use an isolated read-only project copy, a fixed allowlisted environment, bounded files and output, explicit timeouts, Linux Landlock filesystem rules, `no_new_privs`, subreaper cleanup, and child process-group termination. Hosted execution MUST require Landlock ABI 4 or newer and deny TCP connect and bind operations. It MUST reject symbolic links, hard links, traversal, special files, root overlap, caller tool configuration, startup hooks, and executable shadows before caller Bash code executes.
 
 ## Static-Analysis Requirements
 
@@ -123,7 +123,7 @@ pwsh -NoProfile -File scripts/Test-AgentStandards.ps1 -Path .
 pwsh -NoProfile -File examples/bash-project/tools/Test-Example.ps1
 ```
 
-The reusable hosted entry point is `.github/workflows/bash-ci-reusable.yml`, called at a full immutable 40-character standards commit SHA with a repository-relative `project-path`. It uses exact `/usr/bin/bash`, invokes ShellCheck with a trusted `/dev/null` rc file and warning severity, invokes shfmt with fixed formatting flags, and invokes Bats only for the project-declared test file. The existing `scripts/Test-BashStaticAnalysis.ps1` remains a separate non-executing static control and MUST NOT be made functional.
+The reusable hosted entry point is `.github/workflows/bash-ci-reusable.yml`, called at a full immutable 40-character standards commit SHA with a repository-relative `project-path`. It uses exact `/usr/bin/bash`, invokes ShellCheck with a trusted `/dev/null` rc file and warning severity, invokes shfmt with fixed formatting flags for declared Bash sources, and invokes Bats only for project-declared Bats specs. Boundary rejection still produces normalized failure evidence before enforcement. The existing `scripts/Test-BashStaticAnalysis.ps1` remains a separate non-executing static control and MUST NOT be made functional.
 
 ## Evidence Requirements
 

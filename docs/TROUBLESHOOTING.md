@@ -137,6 +137,11 @@ the independent artifact metadata JSON. Run
 name and ID, expected conclusion, and controlled-failure phase before making a
 hosted success or expected-failure claim.
 
+Standard `@test "name" { ... }` Bats syntax is supported. Bash `-n`, ShellCheck,
+and shfmt apply only to declared `cmd/` and `lib/*.sh` sources; Bats owns parsing
+and execution of `spec/*.bats`. A rejected `project-path` still uploads
+sanitized failure evidence when trusted runtime and toolchain setup succeeds.
+
 If the hosted toolchain bootstrap is `Blocked` or `Failed`, the workflow
 normalizes and uploads its bootstrap record under the usual Bash artifact name
 before final enforcement fails the job. Completion and functional phase records

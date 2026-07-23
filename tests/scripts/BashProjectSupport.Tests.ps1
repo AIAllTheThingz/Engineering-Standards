@@ -103,6 +103,7 @@ function Test-BashWorkflowControls {
     if ($Text -notmatch "(?ms)- name: Upload Bash bootstrap failure evidence before enforcement\s+id: bootstrap_failure_upload\s+if: always\(\) && steps\.bootstrap\.outcome != 'success' && steps\.staging\.outcome == 'success' && steps\.normalization\.outcome == 'success'" -or
         -not $Text.Contains("`$bootstrapFailed = `$outcomes.bootstrap -cne 'success'") -or
         -not $Text.Contains("bootstrapFailureUpload = '`${{ steps.bootstrap_failure_upload.outcome }}'")) { $failures.Add('unsafe-bootstrap-failure-upload') }
+    if ($Text -match "(?ms)- name: Run governed functional Bash validation\s+id: functional\s+if:.*steps\.boundary\.outcome == 'success'") { $failures.Add('missing-boundary-failure-evidence') }
     if ($Text -match '--(?:bash|shellcheck|shfmt|bats)\s+"?\$CALLER') { $failures.Add('caller-tool-path') }
     @($failures)
 }
@@ -124,6 +125,7 @@ function Test-BashDriverControls {
     if ($Text -notmatch '--rcfile=/dev/null' -or $Text -notmatch '"externalSources": False') { $failures.Add('caller-shellcheck-config') }
     if ($Text -notmatch 'RLIMIT_FSIZE' -or $Text -notmatch 'EVIDENCE_OUTPUT_CHARS') { $failures.Add('bounded-output') }
     if ($Text -notmatch 'execution_gate' -or $Text -notmatch 'Bats execution was not run because a mandatory non-executing gate') { $failures.Add('execution-gate') }
+    if ($Text -notmatch 'source_files\s*=\s*bash_files') { $failures.Add('bats-source-isolation') }
     if ($Text -notmatch '"Blocked"' -or $Text -notmatch 'FileNotFoundError') { $failures.Add('blocked-status') }
     if ($Text -notmatch 'UNSAFE_ENVIRONMENT_VARIABLES' -or $Text -notmatch '"PATH": "/usr/bin:/bin"') { $failures.Add('environment-isolation') }
     @($failures)
@@ -447,7 +449,8 @@ raise SystemExit(2)
         @{ Name='completion copies unnormalized evidence'; Mutate={ param($text) $text.Replace("if: always() && steps.bootstrap.outcome == 'success' && steps.normalization.outcome == 'success'",'if: always()') }; Expected='unsafe-evidence-upload' },
         @{ Name='upload ignores evidence safety gates'; Mutate={ param($text) $text.Replace("if: always() && steps.bootstrap.outcome == 'success' && steps.normalization.outcome == 'success' && steps.completion.outcome == 'success' && steps.evidence.outcome == 'success'",'if: always()') }; Expected='unsafe-evidence-upload' },
         @{ Name='bootstrap failure upload ignores preservation gates'; Mutate={ param($text) $text.Replace("if: always() && steps.bootstrap.outcome != 'success' && steps.staging.outcome == 'success' && steps.normalization.outcome == 'success'",'if: always()') }; Expected='unsafe-bootstrap-failure-upload' },
-        @{ Name='bootstrap failure upload is not enforced'; Mutate={ param($text) $text.Replace("`$bootstrapFailed = `$outcomes.bootstrap -cne 'success'",'$bootstrapFailed = $false') }; Expected='unsafe-bootstrap-failure-upload' }
+        @{ Name='bootstrap failure upload is not enforced'; Mutate={ param($text) $text.Replace("`$bootstrapFailed = `$outcomes.bootstrap -cne 'success'",'$bootstrapFailed = $false') }; Expected='unsafe-bootstrap-failure-upload' },
+        @{ Name='boundary failure skips evidence driver'; Mutate={ param($text) $text.Replace("if: always() && steps.python.outcome == 'success' && steps.bootstrap.outcome == 'success'","if: always() && steps.boundary.outcome == 'success' && steps.python.outcome == 'success' && steps.bootstrap.outcome == 'success'") }; Expected='missing-boundary-failure-evidence' }
     ) {
         $mutant = & $Mutate $script:workflow
         @(Test-BashWorkflowControls -Text $mutant) | Should -Contain $Expected
@@ -458,6 +461,7 @@ raise SystemExit(2)
         @{ Pattern='"externalSources": False'; Expected='caller-shellcheck-config' },
         @{ Pattern='RLIMIT_FSIZE'; Expected='bounded-output' },
         @{ Pattern='execution_gate'; Expected='execution-gate' },
+        @{ Pattern='source_files = bash_files'; Expected='bats-source-isolation' },
         @{ Pattern='"Blocked"'; Expected='blocked-status' },
         @{ Pattern='"PATH": "/usr/bin:/bin"'; Expected='environment-isolation' }
     ) {

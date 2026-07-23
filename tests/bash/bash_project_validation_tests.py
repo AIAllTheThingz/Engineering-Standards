@@ -82,7 +82,7 @@ class BashProjectValidationTests(unittest.TestCase):
         )
         spec_marker = marker if marker in {"BATS_FAIL", "BATS_TIMEOUT"} else ""
         (project / "spec" / "fixture.bats").write_text(
-            "#!/usr/bin/env bats\nfunction fixture_test { # @test\n  true\n}\n"
+            "#!/usr/bin/env bats\n@test \"fixture\" {\n  true\n}\n"
             + (f"# {spec_marker}\n" if spec_marker else ""),
             encoding="utf-8",
         )
@@ -151,6 +151,8 @@ exit 0
         self.assertEqual(0, code)
         for name in ("bash-syntax.json", "bash-shellcheck.json", "bash-formatting.json", "bash-tests.json"):
             self.assertEqual("Passed", json.loads((evidence / name).read_text(encoding="utf-8"))["status"])
+        syntax = json.loads((evidence / "bash-syntax.json").read_text(encoding="utf-8"))
+        self.assertEqual(["cmd/fixture", "lib/fixture.sh"], syntax["details"]["files"])
         serial = json.loads((evidence / "bash-project-sbom.cdx.json").read_text(encoding="utf-8"))["serialNumber"]
         self.assertRegex(serial, r"^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
         self.assertEqual(serial.removeprefix("urn:uuid:"), str(UUID(serial.removeprefix("urn:uuid:"))))
@@ -360,6 +362,21 @@ exit 0
         with self.assertRaisesRegex(ValueError, "overlapping"):
             validator.write_failure_evidence(args, ValueError("overlap"))
         self.assertFalse((project / "new-evidence").exists())
+
+    def test_missing_project_path_still_produces_complete_failure_evidence(self) -> None:
+        caller = self.make_project()
+        evidence = self.root / "evidence"
+        args = argparse.Namespace(
+            bash=Path("/usr/bin/bash"), shellcheck=self.root / "shellcheck", shfmt=self.root / "shfmt",
+            bats=self.root / "bats", caller_root=caller, project=caller / "missing", project_path_input="missing",
+            work_root=self.root / "work", evidence_root=evidence, tool_lock=LOCK_PATH,
+            command_timeout_seconds=10, test_timeout_seconds=10,
+        )
+        validator.write_failure_evidence(args, FileNotFoundError("project path is missing"))
+        for name in (*validator.PHASE_FILES.values(), "bash-validation.json", "local-test-results.json"):
+            self.assertTrue((evidence / name).is_file(), name)
+        structure = json.loads((evidence / "bash-validation.json").read_text(encoding="utf-8"))
+        self.assertEqual("Blocked", structure["status"])
 
     def test_failure_evidence_uses_a_valid_minimal_cyclonedx_sbom(self) -> None:
         project = self.make_project()
