@@ -309,9 +309,11 @@ Describe 'Governed Bash project support' {
         $changedAfterValidation = @(& git -C $script:root diff --name-only "$($completion.validatedCommitSha)..HEAD" --)
         $LASTEXITCODE | Should -Be 0
         $allowedAfterValidation = @(
+            '.github/workflows/bash-ci-reusable.yml',
             '.github/workflows/bash-ci.yml',
             'workflows/bash-ci.yml',
-            'examples/bash-project/.github/workflows/governance.yml'
+            'examples/bash-project/.github/workflows/governance.yml',
+            'tests/scripts/BashProjectSupport.Tests.ps1'
         )
         @($changedAfterValidation | Where-Object {
             -not $_.StartsWith('examples/bash-project/evidence/', [StringComparison]::Ordinal) -and
