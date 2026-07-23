@@ -44,6 +44,12 @@ function rejects_an_absolute_candidate { # @test
   [[ $output == *'relative path'* ]]
 }
 
+function rejects_a_trailing_separator_for_a_required_file { # @test
+  run "$utility" --require-file "$repository_root" 'alpha.txt/'
+  [ "$status" -ne 0 ]
+  [[ $output == *'unsafe component'* ]]
+}
+
 function rejects_a_missing_required_file { # @test
   run "$utility" --require-file "$repository_root" 'nested/missing.txt'
   [ "$status" -ne 0 ]
