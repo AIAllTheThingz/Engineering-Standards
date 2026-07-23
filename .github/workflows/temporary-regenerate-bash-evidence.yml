@@ -1,0 +1,74 @@
+name: Temporary regenerate Bash local evidence
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: agent/bash-first-class-project-support
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Generate evidence from clean pre-workflow source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sourceSha = (& git rev-parse HEAD^).Trim()
+          if ($LASTEXITCODE -ne 0 -or $sourceSha -notmatch '^[0-9a-f]{40}$') {
+            throw 'Unable to resolve the clean evidence source commit.'
+          }
+          $sourceRoot = Join-Path $env:RUNNER_TEMP 'bash-evidence-source'
+          & git worktree add --detach $sourceRoot $sourceSha
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to create the clean evidence source worktree.' }
+          try {
+            $example = Join-Path $sourceRoot 'examples/bash-project'
+            $cache = Join-Path $env:RUNNER_TEMP 'bash-tool-cache'
+            & pwsh -NoProfile -File (Join-Path $example 'tools/Test-Example.ps1') -ProjectPath $example -ToolCache $cache
+            if ($LASTEXITCODE -ne 0) { throw "Bash local evidence generation failed with exit code $LASTEXITCODE." }
+            $destination = Join-Path $env:GITHUB_WORKSPACE 'examples/bash-project/evidence'
+            $required = @(
+              'bash-formatting.json',
+              'bash-project-sbom.cdx.json',
+              'bash-shellcheck.json',
+              'bash-syntax.json',
+              'bash-tests.json',
+              'bash-toolchain-bootstrap.json',
+              'bash-toolchain.json',
+              'local-completion-result.json',
+              'local-test-results.json'
+            )
+            foreach ($name in $required) {
+              $source = Join-Path $example "evidence/$name"
+              if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Missing generated evidence file: $name" }
+              Copy-Item -LiteralPath $source -Destination (Join-Path $destination $name) -Force
+            }
+            $completion = Get-Content -LiteralPath (Join-Path $destination 'local-completion-result.json') -Raw | ConvertFrom-Json
+            if ($completion.validatedCommitSha -cne $sourceSha -or $completion.status -cne 'NotRun') {
+              throw 'Generated local completion evidence has incorrect source identity or status.'
+            }
+          }
+          finally {
+            & git worktree remove --force $sourceRoot 2>$null
+          }
+          Remove-Item -LiteralPath (Join-Path $env:GITHUB_WORKSPACE '.github/workflows/temporary-regenerate-bash-evidence.yml') -Force
+
+      - name: Commit regenerated evidence and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add examples/bash-project/evidence .github/workflows/temporary-regenerate-bash-evidence.yml
+          git diff --cached --quiet && { echo 'Expected evidence changes were not produced.' >&2; exit 1; }
+          git commit -m 'test(bash): refresh local evidence for corrected validator'
+          git push origin HEAD:agent/bash-first-class-project-support
