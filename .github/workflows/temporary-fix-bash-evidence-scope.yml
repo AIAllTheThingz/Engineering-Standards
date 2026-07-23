@@ -2,6 +2,9 @@ name: Temporary fix Bash evidence freshness scope
 
 on:
   pull_request:
+  push:
+    branches:
+      - agent/bash-first-class-project-support
 
 permissions:
   contents: write
