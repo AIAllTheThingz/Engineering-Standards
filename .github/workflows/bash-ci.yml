@@ -51,30 +51,50 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Apply bounded repairs and restore workflow
+      - name: Align cleanup assertion
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-
-          cleanup = Path('tests/scripts/BashExampleCleanup.Tests.ps1')
-          cleanup_text = cleanup.read_text(encoding='utf-8')
-          old_cleanup = "$removeIndex = $script:wrapper.IndexOf('Remove-Item -LiteralPath $resolvedTemporary -Recurse -Force')"
-          new_cleanup = "$removeIndex = $script:wrapper.IndexOf('& rm -rf -- $resolvedTemporary')"
-          if cleanup_text.count(old_cleanup) != 1:
-              raise SystemExit('Expected cleanup assertion anchor was not found exactly once.')
-          cleanup.write_text(cleanup_text.replace(old_cleanup, new_cleanup), encoding='utf-8')
-
-          support = Path('tests/scripts/BashProjectSupport.Tests.ps1')
-          support_text = support.read_text(encoding='utf-8')
-          old_scope = "            'scripts/Test-PythonStaticAnalysis.ps1',\n            'tests/scripts/BashProjectSupport.Tests.ps1'"
-          new_scope = "            'scripts/Test-PythonStaticAnalysis.ps1',\n            'scripts/bash-project-validation.py',\n            'tests/scripts/BashProjectSupport.Tests.ps1'"
-          if support_text.count(old_scope) != 1:
-              raise SystemExit('Expected local evidence freshness scope anchor was not found exactly once.')
-          support.write_text(support_text.replace(old_scope, new_scope), encoding='utf-8')
+          path = Path('tests/scripts/BashExampleCleanup.Tests.ps1')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace(
+              "$removeIndex = $script:wrapper.IndexOf('Remove-Item -LiteralPath $resolvedTemporary -Recurse -Force')",
+              "$removeIndex = $script:wrapper.IndexOf('& rm -rf -- $resolvedTemporary')",
+          )
+          if "& rm -rf -- $resolvedTemporary" not in text:
+              raise SystemExit('Cleanup assertion was not aligned.')
+          path.write_text(text, encoding='utf-8')
           PY
+
+      - name: Align evidence freshness scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('tests/scripts/BashProjectSupport.Tests.ps1')
+          text = path.read_text(encoding='utf-8')
+          anchor = "            'scripts/Test-PythonStaticAnalysis.ps1',\n"
+          addition = anchor + "            'scripts/bash-project-validation.py',\n"
+          if "            'scripts/bash-project-validation.py',\n" not in text:
+              text = text.replace(anchor, addition, 1)
+          if "            'scripts/bash-project-validation.py',\n" not in text:
+              raise SystemExit('Bash validator was not added to the freshness scope.')
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Restore normal Bash workflow
+        shell: bash
+        run: |
+          set -euo pipefail
           git show 3e17d4b81ba10f9035e0c41d7278e78ae9aa2506:.github/workflows/bash-ci.yml > .github/workflows/bash-ci.yml
+
+      - name: Commit and push repairs
+        shell: bash
+        run: |
+          set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add tests/scripts/BashExampleCleanup.Tests.ps1 tests/scripts/BashProjectSupport.Tests.ps1 .github/workflows/bash-ci.yml
