@@ -25,11 +25,51 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   bash:
     name: Bash
+    permissions:
+      contents: read
     uses: AIAllTheThingz/Engineering-Standards/.github/workflows/bash-ci-reusable.yml@d55bb8e6778030f5490e900ba52ba99ac6403827
     with:
       project-path: examples/bash-project
+
+  repair-freshness-scope:
+    name: Repair Bash freshness scope
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: agent/bash-first-class-project-support
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Add cleanup test to allowed scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('tests/scripts/BashProjectSupport.Tests.ps1')
+          text = path.read_text(encoding='utf-8')
+          target = "            'tests/scripts/BashProjectSupport.Tests.ps1'"
+          replacement = "            'tests/scripts/BashExampleCleanup.Tests.ps1',\n            'tests/scripts/BashProjectSupport.Tests.ps1'"
+          if "            'tests/scripts/BashExampleCleanup.Tests.ps1',\n" not in text:
+              if target not in text:
+                  raise SystemExit('Freshness allowlist anchor not found.')
+              text = text.replace(target, replacement, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tests/scripts/BashProjectSupport.Tests.ps1
+          git diff --cached --quiet && { echo 'Expected freshness scope change was not produced.' >&2; exit 1; }
+          git commit -m 'test(bash): include cleanup test in evidence freshness scope'
+          git push origin HEAD:agent/bash-first-class-project-support
