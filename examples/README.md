@@ -11,6 +11,7 @@ test entry point.
 | --- | --- |
 | [`powershell-project`](powershell-project/README.md) | PowerShell module, scripts, Pester tests, and evidence. |
 | [`python-project`](python-project/README.md) | Hash-locked Python tests, strict typing, audit, build, archive inspection, SBOM, and evidence. |
+| [`bash-project`](bash-project/README.md) | GNU Bash 5.2 syntax, ShellCheck, shfmt, Bats boundary tests, hash-locked tools, SBOM, and evidence. |
 | [`dotnet-project`](dotnet-project/README.md) | Runtime-dependent .NET governance example. |
 | [`database-project`](database-project/README.md) | Non-mutating migration validation. |
 | [`web-project`](web-project/README.md) | Runtime-dependent web governance example. |

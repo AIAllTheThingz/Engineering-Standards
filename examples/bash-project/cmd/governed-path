@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -u -o pipefail
+
+main() {
+  local script_directory
+  local mode='resolve'
+  local -a arguments=("$@")
+
+  if ! script_directory=$(
+    unset CDPATH
+    cd -- "${BASH_SOURCE[0]%/*}" && pwd -P
+  ); then
+    printf 'could not resolve the utility directory\n' >&2
+    return 70
+  fi
+
+  # The library path is fixed relative to this reviewed entry point.
+  source "$script_directory/../lib/governed_path.sh"
+
+  if ((${#arguments[@]} > 0)) && [[ ${arguments[0]} == '--require-file' ]]; then
+    mode='require-file'
+    arguments=("${arguments[@]:1}")
+  fi
+  if ((${#arguments[@]} != 2)); then
+    printf 'usage: governed-path [--require-file] ROOT RELATIVE_PATH\n' >&2
+    return 64
+  fi
+  if [[ ${arguments[0]} == -* || ${arguments[1]} == -* ]]; then
+    printf 'operands that begin with a hyphen are not accepted\n' >&2
+    return 64
+  fi
+
+  if [[ $mode == 'require-file' ]]; then
+    governed_path_require_file "${arguments[0]}" "${arguments[1]}"
+  else
+    governed_path_resolve "${arguments[0]}" "${arguments[1]}"
+  fi
+}
+
+main "$@"

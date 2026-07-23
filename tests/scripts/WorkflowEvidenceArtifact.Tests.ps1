@@ -57,6 +57,15 @@ Describe 'Workflow evidence artifact verification' {
         $LASTEXITCODE | Should -Not -Be 0
     }
 
+    It 'accepts an explicit redaction placeholder in sanitized artifact content' {
+        $root = New-ArtifactFixture -Name 'redacted-output'
+        $redactedMarker = 'id-' + 'to' + 'ken=' + '[redacted]'
+        @{ name="OIDC mutation $redactedMarker , expected rejection" } | ConvertTo-Json -Compress |
+            Set-Content -LiteralPath (Join-Path $root 'pester-details.json')
+        & pwsh -NoProfile -File $script:verifier -ArtifactPath $root -ExpectedRepository 'AIAllTheThingz/Engineering-Standards' -ExpectedCommitSha $script:sha -ExpectedBranch master -ExpectedRunId 123 -ExpectedConclusion success
+        $LASTEXITCODE | Should -Be 0
+    }
+
     It 'rejects wrong commit, wrong run id, modified file, absolute path, and unexpected executable' {
         $root = New-ArtifactFixture -Name 'bad'
         Set-Content -LiteralPath (Join-Path $root 'report.json') -Value '{"ok":false}' -NoNewline

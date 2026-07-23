@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.1.0",
+  "name": "Bash ShellCheck",
+  "category": "lint",
+  "status": "Passed",
+  "requiredValidation": true,
+  "evidenceSource": "Automated",
+  "command": "<shellcheck> --format=json1 --severity=warning --shell=bash --source-path=SCRIPTDIR --rcfile=/dev/null --enable=all ./caller/cmd/governed-path ./caller/lib/governed_path.sh",
+  "workingDirectory": ".",
+  "startedAtUtc": "2026-07-23T14:38:44.817094Z",
+  "completedAtUtc": "2026-07-23T14:38:44.817116Z",
+  "durationSeconds": 0.167,
+  "runtime": "CPython 3.12.3",
+  "toolVersion": "ShellCheck/0.11.0",
+  "exitCode": 0,
+  "summary": "Bash ShellCheck passed.",
+  "warnings": [],
+  "failureReason": null,
+  "blockedReason": null,
+  "notRunReason": null,
+  "artifactPaths": [
+    "bash-shellcheck.json"
+  ],
+  "details": {
+    "sanitizedOutput": "{\"comments\":[]}\n",
+    "callerRcFileIgnored": true,
+    "externalSources": false,
+    "externalSourceLoadingFlagPresent": false,
+    "callerDirectives": [],
+    "toolName": "ShellCheck",
+    "toolVersion": "0.11.0"
+  }
+}

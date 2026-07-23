@@ -111,6 +111,49 @@ If validation names `additionalForbiddenPatterns` or `reviewedAllowlist` as unsu
 
 ## Validator Dependency and Runtime Failures
 
+For functional Bash failures, first run the governed example from Ubuntu 24.04
+with GNU Bash 5.2, PowerShell 7, and Python 3.12:
+
+```powershell
+pwsh -NoProfile -File examples/bash-project/tools/Test-Example.ps1
+```
+
+Use its `-ToolCache <path> -Offline` mode only after the exact artifacts in
+`bash-toolchain.lock.json` have been cached and verified. A missing artifact or
+unavailable approved source is `Blocked`; a malformed lock, digest mismatch,
+unsafe archive entry, link, destination reuse, or actual-version mismatch is
+`Failed`. Do not substitute PATH-provided ShellCheck, shfmt, or Bats and do not
+update a digest merely to match downloaded content.
+
+If hosted Bash validation rejects a project before Bats runs, inspect the
+syntax, ShellCheck, formatting, filesystem, and toolchain phase records. Remove
+symbolic or hard links, FIFOs, sockets, devices, traversal, startup variables,
+caller `.shellcheckrc` or shfmt configuration, and executable shadows. Test
+failures are valid only after all non-executing gates passed. Download the
+artifact through the GitHub Actions API and preserve both the original ZIP and
+the independent artifact metadata JSON. Run
+`scripts/Test-BashWorkflowEvidenceArtifact.ps1` with `-ZipPath`,
+`-ArtifactMetadataPath`, the exact repository, commit, branch, run ID, artifact
+name and ID, expected conclusion, and controlled-failure phase before making a
+hosted success or expected-failure claim.
+
+Standard `@test "name" { ... }` Bats syntax is supported. Bash `-n`, ShellCheck,
+and shfmt apply only to declared `cmd/` and `lib/*.sh` sources; Bats owns parsing
+and execution of `spec/*.bats`. A rejected `project-path` still uploads
+sanitized failure evidence when trusted runtime and toolchain setup succeeds.
+
+If the hosted toolchain bootstrap is `Blocked` or `Failed`, the workflow
+normalizes and uploads its bootstrap record under the usual Bash artifact name
+before final enforcement fails the job. Completion and functional phase records
+are intentionally absent because those phases did not run.
+
+The trusted driver requires Linux Landlock ABI 1 or newer for local filesystem
+isolation. Hosted execution requires ABI 4 or newer so TCP connect and bind can
+also be denied. An unsupported kernel is `Blocked`; do not disable the sandbox
+or describe the TCP restriction as complete network isolation. Timeout cleanup
+uses both a process group and a child subreaper, so a surviving detached caller
+process is a validation failure.
+
 Run the dependency validator before changing a workflow or installing a
 replacement package:
 

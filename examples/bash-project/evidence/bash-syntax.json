@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.1.0",
+  "name": "Bash syntax",
+  "category": "syntax",
+  "status": "Passed",
+  "requiredValidation": true,
+  "evidenceSource": "Automated",
+  "command": "<bash> --noprofile --norc -n <declared-bash-files>",
+  "workingDirectory": ".",
+  "startedAtUtc": "2026-07-23T14:38:44.649723Z",
+  "completedAtUtc": "2026-07-23T14:38:44.649736Z",
+  "durationSeconds": 0.005,
+  "runtime": "CPython 3.12.3",
+  "toolVersion": "GNU Bash/5.2.21",
+  "exitCode": 0,
+  "summary": "Bash syntax passed.",
+  "warnings": [],
+  "failureReason": null,
+  "blockedReason": null,
+  "notRunReason": null,
+  "artifactPaths": [
+    "bash-syntax.json"
+  ],
+  "details": {
+    "sanitizedOutput": "cmd/governed-path: syntax passed\nlib/governed_path.sh: syntax passed",
+    "files": [
+      "cmd/governed-path",
+      "lib/governed_path.sh"
+    ],
+    "toolName": "GNU Bash",
+    "toolVersion": "5.2.21"
+  }
+}

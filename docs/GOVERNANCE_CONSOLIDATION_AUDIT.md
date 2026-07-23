@@ -85,9 +85,9 @@ Canonical completion statuses are:
 | [../agents/AGENTS_Infrastructure.md](../agents/AGENTS_Infrastructure.md) | 1.1.1 | Active | 2026-06-20 | Engineering Standards Maintainers | 1.1.1 | Present | Present | Present | Preserved. |
 | [../agents/AGENTS_WebFrontend.md](../agents/AGENTS_WebFrontend.md) | 1.1.1 | Active | 2026-06-21 | Engineering Standards Maintainers | 1.1.1 | Present | Present | Present | Preserved. |
 | [../agents/AGENTS_Python.md](../agents/AGENTS_Python.md) | 1.0.0 | Active | 2026-07-19 | Engineering Standards Maintainers | 1.0.0 | Present | Present | Present | Initial standards-foundation contract and mutation coverage. |
-| [../agents/AGENTS_Bash.md](../agents/AGENTS_Bash.md) | 1.0.0 | Active | 2026-07-19 | Engineering Standards Maintainers | 1.0.0 | Present | Present | Present | Initial standards-foundation contract and mutation coverage. |
+| [../agents/AGENTS_Bash.md](../agents/AGENTS_Bash.md) | 1.1.0 | Active | 2026-07-21 | Engineering Standards Maintainers | 1.1.0 | Present | Present | Present | Functional runtime, toolchain, isolated execution, evidence, and mutation contract. |
 
-Python and Bash are now first-class central technology standards. This foundation adds hierarchy, schema, deterministic validation, and regression contracts only; runtime validators, language workflows, package or distribution tooling, and functional examples remain future work. The existing Python and Bash review home labs remain inert demonstrations rather than production-certified skills, and neither an `OPENAI_API_KEY` nor paid model evaluation is required.
+Python and Bash are first-class central technology standards with isolated functional workflows and governed examples. Bash functional support uses GNU Bash 5.2 on Ubuntu 24.04 with exact hash-verified ShellCheck, shfmt, and Bats tools; its static validator remains separately non-executing. The existing Python and Bash review home labs remain inert demonstrations rather than production-certified skills, and neither an `OPENAI_API_KEY` nor paid model evaluation is required.
 
 ## Remaining Consolidation Areas
 

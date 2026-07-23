@@ -3,14 +3,14 @@
 | Field | Value |
 | --- | --- |
 | Status | Active |
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Owner role | Engineering Standards Maintainers |
-| Last reviewed | 2026-07-19 |
+| Last reviewed | 2026-07-21 |
 | Changelog | See [../CHANGELOG.md](../CHANGELOG.md). |
 
 ## Purpose
 
-This standard defines enforceable requirements for AI agents creating, reviewing, or modifying Bash scripts, libraries, automation, build and deployment entry points, scheduled jobs, and operational tooling. It establishes governance foundations without providing a repository-wide Bash runtime toolchain or workflow.
+This standard defines enforceable requirements for AI agents creating, reviewing, or modifying Bash scripts, libraries, automation, build and deployment entry points, scheduled jobs, and operational tooling. It also defines the supported functional Bash baseline, trusted toolchain, reusable workflow boundary, and required evidence.
 
 ## Applicability And Inheritance
 
@@ -96,7 +96,11 @@ Scripts MUST use locking when concurrent execution is unsafe. PID files alone MU
 
 Tests MUST cover syntax, positive, negative, boundary, destructive-target, quoting, signal, cleanup, pipeline, command-failure, and failure-path behavior. Tests MUST use synthetic targets and MUST NOT execute against production systems. Destructive samples MUST NOT be executed by standards validation.
 
-Missing tools or environments MUST be reported as `NotRun` or `Blocked` with an exact reason and MUST NOT be converted to `Passed`. Bash repositories MUST declare approved syntax, static-analysis, formatting, and test tools; this foundation does not mandate ShellCheck, shfmt, Bats, or exact versions.
+Missing tools or environments MUST be reported as `NotRun` or `Blocked` with an exact reason and MUST NOT be converted to `Passed`. A missing offline artifact or unavailable approved source is `Blocked`; a malformed lock, hash mismatch, unsafe archive, unexpected tool version, or incomplete required evidence is `Failed`.
+
+The supported functional baseline is GNU Bash 5.2 on Ubuntu 24.04 x86-64 with ShellCheck 0.11.0, shfmt 3.13.1, and Bats 1.13.0. Exact sources and SHA-256 values are declared in `examples/bash-project/bash-toolchain.lock.json`. Other shells, Bash versions, operating systems, architectures, and BSD utility semantics require their own execution evidence and are not implied by this baseline.
+
+Functional validation MUST run only declared test entry points after syntax, ShellCheck, formatting, toolchain, path, archive, and filesystem trust-boundary gates pass. Bash syntax, ShellCheck, and shfmt gates apply to declared `cmd/` and `lib/*.sh` sources; standard `spec/*.bats` syntax is parsed and executed only by the exact Bats runtime after those gates pass. It MUST use an isolated read-only project copy, a fixed allowlisted environment, bounded files and output, explicit timeouts, Linux Landlock filesystem rules, `no_new_privs`, subreaper cleanup, and child process-group termination. Hosted execution MUST require Landlock ABI 4 or newer and deny TCP connect and bind operations. It MUST reject symbolic links, hard links, traversal, special files, root overlap, caller tool configuration, startup hooks, and executable shadows before caller Bash code executes.
 
 ## Static-Analysis Requirements
 
@@ -112,15 +116,20 @@ Scheduled, daemonized, privileged, or deployment scripts MUST define identity, e
 
 ## Validation Commands
 
-Each Bash repository MUST document exact interpreter, syntax, analysis, formatting, and test commands. For this central standards foundation, deterministic validation is:
+Each Bash repository MUST document exact interpreter, syntax, analysis, formatting, and test commands. The central standards and governed example use:
 
 ```powershell
 pwsh -NoProfile -File scripts/Test-AgentStandards.ps1 -Path .
+pwsh -NoProfile -File examples/bash-project/tools/Test-Example.ps1
 ```
+
+The reusable hosted entry point is `.github/workflows/bash-ci-reusable.yml`, called at a full immutable 40-character standards commit SHA with a repository-relative `project-path`. It uses exact `/usr/bin/bash`, invokes ShellCheck with a trusted `/dev/null` rc file and warning severity, invokes shfmt with fixed formatting flags for declared Bash sources, and invokes Bats only for project-declared Bats specs. Boundary rejection still produces normalized failure evidence before enforcement. The existing `scripts/Test-BashStaticAnalysis.ps1` remains a separate non-executing static control and MUST NOT be made functional.
 
 ## Evidence Requirements
 
 Evidence MUST comply with [../governance/COMPLETION_EVIDENCE.md](../governance/COMPLETION_EVIDENCE.md), record exact commands, working directory, shell and utility versions, exit codes, limitations, and artifacts, and distinguish local from hosted execution. Agents MUST NOT fabricate shell compatibility, analysis, tests, workflow runs, approvals, or production behavior.
+
+Functional artifacts MUST contain normalized syntax, ShellCheck, shfmt, Bats, toolchain-bootstrap, toolchain, CycloneDX SBOM, aggregate test, completion, evidence-validation, and step-outcome records. Records MUST contain only sanitized repository-relative identities and MUST NOT contain workstation paths, credentials, startup variables, or token-like values. Local runs MUST record hosted execution as `NotRun`; only a downloaded, identity-verified GitHub artifact may support a hosted `Passed` claim.
 
 ## Rollback Requirements
 
@@ -153,4 +162,5 @@ Exceptions MUST follow [../governance/EXCEPTION_PROCESS.md](../governance/EXCEPT
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| 1.1.0 | 2026-07-21 | Added the supported functional Bash runtime, hash-locked ShellCheck, shfmt, and Bats toolchain, isolated reusable workflow boundary, example project, and fail-closed evidence contract. |
 | 1.0.0 | 2026-07-19 | Established the Bash standards, hierarchy, schema, validation, and evidence foundation. |

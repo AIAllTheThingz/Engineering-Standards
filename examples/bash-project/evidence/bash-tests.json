@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "1.1.0",
+  "name": "Bash tests",
+  "category": "unit",
+  "status": "Passed",
+  "requiredValidation": true,
+  "evidenceSource": "Automated",
+  "command": "<bats> --tap --timing ./caller/spec/governed_path.bats",
+  "workingDirectory": ".",
+  "startedAtUtc": "2026-07-23T14:38:45.372776Z",
+  "completedAtUtc": "2026-07-23T14:38:45.372793Z",
+  "durationSeconds": 0.549,
+  "runtime": "CPython 3.12.3",
+  "toolVersion": "Bats/1.13.0",
+  "exitCode": 0,
+  "summary": "Bash tests passed.",
+  "warnings": [],
+  "failureReason": null,
+  "blockedReason": null,
+  "notRunReason": null,
+  "artifactPaths": [
+    "bash-tests.json"
+  ],
+  "details": {
+    "sanitizedOutput": "1..11\nok 1 resolves_an_existing_relative_path in 15ms\nok 2 preserves_spaces_as_one_argument in 15ms\nok 3 accepts_a_nonexistent_path_within_the_boundary in 14ms\nok 4 rejects_traversal in 12ms\nok 5 rejects_an_absolute_candidate in 12ms\nok 6 rejects_a_trailing_separator_for_a_required_file in 13ms\nok 7 rejects_a_missing_required_file in 15ms\nok 8 rejects_a_symlink_to_an_in_root_file in 17ms\nok 9 rejects_a_symlinked_directory_component in 17ms\nok 10 rejects_a_symlinked_repository_root in 14ms\nok 11 propagates_a_child_command_failure in 18ms\n",
+    "specFiles": [
+      "spec/governed_path.bats"
+    ],
+    "timedOut": false,
+    "projectReadOnly": true,
+    "landlockAbi": 7,
+    "filesystemSandboxed": true,
+    "tcpConnectAndBindRestricted": true,
+    "toolName": "Bats",
+    "toolVersion": "1.13.0"
+  }
+}

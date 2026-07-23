@@ -429,9 +429,9 @@
     {
       "path": "agents/AGENTS_Bash.md",
       "kind": "technology-standard",
-      "declaredVersion": "1.0.0",
+      "declaredVersion": "1.1.0",
       "status": "Active",
-      "lastReviewed": "2026-07-19",
+      "lastReviewed": "2026-07-21",
       "ownerRole": "Engineering Standards Maintainers",
       "parentDocuments": ["agents/AGENTS_Base.md"],
       "childOrHandoffStandards": ["agents/AGENTS_Infrastructure.md","agents/AGENTS_Integration.md","agents/AGENTS_WorkerService.md","agents/AGENTS_Database.md","agents/AGENTS_PowerShell.md","agents/AGENTS_WebFrontend.md","agents/AGENTS_DotNet.md","agents/AGENTS_Python.md"],
@@ -441,12 +441,12 @@
       "exceptionProcessReferenced": true,
       "completionEvidenceReferenced": true,
       "validationCommandsPresent": true,
-      "validatorMinimumVersion": "1.0.0",
+      "validatorMinimumVersion": "1.1.0",
       "positiveValidatorCoverage": "Present",
       "negativeWeakeningCoverage": "Present",
       "pesterMutationCoverage": "Present",
       "identifiedDiscrepancies": [],
-      "resolution": "Initial Bash standard registered with deterministic semantic validation and mutation coverage."
+      "resolution": "Bash standard aligned with the functional runtime, hash-locked toolchain, reusable workflow, isolated execution boundary, evidence contract, and mutation coverage."
     },
     {
       "path": "agents/AGENTS_WebFrontend.md",

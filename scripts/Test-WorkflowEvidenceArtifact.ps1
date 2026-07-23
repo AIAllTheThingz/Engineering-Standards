@@ -142,7 +142,7 @@ $absoluteMatches = @(Select-String -LiteralPath $files.FullName -Pattern '([A-Za
 foreach ($match in $absoluteMatches) { Add-Result Failed 'Absolute path leaked into artifact.' ([System.IO.Path]::GetRelativePath($root, $match.Path).Replace('\','/')) }
 
 $secretPatterns = @(
-    '(?i)(password|passwd|pwd|secret|client[_-]?secret|api[_-]?key|access[_-]?token|refresh[_-]?token|token)\s*[:=]\s*\S{8,}',
+    '(?i)(password|passwd|pwd|secret|client[_-]?secret|api[_-]?key|access[_-]?token|refresh[_-]?token|token)\s*[:=]\s*(?!\[redacted\](?:\s|[,}\]"]|$))\S{8,}',
     '(?i)Authorization\s*[:=]\s*(Bearer|Basic)\s+\S+',
     '(?i)\b(gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,})\b',
     '(?i)https?://[^/\s:@]+:[^@\s/]+@'

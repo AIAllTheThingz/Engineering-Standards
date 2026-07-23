@@ -118,13 +118,13 @@ if (-not $commit) {
     if ($LASTEXITCODE -ne 0 -or -not $commit) { $commit = 'unknown' }
 }
 $validatedCommit = if ($ValidatedCommitSha) { $ValidatedCommitSha } else { $commit }
-$branch = $env:GITHUB_REF_NAME
+$effectiveBranch = $env:GITHUB_REF_NAME
 if ($Branch) {
-    $branch = $Branch
+    $effectiveBranch = $Branch
 }
-elseif (-not $branch) {
-    $branch = (& git -C $sourceRoot branch --show-current 2>$null)
-    if ($LASTEXITCODE -ne 0 -or -not $branch) { $branch = 'unknown' }
+elseif (-not $effectiveBranch) {
+    $effectiveBranch = (& git -C $sourceRoot branch --show-current 2>$null)
+    if ($LASTEXITCODE -ne 0 -or -not $effectiveBranch) { $effectiveBranch = 'unknown' }
 }
 $githubRunId = if ($EvidenceExecutionContext -eq 'GitHubActions' -and $env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID } else { $null }
 $githubRunAttempt = if ($EvidenceExecutionContext -eq 'GitHubActions' -and $env:GITHUB_RUN_ATTEMPT) { $env:GITHUB_RUN_ATTEMPT } else { $null }
@@ -247,7 +247,7 @@ $evidence = [ordered]@{
     commitSha = $validatedCommit.Trim()
     validatedCommitSha = $validatedCommit.Trim()
     evidenceCommitSha = $(if ($EvidenceCommitSha) { $EvidenceCommitSha.Trim() } else { $null })
-    branch = $branch.Trim()
+    branch = $effectiveBranch.Trim()
     pullRequest = $null
     governanceVersion = $GovernanceVersion
     riskClassification = $RiskClassification

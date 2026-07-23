@@ -69,6 +69,7 @@ Describe 'Agent standards validation' {
             @{ Name='secret tracing controls removed'; Old='Secrets MUST NOT be exposed through `set -x`'; New='Secrets MAY be exposed through tracing' },
             @{ Name='failure propagation weakened'; Old='Scripts MUST preserve command and pipeline failure exit codes'; New='Scripts MAY ignore command and pipeline failures' },
             @{ Name='negative testing made optional'; Old='Tests MUST cover syntax, positive, negative, boundary, destructive-target, quoting, signal, cleanup, pipeline, command-failure, and failure-path behavior'; New='Tests MAY cover positive behavior' },
+            @{ Name='functional execution boundary weakened'; Old='Functional validation MUST run only declared test entry points'; New='Functional validation MAY run arbitrary project entry points' },
             @{ Name='base inheritance removed'; Old='This standard inherits [AGENTS_Base.md](AGENTS_Base.md).'; New='This standard is independent of the base standard.' }
         ) {
             $script:tempRoot = New-AgentStandardsFixture

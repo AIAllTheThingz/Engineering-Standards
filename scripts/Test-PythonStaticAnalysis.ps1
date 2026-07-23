@@ -33,11 +33,21 @@ try {
             $reviewedExecutorFinding = (
                 $Profile -eq 'standards-maintainer' -and
                 $item.code -eq 'S603' -and
-                $rel -eq 'scripts/python-project-validation.py' -and
-                $item.location.row -eq 126 -and
-                $item.message -eq '`subprocess` call: check for execution of untrusted input'
+                $item.message -eq '`subprocess` call: check for execution of untrusted input' -and
+                "${rel}:$($item.location.row)" -in @(
+                    'scripts/python-project-validation.py:126',
+                    'scripts/Install-BashProjectToolchain.py:234',
+                    'scripts/bash-project-validation.py:433'
+                )
             )
-            if($reviewedExecutorFinding){ continue }
+            $reviewedHttpsFinding = (
+                $Profile -eq 'standards-maintainer' -and
+                $item.code -eq 'S310' -and
+                $rel -eq 'scripts/Install-BashProjectToolchain.py' -and
+                $item.location.row -eq 210 -and
+                $item.message -eq 'Audit URL open for permitted schemes. Allowing use of `file:` or custom schemes is often unexpected.'
+            )
+            if($reviewedExecutorFinding -or $reviewedHttpsFinding){ continue }
             $findings.Add([ordered]@{tool='Ruff';rule=$item.code;path=$rel;line=$item.location.row;message=$item.message})
         }
     }

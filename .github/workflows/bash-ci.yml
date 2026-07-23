@@ -1,0 +1,35 @@
+name: Bash example CI
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/bash-ci*.yml'
+      - 'workflows/bash-ci.yml'
+      - 'examples/bash-project/**'
+      - 'scripts/Install-BashProjectToolchain.py'
+      - 'scripts/bash-project-validation.py'
+      - 'scripts/Normalize-BashFunctionalEvidence.py'
+      - 'scripts/New-CompletionEvidence.ps1'
+      - 'scripts/GovernanceValidation.psm1'
+      - 'scripts/Test-BashWorkflowEvidenceArtifact.ps1'
+      - 'actions/validate-evidence/Invoke-EvidenceValidation.ps1'
+      - 'tests/bash/**'
+      - 'tests/scripts/BashProjectSupport.Tests.ps1'
+      - 'tests/scripts/BashExampleCleanup.Tests.ps1'
+      - 'agents/AGENTS_Bash.md'
+      - 'docs/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bash:
+    name: Bash
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/bash-ci-reusable.yml@d55bb8e6778030f5490e900ba52ba99ac6403827
+    with:
+      project-path: examples/bash-project

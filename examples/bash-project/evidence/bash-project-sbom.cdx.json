@@ -1,0 +1,139 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:a86a5fc3-33c0-ccb4-fa3f-0381f3e0116b",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-07-23T14:38:45.374759Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "bash-project-validation",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "name": "bash-project",
+      "version": "1.0.0",
+      "bom-ref": "pkg:generic/bash-project@1.0.0"
+    }
+  },
+  "components": [
+    {
+      "type": "application",
+      "name": "ShellCheck",
+      "version": "0.11.0",
+      "purl": "pkg:github/koalaman/shellcheck@v0.11.0",
+      "bom-ref": "pkg:github/koalaman/shellcheck@v0.11.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-3.0-only"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198"
+        }
+      ],
+      "properties": [
+        {
+          "name": "engineering-standards:artifact",
+          "value": "shellcheck-v0.11.0.linux.x86_64.tar.xz"
+        },
+        {
+          "name": "engineering-standards:source",
+          "value": "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "name": "shfmt",
+      "version": "3.13.1",
+      "purl": "pkg:github/mvdan/sh@v3.13.1",
+      "bom-ref": "pkg:github/mvdan/sh@v3.13.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "fb096c5d1ac6beabbdbaa2874d025badb03ee07929f0c9ff67563ce8c75398b1"
+        }
+      ],
+      "properties": [
+        {
+          "name": "engineering-standards:artifact",
+          "value": "shfmt_v3.13.1_linux_amd64"
+        },
+        {
+          "name": "engineering-standards:source",
+          "value": "https://github.com/mvdan/sh/releases/download/v3.13.1/shfmt_v3.13.1_linux_amd64"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "name": "Bats",
+      "version": "1.13.0",
+      "purl": "pkg:npm/bats@1.13.0",
+      "bom-ref": "pkg:npm/bats@1.13.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b7ae290dbc7e44709d5e3430698f3048a978bef871c6063f5fca49a20e5aaf58"
+        }
+      ],
+      "properties": [
+        {
+          "name": "engineering-standards:artifact",
+          "value": "bats-1.13.0.tgz"
+        },
+        {
+          "name": "engineering-standards:source",
+          "value": "https://registry.npmjs.org/bats/-/bats-1.13.0.tgz"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "name": "GNU Bash",
+      "version": "5.2",
+      "bom-ref": "pkg:generic/gnu-bash@5.2",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "bc5945feb8bd26203ebfafea5ce1878bb2e32cb8fb50ab7ae395cfb1e1aaaef1"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:generic/bash-project@1.0.0",
+      "dependsOn": [
+        "pkg:github/koalaman/shellcheck@v0.11.0",
+        "pkg:github/mvdan/sh@v3.13.1",
+        "pkg:npm/bats@1.13.0",
+        "pkg:generic/gnu-bash@5.2"
+      ]
+    }
+  ]
+}

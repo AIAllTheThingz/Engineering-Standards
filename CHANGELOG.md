@@ -6,6 +6,11 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ### Added
 
+- Added first-class functional Bash support with GNU Bash 5.2 on Ubuntu 24.04,
+  exact hash-verified ShellCheck 0.11.0, shfmt 3.13.1, and Bats 1.13.0,
+  fail-closed isolated execution, a reusable workflow, a safe maintained example,
+  regression and adversarial tests, CycloneDX inventory, and structured evidence.
+
 - Added functional governed Python support with an isolated reusable workflow,
   exact hash-locked pytest, mypy, pip-audit, build and SBOM tooling, safe wheel
   and sdist inspection, fresh-environment smoke testing, structured evidence,

@@ -74,7 +74,23 @@ An exception to a mandatory canary scenario or verification requirement must fol
 
 ## Limitations
 
-The governance canary validates the reusable static contract and its security boundary. A Python functional-workflow release additionally requires a clean governed Python caller pinned to the exact candidate SHA and hosted proof for static analysis, pytest, mypy, audit, build, archive inspection, isolated wheel installation, SBOM, completion evidence, and caller-configuration resistance. It does not exercise deployments, private repositories, GitHub Enterprise Server, or production integrations.
+The governance canary validates the reusable static contract and its security boundary. A Python functional-workflow release additionally requires a clean governed Python caller pinned to the exact candidate SHA and hosted proof for static analysis, pytest, mypy, audit, build, archive inspection, isolated wheel installation, SBOM, completion evidence, and caller-configuration resistance.
+
+A Bash functional-workflow release additionally requires the separate
+`bash-functional` canary caller pinned to the exact candidate SHA. Its success
+scenario must prove GNU Bash syntax, ShellCheck, shfmt, Bats, exact tool
+provenance, SBOM, completion evidence, and a sanitized artifact. The independent
+manual scenarios cover ShellCheck failure, formatting failure, Bats failure,
+and a caller-configuration bypass attempt that the trusted baseline neutralizes.
+Only one scenario may be selected per dispatch, every intended negative
+scenario must fail for its named functional phase after evidence upload, and no
+scenario may add secrets, environments, write permission, copied central
+implementation, or production behavior. Environment, path-shadow, link,
+special-file, archive, timeout, and evidence attacks remain mandatory central
+regression cases.
+
+Neither functional canary exercises deployments, private repositories, GitHub
+Enterprise Server, or production integrations.
 
 ## Related
 

@@ -1,0 +1,20 @@
+# Distribution template. Copy this file into .github/workflows/ before use.
+name: Governed Bash CI
+
+on:
+  workflow_call:
+    inputs:
+      project-path:
+        type: string
+        required: false
+        default: .
+
+permissions:
+  contents: read
+
+jobs:
+  bash:
+    name: Bash validation
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/bash-ci-reusable.yml@d55bb8e6778030f5490e900ba52ba99ac6403827
+    with:
+      project-path: ${{ inputs.project-path }}

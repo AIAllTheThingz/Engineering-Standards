@@ -136,6 +136,16 @@ The functional job uses CPython 3.12.11 and a fully hashed project-owned lock
 to run pytest, strict mypy, pip-audit, package build and inspection, isolated
 wheel installation, an import smoke test, SBOM generation, and evidence upload.
 
+Governed Bash projects pair the non-executing static workflow with
+`.github/workflows/bash-ci-reusable.yml`, also pinned to a full immutable SHA.
+The functional job uses GNU Bash 5.2 on Ubuntu 24.04 and exact hash-verified
+ShellCheck 0.11.0, shfmt 3.13.1, and Bats 1.13.0. Caller code is copied into a
+bounded read-only workspace and only its declared Bats entry point executes,
+after syntax, analysis, formatting, toolchain, path, and filesystem gates pass.
+Caller execution is constrained with Linux Landlock, no-new-privileges, and
+subreaper process cleanup; hosted runs also require Landlock ABI 4 or newer to
+deny TCP connect and bind operations.
+
 ## Example Local AGENTS.md
 
 ```markdown
@@ -245,17 +255,26 @@ The PowerShell example at `examples/powershell-project` is functional and includ
 pwsh -NoProfile -File examples/powershell-project/tools/Test-Example.ps1
 ```
 
+The Bash example at `examples/bash-project` is a safe maintained project with
+positive, negative, quoting, traversal, symlink, cleanup, and child-failure
+coverage. Run it from Ubuntu 24.04 with PowerShell 7 and Python 3.12:
+
+```powershell
+pwsh -NoProfile -File examples/bash-project/tools/Test-Example.ps1
+```
+
 The repository now separates example types explicitly:
 
-Python and Bash have first-class central standards plus mandatory trusted static
-validation when maintained source is present. Python uses inert standard-library
-AST parsing and isolated Ruff; Bash uses no-execution syntax parsing and isolated
-ShellCheck. Exact tools are installed from the hash-locked validator cache and
-never import, source, or execute caller code. Language functional workflows,
-tests, package/distribution tooling, and functional project examples remain
-deferred.
+Python and Bash have first-class central standards, mandatory trusted static
+validation, isolated functional workflows, and maintained examples. Static
+Python and Bash controls remain non-executing. Functional Bash execution is a
+separate no-secret, read-only workflow whose fixed trusted driver rejects
+caller configuration, startup hooks, links, special files, root overlap, and
+unbounded content before it runs only the declared test entry point.
 
 - `examples/powershell-project`: functional PowerShell example.
+- `examples/python-project`: hash-locked functional Python package example.
+- `examples/bash-project`: hash-locked functional Bash path-validation example.
 - `examples/dotnet-project`: runtime-dependent .NET example.
 - `examples/database-project`: non-mutating migration validation example.
 - `examples/web-project`: runtime-dependent web example.
