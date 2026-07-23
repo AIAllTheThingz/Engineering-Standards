@@ -37,7 +37,7 @@ try {
                 "${rel}:$($item.location.row)" -in @(
                     'scripts/python-project-validation.py:126',
                     'scripts/Install-BashProjectToolchain.py:234',
-                    'scripts/bash-project-validation.py:433'
+                    'scripts/bash-project-validation.py:434'
                 )
             )
             $reviewedHttpsFinding = (
