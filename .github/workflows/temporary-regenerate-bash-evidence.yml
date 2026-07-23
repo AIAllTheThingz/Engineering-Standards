@@ -11,61 +11,60 @@ jobs:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_SHA: 97883c8b6d126e0c4f31e0110e87cc185d929a24
     steps:
-      - name: Checkout repair branch
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          ref: agent/bash-first-class-project-support
-          fetch-depth: 0
-          persist-credentials: true
-
-      - name: Generate evidence from clean pre-workflow source
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $sourceSha = (& git rev-parse HEAD^).Trim()
-          if ($LASTEXITCODE -ne 0 -or $sourceSha -notmatch '^[0-9a-f]{40}$') {
-            throw 'Unable to resolve the clean evidence source commit.'
-          }
-          $sourceRoot = Join-Path $env:RUNNER_TEMP 'bash-evidence-source'
-          & git worktree add --detach $sourceRoot $sourceSha
-          if ($LASTEXITCODE -ne 0) { throw 'Unable to create the clean evidence source worktree.' }
-          try {
-            $example = Join-Path $sourceRoot 'examples/bash-project'
-            $cache = Join-Path $env:RUNNER_TEMP 'bash-tool-cache'
-            & pwsh -NoProfile -File (Join-Path $example 'tools/Test-Example.ps1') -ProjectPath $example -ToolCache $cache
-            if ($LASTEXITCODE -ne 0) { throw "Bash local evidence generation failed with exit code $LASTEXITCODE." }
-            $destination = Join-Path $env:GITHUB_WORKSPACE 'examples/bash-project/evidence'
-            $required = @(
-              'bash-formatting.json',
-              'bash-project-sbom.cdx.json',
-              'bash-shellcheck.json',
-              'bash-syntax.json',
-              'bash-tests.json',
-              'bash-toolchain-bootstrap.json',
-              'bash-toolchain.json',
-              'local-completion-result.json',
-              'local-test-results.json'
-            )
-            foreach ($name in $required) {
-              $source = Join-Path $example "evidence/$name"
-              if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Missing generated evidence file: $name" }
-              Copy-Item -LiteralPath $source -Destination (Join-Path $destination $name) -Force
-            }
-            $completion = Get-Content -LiteralPath (Join-Path $destination 'local-completion-result.json') -Raw | ConvertFrom-Json
-            if ($completion.validatedCommitSha -cne $sourceSha -or $completion.status -cne 'NotRun') {
-              throw 'Generated local completion evidence has incorrect source identity or status.'
-            }
-          }
-          finally {
-            & git worktree remove --force $sourceRoot 2>$null
-          }
-          Remove-Item -LiteralPath (Join-Path $env:GITHUB_WORKSPACE '.github/workflows/temporary-regenerate-bash-evidence.yml') -Force
-
-      - name: Commit regenerated evidence and remove temporary workflow
+      - name: Generate and commit clean local evidence
         shell: bash
         run: |
           set -euo pipefail
+          repo="$RUNNER_TEMP/repair-repo"
+          source_root="$RUNNER_TEMP/bash-evidence-source"
+          cache="$RUNNER_TEMP/bash-tool-cache"
+          git clone --quiet --no-tags --branch agent/bash-first-class-project-support \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$repo"
+          cd "$repo"
+          git worktree add --detach "$source_root" "$SOURCE_SHA" >/dev/null
+          example="$source_root/examples/bash-project"
+          log="$RUNNER_TEMP/bash-evidence-generation.log"
+          set +e
+          pwsh -NoProfile -File "$example/tools/Test-Example.ps1" \
+            -ProjectPath "$example" -ToolCache "$cache" 2>&1 | tee "$log"
+          generator_exit=${PIPESTATUS[0]}
+          set -e
+          if [[ $generator_exit -ne 0 ]]; then
+            echo '--- Bash evidence generator failure ---' >&2
+            tail -n 80 "$log" >&2
+            exit "$generator_exit"
+          fi
+          destination="$repo/examples/bash-project/evidence"
+          required=(
+            bash-formatting.json
+            bash-project-sbom.cdx.json
+            bash-shellcheck.json
+            bash-syntax.json
+            bash-tests.json
+            bash-toolchain-bootstrap.json
+            bash-toolchain.json
+            local-completion-result.json
+            local-test-results.json
+          )
+          for name in "${required[@]}"; do
+            test -f "$example/evidence/$name"
+            cp "$example/evidence/$name" "$destination/$name"
+          done
+          python3 - "$destination/local-completion-result.json" "$SOURCE_SHA" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          record = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8-sig'))
+          assert record['validatedCommitSha'] == sys.argv[2]
+          assert record['commitSha'] == sys.argv[2]
+          assert record['status'] == 'NotRun'
+          assert 'GitHub-hosted Bash workflow execution' in record['commandsNotExecuted']
+          PY
+          rm -f "$repo/.github/workflows/temporary-regenerate-bash-evidence.yml"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add examples/bash-project/evidence .github/workflows/temporary-regenerate-bash-evidence.yml
