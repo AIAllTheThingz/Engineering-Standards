@@ -138,7 +138,8 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: |
-          $trustedPython = (Get-Command python -CommandType Application -ErrorAction Stop).Source
+          $trustedPython = (Get-Command python -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
+          if ([string]::IsNullOrWhiteSpace($trustedPython) -or -not [IO.Path]::IsPathFullyQualified($trustedPython)) { throw 'Trusted Python path is missing or malformed.' }
           "TRUSTED_PYTHON=$trustedPython" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           $version = & $trustedPython -I -c 'import platform; print(platform.python_version())'
           if ($LASTEXITCODE -ne 0 -or $version -cne '3.12.11') { throw 'Trusted orchestration requires exact Python 3.12.11.' }

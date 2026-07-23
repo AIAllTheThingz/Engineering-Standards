@@ -106,6 +106,7 @@ function Test-BashWorkflowControls {
     $pythonExport = $Text.IndexOf('"TRUSTED_PYTHON=$trustedPython"')
     $installerInvocation = $Text.IndexOf('& $trustedPython -I standards/scripts/Install-BashProjectToolchain.py')
     if ($pythonExport -lt 0 -or $installerInvocation -lt 0 -or $pythonExport -gt $installerInvocation) { $failures.Add('late-trusted-python-export') }
+    if ($Text -notmatch 'Get-Command python.*?Select-Object -First 1') { $failures.Add('ambiguous-trusted-python-path') }
     $preservation = [regex]::Match($Text, '(?ms)\$preservationOutcomes\s*=.*?\$preservationFailures')
     if (-not $preservation.Success -or $preservation.Value -match '\bregression\b') { $failures.Add('unrelated-bootstrap-preservation-gate') }
     if ($Text -match "(?ms)- name: Run governed functional Bash validation\s+id: functional\s+if:.*steps\.boundary\.outcome == 'success'") { $failures.Add('missing-boundary-failure-evidence') }
@@ -458,6 +459,7 @@ raise SystemExit(2)
         @{ Name='bootstrap failure upload is not enforced'; Mutate={ param($text) $text.Replace("`$bootstrapFailed = `$outcomes.bootstrap -cne 'success'",'$bootstrapFailed = $false') }; Expected='unsafe-bootstrap-failure-upload' },
         @{ Name='boundary failure skips evidence driver'; Mutate={ param($text) $text.Replace("if: always() && steps.python.outcome == 'success' && steps.bootstrap.outcome == 'success'","if: always() && steps.boundary.outcome == 'success' && steps.python.outcome == 'success' && steps.bootstrap.outcome == 'success'") }; Expected='missing-boundary-failure-evidence' },
         @{ Name='trusted Python export delayed until after installer'; Mutate={ param($text) $text.Replace('"TRUSTED_PYTHON=$trustedPython" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append','').Replace('"TRUSTED_SHELLCHECK=$($paths.shellcheck)",','"TRUSTED_PYTHON=$trustedPython",`n            "TRUSTED_SHELLCHECK=$($paths.shellcheck)",') }; Expected='late-trusted-python-export' },
+        @{ Name='trusted Python path accepts every PATH match'; Mutate={ param($text) $text.Replace(' | Select-Object -First 1','') }; Expected='ambiguous-trusted-python-path' },
         @{ Name='regression gates bootstrap preservation'; Mutate={ param($text) $text.Replace('staging = $outcomes.staging','regression = $outcomes.regression`n              staging = $outcomes.staging') }; Expected='unrelated-bootstrap-preservation-gate' }
     ) {
         $mutant = & $Mutate $script:workflow
