@@ -63,7 +63,8 @@ jobs:
           ref: ${{ job.workflow_sha }}
           path: standards
           persist-credentials: false
-          fetch-depth: 1
+          # Trusted tests validate checked-in evidence against historical standards commits.
+          fetch-depth: 0
 
       - name: Validate workflow identity and inputs
         id: inputs
