@@ -41,7 +41,7 @@ The central governance workflow interface remains `1.0.0`.
 
 Published `v1.1.0` remains supported at immutable commit `2704049d7e826975d956611b194214dd79ea3686`. Current development retains project-manifest schemas `1.0.0` and `1.1.0` and adds schema `1.2.0` as Preview. Test-evidence and completion-result schemas remain `1.0.0` and `1.1.0`.
 
-The independently canary-validated central downstream workflow remains `de32b77e2043f5336a54b92ab9ed867abe93ba7e`. The newer self-CI implementation `a9158d0c7dc37db966da3a518c6155645e985b0c` is not promoted to downstream compatibility authority without a fresh external canary.
+The independently canary-validated central downstream workflow remains `de32b77e2043f5336a54b92ab9ed867abe93ba7e`. Repository self-CI is currently pinned to immutable implementation `335452c509991729cf60d94eb756f8f59d190011`; that self-CI authority is not promoted to downstream compatibility authority without a fresh external canary. The earlier `a9158d0c7dc37db966da3a518c6155645e985b0c` pin is historical and was superseded during PR #90 validation.
 
 The Preview functional workflow authorities are recorded separately:
 
