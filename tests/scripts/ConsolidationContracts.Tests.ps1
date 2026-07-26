@@ -1,5 +1,6 @@
 BeforeAll {
     $script:root = (Resolve-Path "$PSScriptRoot/../..").Path
+    Import-Module (Join-Path $script:root 'scripts/GovernanceValidation.psm1') -Force
     $script:standardsPath = Join-Path $script:root 'governance/standards-consistency.json'
     $script:standardsSchema = Join-Path $script:root 'schemas/standards-consistency.schema.json'
     $script:compatibilityPath = Join-Path $script:root 'governance/downstream-compatibility.json'
@@ -7,9 +8,33 @@ BeforeAll {
 }
 
 Describe 'Consolidation contract regression coverage' {
-    It 'validates both owned records against their current schemas' {
+    It 'validates both owned version 1.1.0 records against their current schemas and semantics' {
+        $standards = Get-Content -LiteralPath $script:standardsPath -Raw | ConvertFrom-Json
+        $compatibility = Get-Content -LiteralPath $script:compatibilityPath -Raw | ConvertFrom-Json
+        $standards.schemaVersion | Should -BeExactly '1.1.0'
+        $compatibility.schemaVersion | Should -BeExactly '1.1.0'
         (Get-Content -LiteralPath $script:standardsPath -Raw | Test-Json -SchemaFile $script:standardsSchema) | Should -BeTrue
         (Get-Content -LiteralPath $script:compatibilityPath -Raw | Test-Json -SchemaFile $script:compatibilitySchema) | Should -BeTrue
+        @((Test-GovernanceJsonDocument -Path $script:standardsPath -Kind standards-consistency) | Where-Object status -EQ Failed).Count | Should -Be 0
+    }
+
+    It 'preserves downstream compatibility schema 1.0.0 without functional workflows' {
+        $matrix = Get-Content -LiteralPath $script:compatibilityPath -Raw | ConvertFrom-Json
+        $matrix.schemaVersion = '1.0.0'
+        $matrix.unreleasedContract.PSObject.Properties.Remove('functionalWorkflows')
+        ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:compatibilitySchema) | Should -BeTrue
+    }
+
+    It 'rejects unversioned functional workflow additions under compatibility schema 1.0.0' {
+        $matrix = Get-Content -LiteralPath $script:compatibilityPath -Raw | ConvertFrom-Json
+        $matrix.schemaVersion = '1.0.0'
+        ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:compatibilitySchema) | Should -BeFalse
+    }
+
+    It 'requires functional workflow authorities only for compatibility schema 1.1.0' {
+        $matrix = Get-Content -LiteralPath $script:compatibilityPath -Raw | ConvertFrom-Json
+        $matrix.unreleasedContract.PSObject.Properties.Remove('functionalWorkflows')
+        ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:compatibilitySchema) | Should -BeFalse
     }
 
     It 'records immutable Python and Bash functional workflow authorities' {
@@ -48,12 +73,6 @@ Describe 'Consolidation contract regression coverage' {
         }
     }
 
-    It 'rejects a compatibility record that omits functional workflow authorities' {
-        $matrix = Get-Content -LiteralPath $script:compatibilityPath -Raw | ConvertFrom-Json
-        $matrix.unreleasedContract.PSObject.Properties.Remove('functionalWorkflows')
-        ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:compatibilitySchema) | Should -BeFalse
-    }
-
     It 'preserves mandatory cross-standard handoffs from the technology standards' {
         $matrix = Get-Content -LiteralPath $script:standardsPath -Raw | ConvertFrom-Json
         $expected = [ordered]@{
@@ -85,11 +104,49 @@ Describe 'Consolidation contract regression coverage' {
         )
     }
 
+    It 'preserves the original standards-consistency 1.0.0 release-readiness shape' {
+        $matrix = Get-Content -LiteralPath $script:standardsPath -Raw | ConvertFrom-Json
+        $matrix.schemaVersion = '1.0.0'
+        $matrix.PSObject.Properties.Remove('publishedRelease')
+        $matrix.PSObject.Properties.Remove('nextReleaseReadiness')
+        $matrix.releaseReadiness = [pscustomobject]@{
+            status = 'NotRun'
+            proposedVersion = '1.1.0'
+            proposedTag = 'v1.1.0'
+            targetCommitSha = '2704049d7e826975d956611b194214dd79ea3686'
+            releaseCreated = $true
+            reason = 'Synthetic legacy fixture retains the original schema 1.0.0 release-readiness object.'
+        }
+        $legacyPath = Join-Path $TestDrive 'standards-consistency-v1.0.json'
+        $matrix | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $legacyPath -Encoding utf8
+        (Get-Content -LiteralPath $legacyPath -Raw | Test-Json -SchemaFile $script:standardsSchema) | Should -BeTrue
+        @((Test-GovernanceJsonDocument -Path $legacyPath -Kind standards-consistency) | Where-Object status -EQ Failed).Count | Should -Be 0
+    }
+
+    It 'rejects split release states when mislabeled as standards-consistency 1.0.0' {
+        $matrix = Get-Content -LiteralPath $script:standardsPath -Raw | ConvertFrom-Json
+        $matrix.schemaVersion = '1.0.0'
+        ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:standardsSchema) | Should -BeFalse
+        $hybridPath = Join-Path $TestDrive 'standards-consistency-hybrid.json'
+        $matrix | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $hybridPath -Encoding utf8
+        $messages = @((Test-GovernanceJsonDocument -Path $hybridPath -Kind standards-consistency) | Where-Object status -EQ Failed | ForEach-Object message)
+        $messages -join "`n" | Should -Match 'schema 1\.0\.0 must not contain'
+    }
+
+    It 'requires authoritative release states for standards-consistency 1.1.0 semantics' {
+        $matrix = Get-Content -LiteralPath $script:standardsPath -Raw | ConvertFrom-Json
+        $matrix.PSObject.Properties.Remove('publishedRelease')
+        $matrix.PSObject.Properties.Remove('nextReleaseReadiness')
+        $missingPath = Join-Path $TestDrive 'standards-consistency-v1.1-missing-release-states.json'
+        $matrix | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $missingPath -Encoding utf8
+        (Get-Content -LiteralPath $missingPath -Raw | Test-Json -SchemaFile $script:standardsSchema) | Should -BeFalse
+        $messages = @((Test-GovernanceJsonDocument -Path $missingPath -Kind standards-consistency) | Where-Object status -EQ Failed | ForEach-Object message)
+        $messages | Should -Contain "Standards-consistency schema 1.1.0 is missing required member 'publishedRelease'."
+        $messages | Should -Contain "Standards-consistency schema 1.1.0 is missing required member 'nextReleaseReadiness'."
+    }
+
     It 'separates the published release from unselected next-release readiness' {
         $matrix = Get-Content -LiteralPath $script:standardsPath -Raw | ConvertFrom-Json
-        $matrix.PSObject.Properties.Name | Should -Contain 'publishedRelease'
-        $matrix.PSObject.Properties.Name | Should -Contain 'nextReleaseReadiness'
-
         $matrix.publishedRelease.status | Should -BeExactly 'Passed'
         $matrix.publishedRelease.version | Should -BeExactly '1.1.0'
         $matrix.publishedRelease.tag | Should -BeExactly 'v1.1.0'
@@ -103,10 +160,7 @@ Describe 'Consolidation contract regression coverage' {
         $matrix.nextReleaseReadiness.reason | Should -Match 'no next semantic version'
 
         $matrix.releaseReadiness.status | Should -BeExactly 'NotApplicable'
-        $matrix.releaseReadiness.PSObject.Properties.Name | Should -Not -Contain 'proposedVersion'
-        $matrix.releaseReadiness.PSObject.Properties.Name | Should -Not -Contain 'proposedTag'
-        $matrix.releaseReadiness.PSObject.Properties.Name | Should -Not -Contain 'targetCommitSha'
-        $matrix.releaseReadiness.PSObject.Properties.Name | Should -Not -Contain 'releaseCreated'
+        @($matrix.releaseReadiness.PSObject.Properties.Name) | Should -Be @('status','reason')
     }
 
     It 'rejects published release values inside a NotRun next-release record' {
@@ -115,5 +169,15 @@ Describe 'Consolidation contract regression coverage' {
         $matrix.nextReleaseReadiness.proposedTag = 'v1.1.0'
         $matrix.nextReleaseReadiness.targetCommitSha = '2704049d7e826975d956611b194214dd79ea3686'
         ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:standardsSchema) | Should -BeFalse
+    }
+
+    It 'rejects release candidate fields on the deprecated compatibility alias' {
+        $matrix = Get-Content -LiteralPath $script:standardsPath -Raw | ConvertFrom-Json
+        $matrix.releaseReadiness | Add-Member -NotePropertyName proposedVersion -NotePropertyValue '1.1.0'
+        ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:standardsSchema) | Should -BeFalse
+        $aliasPath = Join-Path $TestDrive 'standards-consistency-alias-mutation.json'
+        $matrix | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $aliasPath -Encoding utf8
+        $messages = @((Test-GovernanceJsonDocument -Path $aliasPath -Kind standards-consistency) | Where-Object status -EQ Failed | ForEach-Object message)
+        $messages -join "`n" | Should -Match "alias must not contain 'proposedVersion'"
     }
 }
