@@ -109,22 +109,10 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: |
-          try {
-            & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath (Join-Path $env:PYTHON_WORK_ROOT 'caller') -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary 'Governed Python static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' -CommandsExecuted @('python-project-validation.py') -ArtifactPath @('evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json') -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha '${{ job.workflow_sha }}'
-            $completionPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/completion-result.json'
-            if (-not (Test-Path -LiteralPath $completionPath -PathType Leaf)) { throw 'Completion evidence was not created.' }
-            $global:LASTEXITCODE = 0
-          }
-          catch {
-            [ordered]@{
-              type = $_.Exception.GetType().FullName
-              message = [string]$_.Exception.Message
-              script = [string]$_.InvocationInfo.ScriptName
-              line = [int]$_.InvocationInfo.ScriptLineNumber
-              position = [string]$_.InvocationInfo.PositionMessage
-            } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath "$env:PYTHON_WORK_ROOT/evidence/completion-diagnostic.json" -Encoding utf8
-            throw
-          }
+          & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath (Join-Path $env:PYTHON_WORK_ROOT 'caller') -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary 'Governed Python static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' -CommandsExecuted @('python-project-validation.py') -ArtifactPath @('evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json') -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha '${{ job.workflow_sha }}'
+          $completionPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/completion-result.json'
+          if (-not (Test-Path -LiteralPath $completionPath -PathType Leaf)) { throw 'Completion evidence was not created.' }
+          $global:LASTEXITCODE = 0
 
       - name: Validate Python completion evidence
         id: evidence
