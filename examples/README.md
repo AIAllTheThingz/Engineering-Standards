@@ -5,6 +5,20 @@ skill demonstrations. Each example has its own manifest, governance
 configuration, instructions, documentation, validation workflow, and focused
 test entry point.
 
+## Catalog Status
+
+| Category | Count | Authority |
+| --- | ---: | --- |
+| Governed functional examples | 10 | This file |
+| Isolated home-lab demonstrations | 15 | This file |
+| Suspended production skills | 1 | [`.agents/suspended-skills/README.md`](../.agents/suspended-skills/README.md) |
+| Active production skills | 0 | [Codex Skills](../docs/CODEX_SKILLS.md) |
+
+Functional examples produce technology-specific validation evidence. Home-lab
+packages produce demonstration output only. A package appearing in this catalog
+does not make it an Active production skill, and the two categories must not be
+combined when reporting lifecycle status.
+
 ## Functional Examples
 
 | Example | Purpose |
@@ -59,3 +73,11 @@ the workspace and use an existing authenticated Codex or ChatGPT session. Any
 interactive output is demonstration output, not controlled production
 behavior evidence. Live model behavior, hosted execution not actually run, and
 production promotion remain explicitly `NotRun`.
+
+## Reconciliation Boundary
+
+Issues #43 through #49 remain closed as not planned and are represented only by
+the applicable home-lab demonstrations above. No placeholder production skill
+directory remains for those issues. A future promotion requires a new or
+reopened issue, complete controlled evidence, attributable human approval, and
+an explicit lifecycle change in the production-skill catalog.
