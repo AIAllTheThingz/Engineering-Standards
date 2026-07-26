@@ -5,6 +5,18 @@ Set-StrictMode -Version Latest
 $script:CoreModulePath = Join-Path $PSScriptRoot 'GovernanceValidation.Legacy.psm1'
 Import-Module $script:CoreModulePath -Force -Prefix Legacy -Scope Local
 
+# Keep the public wrapper's version registry authoritative for tests and callers
+# that inspect the module scope. The preserved core remains unchanged.
+$script:GovernanceSchemaVersionsByKind = [ordered]@{
+    'completion-result'     = @('1.0.0', '1.1.0')
+    'test-evidence'         = @('1.0.0', '1.1.0')
+    'artifact-record'       = @('1.0.0', '1.1.0')
+    'project-manifest'      = @('1.0.0', '1.1.0', '1.2.0')
+    'governance-config'     = @('1.0.0', '1.1.0', '1.2.0')
+    'verified-run'          = @('1.0.0')
+    'standards-consistency' = @('1.0.0', '1.1.0')
+}
+
 $script:ForwardedCommands = [ordered]@{
     'Get-GovernanceValidationRegistry' = 'Get-LegacyGovernanceValidationRegistry'
     'Get-GovernanceValidationCategoryRegistry' = 'Get-LegacyGovernanceValidationCategoryRegistry'
@@ -61,6 +73,10 @@ function Test-GovernanceJsonDocument {
     }
 
     $schemaVersion = [string]$json.schemaVersion
+    if (@($script:GovernanceSchemaVersionsByKind[$Kind]) -cnotcontains $schemaVersion) {
+        return @((New-LegacyValidationResult -Status Failed -Message "Unsupported schemaVersion '$schemaVersion' for governance document kind '$Kind'. Supported versions: $(@($script:GovernanceSchemaVersionsByKind[$Kind]) -join ', ')." -Path $Path))
+    }
+
     $legacyResults = @()
     $temporaryPath = $null
     try {
