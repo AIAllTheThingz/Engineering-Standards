@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "1.1.0",
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "repositoryVersion": "1.1.0",
+  "defaultBranch": "master",
+  "riskClassification": "High",
+  "generatedFromCommit": "1111111111111111111111111111111111111111",
+  "generatedAtUtc": "2026-07-26T13:58:00Z",
+  "canonicalStatusValues": [
+    "Passed",
+    "Failed",
+    "Blocked",
+    "NotRun",
+    "NotApplicable"
+  ],
+  "canonicalRiskValues": [
+    "Low",
+    "Moderate",
+    "High",
+    "Critical"
+  ],
+  "documents": [],
+  "workflowReview": {
+    "status": "Passed",
+    "summary": "Synthetic invalid fixture intentionally omits authoritative release states.",
+    "workflowsInspected": [
+      ".github/workflows/governance-ci.yml"
+    ]
+  },
+  "githubEvidence": {
+    "status": "NotRun",
+    "reason": "Synthetic fixture does not represent hosted evidence."
+  },
+  "branchProtection": {
+    "status": "NotRun",
+    "reason": "Synthetic fixture does not represent live branch protection."
+  },
+  "releaseReadiness": {
+    "status": "NotApplicable",
+    "reason": "Deprecated compatibility alias is present, but authoritative split records are intentionally omitted."
+  }
+}
