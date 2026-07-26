@@ -63,14 +63,8 @@ jobs:
 
           test_path = Path('tests/scripts/BashProjectSupport.Tests.ps1')
           text = test_path.read_text(encoding='utf-8')
-          old = """            'tests/scripts/BashProjectSupport.Tests.ps1',
-              'tests/scripts/ConsolidationContracts.Tests.ps1'
-          """
-          new = """            'tests/scripts/BashProjectSupport.Tests.ps1',
-              'tests/scripts/ConsolidationContracts.Tests.ps1',
-              'tests/scripts/GovernanceValidationModule.Tests.ps1',
-              'tests/scripts/ReleaseLifecycle.Tests.ps1'
-          """
+          old = "            'tests/scripts/BashProjectSupport.Tests.ps1',\n            'tests/scripts/ConsolidationContracts.Tests.ps1'"
+          new = "            'tests/scripts/BashProjectSupport.Tests.ps1',\n            'tests/scripts/ConsolidationContracts.Tests.ps1',\n            'tests/scripts/GovernanceValidationModule.Tests.ps1',\n            'tests/scripts/ReleaseLifecycle.Tests.ps1'"
           if text.count(old) != 1:
               raise SystemExit('Expected Bash freshness allowlist anchor was not found exactly once.')
           test_path.write_text(text.replace(old, new), encoding='utf-8')
