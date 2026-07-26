@@ -563,5 +563,9 @@
     "proposedTag": null,
     "targetCommitSha": null,
     "reason": "Current master contains unreleased development, but no next semantic version, unchanged release candidate, exact-candidate lifecycle evidence, downstream canary set, tag authorization, or publication authorization has been selected or performed."
+  },
+  "releaseReadiness": {
+    "status": "NotApplicable",
+    "reason": "Deprecated compatibility alias retained only for pre-split validators; it contains no release version, tag, target SHA, or publication state."
   }
 }
