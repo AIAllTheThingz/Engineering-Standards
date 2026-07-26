@@ -18,8 +18,6 @@
     "workflowReview",
     "githubEvidence",
     "branchProtection",
-    "publishedRelease",
-    "nextReleaseReadiness",
     "releaseReadiness"
   ],
   "properties": {
@@ -124,7 +122,12 @@
     },
     "publishedRelease": { "$ref": "#/$defs/publishedRelease" },
     "nextReleaseReadiness": { "$ref": "#/$defs/nextReleaseReadiness" },
-    "releaseReadiness": { "$ref": "#/$defs/legacyReleaseReadiness" }
+    "releaseReadiness": {
+      "oneOf": [
+        { "$ref": "#/$defs/originalReleaseReadiness" },
+        { "$ref": "#/$defs/legacyReleaseReadinessAlias" }
+      ]
+    }
   },
   "$defs": {
     "publishedRelease": {
@@ -161,20 +164,23 @@
               "targetCommitSha": { "const": null }
             }
           }
-        },
-        {
-          "if": { "properties": { "status": { "enum": [ "Passed", "Failed", "Blocked" ] } } },
-          "then": {
-            "properties": {
-              "proposedVersion": { "type": "string" },
-              "proposedTag": { "type": "string" },
-              "targetCommitSha": { "type": "string" }
-            }
-          }
         }
       ]
     },
-    "legacyReleaseReadiness": {
+    "originalReleaseReadiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "status", "proposedVersion", "proposedTag", "targetCommitSha", "releaseCreated", "reason" ],
+      "properties": {
+        "status": { "type": "string", "enum": [ "Passed", "Failed", "Blocked", "NotRun", "NotApplicable" ] },
+        "proposedVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "proposedTag": { "type": "string", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "targetCommitSha": { "type": "string", "pattern": "^[A-Fa-f0-9]{40}$" },
+        "releaseCreated": { "type": "boolean" },
+        "reason": { "type": "string", "minLength": 10 }
+      }
+    },
+    "legacyReleaseReadinessAlias": {
       "type": "object",
       "additionalProperties": false,
       "required": [ "status", "reason" ],
