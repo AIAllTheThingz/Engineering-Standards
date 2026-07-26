@@ -4,13 +4,14 @@
 | --- | --- |
 | Status | Unreleased |
 | Published baseline | 1.1.0 |
-| Audited master commit | `dee27948aafbc6f7dcb646921e8e1c9c9c4add56` |
-| Final validated equivalent tree | `3f80d71d780ddd04c66329c8452c3c97ea50deef` |
+| Consolidation baseline merge | `dee27948aafbc6f7dcb646921e8e1c9c9c4add56` |
+| Corrective validated head | `11d7c3200be8be5ce694887f2331f1df49d3d62b` |
+| Corrective merge commit | `c2fd32e94142d50ac16bbbf6913c849122d58b8d` |
 | Last reviewed | 2026-07-26 |
 
 ## Summary
 
-This record consolidates the post-`v1.1.0` development completed through PR #88 and the focused correction of its post-merge review findings. It is release-preparation documentation only. It does not select a new semantic version, authorize a tag, publish a GitHub Release, or add current development to historical `v1.1.0`.
+This record consolidates the post-`v1.1.0` development completed through PR #88 and the contract correction completed through PR #89. It is release-preparation documentation only. It does not select a new semantic version, authorize a tag, publish a GitHub Release, or add current development to historical `v1.1.0`.
 
 ## Included Unreleased Work
 
@@ -30,6 +31,7 @@ This record consolidates the post-`v1.1.0` development completed through PR #88 
 - Explicit machine-readable Python and Bash functional workflow compatibility authorities.
 - Restored mandatory cross-standard handoff relationships in the standards consistency matrix.
 - Separate published-release state and next-release readiness records.
+- Compatibility bridges preserving historical `1.0.0` downstream and standards-consistency records.
 
 ## Compatibility
 
@@ -46,28 +48,42 @@ The Preview functional workflow authorities are recorded separately:
 
 These are first-party validated distribution authorities. No five-scenario functional external canary is claimed.
 
-## Verified Baseline
+## Consolidation Baseline
 
-Final PR #88 head `3f80d71d780ddd04c66329c8452c3c97ea50deef` passed:
+Final PR #88 head `3f80d71d780ddd04c66329c8452c3c97ea50deef` passed Pull Request Governance, Python example CI, Bash example CI, trusted Governance validation, candidate implementation validation, and mandatory evidence enforcement before merging as `dee27948aafbc6f7dcb646921e8e1c9c9c4add56`.
 
-- Pull Request Governance.
-- Python example CI.
-- Bash example CI.
-- Trusted Governance validation.
-- Candidate implementation validation.
-- Evidence generation, normalization, validation, upload, and mandatory enforcement.
+That baseline predates the contract corrections below and is not presented as validation evidence for PR #89.
 
-PR #88 merged as `dee27948aafbc6f7dcb646921e8e1c9c9c4add56`.
+## Corrective Validation
 
-## Corrective Review Findings
+PR #89 corrected the post-merge findings at validated head `11d7c3200be8be5ce694887f2331f1df49d3d62b` and merged as `c2fd32e94142d50ac16bbbf6913c849122d58b8d`.
 
-The post-merge review identified three semantic defects not detected by the existing green checks:
+Final successful runs:
 
-1. Functional Python and Bash workflow authorities were described as compatibility dimensions but absent from the machine-readable matrix.
-2. The standards consistency rebuild had emptied mandatory technology handoff arrays and flattened Integration's direct governance parents.
-3. Published `v1.1.0` data was mixed into the `NotRun` next-release readiness object.
+- Pull Request Governance: `30192204385`.
+- Python example CI: `30192204377`.
+- Bash example CI: `30192204396`.
+- Governance CI: `30192204388`, including trusted Governance validation and candidate implementation validation.
 
-The corrective change updates both schemas, both owned JSON records, compatibility documentation, and focused regression tests. It does not alter executable workflow behavior, permissions, secrets, packages, production paths, tags, or releases.
+Final artifacts independently downloaded, SHA-256 verified, and JSON parsed:
+
+- `pr-governance-30192204385`, artifact ID `8628947459`, SHA-256 `c766fae54dd670de88fb0f3fbdda7c448cd98fdd996b15916490d3454a6140f8`.
+- `python-evidence-30192204377`, artifact ID `8628953173`, SHA-256 `0ad93a871c3710a650961ec01f425460c16d3188326377f960c035d5bff72b6d`.
+- `bash-evidence-30192204396`, artifact ID `8628951391`, SHA-256 `ed78401d84f6920c2e7c06a94becdca6bc9490a416dbe9ca142a8781325d9c20`.
+- `governance-evidence-30192204388`, artifact ID `8629075724`, SHA-256 `663fbb129e444d6706ad13b934b80ceb7367a750ec130ab12997be0f1e381a43`.
+
+All 38 JSON files parsed successfully. No final artifact contained a `Failed` status. Pester passed 1,013 of 1,013 with zero failures, skips, or not-run tests.
+
+## Post-Merge Contract Review
+
+The PR #89 post-merge review identified four follow-up requirements:
+
+1. Preserve historical downstream-compatibility `1.0.0` records that omit functional workflow authorities.
+2. Preserve historical standards-consistency `1.0.0` records that use the original release-readiness object.
+3. Keep the supported semantic validator aligned with the legacy shape while applying dedicated owned-record regression coverage to the richer split state.
+4. Bind this release-preparation record to PR #89 rather than treating PR #88 as proof of the corrections.
+
+The compatibility bridges retain the historical `1.0.0` shapes. Repository-owned current records continue to require both functional workflow authorities and the split published-versus-next-release state through dedicated regression tests.
 
 ## Lifecycle Limitations
 
@@ -92,4 +108,4 @@ The corrective change updates both schemas, both owned JSON records, compatibili
 
 ## Consumer Guidance
 
-No immediate migration is required for supported `v1.1.0` consumers. Consumers adopting unreleased Python, Bash, project-manifest `1.2.0`, or later validator behavior must pin the exact authority from the machine-readable compatibility record and accept Preview support boundaries. Moving branches are not compatibility records.
+No immediate migration is required for supported `v1.1.0` consumers. Historical `1.0.0` compatibility and standards-consistency records remain valid. Consumers adopting unreleased Python, Bash, project-manifest `1.2.0`, or later validator behavior must pin the exact authority from the machine-readable compatibility record and accept Preview support boundaries. Moving branches are not compatibility records.
