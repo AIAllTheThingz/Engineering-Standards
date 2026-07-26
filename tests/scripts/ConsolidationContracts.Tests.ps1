@@ -20,11 +20,13 @@ Describe 'Consolidation contract regression coverage' {
         $expected = [ordered]@{
             python = [ordered]@{
                 workflowPath = '.github/workflows/python-ci-reusable.yml'
+                distributionTemplate = 'workflows/python-ci.yml'
                 interfaceVersion = '1.0.0'
                 immutableSha = 'e066df32a0deaee38fed4a4cd477d1f4b4b549ed'
             }
             bash = [ordered]@{
                 workflowPath = '.github/workflows/bash-ci-reusable.yml'
+                distributionTemplate = 'workflows/bash-ci.yml'
                 interfaceVersion = '1.0.0'
                 immutableSha = 'd55bb8e6778030f5490e900ba52ba99ac6403827'
             }
@@ -40,7 +42,16 @@ Describe 'Consolidation contract regression coverage' {
             $entry[0].supportStatus | Should -BeExactly 'Preview'
             $entry[0].validationStatus | Should -BeExactly 'Passed'
             $entry[0].evidence.Length | Should -BeGreaterThan 20
+
+            $template = Get-Content -LiteralPath (Join-Path $script:root $expected[$language].distributionTemplate) -Raw
+            $template | Should -Match ([regex]::Escape("$($expected[$language].workflowPath)@$($expected[$language].immutableSha)"))
         }
+    }
+
+    It 'rejects a compatibility record that omits functional workflow authorities' {
+        $matrix = Get-Content -LiteralPath $script:compatibilityPath -Raw | ConvertFrom-Json
+        $matrix.unreleasedContract.PSObject.Properties.Remove('functionalWorkflows')
+        ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:compatibilitySchema) | Should -BeFalse
     }
 
     It 'preserves mandatory cross-standard handoffs from the technology standards' {
@@ -91,5 +102,13 @@ Describe 'Consolidation contract regression coverage' {
         $matrix.nextReleaseReadiness.proposedTag | Should -BeNullOrEmpty
         $matrix.nextReleaseReadiness.targetCommitSha | Should -BeNullOrEmpty
         $matrix.nextReleaseReadiness.reason | Should -Match 'no next semantic version'
+    }
+
+    It 'rejects published release values inside a NotRun next-release record' {
+        $matrix = Get-Content -LiteralPath $script:standardsPath -Raw | ConvertFrom-Json
+        $matrix.nextReleaseReadiness.proposedVersion = '1.1.0'
+        $matrix.nextReleaseReadiness.proposedTag = 'v1.1.0'
+        $matrix.nextReleaseReadiness.targetCommitSha = '2704049d7e826975d956611b194214dd79ea3686'
+        ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:standardsSchema) | Should -BeFalse
     }
 }
