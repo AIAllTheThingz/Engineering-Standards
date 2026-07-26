@@ -389,19 +389,19 @@ Describe 'GovernanceValidation module' {
             }
         }
 
-        It 'rejects unsupported versions for exact-version document kinds' {
+        It 'rejects unsupported versions for bounded-version document kinds' {
             $repoRoot = Resolve-Path "$PSScriptRoot/../.."
             foreach ($case in @(
-                @{ Kind = 'verified-run'; Fixture = 'tests/fixtures/valid/verified-run.json' },
-                @{ Kind = 'standards-consistency'; Fixture = 'governance/standards-consistency.json' }
+                @{ Kind = 'verified-run'; Fixture = 'tests/fixtures/valid/verified-run.json'; Unsupported = @('1.1.0', '1.0.0-rc', 'v1.0.0'); Supported = '1.0.0' },
+                @{ Kind = 'standards-consistency'; Fixture = 'governance/standards-consistency.json'; Unsupported = @('1.2.0', '1.0.0-rc', 'v1.0.0'); Supported = '1.0.0 and 1.1.0' }
             )) {
-                foreach ($version in @('1.1.0', '1.0.0-rc', 'v1.0.0')) {
+                foreach ($version in $case.Unsupported) {
                     $doc = Get-Content (Join-Path $repoRoot $case.Fixture) -Raw | ConvertFrom-Json -AsHashtable
                     $doc.schemaVersion = $version
                     $path = Join-Path $script:tempRoot "$($case.Kind)-unsupported-$($version.Replace('.', '-')).json"
                     $doc | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $path
                     $results = Test-GovernanceJsonDocument -Path $path -Kind $case.Kind
-                    @($results | Where-Object { $_.message -match '^Unsupported schemaVersion' }).Count | Should -Be 1 -Because "$($case.Kind) supports exactly schemaVersion 1.0.0"
+                    @($results | Where-Object { $_.message -match '^Unsupported schemaVersion' }).Count | Should -Be 1 -Because "$($case.Kind) supports $($case.Supported)"
                 }
             }
         }
