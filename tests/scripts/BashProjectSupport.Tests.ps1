@@ -309,10 +309,17 @@ Describe 'Governed Bash project support' {
         $changedAfterValidation = @(& git -C $script:root diff --name-only "$($completion.validatedCommitSha)..HEAD" --)
         $LASTEXITCODE | Should -Be 0
         $allowedAfterValidation = @(
+            '.github/dependencies/validator-dependencies.psd1',
+            '.github/dependencies/workflow-validation-requirements.txt',
             '.github/workflows/bash-ci-reusable.yml',
             '.github/workflows/bash-ci.yml',
+            '.github/workflows/governance-ci-reusable.yml',
+            '.github/workflows/governance-ci.yml',
             'workflows/bash-ci.yml',
+            'docs/VALIDATOR_DEPENDENCIES.md',
             'examples/bash-project/.github/workflows/governance.yml',
+            'governance.config.json',
+            'project-manifest.json',
             'scripts/Test-PythonStaticAnalysis.ps1',
             'scripts/bash-project-validation.py',
             'tests/scripts/BashExampleCleanup.Tests.ps1',

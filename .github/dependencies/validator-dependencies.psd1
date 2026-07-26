@@ -32,12 +32,12 @@
             Name = 'PyYAML'
             Ecosystem = 'Python'
             InstallationKind = 'PythonWheel'
-            Version = '6.0.2'
-            SourceUri = 'https://files.pythonhosted.org/packages/b9/2b/614b4752f2e127db5cc206abc23a8c19678e92b23c3db30fc86ab731d3bd/PyYAML-6.0.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl'
+            Version = '6.0.3'
+            SourceUri = 'https://files.pythonhosted.org/packages/8b/9d/b3589d3877982d4f2329302ef98a8026e7f4443c765c46cfecc8858c6b4b/pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl'
             PackageIndexUri = 'https://pypi.org/simple'
-            PackageFile = 'PyYAML-6.0.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl'
-            Sha256 = '80bab7bfc629882493af4aa31a4cfa43a4c57c83813253626916b8c7ada83476'
-            Purl = 'pkg:pypi/pyyaml@6.0.2'
+            PackageFile = 'pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl'
+            Sha256 = 'ba1cc08a7ccde2d2ec775841541641e4548226580ab850948cbfda66a1befcdc'
+            Purl = 'pkg:pypi/pyyaml@6.0.3'
         }
         @{
             Name = 'Ruff'

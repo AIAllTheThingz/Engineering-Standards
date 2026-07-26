@@ -19,7 +19,7 @@ functional driver may execute caller tests.
 | Status | Active |
 | Model version | 1.1.0 |
 | Owner role | Engineering Standards Maintainers |
-| Last reviewed | 2026-07-21 |
+| Last reviewed | 2026-07-25 |
 
 ## Purpose
 
@@ -45,7 +45,7 @@ lock.
 | Python | `3.12.11` | `actions/setup-python` pinned by full commit SHA; exact version is verified and the executable SHA-256 is recorded. |
 | Node.js | `22.17.0` | `actions/setup-node` pinned by full commit SHA; exact version is verified and the executable SHA-256 is recorded. |
 | .NET SDK | `8.0.411` | `actions/setup-dotnet` pinned by full commit SHA plus root `global.json` with roll-forward and prerelease disabled; exact version is verified and the executable SHA-256 is recorded. |
-| PyYAML | `6.0.2` | Binary wheel only; exact wheel SHA-256 is locked and pip uses `--require-hashes`, `--no-deps`, and a verified local cache for installation. |
+| PyYAML | `6.0.3` | Binary wheel only; exact wheel SHA-256 is locked and pip uses `--require-hashes`, `--no-deps`, and a verified local cache for installation. |
 | Ruff | `0.15.22` | Official Astral PyPI manylinux X64 wheel, MIT license; exact filename and SHA-256 are locked and installed binary-only from the verified local cache. |
 | ShellCheck | `0.11.0` | Official `koalaman/shellcheck` Linux X64 release archive, GPL-3.0; immutable release URL and SHA-256 are verified before bounded extraction. |
 | Pester | `5.7.1` | Exact PSGallery package URL, filename, version, module manifest, and package SHA-256 are locked and verified. |
