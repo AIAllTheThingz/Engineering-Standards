@@ -122,8 +122,7 @@
         "testEvidenceSchemaVersions",
         "completionResultSchemaVersions",
         "migrationGuide",
-        "canaryValidatedWorkflowSha",
-        "functionalWorkflows"
+        "canaryValidatedWorkflowSha"
       ],
       "properties": {
         "governanceVersion": { "$ref": "#/$defs/version" },
