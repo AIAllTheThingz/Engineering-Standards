@@ -23,8 +23,8 @@ concurrency:
 jobs:
   governance:
     name: Governance
-    permissions:
-      contents: read
+    # Self-CI uses the immutable fully validated version-aware implementation commit so
+    # pull-request changes cannot redefine the validator checkout labeled trusted.
     uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@9285544a3ac0da347b6b2e349b1c05e6278391fd
     with:
       project-path: .
@@ -33,40 +33,6 @@ jobs:
 
   candidate_implementation:
     name: Candidate implementation validation
-    permissions:
-      contents: read
+    # Keep the trusted baseline and candidate harness on the same immutable
+    # fully validated implementation commit, as required by the workflow architecture contract.
     uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-candidate.yml@9285544a3ac0da347b6b2e349b1c05e6278391fd
-
-  apply_reviewed_allowlist_fix:
-    name: Apply reviewed Bash freshness allowlist fix
-    if: github.event_name == 'pull_request' && github.head_ref == 'agent/version-consolidation-contracts' && github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout exact pull request head
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-          persist-credentials: true
-      - name: Apply exact allowlist update
-        env:
-          BRANCH_NAME: ${{ github.head_ref }}
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('tests/scripts/BashProjectSupport.Tests.ps1')
-          text = path.read_text(encoding='utf-8')
-          old = "            'tests/scripts/BashProjectSupport.Tests.ps1',\n            'tests/scripts/ConsolidationContracts.Tests.ps1'"
-          new = "            'tests/scripts/BashProjectSupport.Tests.ps1',\n            'tests/scripts/ConsolidationContracts.Tests.ps1',\n            'tests/scripts/GovernanceValidationModule.Tests.ps1',\n            'tests/scripts/ReleaseLifecycle.Tests.ps1'"
-          if text.count(old) != 1:
-              raise SystemExit('Expected Bash freshness allowlist anchor was not found exactly once.')
-          path.write_text(text.replace(old, new), encoding='utf-8')
-          PY
-          git diff --check
-          git add tests/scripts/BashProjectSupport.Tests.ps1
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'test(bash): classify governance-only regression updates'
-          git push origin "HEAD:${BRANCH_NAME}"
