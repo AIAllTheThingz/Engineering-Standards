@@ -167,7 +167,17 @@ function Test-GovernanceJsonDocument {
         }
         if ($json.ContainsKey('releaseReadiness')) {
             $alias = $json.releaseReadiness
-            if ([string]$alias.status -cne 'NotApplicable') { Add-StandardsConsistencyFinding "Deprecated releaseReadiness alias must use status 'NotApplicable'." }
+            foreach ($member in @('status','reason')) {
+                if (-not (Test-LegacyJsonMember -InputObject $alias -Name $member)) {
+                    Add-StandardsConsistencyFinding "Deprecated releaseReadiness alias is missing required member '$member'."
+                }
+            }
+            if ((Test-LegacyJsonMember -InputObject $alias -Name 'status') -and [string]$alias.status -cne 'NotApplicable') {
+                Add-StandardsConsistencyFinding "Deprecated releaseReadiness alias must use status 'NotApplicable'."
+            }
+            if ((Test-LegacyJsonMember -InputObject $alias -Name 'reason') -and ([string]::IsNullOrWhiteSpace([string]$alias.reason) -or ([string]$alias.reason).Trim().Length -lt 20)) {
+                Add-StandardsConsistencyFinding 'Deprecated releaseReadiness alias reason must contain at least 20 non-whitespace characters.'
+            }
             foreach ($member in @($alias.Keys)) {
                 if (@('status','reason') -cnotcontains [string]$member) { Add-StandardsConsistencyFinding "Deprecated releaseReadiness alias must not contain '$member'." }
             }
