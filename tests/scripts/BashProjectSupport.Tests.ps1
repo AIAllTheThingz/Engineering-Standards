@@ -51,6 +51,7 @@ function Initialize-BashExampleWrapperFixture {
     New-Item -ItemType Directory -Path (Join-Path $root 'scripts'),(Join-Path $example 'tools') -Force | Out-Null
     Copy-Item -LiteralPath (Join-Path $script:root 'scripts/Install-BashProjectToolchain.py') -Destination (Join-Path $root 'scripts')
     Copy-Item -LiteralPath (Join-Path $script:root 'scripts/GovernanceValidation.psm1') -Destination (Join-Path $root 'scripts')
+    Copy-Item -LiteralPath (Join-Path $script:root 'scripts/GovernanceValidation.Legacy.psm1') -Destination (Join-Path $root 'scripts')
     Copy-Item -LiteralPath (Join-Path $script:example 'bash-toolchain.lock.json') -Destination $example
     Copy-Item -LiteralPath (Join-Path $script:example 'tools/Test-Example.ps1') -Destination (Join-Path $example 'tools')
     Copy-Item -LiteralPath (Join-Path $script:example 'evidence') -Destination $example -Recurse
@@ -332,8 +333,14 @@ Describe 'Governed Bash project support' {
             'project-manifest.json',
             'schemas/downstream-compatibility.schema.json',
             'schemas/standards-consistency.schema.json',
+            'scripts/GovernanceValidation.Legacy.psm1',
+            'scripts/GovernanceValidation.psm1',
+            'scripts/Test-JsonSchemas.ps1',
             'scripts/Test-PythonStaticAnalysis.ps1',
+            'scripts/Test-ReleaseConsistency.ps1',
             'scripts/bash-project-validation.py',
+            'tests/fixtures/invalid/standards-consistency-v1.1-missing-release-states.json',
+            'tests/schemas/JsonSchemas.Tests.ps1',
             'tests/scripts/BashExampleCleanup.Tests.ps1',
             'tests/scripts/BashProjectSupport.Tests.ps1',
             'tests/scripts/ConsolidationContracts.Tests.ps1'
@@ -462,6 +469,7 @@ raise SystemExit(2)
         foreach ($path in @(
             'scripts/New-CompletionEvidence.ps1',
             'scripts/GovernanceValidation.psm1',
+            'scripts/GovernanceValidation.Legacy.psm1',
             'actions/validate-evidence/Invoke-EvidenceValidation.ps1'
         )) {
             $script:entryWorkflow | Should -Match ([regex]::Escape("- '$path'"))
