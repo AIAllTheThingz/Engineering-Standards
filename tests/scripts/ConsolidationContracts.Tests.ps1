@@ -89,7 +89,6 @@ Describe 'Consolidation contract regression coverage' {
         $matrix = Get-Content -LiteralPath $script:standardsPath -Raw | ConvertFrom-Json
         $matrix.PSObject.Properties.Name | Should -Contain 'publishedRelease'
         $matrix.PSObject.Properties.Name | Should -Contain 'nextReleaseReadiness'
-        $matrix.PSObject.Properties.Name | Should -Not -Contain 'releaseReadiness'
 
         $matrix.publishedRelease.status | Should -BeExactly 'Passed'
         $matrix.publishedRelease.version | Should -BeExactly '1.1.0'
@@ -102,6 +101,12 @@ Describe 'Consolidation contract regression coverage' {
         $matrix.nextReleaseReadiness.proposedTag | Should -BeNullOrEmpty
         $matrix.nextReleaseReadiness.targetCommitSha | Should -BeNullOrEmpty
         $matrix.nextReleaseReadiness.reason | Should -Match 'no next semantic version'
+
+        $matrix.releaseReadiness.status | Should -BeExactly 'NotApplicable'
+        $matrix.releaseReadiness.PSObject.Properties.Name | Should -Not -Contain 'proposedVersion'
+        $matrix.releaseReadiness.PSObject.Properties.Name | Should -Not -Contain 'proposedTag'
+        $matrix.releaseReadiness.PSObject.Properties.Name | Should -Not -Contain 'targetCommitSha'
+        $matrix.releaseReadiness.PSObject.Properties.Name | Should -Not -Contain 'releaseCreated'
     }
 
     It 'rejects published release values inside a NotRun next-release record' {
