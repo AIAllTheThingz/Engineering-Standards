@@ -29,7 +29,7 @@ try {
     $config = New-PesterConfiguration
     $config.Run.Path = Join-Path $standardsRoot 'tests'
     $config.Run.PassThru = $true
-    $config.Output.Verbosity = 'None'
+    $config.Output.Verbosity = 'Detailed'
     $config.TestResult.Enabled = $true
     $config.TestResult.OutputPath = $xmlPath
     $config.TestResult.OutputFormat = 'NUnitXml'
@@ -63,9 +63,6 @@ try {
     & (Join-Path $standardsRoot 'scripts/Convert-PesterResultToSanitizedJson.ps1') -InputPath $xmlPath -OutputPath (Join-Path $evidenceFull 'pester-details.json') -RepositoryPath $workspaceRoot -EvidenceRoot $evidenceFull
     if ($discovered -eq 0) { throw 'Pester discovered zero tests.' }
     if ($result.Result -ne 'Passed' -or $result.FailedCount -gt 0 -or $result.NotRunCount -gt 0) {
-        foreach ($failed in @($result.Tests | Where-Object Result -EQ Failed)) {
-            Write-Output "[candidate-pester-failure] $($failed.ExpandedPath) :: $($failed.ErrorRecord.Exception.Message)"
-        }
         throw "Pester result was '$($result.Result)' with $($result.FailedCount) failed and $($result.NotRunCount) NotRun tests."
     }
 }
