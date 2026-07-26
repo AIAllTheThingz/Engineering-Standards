@@ -104,14 +104,12 @@ function Test-GovernanceJsonDocument {
                 Add-StandardsConsistencyFinding "Standards-consistency schema 1.0.0 must not contain '$forbidden'; use schema 1.1.0 for split release state."
             }
         }
-
         if (-not $json.ContainsKey('releaseReadiness')) {
             Add-StandardsConsistencyFinding "Standards-consistency schema 1.0.0 requires legacy 'releaseReadiness'."
         }
         else {
-            $legacyReadiness = $json.releaseReadiness
             foreach ($member in @('status','proposedVersion','proposedTag','targetCommitSha','releaseCreated','reason')) {
-                if (-not (Test-LegacyJsonMember -InputObject $legacyReadiness -Name $member)) {
+                if (-not (Test-LegacyJsonMember -InputObject $json.releaseReadiness -Name $member)) {
                     Add-StandardsConsistencyFinding "Legacy releaseReadiness is missing required member '$member'."
                 }
             }
@@ -123,80 +121,45 @@ function Test-GovernanceJsonDocument {
                 Add-StandardsConsistencyFinding "Standards-consistency schema 1.1.0 is missing required member '$member'."
             }
         }
-
         if ($json.ContainsKey('publishedRelease')) {
             $published = $json.publishedRelease
             foreach ($member in @('status','version','tag','targetCommitSha','releaseCreated','reason')) {
-                if (-not (Test-LegacyJsonMember -InputObject $published -Name $member)) {
-                    Add-StandardsConsistencyFinding "publishedRelease is missing required member '$member'."
-                }
+                if (-not (Test-LegacyJsonMember -InputObject $published -Name $member)) { Add-StandardsConsistencyFinding "publishedRelease is missing required member '$member'." }
             }
-            if ((Test-LegacyJsonMember -InputObject $published -Name 'status') -and $statuses -cnotcontains [string]$published.status) {
-                Add-StandardsConsistencyFinding "publishedRelease uses invalid status '$($published.status)'."
-            }
-            if ((Test-LegacyJsonMember -InputObject $published -Name 'version') -and [string]$published.version -cnotmatch '^\d+\.\d+\.\d+$') {
-                Add-StandardsConsistencyFinding 'publishedRelease.version must use semantic version syntax.'
-            }
-            if ((Test-LegacyJsonMember -InputObject $published -Name 'version') -and (Test-LegacyJsonMember -InputObject $published -Name 'tag') -and [string]$published.tag -cne "v$($published.version)") {
-                Add-StandardsConsistencyFinding 'publishedRelease.tag must match publishedRelease.version.'
-            }
-            if ((Test-LegacyJsonMember -InputObject $published -Name 'targetCommitSha') -and [string]$published.targetCommitSha -cnotmatch '^[0-9a-f]{40}$') {
-                Add-StandardsConsistencyFinding 'publishedRelease.targetCommitSha must be a full lowercase commit SHA.'
-            }
-            if ((Test-LegacyJsonMember -InputObject $published -Name 'releaseCreated') -and $published.releaseCreated -isnot [bool]) {
-                Add-StandardsConsistencyFinding 'publishedRelease.releaseCreated must be boolean.'
-            }
+            if ((Test-LegacyJsonMember -InputObject $published -Name 'status') -and $statuses -cnotcontains [string]$published.status) { Add-StandardsConsistencyFinding "publishedRelease uses invalid status '$($published.status)'." }
+            if ((Test-LegacyJsonMember -InputObject $published -Name 'version') -and [string]$published.version -cnotmatch '^\d+\.\d+\.\d+$') { Add-StandardsConsistencyFinding 'publishedRelease.version must use semantic version syntax.' }
+            if ((Test-LegacyJsonMember -InputObject $published -Name 'version') -and (Test-LegacyJsonMember -InputObject $published -Name 'tag') -and [string]$published.tag -cne "v$($published.version)") { Add-StandardsConsistencyFinding 'publishedRelease.tag must match publishedRelease.version.' }
+            if ((Test-LegacyJsonMember -InputObject $published -Name 'targetCommitSha') -and [string]$published.targetCommitSha -cnotmatch '^[0-9a-f]{40}$') { Add-StandardsConsistencyFinding 'publishedRelease.targetCommitSha must be a full lowercase commit SHA.' }
+            if ((Test-LegacyJsonMember -InputObject $published -Name 'releaseCreated') -and $published.releaseCreated -isnot [bool]) { Add-StandardsConsistencyFinding 'publishedRelease.releaseCreated must be boolean.' }
         }
-
         if ($json.ContainsKey('nextReleaseReadiness')) {
             $next = $json.nextReleaseReadiness
             foreach ($member in @('status','proposedVersion','proposedTag','targetCommitSha','reason')) {
-                if (-not (Test-LegacyJsonMember -InputObject $next -Name $member)) {
-                    Add-StandardsConsistencyFinding "nextReleaseReadiness is missing required member '$member'."
-                }
+                if (-not (Test-LegacyJsonMember -InputObject $next -Name $member)) { Add-StandardsConsistencyFinding "nextReleaseReadiness is missing required member '$member'." }
             }
-            if ((Test-LegacyJsonMember -InputObject $next -Name 'status') -and $statuses -cnotcontains [string]$next.status) {
-                Add-StandardsConsistencyFinding "nextReleaseReadiness uses invalid status '$($next.status)'."
-            }
+            if ((Test-LegacyJsonMember -InputObject $next -Name 'status') -and $statuses -cnotcontains [string]$next.status) { Add-StandardsConsistencyFinding "nextReleaseReadiness uses invalid status '$($next.status)'." }
             elseif ([string]$next.status -in @('NotRun','NotApplicable')) {
                 foreach ($member in @('proposedVersion','proposedTag','targetCommitSha')) {
-                    if ($null -ne (Get-LegacyJsonMemberValue -InputObject $next -Name $member)) {
-                        Add-StandardsConsistencyFinding "nextReleaseReadiness.$member must be null while status is '$($next.status)'."
-                    }
+                    if ($null -ne (Get-LegacyJsonMemberValue -InputObject $next -Name $member)) { Add-StandardsConsistencyFinding "nextReleaseReadiness.$member must be null while status is '$($next.status)'." }
                 }
             }
             elseif ([string]$next.status -in @('Passed','Failed','Blocked')) {
-                if ([string]$next.proposedVersion -cnotmatch '^\d+\.\d+\.\d+$') {
-                    Add-StandardsConsistencyFinding 'nextReleaseReadiness.proposedVersion must use semantic version syntax for an active candidate state.'
-                }
-                if ([string]$next.proposedTag -cne "v$($next.proposedVersion)") {
-                    Add-StandardsConsistencyFinding 'nextReleaseReadiness.proposedTag must match proposedVersion for an active candidate state.'
-                }
-                if ([string]$next.targetCommitSha -cnotmatch '^[0-9a-f]{40}$') {
-                    Add-StandardsConsistencyFinding 'nextReleaseReadiness.targetCommitSha must be a full lowercase commit SHA for an active candidate state.'
-                }
+                if ([string]$next.proposedVersion -cnotmatch '^\d+\.\d+\.\d+$') { Add-StandardsConsistencyFinding 'nextReleaseReadiness.proposedVersion must use semantic version syntax for an active candidate state.' }
+                if ([string]$next.proposedTag -cne "v$($next.proposedVersion)") { Add-StandardsConsistencyFinding 'nextReleaseReadiness.proposedTag must match proposedVersion for an active candidate state.' }
+                if ([string]$next.targetCommitSha -cnotmatch '^[0-9a-f]{40}$') { Add-StandardsConsistencyFinding 'nextReleaseReadiness.targetCommitSha must be a full lowercase commit SHA for an active candidate state.' }
             }
         }
-
         if ($json.ContainsKey('releaseReadiness')) {
             $alias = $json.releaseReadiness
-            if ([string]$alias.status -cne 'NotApplicable') {
-                Add-StandardsConsistencyFinding "Deprecated releaseReadiness alias must use status 'NotApplicable'."
-            }
-            $allowedAliasMembers = @('status','reason')
+            if ([string]$alias.status -cne 'NotApplicable') { Add-StandardsConsistencyFinding "Deprecated releaseReadiness alias must use status 'NotApplicable'." }
             foreach ($member in @($alias.Keys)) {
-                if ($allowedAliasMembers -cnotcontains [string]$member) {
-                    Add-StandardsConsistencyFinding "Deprecated releaseReadiness alias must not contain '$member'."
-                }
+                if (@('status','reason') -cnotcontains [string]$member) { Add-StandardsConsistencyFinding "Deprecated releaseReadiness alias must not contain '$member'." }
             }
         }
     }
 
-    if ($findings.Count -eq 0) {
-        return @($legacyResults)
-    }
-
+    if ($findings.Count -eq 0) { return @($legacyResults) }
     @($legacyResults | Where-Object status -cne 'Passed') + @($findings)
 }
 
-Export-ModuleMember -Function 'Test-GovernanceJsonDocument' -Alias @($script:ForwardedCommands.Keys)
+Export-ModuleMember -Function @('Test-GovernanceJsonDocument') + @($script:ForwardedCommands.Values) -Alias @($script:ForwardedCommands.Keys)
