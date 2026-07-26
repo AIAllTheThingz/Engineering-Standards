@@ -45,7 +45,7 @@ jobs:
         run: |
           if ('${{ inputs.python-version }}' -cne '3.12.11') { throw 'python-version must be the reviewed exact version 3.12.11.' }
           $candidate = '${{ inputs.project-path }}'
-          if ([IO.Path]::IsPathRooted($candidate) -or $candidate -match '(^|[\/])\.\.([\/]|$)') { throw 'project-path must be repository-relative without traversal.' }
+          if ([IO.Path]::IsPathRooted($candidate) -or $candidate -match '(^|[\\/])\.\.([\\/]|$)') { throw 'project-path must be repository-relative without traversal.' }
           $root = (Resolve-Path -LiteralPath (Join-Path $env:GITHUB_WORKSPACE 'caller')).Path
           $projectItem = Get-Item -LiteralPath (Join-Path $root $candidate) -Force
           if ($projectItem.LinkType -or ($projectItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'project-path must not be a link or reparse point.' }
