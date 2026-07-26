@@ -343,7 +343,9 @@ Describe 'Governed Bash project support' {
             'tests/schemas/JsonSchemas.Tests.ps1',
             'tests/scripts/BashExampleCleanup.Tests.ps1',
             'tests/scripts/BashProjectSupport.Tests.ps1',
-            'tests/scripts/ConsolidationContracts.Tests.ps1'
+            'tests/scripts/ConsolidationContracts.Tests.ps1',
+            'tests/scripts/GovernanceValidationModule.Tests.ps1',
+            'tests/scripts/ReleaseLifecycle.Tests.ps1'
         )
         @($changedAfterValidation | Where-Object {
             -not $_.StartsWith('examples/bash-project/evidence/', [StringComparison]::Ordinal) -and
