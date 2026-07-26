@@ -162,4 +162,4 @@ function Test-GovernanceJsonDocument {
     @($legacyResults | Where-Object status -cne 'Passed') + @($findings)
 }
 
-Export-ModuleMember -Function @('Test-GovernanceJsonDocument') + @($script:ForwardedCommands.Values) -Alias @($script:ForwardedCommands.Keys)
+Export-ModuleMember -Function (@('Test-GovernanceJsonDocument') + @($script:ForwardedCommands.Values)) -Alias @($script:ForwardedCommands.Keys)
