@@ -92,7 +92,7 @@ Before release approval, maintainers MUST update the matrix in the same unchange
 pwsh -NoProfile -File scripts/Test-ReleaseLifecycle.ps1 -Path . -EvidencePath <release-lifecycle-record.json> -Stage PreRelease
 ```
 
-The pre-release gate compares the lifecycle record with the matrix. Publication cannot make an unsupported combination valid merely by creating a tag.
+The pre-release gate compares the lifecycle record with the matrix. Publication cannot make an unsupported combination valid merely by creating a tag. Reusable-workflow changes also require the applicable exact-candidate external canary contract; repository self-CI is necessary but does not replace external consumer proof.
 
 ## Support, Evidence, And Exceptions
 
