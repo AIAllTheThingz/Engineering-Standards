@@ -39,7 +39,7 @@ The compatibility contract records these dimensions separately:
 - Language-specific functional workflow interface, path, immutable implementation SHA, support status, and validation status.
 - Migration guidance and deprecation state.
 
-`Supported` means release maintainers accept critical fixes and migration questions for that published contract. `Preview` describes unreleased behavior and is not a published semantic compatibility promise.
+`Supported` means release maintainers accept security fixes, critical validator fixes, and migration questions for that published contract. `Preview` describes unreleased behavior and is not a published semantic compatibility promise.
 
 ## Published Matrix
 
@@ -96,7 +96,7 @@ The pre-release gate compares the lifecycle record with the matrix. Publication 
 
 ## Support, Evidence, And Exceptions
 
-A deprecation MUST identify announcement time, replacement, intended removal version, downstream impact, and migration guidance.
+A deprecation MUST identify announcement time, replacement, intended removal version, downstream impact, and migration guidance. A supported contract MUST be removed only through a separately reviewed major release with migration guidance.
 
 Evidence MUST identify commands, outcomes, candidate SHA, supported schemas, workflow interfaces, immutable workflow authorities, migration path, artifact hashes, approvals, and limitations. `Blocked`, `NotRun`, and `NotApplicable` remain visible.
 
