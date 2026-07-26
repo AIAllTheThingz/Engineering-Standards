@@ -1,11 +1,11 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "repository": "AIAllTheThingz/Engineering-Standards",
   "repositoryVersion": "1.1.0",
   "defaultBranch": "master",
   "riskClassification": "High",
-  "generatedFromCommit": "dee27948aafbc6f7dcb646921e8e1c9c9c4add56",
-  "generatedAtUtc": "2026-07-26T06:12:59Z",
+  "generatedFromCommit": "c2fd32e94142d50ac16bbbf6913c849122d58b8d",
+  "generatedAtUtc": "2026-07-26T13:58:00Z",
   "canonicalStatusValues": [
     "Passed",
     "Failed",
@@ -543,11 +543,11 @@
   },
   "githubEvidence": {
     "status": "Passed",
-    "reason": "Final PR #88 head 3f80d71d780ddd04c66329c8452c3c97ea50deef passed Pull Request Governance, Python example CI, Bash example CI, trusted Governance validation, and candidate implementation validation before merge commit dee27948aafbc6f7dcb646921e8e1c9c9c4add56."
+    "reason": "Final PR #89 head 11d7c3200be8be5ce694887f2331f1df49d3d62b passed Pull Request Governance run 30192204385, Python example CI run 30192204377, Bash example CI run 30192204396, trusted Governance validation, and candidate implementation validation in Governance CI run 30192204388 before merge commit c2fd32e94142d50ac16bbbf6913c849122d58b8d."
   },
   "branchProtection": {
     "status": "Passed",
-    "reason": "The previously recorded GitHub API inspection verified classic protection on master with pull-request enforcement, strict required governance validation, conversation resolution, force-push and deletion blocks, and administrator enforcement. This corrective record does not claim a new live branch-protection inspection."
+    "reason": "The previously recorded GitHub API inspection verified classic protection on master with pull-request enforcement, strict required governance validation, conversation resolution, force-push and deletion blocks, and administrator enforcement. This versioning correction does not claim a new live branch-protection inspection."
   },
   "publishedRelease": {
     "status": "Passed",
