@@ -72,13 +72,11 @@ $releaseLifecycleFixtures = @(
         Path = 'tests/fixtures/release-lifecycle/valid/full-lifecycle.json'
         ExpectedExitCode = 0
         Message = 'Valid release lifecycle fixture accepted by all gates.'
-        ProjectCompatibilityVersion = $true
     },
     [ordered]@{
         Path = 'tests/fixtures/release-lifecycle/invalid/missing-canary.json'
         ExpectedExitCode = 1
         Message = 'Invalid release lifecycle fixture rejected as expected.'
-        ProjectCompatibilityVersion = $false
     }
 )
 if (-not (Test-Path -LiteralPath $releaseLifecycleValidator -PathType Leaf)) {
@@ -92,45 +90,13 @@ else {
             continue
         }
 
-        $effectiveEvidencePath = [string]$fixtureContract.Path
-        $temporaryFixturePath = $null
-        try {
-            if ([bool]$fixtureContract.ProjectCompatibilityVersion) {
-                $matrix = Read-JsonFile -Path (Join-Path $root 'governance/downstream-compatibility.json')
-                $fixtureDocument = Read-JsonFile -Path $fixturePath
-                $matrixVersion = [string]$matrix.schemaVersion
-                $fixtureVersion = [string]$fixtureDocument.compatibilityMatrix.schemaVersion
-                if ($fixtureVersion -cne $matrixVersion) {
-                    $temporaryRoot = Join-Path $root '.tmp/release-lifecycle'
-                    New-Item -Path $temporaryRoot -ItemType Directory -Force | Out-Null
-                    $temporaryFixturePath = Join-Path $temporaryRoot 'full-lifecycle-current-compatibility.json'
-                    $fixtureDocument.compatibilityMatrix.schemaVersion = $matrixVersion
-                    $fixtureDocument | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $temporaryFixturePath -Encoding utf8
-                    $effectiveEvidencePath = [IO.Path]::GetRelativePath($root, $temporaryFixturePath).Replace('\','/')
-                }
-            }
-
-            $fixtureOutput = @(& (Join-Path $PSHOME 'pwsh') -NoProfile -File $releaseLifecycleValidator -Path $root -EvidencePath $effectiveEvidencePath -Stage All 2>&1)
-            $fixtureExitCode = $LASTEXITCODE
-            if ($fixtureExitCode -eq [int]$fixtureContract.ExpectedExitCode) {
-                $results.Add((New-ValidationResult -Status Passed -Message $fixtureContract.Message -Path $fixturePath -Severity info))
-            }
-            else {
-                $results.Add((New-ValidationResult -Status Failed -Message "Release lifecycle fixture expected exit code $($fixtureContract.ExpectedExitCode) but observed $fixtureExitCode." -Path $fixturePath -Data @($fixtureOutput | ForEach-Object { [string]$_ })))
-            }
+        $fixtureOutput = @(& (Join-Path $PSHOME 'pwsh') -NoProfile -File $releaseLifecycleValidator -Path $root -EvidencePath ([string]$fixtureContract.Path) -Stage All 2>&1)
+        $fixtureExitCode = $LASTEXITCODE
+        if ($fixtureExitCode -eq [int]$fixtureContract.ExpectedExitCode) {
+            $results.Add((New-ValidationResult -Status Passed -Message $fixtureContract.Message -Path $fixturePath -Severity info))
         }
-        finally {
-            if ($temporaryFixturePath -and (Test-Path -LiteralPath $temporaryFixturePath -PathType Leaf)) {
-                Remove-Item -LiteralPath $temporaryFixturePath -Force
-                $temporaryRoot = Split-Path -Parent $temporaryFixturePath
-                if ((Test-Path -LiteralPath $temporaryRoot -PathType Container) -and @(Get-ChildItem -LiteralPath $temporaryRoot -Force).Count -eq 0) {
-                    Remove-Item -LiteralPath $temporaryRoot -Force
-                }
-                $temporaryParent = Split-Path -Parent $temporaryRoot
-                if ((Test-Path -LiteralPath $temporaryParent -PathType Container) -and @(Get-ChildItem -LiteralPath $temporaryParent -Force).Count -eq 0) {
-                    Remove-Item -LiteralPath $temporaryParent -Force
-                }
-            }
+        else {
+            $results.Add((New-ValidationResult -Status Failed -Message "Release lifecycle fixture expected exit code $($fixtureContract.ExpectedExitCode) but observed $fixtureExitCode." -Path $fixturePath -Data @($fixtureOutput | ForEach-Object { [string]$_ })))
         }
     }
 }
