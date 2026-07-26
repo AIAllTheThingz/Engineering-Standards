@@ -112,11 +112,23 @@ if ($readme -notmatch 'docs/DOWNSTREAM_COMPATIBILITY\.md' -or $compatibilityGuid
 }
 
 $compatibilityMatrixPath = Join-Path $root 'governance/downstream-compatibility.json'
+$compatibilitySchemaPath = Join-Path $root 'schemas/downstream-compatibility.schema.json'
 if (Test-Path -LiteralPath $compatibilityMatrixPath -PathType Leaf) {
     try {
-        $compatibilityMatrix = Get-Content -LiteralPath $compatibilityMatrixPath -Raw | ConvertFrom-Json
-        if ($compatibilityMatrix.schemaVersion -cne '1.0.0') {
+        $compatibilityRaw = Get-Content -LiteralPath $compatibilityMatrixPath -Raw
+        $compatibilityMatrix = $compatibilityRaw | ConvertFrom-Json
+        if (@('1.0.0', '1.1.0') -cnotcontains [string]$compatibilityMatrix.schemaVersion) {
             $failures.Add("Downstream compatibility schemaVersion '$($compatibilityMatrix.schemaVersion)' is unsupported.")
+        }
+        $hasFunctionalWorkflows = $compatibilityMatrix.unreleasedContract.PSObject.Properties.Name -ccontains 'functionalWorkflows'
+        if ($compatibilityMatrix.schemaVersion -ceq '1.0.0' -and $hasFunctionalWorkflows) {
+            $failures.Add('Downstream compatibility schema 1.0.0 must not contain functionalWorkflows.')
+        }
+        if ($compatibilityMatrix.schemaVersion -ceq '1.1.0' -and @($compatibilityMatrix.unreleasedContract.functionalWorkflows).Count -lt 1) {
+            $failures.Add('Downstream compatibility schema 1.1.0 requires functionalWorkflows.')
+        }
+        if (-not ($compatibilityRaw | Test-Json -SchemaFile $compatibilitySchemaPath)) {
+            $failures.Add('Downstream compatibility matrix does not validate against its version-aware JSON Schema.')
         }
         $matchingRelease = @($compatibilityMatrix.governanceReleases | Where-Object version -CEQ $version)
         if ($isPublished) {
