@@ -13,11 +13,11 @@ The latest published version is `1.1.0`. Annotated tag `v1.1.0` has tag-object S
 
 GitHub Release ID `352430221`, [Engineering Standards v1.1.0](https://github.com/AIAllTheThingz/Engineering-Standards/releases/tag/v1.1.0), was published at `2026-07-11T05:05:47Z`. It is neither a draft nor a prerelease and has no assets. Its target commitish resolves to the same immutable release commit.
 
-The historical GitHub Release body retains preparation-era wording that the tag and release were pending. The live tag and Release API state above are authoritative; this repository records the discrepancy without rewriting the historical external payload.
+The historical GitHub Release body retains stale preparation-era statements that the tag and release were pending. The live tag and Release API state above are authoritative; this repository records the discrepancy without rewriting the historical external payload.
 
 ## Unreleased Development
 
-Current `master` contains development after `v1.1.0`. The audited post-PR #84 merge commit is `e9fa50a0df28982b12ffc1ca55d40ac51d6e0ed3`. The authoritative feature inventory is [`CHANGELOG.md` `[Unreleased]`](../CHANGELOG.md#unreleased).
+Current `master` contains development after the published target `v1.1.0`. The audited post-PR #84 merge commit is `e9fa50a0df28982b12ffc1ca55d40ac51d6e0ed3`. The authoritative feature inventory is [`CHANGELOG.md` `[Unreleased]`](../CHANGELOG.md#unreleased).
 
 `VERSION` remains `1.1.0` because it identifies the latest published release. It does not imply that current `master` is identical to the published tag.
 
@@ -36,7 +36,7 @@ None of those changes is retroactively part of `v1.1.0`.
 
 ## Current Validation Baseline
 
-Final PR #84 head `66c868ad157e34449435685cb961c8bade646ffe` passed Governance CI, Python example CI, Bash example CI, and Pull Request Governance. Git comparison confirmed that merge commit `e9fa50a0df28982b12ffc1ca55d40ac51d6e0ed3` is one commit ahead with no file differences.
+Final PR #84 head `66c868ad157e34449435685cb961c8bade646ffe` passed Governance CI, Python example CI, Bash example CI, and Pull Request Governance. Git comparison confirmed that merge commit `e9fa50a0df28982b12ffc1ca55d40ac51d6e0ed3` is one commit ahead with no file differences. Historical evidence for those commits does not validate current `master`.
 
 The four final artifacts were independently downloaded, SHA-256 hashed, opened, and JSON parsed:
 
