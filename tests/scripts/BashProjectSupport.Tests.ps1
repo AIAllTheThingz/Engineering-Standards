@@ -316,6 +316,7 @@ Describe 'Governed Bash project support' {
             '.github/workflows/governance-ci-reusable.yml',
             '.github/workflows/governance-ci.yml',
             'workflows/bash-ci.yml',
+            'CHANGELOG.md',
             'docs/VALIDATOR_DEPENDENCIES.md',
             'docs/DOWNSTREAM_COMPATIBILITY.md',
             'docs/GOVERNANCE_CONSOLIDATION_AUDIT.md',
@@ -329,10 +330,13 @@ Describe 'Governed Bash project support' {
             'governance/standards-consistency.json',
             'governance.config.json',
             'project-manifest.json',
+            'schemas/downstream-compatibility.schema.json',
+            'schemas/standards-consistency.schema.json',
             'scripts/Test-PythonStaticAnalysis.ps1',
             'scripts/bash-project-validation.py',
             'tests/scripts/BashExampleCleanup.Tests.ps1',
-            'tests/scripts/BashProjectSupport.Tests.ps1'
+            'tests/scripts/BashProjectSupport.Tests.ps1',
+            'tests/scripts/ConsolidationContracts.Tests.ps1'
         )
         @($changedAfterValidation | Where-Object {
             -not $_.StartsWith('examples/bash-project/evidence/', [StringComparison]::Ordinal) -and
