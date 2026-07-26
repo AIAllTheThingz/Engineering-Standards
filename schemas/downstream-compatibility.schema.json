@@ -14,48 +14,222 @@
     "unreleasedContract"
   ],
   "properties": {
-    "schemaVersion": { "type": "string", "const": "1.0.0" },
-    "repository": { "type": "string", "const": "AIAllTheThingz/Engineering-Standards" },
-    "updatedAtUtc": { "type": "string", "format": "date-time" },
-    "ownerRole": { "type": "string", "minLength": 3, "maxLength": 120 },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "repository": {
+      "type": "string",
+      "const": "AIAllTheThingz/Engineering-Standards"
+    },
+    "updatedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ownerRole": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 120
+    },
     "supportPolicy": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["currentMajor", "previousMajor", "securityFixes", "removalNotice"],
+      "required": [
+        "currentMajor",
+        "previousMajor",
+        "securityFixes",
+        "removalNotice"
+      ],
       "properties": {
-        "currentMajor": { "type": "integer", "minimum": 0 },
-        "previousMajor": { "type": ["integer", "null"], "minimum": 0 },
-        "securityFixes": { "type": "string", "minLength": 20, "maxLength": 1000 },
-        "removalNotice": { "type": "string", "minLength": 20, "maxLength": 1000 }
+        "currentMajor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "previousMajor": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "securityFixes": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 1000
+        },
+        "removalNotice": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 1000
+        }
       }
     },
     "governanceReleases": {
       "type": "array",
-      "items": { "$ref": "#/$defs/release" },
+      "items": {
+        "$ref": "#/$defs/release"
+      },
       "minItems": 1
     },
-    "unreleasedContract": { "$ref": "#/$defs/unreleased" }
+    "unreleasedContract": {
+      "$ref": "#/$defs/unreleased"
+    }
   },
   "$defs": {
-    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
-    "commitSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
-    "relativePath": { "type": "string", "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?![A-Za-z]:)(?!/)(?!\\\\).+" },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "commitSha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?![A-Za-z]:)(?!/)(?!\\\\).+"
+    },
     "versionSet": {
       "type": "array",
-      "items": { "$ref": "#/$defs/version" },
+      "items": {
+        "$ref": "#/$defs/version"
+      },
       "minItems": 1,
       "uniqueItems": true
     },
     "deprecation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status", "announcedAtUtc", "removalVersion", "replacement"],
+      "required": [
+        "status",
+        "announcedAtUtc",
+        "removalVersion",
+        "replacement"
+      ],
       "properties": {
-        "status": { "type": "string", "enum": ["NotDeprecated", "Deprecated", "Removed"] },
-        "announcedAtUtc": { "type": ["string", "null"], "format": "date-time" },
-        "removalVersion": { "type": ["string", "null"], "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
-        "replacement": { "type": ["string", "null"], "minLength": 3, "maxLength": 500 }
+        "status": {
+          "type": "string",
+          "enum": [
+            "NotDeprecated",
+            "Deprecated",
+            "Removed"
+          ]
+        },
+        "announcedAtUtc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "removalVersion": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "replacement": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 3,
+          "maxLength": 500
+        }
       }
+    },
+    "functionalWorkflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "language",
+        "workflowPath",
+        "interfaceVersion",
+        "immutableSha",
+        "supportStatus",
+        "validationStatus",
+        "evidence"
+      ],
+      "properties": {
+        "language": {
+          "type": "string",
+          "enum": [
+            "python",
+            "bash"
+          ]
+        },
+        "workflowPath": {
+          "type": "string",
+          "enum": [
+            ".github/workflows/python-ci-reusable.yml",
+            ".github/workflows/bash-ci-reusable.yml"
+          ]
+        },
+        "interfaceVersion": {
+          "$ref": "#/$defs/version"
+        },
+        "immutableSha": {
+          "$ref": "#/$defs/commitSha"
+        },
+        "supportStatus": {
+          "type": "string",
+          "enum": [
+            "Preview",
+            "Supported",
+            "SecurityFixesOnly",
+            "Unsupported"
+          ]
+        },
+        "validationStatus": {
+          "type": "string",
+          "enum": [
+            "Passed",
+            "Failed",
+            "Blocked",
+            "NotRun",
+            "NotApplicable"
+          ]
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 2000
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "language": {
+                "const": "python"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "workflowPath": {
+                "const": ".github/workflows/python-ci-reusable.yml"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "language": {
+                "const": "bash"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "workflowPath": {
+                "const": ".github/workflows/bash-ci-reusable.yml"
+              }
+            }
+          }
+        }
+      ]
     },
     "release": {
       "type": "object",
@@ -74,17 +248,46 @@
         "deprecation"
       ],
       "properties": {
-        "version": { "$ref": "#/$defs/version" },
-        "lifecycle": { "type": "string", "const": "Published" },
-        "supportStatus": { "type": "string", "enum": ["Supported", "SecurityFixesOnly", "Unsupported"] },
-        "immutableRef": { "type": "string", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
-        "immutableSha": { "$ref": "#/$defs/commitSha" },
-        "workflowInterfaceVersions": { "$ref": "#/$defs/versionSet" },
-        "projectManifestSchemaVersions": { "$ref": "#/$defs/versionSet" },
-        "testEvidenceSchemaVersions": { "$ref": "#/$defs/versionSet" },
-        "completionResultSchemaVersions": { "$ref": "#/$defs/versionSet" },
-        "migrationGuide": { "$ref": "#/$defs/relativePath" },
-        "deprecation": { "$ref": "#/$defs/deprecation" }
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "lifecycle": {
+          "type": "string",
+          "const": "Published"
+        },
+        "supportStatus": {
+          "type": "string",
+          "enum": [
+            "Supported",
+            "SecurityFixesOnly",
+            "Unsupported"
+          ]
+        },
+        "immutableRef": {
+          "type": "string",
+          "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+        },
+        "immutableSha": {
+          "$ref": "#/$defs/commitSha"
+        },
+        "workflowInterfaceVersions": {
+          "$ref": "#/$defs/versionSet"
+        },
+        "projectManifestSchemaVersions": {
+          "$ref": "#/$defs/versionSet"
+        },
+        "testEvidenceSchemaVersions": {
+          "$ref": "#/$defs/versionSet"
+        },
+        "completionResultSchemaVersions": {
+          "$ref": "#/$defs/versionSet"
+        },
+        "migrationGuide": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "deprecation": {
+          "$ref": "#/$defs/deprecation"
+        }
       }
     },
     "unreleased": {
@@ -98,17 +301,43 @@
         "testEvidenceSchemaVersions",
         "completionResultSchemaVersions",
         "migrationGuide",
-        "canaryValidatedWorkflowSha"
+        "canaryValidatedWorkflowSha",
+        "functionalWorkflows"
       ],
       "properties": {
-        "governanceVersion": { "$ref": "#/$defs/version" },
-        "supportStatus": { "type": "string", "const": "Preview" },
-        "workflowInterfaceVersions": { "$ref": "#/$defs/versionSet" },
-        "projectManifestSchemaVersions": { "$ref": "#/$defs/versionSet" },
-        "testEvidenceSchemaVersions": { "$ref": "#/$defs/versionSet" },
-        "completionResultSchemaVersions": { "$ref": "#/$defs/versionSet" },
-        "migrationGuide": { "$ref": "#/$defs/relativePath" },
-        "canaryValidatedWorkflowSha": { "$ref": "#/$defs/commitSha" }
+        "governanceVersion": {
+          "$ref": "#/$defs/version"
+        },
+        "supportStatus": {
+          "type": "string",
+          "const": "Preview"
+        },
+        "workflowInterfaceVersions": {
+          "$ref": "#/$defs/versionSet"
+        },
+        "projectManifestSchemaVersions": {
+          "$ref": "#/$defs/versionSet"
+        },
+        "testEvidenceSchemaVersions": {
+          "$ref": "#/$defs/versionSet"
+        },
+        "completionResultSchemaVersions": {
+          "$ref": "#/$defs/versionSet"
+        },
+        "migrationGuide": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "canaryValidatedWorkflowSha": {
+          "$ref": "#/$defs/commitSha"
+        },
+        "functionalWorkflows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/functionalWorkflow"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
       }
     }
   }
