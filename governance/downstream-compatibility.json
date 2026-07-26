@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "repository": "AIAllTheThingz/Engineering-Standards",
-  "updatedAtUtc": "2026-07-26T02:55:00Z",
+  "updatedAtUtc": "2026-07-26T06:12:59Z",
   "ownerRole": "Release Maintainers",
   "supportPolicy": {
     "currentMajor": 1,
@@ -16,10 +16,21 @@
       "supportStatus": "Supported",
       "immutableRef": "v1.1.0",
       "immutableSha": "2704049d7e826975d956611b194214dd79ea3686",
-      "workflowInterfaceVersions": ["1.0.0"],
-      "projectManifestSchemaVersions": ["1.0.0", "1.1.0"],
-      "testEvidenceSchemaVersions": ["1.0.0", "1.1.0"],
-      "completionResultSchemaVersions": ["1.0.0", "1.1.0"],
+      "workflowInterfaceVersions": [
+        "1.0.0"
+      ],
+      "projectManifestSchemaVersions": [
+        "1.0.0",
+        "1.1.0"
+      ],
+      "testEvidenceSchemaVersions": [
+        "1.0.0",
+        "1.1.0"
+      ],
+      "completionResultSchemaVersions": [
+        "1.0.0",
+        "1.1.0"
+      ],
       "migrationGuide": "docs/ADOPTION_GUIDE.md",
       "deprecation": {
         "status": "NotDeprecated",
@@ -32,11 +43,43 @@
   "unreleasedContract": {
     "governanceVersion": "1.1.0",
     "supportStatus": "Preview",
-    "workflowInterfaceVersions": ["1.0.0"],
-    "projectManifestSchemaVersions": ["1.0.0", "1.1.0", "1.2.0"],
-    "testEvidenceSchemaVersions": ["1.0.0", "1.1.0"],
-    "completionResultSchemaVersions": ["1.0.0", "1.1.0"],
+    "workflowInterfaceVersions": [
+      "1.0.0"
+    ],
+    "projectManifestSchemaVersions": [
+      "1.0.0",
+      "1.1.0",
+      "1.2.0"
+    ],
+    "testEvidenceSchemaVersions": [
+      "1.0.0",
+      "1.1.0"
+    ],
+    "completionResultSchemaVersions": [
+      "1.0.0",
+      "1.1.0"
+    ],
     "migrationGuide": "docs/migrations/ISSUE_21_CONTRACT_COMPATIBILITY_PROPOSAL.md",
-    "canaryValidatedWorkflowSha": "de32b77e2043f5336a54b92ab9ed867abe93ba7e"
+    "canaryValidatedWorkflowSha": "de32b77e2043f5336a54b92ab9ed867abe93ba7e",
+    "functionalWorkflows": [
+      {
+        "language": "python",
+        "workflowPath": ".github/workflows/python-ci-reusable.yml",
+        "interfaceVersion": "1.0.0",
+        "immutableSha": "e066df32a0deaee38fed4a4cd477d1f4b4b549ed",
+        "supportStatus": "Preview",
+        "validationStatus": "Passed",
+        "evidence": "The distribution authority matches workflows/python-ci.yml and is validated by the maintained Python example and hosted Python example CI. This is first-party functional evidence, not a five-scenario external canary."
+      },
+      {
+        "language": "bash",
+        "workflowPath": ".github/workflows/bash-ci-reusable.yml",
+        "interfaceVersion": "1.0.0",
+        "immutableSha": "d55bb8e6778030f5490e900ba52ba99ac6403827",
+        "supportStatus": "Preview",
+        "validationStatus": "Passed",
+        "evidence": "The distribution authority matches workflows/bash-ci.yml and is validated by the maintained Bash example and hosted Bash example CI. This is first-party functional evidence, not a five-scenario external canary."
+      }
+    ]
   }
 }
