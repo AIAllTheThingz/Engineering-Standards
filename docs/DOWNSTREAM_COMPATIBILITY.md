@@ -11,7 +11,7 @@
 
 This document defines how maintainers and downstream consumers determine whether a governance release, evidence schema, project-manifest schema, central reusable-workflow interface, or language-specific functional workflow remains supported. The machine-readable source of truth is [`governance/downstream-compatibility.json`](../governance/downstream-compatibility.json), validated against [`schemas/downstream-compatibility.schema.json`](../schemas/downstream-compatibility.schema.json).
 
-The matrix distinguishes an immutable published release from the unreleased contract on `master`. A moving branch is never release evidence. Consumers must select an immutable release target or an explicitly recorded immutable workflow authority and must not infer compatibility from a matching semantic version alone.
+The matrix distinguishes an immutable published release from the unreleased contract on `master`. A moving branch is never release evidence. Consumers MUST select an immutable release target or an explicitly recorded immutable workflow authority and MUST NOT infer compatibility from a matching semantic version alone.
 
 ## Contract Schema Versions
 
@@ -82,11 +82,11 @@ These SHAs are distribution authorities recorded by `workflows/python-ci.yml` an
 5. When Python or Bash functional validation is required, pin the matching functional workflow `immutableSha`.
 6. Retain adoption evidence with the chosen entry and its stated limitations.
 
-Consumers must not substitute `master`, a mutable tag, an undocumented self-CI pin, or a convenient schema version. When a required combination is absent, stop adoption and open a compatibility issue.
+Consumers MUST NOT substitute `master`, a mutable tag, an undocumented self-CI pin, or a convenient schema version. When a required combination is absent, adoption MUST stop until the compatibility record is corrected or an approved exception exists.
 
 ## Release Gate
 
-Before release approval, maintainers must update the matrix in the same unchanged candidate head as `VERSION`, changelog, release notes, schema declarations, workflow interfaces, migration guidance, and functional workflow authorities.
+Before release approval, maintainers MUST update the matrix in the same unchanged candidate head as `VERSION`, changelog, release notes, schema declarations, workflow interfaces, migration guidance, and functional workflow authorities.
 
 ```powershell
 pwsh -NoProfile -File scripts/Test-ReleaseLifecycle.ps1 -Path . -EvidencePath <release-lifecycle-record.json> -Stage PreRelease
@@ -96,11 +96,11 @@ The pre-release gate compares the lifecycle record with the matrix. Publication 
 
 ## Support, Evidence, And Exceptions
 
-A deprecation must identify announcement time, replacement, intended removal version, downstream impact, and migration guidance.
+A deprecation MUST identify announcement time, replacement, intended removal version, downstream impact, and migration guidance.
 
-Evidence must identify commands, outcomes, candidate SHA, supported schemas, workflow interfaces, immutable workflow authorities, migration path, artifact hashes, approvals, and limitations. `Blocked`, `NotRun`, and `NotApplicable` remain visible.
+Evidence MUST identify commands, outcomes, candidate SHA, supported schemas, workflow interfaces, immutable workflow authorities, migration path, artifact hashes, approvals, and limitations. `Blocked`, `NotRun`, and `NotApplicable` remain visible.
 
-An exception requires a `GOV-*` record with owner, scope, rationale, expiration, compensating controls, and migration plan.
+An Exception requires a `GOV-*` record with owner, scope, rationale, expiration, compensating controls, and migration plan.
 
 ## Related
 
