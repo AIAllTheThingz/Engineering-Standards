@@ -11,6 +11,7 @@ on:
       - 'scripts/Normalize-BashFunctionalEvidence.py'
       - 'scripts/New-CompletionEvidence.ps1'
       - 'scripts/GovernanceValidation.psm1'
+      - 'scripts/GovernanceValidation.Legacy.psm1'
       - 'scripts/Test-BashWorkflowEvidenceArtifact.ps1'
       - 'actions/validate-evidence/Invoke-EvidenceValidation.ps1'
       - 'tests/bash/**'
