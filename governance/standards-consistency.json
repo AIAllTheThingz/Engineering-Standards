@@ -4,8 +4,8 @@
   "repositoryVersion": "1.1.0",
   "defaultBranch": "master",
   "riskClassification": "High",
-  "generatedFromCommit": "e9fa50a0df28982b12ffc1ca55d40ac51d6e0ed3",
-  "generatedAtUtc": "2026-07-26T02:55:00Z",
+  "generatedFromCommit": "dee27948aafbc6f7dcb646921e8e1c9c9c4add56",
+  "generatedAtUtc": "2026-07-26T06:12:59Z",
   "canonicalStatusValues": [
     "Passed",
     "Failed",
@@ -233,7 +233,13 @@
       "parentDocuments": [
         "agents/AGENTS_Base.md"
       ],
-      "childOrHandoffStandards": [],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_DotNet.md",
+        "agents/AGENTS_Database.md",
+        "agents/AGENTS_Infrastructure.md",
+        "agents/AGENTS_Python.md",
+        "agents/AGENTS_Bash.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -245,7 +251,7 @@
       "negativeWeakeningCoverage": "Present",
       "pesterMutationCoverage": "Present",
       "identifiedDiscrepancies": [],
-      "resolution": "Enterprise PowerShell controls retained."
+      "resolution": "Enterprise PowerShell controls and cross-shell handoffs are retained."
     },
     {
       "path": "agents/AGENTS_DotNet.md",
@@ -257,7 +263,14 @@
       "parentDocuments": [
         "agents/AGENTS_Base.md"
       ],
-      "childOrHandoffStandards": [],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_Python.md",
+        "agents/AGENTS_Bash.md",
+        "agents/AGENTS_Database.md",
+        "agents/AGENTS_WorkerService.md",
+        "agents/AGENTS_Integration.md",
+        "agents/AGENTS_WebFrontend.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -269,7 +282,7 @@
       "negativeWeakeningCoverage": "Present",
       "pesterMutationCoverage": "Present",
       "identifiedDiscrepancies": [],
-      "resolution": ".NET controls retained."
+      "resolution": ".NET controls and mandatory cross-standard handoffs are retained."
     },
     {
       "path": "agents/AGENTS_Database.md",
@@ -281,7 +294,15 @@
       "parentDocuments": [
         "agents/AGENTS_Base.md"
       ],
-      "childOrHandoffStandards": [],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_DotNet.md",
+        "agents/AGENTS_PowerShell.md",
+        "agents/AGENTS_WorkerService.md",
+        "agents/AGENTS_Integration.md",
+        "agents/AGENTS_Infrastructure.md",
+        "agents/AGENTS_Python.md",
+        "agents/AGENTS_Bash.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -293,7 +314,7 @@
       "negativeWeakeningCoverage": "Present",
       "pesterMutationCoverage": "Present",
       "identifiedDiscrepancies": [],
-      "resolution": "Database controls retained."
+      "resolution": "Database controls and mandatory cross-standard handoffs are retained."
     },
     {
       "path": "agents/AGENTS_WorkerService.md",
@@ -305,7 +326,15 @@
       "parentDocuments": [
         "agents/AGENTS_Base.md"
       ],
-      "childOrHandoffStandards": [],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_DotNet.md",
+        "agents/AGENTS_Database.md",
+        "agents/AGENTS_PowerShell.md",
+        "agents/AGENTS_Integration.md",
+        "agents/AGENTS_Infrastructure.md",
+        "agents/AGENTS_Python.md",
+        "agents/AGENTS_Bash.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -317,7 +346,7 @@
       "negativeWeakeningCoverage": "Present",
       "pesterMutationCoverage": "Present",
       "identifiedDiscrepancies": [],
-      "resolution": "Worker-service controls retained."
+      "resolution": "Worker-service controls and mandatory cross-standard handoffs are retained."
     },
     {
       "path": "agents/AGENTS_Integration.md",
@@ -327,9 +356,23 @@
       "lastReviewed": "2026-06-21",
       "ownerRole": "Engineering Standards Maintainers",
       "parentDocuments": [
-        "agents/AGENTS_Base.md"
+        "agents/AGENTS_Base.md",
+        "governance/ORGANIZATION_CONTRACT.md",
+        "governance/COMPLETION_EVIDENCE.md",
+        "governance/RISK_CLASSIFICATION.md",
+        "governance/EXCEPTION_PROCESS.md",
+        "governance/AI_GENERATED_CODE_POLICY.md"
       ],
-      "childOrHandoffStandards": [],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_DotNet.md",
+        "agents/AGENTS_PowerShell.md",
+        "agents/AGENTS_Database.md",
+        "agents/AGENTS_WorkerService.md",
+        "agents/AGENTS_Infrastructure.md",
+        "agents/AGENTS_WebFrontend.md",
+        "agents/AGENTS_Python.md",
+        "agents/AGENTS_Bash.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -341,19 +384,28 @@
       "negativeWeakeningCoverage": "Present",
       "pesterMutationCoverage": "Present",
       "identifiedDiscrepancies": [],
-      "resolution": "Integration controls and semantic mutation coverage retained."
+      "resolution": "Integration governance parents, technology handoffs, and semantic mutation coverage are retained."
     },
     {
       "path": "agents/AGENTS_Infrastructure.md",
       "kind": "technology-standard",
       "declaredVersion": "1.1.1",
       "status": "Active",
-      "lastReviewed": "2026-06-20",
+      "lastReviewed": "2026-06-21",
       "ownerRole": "Engineering Standards Maintainers",
       "parentDocuments": [
         "agents/AGENTS_Base.md"
       ],
-      "childOrHandoffStandards": [],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_PowerShell.md",
+        "agents/AGENTS_DotNet.md",
+        "agents/AGENTS_Database.md",
+        "agents/AGENTS_WorkerService.md",
+        "agents/AGENTS_Integration.md",
+        "agents/AGENTS_WebFrontend.md",
+        "agents/AGENTS_Python.md",
+        "agents/AGENTS_Bash.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -365,7 +417,7 @@
       "negativeWeakeningCoverage": "Present",
       "pesterMutationCoverage": "Present",
       "identifiedDiscrepancies": [],
-      "resolution": "Infrastructure controls retained."
+      "resolution": "Infrastructure controls, current review metadata, and mandatory handoffs are retained."
     },
     {
       "path": "agents/AGENTS_WebFrontend.md",
@@ -377,7 +429,16 @@
       "parentDocuments": [
         "agents/AGENTS_Base.md"
       ],
-      "childOrHandoffStandards": [],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_DotNet.md",
+        "agents/AGENTS_Integration.md",
+        "agents/AGENTS_Infrastructure.md",
+        "agents/AGENTS_WorkerService.md",
+        "agents/AGENTS_Database.md",
+        "agents/AGENTS_PowerShell.md",
+        "agents/AGENTS_Python.md",
+        "agents/AGENTS_Bash.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -389,7 +450,7 @@
       "negativeWeakeningCoverage": "Present",
       "pesterMutationCoverage": "Present",
       "identifiedDiscrepancies": [],
-      "resolution": "Web frontend controls retained."
+      "resolution": "Web frontend controls and mandatory cross-standard handoffs are retained."
     },
     {
       "path": "agents/AGENTS_Python.md",
@@ -401,7 +462,15 @@
       "parentDocuments": [
         "agents/AGENTS_Base.md"
       ],
-      "childOrHandoffStandards": [],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_WebFrontend.md",
+        "agents/AGENTS_Database.md",
+        "agents/AGENTS_WorkerService.md",
+        "agents/AGENTS_Integration.md",
+        "agents/AGENTS_Infrastructure.md",
+        "agents/AGENTS_PowerShell.md",
+        "agents/AGENTS_DotNet.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -413,7 +482,7 @@
       "negativeWeakeningCoverage": "Present",
       "pesterMutationCoverage": "Present",
       "identifiedDiscrepancies": [],
-      "resolution": "Python standard, trusted static validation, functional workflow, and mutation coverage are registered."
+      "resolution": "Python standard, trusted static validation, functional workflow, and mandatory handoffs are registered."
     },
     {
       "path": "agents/AGENTS_Bash.md",
@@ -425,7 +494,16 @@
       "parentDocuments": [
         "agents/AGENTS_Base.md"
       ],
-      "childOrHandoffStandards": [],
+      "childOrHandoffStandards": [
+        "agents/AGENTS_Infrastructure.md",
+        "agents/AGENTS_Integration.md",
+        "agents/AGENTS_WorkerService.md",
+        "agents/AGENTS_Database.md",
+        "agents/AGENTS_PowerShell.md",
+        "agents/AGENTS_WebFrontend.md",
+        "agents/AGENTS_DotNet.md",
+        "agents/AGENTS_Python.md"
+      ],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -437,7 +515,7 @@
       "negativeWeakeningCoverage": "Present",
       "pesterMutationCoverage": "Present",
       "identifiedDiscrepancies": [],
-      "resolution": "Bash standard, hash-locked functional toolchain, isolated execution, evidence, and mutation coverage are registered."
+      "resolution": "Bash standard, hash-locked functional toolchain, isolated execution, evidence, mutation coverage, and mandatory handoffs are registered."
     }
   ],
   "workflowReview": {
@@ -465,18 +543,29 @@
   },
   "githubEvidence": {
     "status": "Passed",
-    "reason": "Final PR #84 Governance CI, Python example CI, Bash example CI, and Pull Request Governance runs all passed for head 66c868ad157e34449435685cb961c8bade646ffe. All four artifacts were downloaded, independently SHA-256 hashed, and JSON parsed; their hashes matched GitHub digests. Merge commit e9fa50a0df28982b12ffc1ca55d40ac51d6e0ed3 has no file differences from that validated head."
+    "reason": "Final PR #88 head 3f80d71d780ddd04c66329c8452c3c97ea50deef passed Pull Request Governance, Python example CI, Bash example CI, trusted Governance validation, and candidate implementation validation before merge commit dee27948aafbc6f7dcb646921e8e1c9c9c4add56."
   },
   "branchProtection": {
     "status": "Passed",
-    "reason": "The previously recorded GitHub API inspection verified classic protection on master with pull-request enforcement, strict required governance validation, conversation resolution, force-push and deletion blocks, and administrator enforcement. This consolidation does not claim a new live branch-protection inspection."
+    "reason": "The previously recorded GitHub API inspection verified classic protection on master with pull-request enforcement, strict required governance validation, conversation resolution, force-push and deletion blocks, and administrator enforcement. This corrective record does not claim a new live branch-protection inspection."
   },
-  "releaseReadiness": {
-    "status": "NotRun",
-    "proposedVersion": "1.1.0",
-    "proposedTag": "v1.1.0",
+  "publishedRelease": {
+    "status": "Passed",
+    "version": "1.1.0",
+    "tag": "v1.1.0",
     "targetCommitSha": "2704049d7e826975d956611b194214dd79ea3686",
     "releaseCreated": true,
-    "reason": "Published v1.1.0 is complete and verified at its immutable target. Current master is later unreleased development. No next semantic version or unchanged release candidate has been selected, and no new pre-release lifecycle run, exact-candidate downstream canary, tag authorization, or publication authorization has been performed."
+    "reason": "Published v1.1.0 remains complete and verified at its immutable annotated tag and target commit."
+  },
+  "nextReleaseReadiness": {
+    "status": "NotRun",
+    "proposedVersion": null,
+    "proposedTag": null,
+    "targetCommitSha": null,
+    "reason": "Current master contains unreleased development, but no next semantic version, unchanged release candidate, exact-candidate lifecycle evidence, downstream canary set, tag authorization, or publication authorization has been selected or performed."
+  },
+  "releaseReadiness": {
+    "status": "NotApplicable",
+    "reason": "Deprecated compatibility alias retained only for pre-split validators; it contains no release version, tag, target SHA, or publication state."
   }
 }

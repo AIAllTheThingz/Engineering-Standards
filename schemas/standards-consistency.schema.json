@@ -18,6 +18,8 @@
     "workflowReview",
     "githubEvidence",
     "branchProtection",
+    "publishedRelease",
+    "nextReleaseReadiness",
     "releaseReadiness"
   ],
   "properties": {
@@ -120,17 +122,65 @@
         "reason": { "type": "string", "minLength": 10 }
       }
     },
-    "releaseReadiness": {
+    "publishedRelease": { "$ref": "#/$defs/publishedRelease" },
+    "nextReleaseReadiness": { "$ref": "#/$defs/nextReleaseReadiness" },
+    "releaseReadiness": { "$ref": "#/$defs/legacyReleaseReadiness" }
+  },
+  "$defs": {
+    "publishedRelease": {
       "type": "object",
       "additionalProperties": false,
-      "required": [ "status", "proposedVersion", "proposedTag", "targetCommitSha", "releaseCreated", "reason" ],
+      "required": [ "status", "version", "tag", "targetCommitSha", "releaseCreated", "reason" ],
       "properties": {
         "status": { "type": "string", "enum": [ "Passed", "Failed", "Blocked", "NotRun", "NotApplicable" ] },
-        "proposedVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
-        "proposedTag": { "type": "string", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "tag": { "type": "string", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$" },
         "targetCommitSha": { "type": "string", "pattern": "^[A-Fa-f0-9]{40}$" },
         "releaseCreated": { "type": "boolean" },
         "reason": { "type": "string", "minLength": 10 }
+      }
+    },
+    "nextReleaseReadiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "status", "proposedVersion", "proposedTag", "targetCommitSha", "reason" ],
+      "properties": {
+        "status": { "type": "string", "enum": [ "Passed", "Failed", "Blocked", "NotRun", "NotApplicable" ] },
+        "proposedVersion": { "type": [ "string", "null" ], "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "proposedTag": { "type": [ "string", "null" ], "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "targetCommitSha": { "type": [ "string", "null" ], "pattern": "^[A-Fa-f0-9]{40}$" },
+        "reason": { "type": "string", "minLength": 10 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "enum": [ "NotRun", "NotApplicable" ] } } },
+          "then": {
+            "properties": {
+              "proposedVersion": { "const": null },
+              "proposedTag": { "const": null },
+              "targetCommitSha": { "const": null }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "status": { "enum": [ "Passed", "Failed", "Blocked" ] } } },
+          "then": {
+            "properties": {
+              "proposedVersion": { "type": "string" },
+              "proposedTag": { "type": "string" },
+              "targetCommitSha": { "type": "string" }
+            }
+          }
+        }
+      ]
+    },
+    "legacyReleaseReadiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "status", "reason" ],
+      "properties": {
+        "status": { "type": "string", "const": "NotApplicable" },
+        "reason": { "type": "string", "minLength": 20 }
       }
     }
   }

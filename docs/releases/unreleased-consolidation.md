@@ -4,13 +4,13 @@
 | --- | --- |
 | Status | Unreleased |
 | Published baseline | 1.1.0 |
-| Audited master commit | `e9fa50a0df28982b12ffc1ca55d40ac51d6e0ed3` |
-| Final validated equivalent tree | `66c868ad157e34449435685cb961c8bade646ffe` |
-| Last reviewed | 2026-07-25 |
+| Audited master commit | `dee27948aafbc6f7dcb646921e8e1c9c9c4add56` |
+| Final validated equivalent tree | `3f80d71d780ddd04c66329c8452c3c97ea50deef` |
+| Last reviewed | 2026-07-26 |
 
 ## Summary
 
-This record consolidates the post-`v1.1.0` development completed through PR #84. It is release-preparation documentation only. It does not select a new semantic version, authorize a tag, publish a GitHub Release, or add current development to historical `v1.1.0`.
+This record consolidates the post-`v1.1.0` development completed through PR #88 and the focused correction of its post-merge review findings. It is release-preparation documentation only. It does not select a new semantic version, authorize a tag, publish a GitHub Release, or add current development to historical `v1.1.0`.
 
 ## Included Unreleased Work
 
@@ -27,6 +27,9 @@ This record consolidates the post-`v1.1.0` development completed through PR #84.
 - Coordinated immutable self-CI pin rotation.
 - Full trusted Git history for checked-in evidence validation.
 - Corrected Bash evidence-freshness boundaries for unrelated central governance changes.
+- Explicit machine-readable Python and Bash functional workflow compatibility authorities.
+- Restored mandatory cross-standard handoff relationships in the standards consistency matrix.
+- Separate published-release state and next-release readiness records.
 
 ## Compatibility
 
@@ -34,20 +37,37 @@ The central governance workflow interface remains `1.0.0`.
 
 Published `v1.1.0` remains supported at immutable commit `2704049d7e826975d956611b194214dd79ea3686`. Current development retains project-manifest schemas `1.0.0` and `1.1.0` and adds schema `1.2.0` as Preview. Test-evidence and completion-result schemas remain `1.0.0` and `1.1.0`.
 
-The independently canary-validated downstream workflow remains `de32b77e2043f5336a54b92ab9ed867abe93ba7e`. The newer self-CI implementation `a9158d0c7dc37db966da3a518c6155645e985b0c` is not promoted to downstream compatibility authority without a fresh external canary.
+The independently canary-validated central downstream workflow remains `de32b77e2043f5336a54b92ab9ed867abe93ba7e`. The newer self-CI implementation `a9158d0c7dc37db966da3a518c6155645e985b0c` is not promoted to downstream compatibility authority without a fresh external canary.
+
+The Preview functional workflow authorities are recorded separately:
+
+- Python: `.github/workflows/python-ci-reusable.yml@e066df32a0deaee38fed4a4cd477d1f4b4b549ed`, interface `1.0.0`.
+- Bash: `.github/workflows/bash-ci-reusable.yml@d55bb8e6778030f5490e900ba52ba99ac6403827`, interface `1.0.0`.
+
+These are first-party validated distribution authorities. No five-scenario functional external canary is claimed.
 
 ## Verified Baseline
 
-Final PR #84 head `66c868ad157e34449435685cb961c8bade646ffe` passed:
+Final PR #88 head `3f80d71d780ddd04c66329c8452c3c97ea50deef` passed:
 
-- Governance CI run `30184347651`.
-- Bash example CI run `30184347667`.
-- Python example CI run `30184347650`.
-- Pull Request Governance run `30184347707`.
+- Pull Request Governance.
+- Python example CI.
+- Bash example CI.
+- Trusted Governance validation.
+- Candidate implementation validation.
+- Evidence generation, normalization, validation, upload, and mandatory enforcement.
 
-Merge commit `e9fa50a0df28982b12ffc1ca55d40ac51d6e0ed3` has no file differences from the validated head.
+PR #88 merged as `dee27948aafbc6f7dcb646921e8e1c9c9c4add56`.
 
-All four artifacts were downloaded, independently SHA-256 hashed, opened, and JSON parsed. Exact artifact identities and hashes are recorded in [`evidence/latest-verified-run.json`](../../evidence/latest-verified-run.json) and [Governance Consolidation Audit](../GOVERNANCE_CONSOLIDATION_AUDIT.md).
+## Corrective Review Findings
+
+The post-merge review identified three semantic defects not detected by the existing green checks:
+
+1. Functional Python and Bash workflow authorities were described as compatibility dimensions but absent from the machine-readable matrix.
+2. The standards consistency rebuild had emptied mandatory technology handoff arrays and flattened Integration's direct governance parents.
+3. Published `v1.1.0` data was mixed into the `NotRun` next-release readiness object.
+
+The corrective change updates both schemas, both owned JSON records, compatibility documentation, and focused regression tests. It does not alter executable workflow behavior, permissions, secrets, packages, production paths, tags, or releases.
 
 ## Lifecycle Limitations
 
@@ -72,4 +92,4 @@ All four artifacts were downloaded, independently SHA-256 hashed, opened, and JS
 
 ## Consumer Guidance
 
-No immediate migration is required for supported `v1.1.0` consumers. Consumers adopting unreleased Python, Bash, project-manifest `1.2.0`, or later validator behavior must pin an explicitly reviewed immutable commit and accept Preview support boundaries. Moving branches are not compatibility records.
+No immediate migration is required for supported `v1.1.0` consumers. Consumers adopting unreleased Python, Bash, project-manifest `1.2.0`, or later validator behavior must pin the exact authority from the machine-readable compatibility record and accept Preview support boundaries. Moving branches are not compatibility records.

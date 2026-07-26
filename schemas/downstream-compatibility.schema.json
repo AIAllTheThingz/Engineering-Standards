@@ -57,6 +57,30 @@
         "replacement": { "type": ["string", "null"], "minLength": 3, "maxLength": 500 }
       }
     },
+    "functionalWorkflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["language", "workflowPath", "interfaceVersion", "immutableSha", "supportStatus", "validationStatus", "evidence"],
+      "properties": {
+        "language": { "type": "string", "enum": ["python", "bash"] },
+        "workflowPath": { "type": "string", "enum": [".github/workflows/python-ci-reusable.yml", ".github/workflows/bash-ci-reusable.yml"] },
+        "interfaceVersion": { "$ref": "#/$defs/version" },
+        "immutableSha": { "$ref": "#/$defs/commitSha" },
+        "supportStatus": { "type": "string", "enum": ["Preview", "Supported", "SecurityFixesOnly", "Unsupported"] },
+        "validationStatus": { "type": "string", "enum": ["Passed", "Failed", "Blocked", "NotRun", "NotApplicable"] },
+        "evidence": { "type": "string", "minLength": 20, "maxLength": 2000 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "language": { "const": "python" } } },
+          "then": { "properties": { "workflowPath": { "const": ".github/workflows/python-ci-reusable.yml" } } }
+        },
+        {
+          "if": { "properties": { "language": { "const": "bash" } } },
+          "then": { "properties": { "workflowPath": { "const": ".github/workflows/bash-ci-reusable.yml" } } }
+        }
+      ]
+    },
     "release": {
       "type": "object",
       "additionalProperties": false,
@@ -98,7 +122,8 @@
         "testEvidenceSchemaVersions",
         "completionResultSchemaVersions",
         "migrationGuide",
-        "canaryValidatedWorkflowSha"
+        "canaryValidatedWorkflowSha",
+        "functionalWorkflows"
       ],
       "properties": {
         "governanceVersion": { "$ref": "#/$defs/version" },
@@ -108,7 +133,13 @@
         "testEvidenceSchemaVersions": { "$ref": "#/$defs/versionSet" },
         "completionResultSchemaVersions": { "$ref": "#/$defs/versionSet" },
         "migrationGuide": { "$ref": "#/$defs/relativePath" },
-        "canaryValidatedWorkflowSha": { "$ref": "#/$defs/commitSha" }
+        "canaryValidatedWorkflowSha": { "$ref": "#/$defs/commitSha" },
+        "functionalWorkflows": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/functionalWorkflow" },
+          "minItems": 1,
+          "uniqueItems": true
+        }
       }
     }
   }
