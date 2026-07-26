@@ -3,6 +3,19 @@ BeforeAll {
     $script:repoRoot = (Resolve-Path "$PSScriptRoot/../..").Path
     $script:tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("standards-consistency-alias-tests-" + [guid]::NewGuid())
     New-Item -ItemType Directory -Path $script:tempRoot -Force | Out-Null
+
+    function script:New-ConsistencyTestDocument {
+        param(
+            [Parameter(Mandatory)][string]$Name,
+            [Parameter(Mandatory)][scriptblock]$Mutate
+        )
+
+        $document = Get-Content (Join-Path $script:repoRoot 'governance/standards-consistency.json') -Raw | ConvertFrom-Json -AsHashtable
+        & $Mutate $document
+        $path = Join-Path $script:tempRoot "$Name.json"
+        $document | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $path -Encoding utf8
+        $path
+    }
 }
 
 AfterAll {
@@ -11,8 +24,8 @@ AfterAll {
     }
 }
 
-Describe 'Standards-consistency releaseReadiness alias semantics' {
-    It 'accepts the current valid schema 1.1.0 alias' {
+Describe 'Standards-consistency release-state schema and semantics' {
+    It 'accepts the current valid schema 1.1.0 record' {
         $path = Join-Path $script:repoRoot 'governance/standards-consistency.json'
         $results = Test-GovernanceJsonDocument -Path $path -Kind 'standards-consistency'
 
@@ -20,10 +33,10 @@ Describe 'Standards-consistency releaseReadiness alias semantics' {
     }
 
     It 'rejects a schema 1.1.0 alias without a reason' {
-        $document = Get-Content (Join-Path $script:repoRoot 'governance/standards-consistency.json') -Raw | ConvertFrom-Json -AsHashtable
-        $document.releaseReadiness.Remove('reason')
-        $path = Join-Path $script:tempRoot 'missing-alias-reason.json'
-        $document | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $path -Encoding utf8
+        $path = New-ConsistencyTestDocument -Name 'missing-alias-reason' -Mutate {
+            param($document)
+            $document.releaseReadiness.Remove('reason')
+        }
 
         $results = Test-GovernanceJsonDocument -Path $path -Kind 'standards-consistency'
 
@@ -31,13 +44,46 @@ Describe 'Standards-consistency releaseReadiness alias semantics' {
     }
 
     It 'rejects a schema 1.1.0 alias with a reason shorter than the schema minimum' {
-        $document = Get-Content (Join-Path $script:repoRoot 'governance/standards-consistency.json') -Raw | ConvertFrom-Json -AsHashtable
-        $document.releaseReadiness.reason = 'Too short'
-        $path = Join-Path $script:tempRoot 'short-alias-reason.json'
-        $document | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $path -Encoding utf8
+        $path = New-ConsistencyTestDocument -Name 'short-alias-reason' -Mutate {
+            param($document)
+            $document.releaseReadiness.reason = 'Too short'
+        }
 
         $results = Test-GovernanceJsonDocument -Path $path -Kind 'standards-consistency'
 
         @($results | Where-Object { $_.status -eq 'Failed' -and $_.message -eq 'Deprecated releaseReadiness alias reason must contain at least 20 non-whitespace characters.' }) | Should -HaveCount 1
+    }
+
+    It 'rejects a published release reason shorter than the authoritative schema minimum' {
+        $path = New-ConsistencyTestDocument -Name 'short-published-reason' -Mutate {
+            param($document)
+            $document.publishedRelease.reason = 'Short'
+        }
+
+        $results = Test-GovernanceJsonDocument -Path $path -Kind 'standards-consistency'
+
+        @($results | Where-Object { $_.status -eq 'Failed' -and $_.message -like 'Standards-consistency JSON Schema validation failed*' }).Count | Should -BeGreaterThan 0
+    }
+
+    It 'rejects unknown properties on the authoritative published release record' {
+        $path = New-ConsistencyTestDocument -Name 'published-extra-property' -Mutate {
+            param($document)
+            $document.publishedRelease.unreviewedField = 'not allowed'
+        }
+
+        $results = Test-GovernanceJsonDocument -Path $path -Kind 'standards-consistency'
+
+        @($results | Where-Object { $_.status -eq 'Failed' -and $_.message -like 'Standards-consistency JSON Schema validation failed*' }).Count | Should -BeGreaterThan 0
+    }
+
+    It 'rejects unknown properties on the authoritative next-release record' {
+        $path = New-ConsistencyTestDocument -Name 'next-release-extra-property' -Mutate {
+            param($document)
+            $document.nextReleaseReadiness.unreviewedField = 'not allowed'
+        }
+
+        $results = Test-GovernanceJsonDocument -Path $path -Kind 'standards-consistency'
+
+        @($results | Where-Object { $_.status -eq 'Failed' -and $_.message -like 'Standards-consistency JSON Schema validation failed*' }).Count | Should -BeGreaterThan 0
     }
 }
