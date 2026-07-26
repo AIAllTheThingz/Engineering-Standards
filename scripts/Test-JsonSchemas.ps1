@@ -76,7 +76,9 @@ $releaseLifecycleFixtures = @(
     [ordered]@{
         Path = 'tests/fixtures/release-lifecycle/invalid/missing-canary.json'
         ExpectedExitCode = 1
-        Message = 'Invalid release lifecycle fixture rejected as expected.'
+        ExpectedPattern = "RLG001 preRelease is missing required member 'downstreamCanary'\."
+        ForbiddenPattern = 'RLG043'
+        Message = 'Invalid release lifecycle fixture rejected for the intended missing-canary defect.'
     }
 )
 if (-not (Test-Path -LiteralPath $releaseLifecycleValidator -PathType Leaf)) {
@@ -91,12 +93,22 @@ else {
         }
 
         $fixtureOutput = @(& (Join-Path $PSHOME 'pwsh') -NoProfile -File $releaseLifecycleValidator -Path $root -EvidencePath ([string]$fixtureContract.Path) -Stage All 2>&1)
+        $fixtureOutputText = $fixtureOutput -join "`n"
         $fixtureExitCode = $LASTEXITCODE
-        if ($fixtureExitCode -eq [int]$fixtureContract.ExpectedExitCode) {
-            $results.Add((New-ValidationResult -Status Passed -Message $fixtureContract.Message -Path $fixturePath -Severity info))
+        $expectedPattern = if ($fixtureContract.Contains('ExpectedPattern')) { [string]$fixtureContract.ExpectedPattern } else { $null }
+        $forbiddenPattern = if ($fixtureContract.Contains('ForbiddenPattern')) { [string]$fixtureContract.ForbiddenPattern } else { $null }
+
+        if ($fixtureExitCode -ne [int]$fixtureContract.ExpectedExitCode) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Release lifecycle fixture expected exit code $($fixtureContract.ExpectedExitCode) but observed $fixtureExitCode." -Path $fixturePath -Data @($fixtureOutput | ForEach-Object { [string]$_ })))
+        }
+        elseif ($expectedPattern -and $fixtureOutputText -notmatch $expectedPattern) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Release lifecycle fixture did not emit required diagnostic pattern '$expectedPattern'." -Path $fixturePath -Data @($fixtureOutput | ForEach-Object { [string]$_ })))
+        }
+        elseif ($forbiddenPattern -and $fixtureOutputText -match $forbiddenPattern) {
+            $results.Add((New-ValidationResult -Status Failed -Message "Release lifecycle fixture emitted unrelated diagnostic pattern '$forbiddenPattern'." -Path $fixturePath -Data @($fixtureOutput | ForEach-Object { [string]$_ })))
         }
         else {
-            $results.Add((New-ValidationResult -Status Failed -Message "Release lifecycle fixture expected exit code $($fixtureContract.ExpectedExitCode) but observed $fixtureExitCode." -Path $fixturePath -Data @($fixtureOutput | ForEach-Object { [string]$_ })))
+            $results.Add((New-ValidationResult -Status Passed -Message $fixtureContract.Message -Path $fixturePath -Severity info))
         }
     }
 }
