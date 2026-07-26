@@ -4,8 +4,16 @@ Set-StrictMode -Version Latest
 # standards-consistency semantics introduced by contract schema 1.1.0.
 . (Join-Path $PSScriptRoot 'GovernanceValidation.Legacy.psm1')
 
+$script:GovernanceSchemaVersionsByKind = [ordered]@{
+    'completion-result'     = @('1.0.0', '1.1.0')
+    'test-evidence'         = @('1.0.0', '1.1.0')
+    'artifact-record'       = @('1.0.0', '1.1.0')
+    'project-manifest'      = @('1.0.0', '1.1.0', '1.2.0')
+    'governance-config'     = @('1.0.0', '1.1.0', '1.2.0')
+    'verified-run'          = @('1.0.0')
+    'standards-consistency' = @('1.0.0', '1.1.0')
+}
 $script:LegacyTestGovernanceJsonDocument = ${function:Test-GovernanceJsonDocument}
-$script:GovernanceSchemaVersionsByKind['standards-consistency'] = @('1.0.0', '1.1.0')
 
 function Test-GovernanceJsonDocument {
     <#
