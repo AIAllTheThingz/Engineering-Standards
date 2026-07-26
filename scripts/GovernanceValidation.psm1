@@ -77,6 +77,18 @@ function Test-GovernanceJsonDocument {
         return @((New-LegacyValidationResult -Status Failed -Message "Unsupported schemaVersion '$schemaVersion' for governance document kind '$Kind'. Supported versions: $(@($script:GovernanceSchemaVersionsByKind[$Kind]) -join ', ')." -Path $Path))
     }
 
+    $schemaValidationMessage = $null
+    $schemaPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'schemas/standards-consistency.schema.json'
+    try {
+        $schemaRaw = Get-Content -LiteralPath $Path -Raw
+        if (-not ($schemaRaw | Test-Json -SchemaFile $schemaPath -ErrorAction Stop)) {
+            $schemaValidationMessage = 'Standards-consistency JSON Schema validation failed.'
+        }
+    }
+    catch {
+        $schemaValidationMessage = "Standards-consistency JSON Schema validation failed: $($_.Exception.Message)"
+    }
+
     $legacyResults = @()
     $temporaryPath = $null
     try {
@@ -110,6 +122,10 @@ function Test-GovernanceJsonDocument {
     function Add-StandardsConsistencyFinding {
         param([Parameter(Mandatory)][string]$Message)
         $findings.Add((New-LegacyValidationResult -Status Failed -Message $Message -Path $Path))
+    }
+
+    if ($schemaValidationMessage) {
+        Add-StandardsConsistencyFinding $schemaValidationMessage
     }
 
     $statuses = @('Passed','Failed','NotRun','NotApplicable','Blocked')
