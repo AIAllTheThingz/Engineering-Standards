@@ -22,65 +22,22 @@
     "nextReleaseReadiness"
   ],
   "properties": {
-    "schemaVersion": {
-      "type": "string",
-      "pattern": "^1\\.0\\.0$"
-    },
-    "repository": {
-      "type": "string",
-      "const": "AIAllTheThingz/Engineering-Standards"
-    },
-    "repositoryVersion": {
-      "type": "string",
-      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
-    },
-    "defaultBranch": {
-      "type": "string",
-      "const": "master"
-    },
-    "riskClassification": {
-      "type": "string",
-      "enum": [
-        "Low",
-        "Moderate",
-        "High",
-        "Critical"
-      ]
-    },
-    "generatedFromCommit": {
-      "type": "string",
-      "pattern": "^[A-Fa-f0-9]{40}$"
-    },
-    "generatedAtUtc": {
-      "type": "string",
-      "format": "date-time"
-    },
+    "schemaVersion": { "type": "string", "pattern": "^1\\.0\\.0$" },
+    "repository": { "type": "string", "const": "AIAllTheThingz/Engineering-Standards" },
+    "repositoryVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "defaultBranch": { "type": "string", "const": "master" },
+    "riskClassification": { "type": "string", "enum": [ "Low", "Moderate", "High", "Critical" ] },
+    "generatedFromCommit": { "type": "string", "pattern": "^[A-Fa-f0-9]{40}$" },
+    "generatedAtUtc": { "type": "string", "format": "date-time" },
     "canonicalStatusValues": {
       "type": "array",
-      "items": {
-        "type": "string",
-        "enum": [
-          "Passed",
-          "Failed",
-          "Blocked",
-          "NotRun",
-          "NotApplicable"
-        ]
-      },
+      "items": { "type": "string", "enum": [ "Passed", "Failed", "Blocked", "NotRun", "NotApplicable" ] },
       "minItems": 5,
       "uniqueItems": true
     },
     "canonicalRiskValues": {
       "type": "array",
-      "items": {
-        "type": "string",
-        "enum": [
-          "Low",
-          "Moderate",
-          "High",
-          "Critical"
-        ]
-      },
+      "items": { "type": "string", "enum": [ "Low", "Moderate", "High", "Critical" ] },
       "minItems": 4,
       "uniqueItems": true
     },
@@ -113,344 +70,103 @@
           "resolution"
         ],
         "properties": {
-          "path": {
-            "type": "string",
-            "pattern": "^(?!.*\\.\\.)(?![A-Za-z]:)(?!/).+"
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "governance",
-              "root",
-              "base-standard",
-              "technology-standard",
-              "documentation"
-            ]
-          },
-          "declaredVersion": {
-            "type": "string",
-            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "Active",
-              "Draft",
-              "Deprecated"
-            ]
-          },
-          "lastReviewed": {
-            "type": "string",
-            "format": "date"
-          },
-          "ownerRole": {
-            "type": "string",
-            "minLength": 3
-          },
-          "parentDocuments": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "uniqueItems": true
-          },
-          "childOrHandoffStandards": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "uniqueItems": true
-          },
-          "notRunDefined": {
-            "type": "boolean"
-          },
-          "blockedDefined": {
-            "type": "boolean"
-          },
-          "fabricatedEvidenceProhibited": {
-            "type": "boolean"
-          },
-          "exceptionProcessReferenced": {
-            "type": "boolean"
-          },
-          "completionEvidenceReferenced": {
-            "type": "boolean"
-          },
-          "validationCommandsPresent": {
-            "type": "boolean"
-          },
-          "validatorMinimumVersion": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
-          },
-          "positiveValidatorCoverage": {
-            "type": "string",
-            "enum": [
-              "Present",
-              "NotApplicable",
-              "Gap"
-            ]
-          },
-          "negativeWeakeningCoverage": {
-            "type": "string",
-            "enum": [
-              "Present",
-              "NotApplicable",
-              "Gap"
-            ]
-          },
-          "pesterMutationCoverage": {
-            "type": "string",
-            "enum": [
-              "Present",
-              "NotApplicable",
-              "Gap"
-            ]
-          },
-          "identifiedDiscrepancies": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "resolution": {
-            "type": "string",
-            "minLength": 3
-          }
+          "path": { "type": "string", "pattern": "^(?!.*\\.\\.)(?![A-Za-z]:)(?!/).+" },
+          "kind": { "type": "string", "enum": [ "governance", "root", "base-standard", "technology-standard", "documentation" ] },
+          "declaredVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+          "status": { "type": "string", "enum": [ "Active", "Draft", "Deprecated" ] },
+          "lastReviewed": { "type": "string", "format": "date" },
+          "ownerRole": { "type": "string", "minLength": 3 },
+          "parentDocuments": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+          "childOrHandoffStandards": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+          "notRunDefined": { "type": "boolean" },
+          "blockedDefined": { "type": "boolean" },
+          "fabricatedEvidenceProhibited": { "type": "boolean" },
+          "exceptionProcessReferenced": { "type": "boolean" },
+          "completionEvidenceReferenced": { "type": "boolean" },
+          "validationCommandsPresent": { "type": "boolean" },
+          "validatorMinimumVersion": { "type": [ "string", "null" ], "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+          "positiveValidatorCoverage": { "type": "string", "enum": [ "Present", "NotApplicable", "Gap" ] },
+          "negativeWeakeningCoverage": { "type": "string", "enum": [ "Present", "NotApplicable", "Gap" ] },
+          "pesterMutationCoverage": { "type": "string", "enum": [ "Present", "NotApplicable", "Gap" ] },
+          "identifiedDiscrepancies": { "type": "array", "items": { "type": "string" } },
+          "resolution": { "type": "string", "minLength": 3 }
         }
       }
     },
     "workflowReview": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "status",
-        "summary",
-        "workflowsInspected"
-      ],
+      "required": [ "status", "summary", "workflowsInspected" ],
       "properties": {
-        "status": {
-          "type": "string",
-          "enum": [
-            "Passed",
-            "Failed",
-            "Blocked",
-            "NotRun",
-            "NotApplicable"
-          ]
-        },
-        "summary": {
-          "type": "string",
-          "minLength": 10
-        },
-        "workflowsInspected": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "minItems": 1,
-          "uniqueItems": true
-        }
+        "status": { "type": "string", "enum": [ "Passed", "Failed", "Blocked", "NotRun", "NotApplicable" ] },
+        "summary": { "type": "string", "minLength": 10 },
+        "workflowsInspected": { "type": "array", "items": { "type": "string" }, "minItems": 1, "uniqueItems": true }
       }
     },
     "githubEvidence": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "status",
-        "reason"
-      ],
+      "required": [ "status", "reason" ],
       "properties": {
-        "status": {
-          "type": "string",
-          "enum": [
-            "Passed",
-            "Failed",
-            "Blocked",
-            "NotRun",
-            "NotApplicable"
-          ]
-        },
-        "reason": {
-          "type": "string",
-          "minLength": 10
-        }
+        "status": { "type": "string", "enum": [ "Passed", "Failed", "Blocked", "NotRun", "NotApplicable" ] },
+        "reason": { "type": "string", "minLength": 10 }
       }
     },
     "branchProtection": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "status",
-        "reason"
-      ],
+      "required": [ "status", "reason" ],
       "properties": {
-        "status": {
-          "type": "string",
-          "enum": [
-            "Passed",
-            "Failed",
-            "Blocked",
-            "NotRun",
-            "NotApplicable"
-          ]
-        },
-        "reason": {
-          "type": "string",
-          "minLength": 10
-        }
+        "status": { "type": "string", "enum": [ "Passed", "Failed", "Blocked", "NotRun", "NotApplicable" ] },
+        "reason": { "type": "string", "minLength": 10 }
       }
     },
-    "publishedRelease": {
-      "$ref": "#/$defs/publishedRelease"
-    },
-    "nextReleaseReadiness": {
-      "$ref": "#/$defs/nextReleaseReadiness"
-    }
+    "publishedRelease": { "$ref": "#/$defs/publishedRelease" },
+    "nextReleaseReadiness": { "$ref": "#/$defs/nextReleaseReadiness" }
   },
   "$defs": {
     "publishedRelease": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "status",
-        "version",
-        "tag",
-        "targetCommitSha",
-        "releaseCreated",
-        "reason"
-      ],
+      "required": [ "status", "version", "tag", "targetCommitSha", "releaseCreated", "reason" ],
       "properties": {
-        "status": {
-          "type": "string",
-          "enum": [
-            "Passed",
-            "Failed",
-            "Blocked",
-            "NotRun",
-            "NotApplicable"
-          ]
-        },
-        "version": {
-          "type": "string",
-          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
-        },
-        "tag": {
-          "type": "string",
-          "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
-        },
-        "targetCommitSha": {
-          "type": "string",
-          "pattern": "^[A-Fa-f0-9]{40}$"
-        },
-        "releaseCreated": {
-          "type": "boolean"
-        },
-        "reason": {
-          "type": "string",
-          "minLength": 10
-        }
+        "status": { "type": "string", "enum": [ "Passed", "Failed", "Blocked", "NotRun", "NotApplicable" ] },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "tag": { "type": "string", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "targetCommitSha": { "type": "string", "pattern": "^[A-Fa-f0-9]{40}$" },
+        "releaseCreated": { "type": "boolean" },
+        "reason": { "type": "string", "minLength": 10 }
       }
     },
     "nextReleaseReadiness": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "status",
-        "proposedVersion",
-        "proposedTag",
-        "targetCommitSha",
-        "reason"
-      ],
+      "required": [ "status", "proposedVersion", "proposedTag", "targetCommitSha", "reason" ],
       "properties": {
-        "status": {
-          "type": "string",
-          "enum": [
-            "Passed",
-            "Failed",
-            "Blocked",
-            "NotRun",
-            "NotApplicable"
-          ]
-        },
-        "proposedVersion": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
-        },
-        "proposedTag": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
-        },
-        "targetCommitSha": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "pattern": "^[A-Fa-f0-9]{40}$"
-        },
-        "reason": {
-          "type": "string",
-          "minLength": 10
-        }
+        "status": { "type": "string", "enum": [ "Passed", "Failed", "Blocked", "NotRun", "NotApplicable" ] },
+        "proposedVersion": { "type": [ "string", "null" ], "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "proposedTag": { "type": [ "string", "null" ], "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "targetCommitSha": { "type": [ "string", "null" ], "pattern": "^[A-Fa-f0-9]{40}$" },
+        "reason": { "type": "string", "minLength": 10 }
       },
       "allOf": [
         {
-          "if": {
-            "properties": {
-              "status": {
-                "enum": [
-                  "NotRun",
-                  "NotApplicable"
-                ]
-              }
-            }
-          },
+          "if": { "properties": { "status": { "enum": [ "NotRun", "NotApplicable" ] } } },
           "then": {
             "properties": {
-              "proposedVersion": {
-                "const": null
-              },
-              "proposedTag": {
-                "const": null
-              },
-              "targetCommitSha": {
-                "const": null
-              }
+              "proposedVersion": { "const": null },
+              "proposedTag": { "const": null },
+              "targetCommitSha": { "const": null }
             }
           }
         },
         {
-          "if": {
-            "properties": {
-              "status": {
-                "enum": [
-                  "Passed",
-                  "Failed",
-                  "Blocked"
-                ]
-              }
-            }
-          },
+          "if": { "properties": { "status": { "enum": [ "Passed", "Failed", "Blocked" ] } } },
           "then": {
             "properties": {
-              "proposedVersion": {
-                "type": "string"
-              },
-              "proposedTag": {
-                "type": "string"
-              },
-              "targetCommitSha": {
-                "type": "string"
-              }
+              "proposedVersion": { "type": "string" },
+              "proposedTag": { "type": "string" },
+              "targetCommitSha": { "type": "string" }
             }
           }
         }
