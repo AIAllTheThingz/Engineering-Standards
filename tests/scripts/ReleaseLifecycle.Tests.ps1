@@ -3,7 +3,6 @@ Describe 'Release lifecycle gates' {
         $script:root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
         $script:validator = Join-Path $script:root 'scripts/Test-ReleaseLifecycle.ps1'
         $script:validFixture = Join-Path $script:root 'tests/fixtures/release-lifecycle/valid/full-lifecycle.json'
-        $script:compatibilityVersion = [string](Get-Content -LiteralPath (Join-Path $script:root 'governance/downstream-compatibility.json') -Raw | ConvertFrom-Json).schemaVersion
         $script:tempRoot = Join-Path $script:root ('.tmp/release-lifecycle-tests-' + [guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $script:tempRoot -Force | Out-Null
 
@@ -16,7 +15,6 @@ Describe 'Release lifecycle gates' {
 
             $fixturePath = Join-Path $script:tempRoot "$Name.json"
             $fixture = Get-Content -LiteralPath $script:validFixture -Raw | ConvertFrom-Json
-            $fixture.compatibilityMatrix.schemaVersion = $script:compatibilityVersion
             if ($Mutate) { & $Mutate $fixture }
             $fixture | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $fixturePath -Encoding utf8
             $relativeFixture = [System.IO.Path]::GetRelativePath($script:root, $fixturePath).Replace('\', '/')
