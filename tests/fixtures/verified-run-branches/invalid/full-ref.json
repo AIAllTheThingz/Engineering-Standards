@@ -6,7 +6,7 @@
   "runId": 30232343849,
   "runAttempt": 1,
   "validatedCommitSha": "d75a37a60f2c82a8ea7cefafd714ce0309ea237e",
-  "branch": "-refs/heads/agent/version-consolidation-contracts",
+  "branch": "refs/heads/agent/version-consolidation-contracts",
   "trigger": "pull_request",
   "conclusion": "success",
   "checkName": "Governance / Governance validation",
@@ -18,6 +18,6 @@
   "controlledFailureRunId": 28306149811,
   "controlledFailureConclusion": "failure",
   "notes": [
-    "Focused invalid ref-like branch fixture with a forbidden leading dash."
+    "Focused invalid GitHub-reserved refs/-prefixed branch fixture."
   ]
 }
