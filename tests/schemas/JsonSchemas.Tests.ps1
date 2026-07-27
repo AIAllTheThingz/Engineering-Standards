@@ -73,6 +73,21 @@ Describe 'JSON schema validation' {
             ($incompleteCurrent | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeFalse
         }
 
+        It 'accepts safe verified-run branches and rejects full refs or malformed names' {
+            $schema = Resolve-Path "$PSScriptRoot/../../schemas/verified-run.schema.json"
+            $source = Get-Content -LiteralPath "$PSScriptRoot/../../evidence/latest-verified-run.json" -Raw | ConvertFrom-Json
+            foreach ($branch in @('master','agent/version-consolidation-contracts','release/v1.2.0')) {
+                $record = $source | ConvertTo-Json -Depth 30 | ConvertFrom-Json
+                $record.branch = $branch
+                ($record | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeTrue -Because $branch
+            }
+            foreach ($branch in @('refs/heads/main','agent//double','agent/bad..name','agent/.hidden','agent/name.lock','agent/name.','bad branch')) {
+                $record = $source | ConvertTo-Json -Depth 30 | ConvertFrom-Json
+                $record.branch = $branch
+                ($record | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeFalse -Because $branch
+            }
+        }
+
         It 'accepts legacy and current standards consistency shapes by declared version' {
             $schema = Resolve-Path "$PSScriptRoot/../../schemas/standards-consistency.schema.json"
             $owned = Get-Content -LiteralPath "$PSScriptRoot/../../governance/standards-consistency.json" -Raw | ConvertFrom-Json
