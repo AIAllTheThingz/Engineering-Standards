@@ -50,7 +50,7 @@ The four final artifacts were independently downloaded, SHA-256 hashed, opened, 
 | Python example CI | `30232343796` | `8640499356` | `6cd9a75cd33057b78d646153a4b328fef68b50357d0ed33e5bcfc5c31dca0c81` |
 | Pull Request Governance | `30233092086` | `8640716524` | `185af693d1e5a38d29324e8f65aff02c6224923edf425a9fdec08ca98954a3a0` |
 
-Every independently computed ZIP hash matched the GitHub digest, and all 38 JSON files parsed successfully. The Governance artifact truthfully retains one `Blocked` result for the suspended `enterprise-powershell` behavior gate and nine `NotRun` declarations for model behavior that was not executed. No final artifact contained a `Failed` result. [`evidence/latest-verified-run.json`](../evidence/latest-verified-run.json) contains the full verification record and historical controlled-failure boundary.
+Every independently computed ZIP hash matched the GitHub digest, and all 38 JSON files parsed successfully. The Governance artifact truthfully retains one `Blocked` result for the suspended `enterprise-powershell` behavior gate and nine `NotRun` declarations for model behavior that was not executed. No final artifact contained a `Failed` result. This table is the retained PR #90 verification record. [`evidence/latest-verified-run.json`](../evidence/latest-verified-run.json) records the newest independently verified run and the historical controlled-failure boundary; it is not the PR #90 record.
 
 ## Skill Lifecycle Boundary
 
