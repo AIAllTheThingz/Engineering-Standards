@@ -3,6 +3,7 @@ Describe 'Release lifecycle gates' {
         $script:root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
         $script:validator = Join-Path $script:root 'scripts/Test-ReleaseLifecycle.ps1'
         $script:validFixture = Join-Path $script:root 'tests/fixtures/release-lifecycle/valid/full-lifecycle.json'
+        $script:missingCanaryFixture = Join-Path $script:root 'tests/fixtures/release-lifecycle/invalid/missing-canary.json'
         $script:tempRoot = Join-Path $script:root ('.tmp/release-lifecycle-tests-' + [guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $script:tempRoot -Force | Out-Null
 
@@ -41,6 +42,17 @@ Describe 'Release lifecycle gates' {
     It 'passes the complete synthetic record through the default pre-release gate' {
         $result = Invoke-ReleaseFixture -Name 'complete-pre-release' -Stage PreRelease
         $result.ExitCode | Should -Be 0
+    }
+
+    It 'rejects the checked-in missing-canary fixture for the intended diagnostic' {
+        $relativeFixture = [System.IO.Path]::GetRelativePath($script:root, $script:missingCanaryFixture).Replace('\', '/')
+        $output = @(& pwsh -NoProfile -File $script:validator -Path $script:root -EvidencePath $relativeFixture -Stage All 2>&1)
+        $exitCode = $LASTEXITCODE
+        $outputText = $output -join "`n"
+
+        $exitCode | Should -Be 1
+        $outputText | Should -Match "RLG001 preRelease is missing required member 'downstreamCanary'\."
+        $outputText | Should -Not -Match 'RLG043'
     }
 
     It 'rejects approvals attached to a stale final head' {
