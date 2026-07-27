@@ -36,8 +36,7 @@
     "branch": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 255,
-      "pattern": "^(?!HEAD$)(?![-/.])(?!.*(?:/\\.|\\.lock(?:/|$)|\\.\\.|//|@\\{|[/.]$))[^\\u0000-\\u0020\\u007F~^:?*\\[\\\\]+$"
+      "pattern": "^(?!HEAD$)(?!refs/)(?![-/.])(?!.*(?:/\\.|\\.lock(?:/|$)|\\.\\.|//|@\\{|[/.]$))[^\\u0000-\\u0020\\u007F~^:?*\\[\\\\]+$"
     },
     "trigger": { "type": "string", "enum": [ "workflow_dispatch", "push", "pull_request", "schedule" ] },
     "conclusion": { "type": "string", "enum": [ "success", "failure", "cancelled", "timed_out", "neutral", "skipped" ] },
