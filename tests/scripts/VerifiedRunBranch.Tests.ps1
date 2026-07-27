@@ -52,8 +52,28 @@ Describe 'Verified-run branch provenance' {
             Should -HaveCount 0
     }
 
-    It 'rejects malformed or GitHub-reserved branch fixture <Fixture> through both public validators' -ForEach @(
-        @{ Fixture = 'full-ref.json' },
+    It 'returns a controlled failure when a required member is missing' {
+        $path = Join-Path $script:root 'tests/fixtures/verified-run-branches/invalid/full-ref.json'
+        { $script:missingMemberResults = @(Test-GovernanceJsonDocument -Path $path -Kind verified-run) } |
+            Should -Not -Throw
+        @($script:missingMemberResults | Where-Object status -EQ Failed).Count |
+            Should -BeGreaterThan 0
+    }
+
+    It 'rejects the GitHub-reserved refs prefix through both public validators' {
+        $record = Get-Content -LiteralPath (Join-Path $script:root 'evidence/latest-verified-run.json') -Raw |
+            ConvertFrom-Json -AsHashtable
+        $record.branch = 'refs/heads/main'
+        $path = Join-Path $TestDrive 'refs-prefix.json'
+        $record | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $path -Encoding utf8
+
+        @((Test-GovernanceJsonDocument -Path $path -Kind verified-run) | Where-Object status -EQ Failed).Count |
+            Should -BeGreaterThan 0
+        @((Test-VerifiedRunObject -Run $record -Path $path) | Where-Object status -EQ Failed).Count |
+            Should -BeGreaterThan 0
+    }
+
+    It 'rejects malformed or reserved branch fixture <Fixture> through both public validators' -ForEach @(
         @{ Fixture = 'double-slash.json' },
         @{ Fixture = 'lock-suffix.json' },
         @{ Fixture = 'head.json' }
