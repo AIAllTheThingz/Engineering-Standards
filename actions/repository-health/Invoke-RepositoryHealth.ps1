@@ -86,6 +86,7 @@ function Resolve-CodeownersCandidate {
     return [pscustomobject]@{ State = 'Valid'; FullName = $item.FullName }
 }
 
+$governanceValidationModule = 'scripts/GovernanceValidation.psm1'
 $required = @(
     'README.md',
     'LICENSE',
@@ -99,11 +100,16 @@ $required = @(
     '.github/pull_request_template.md',
     'docs/BRANCH_PROTECTION.md',
     'docs/ACTION_SECURITY.md',
-    'scripts/GovernanceValidation.psm1',
+    $governanceValidationModule,
     'scripts/Test-DocumentationCompleteness.ps1',
     'scripts/Test-YamlSyntax.ps1',
     'scripts/Test-GitHubWorkflowArchitecture.ps1'
 )
+$governanceValidationModulePath = Resolve-SafePath -Root $root -ChildPath $governanceValidationModule -AllowMissingLeaf
+if ((Test-Path -LiteralPath $governanceValidationModulePath -PathType Leaf) -and
+    (Get-Content -LiteralPath $governanceValidationModulePath -Raw) -match 'GovernanceValidation\.Legacy\.psm1') {
+    $required += 'scripts/GovernanceValidation.Legacy.psm1'
+}
 $required | ForEach-Object { Add-RequiredFileResult -RelativePath $_ }
 
 $trackedGenerated = @(& git -C $root ls-files 2>$null | Where-Object {

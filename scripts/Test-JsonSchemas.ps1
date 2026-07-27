@@ -12,7 +12,7 @@ pwsh -NoProfile -File scripts/Test-JsonSchemas.ps1 -Path .
 .OUTPUTS
 Console report and optional JSON.
 .NOTES
-This script does not install external validators. If a full JSON Schema validator is unavailable, the result is structural validation.
+This script does not install external validators. PowerShell Test-Json is used for owned contract records when available.
 #>
 [CmdletBinding()]
 param([string]$Path='.', [string]$OutputJson)
@@ -89,7 +89,8 @@ else {
             $results.Add((New-ValidationResult -Status Failed -Message 'Release lifecycle semantic fixture is missing.' -Path $fixturePath))
             continue
         }
-        $fixtureOutput = @(& (Join-Path $PSHOME 'pwsh') -NoProfile -File $releaseLifecycleValidator -Path $root -EvidencePath $fixtureContract.Path -Stage All 2>&1)
+
+        $fixtureOutput = @(& (Join-Path $PSHOME 'pwsh') -NoProfile -File $releaseLifecycleValidator -Path $root -EvidencePath ([string]$fixtureContract.Path) -Stage All 2>&1)
         $fixtureExitCode = $LASTEXITCODE
         if ($fixtureExitCode -eq [int]$fixtureContract.ExpectedExitCode) {
             $results.Add((New-ValidationResult -Status Passed -Message $fixtureContract.Message -Path $fixturePath -Severity info))
@@ -101,15 +102,34 @@ else {
 }
 
 $compatibilityMatrixPath = Join-Path $root 'governance/downstream-compatibility.json'
+$compatibilitySchemaPath = Join-Path $root 'schemas/downstream-compatibility.schema.json'
 try {
-    $compatibilityMatrix = Read-JsonFile -Path $compatibilityMatrixPath
+    $compatibilityRaw = Get-Content -LiteralPath $compatibilityMatrixPath -Raw
+    $compatibilityMatrix = $compatibilityRaw | ConvertFrom-Json -Depth 100 -AsHashtable
     $compatibilityRequired = @('schemaVersion', 'repository', 'updatedAtUtc', 'ownerRole', 'supportPolicy', 'governanceReleases', 'unreleasedContract')
     $missingCompatibilityMembers = @($compatibilityRequired | Where-Object { -not $compatibilityMatrix.Contains($_) })
-    if ($compatibilityMatrix.schemaVersion -cne '1.0.0' -or $missingCompatibilityMembers.Count -gt 0 -or @($compatibilityMatrix.governanceReleases).Count -eq 0) {
-        $results.Add((New-ValidationResult -Status Failed -Message "Downstream compatibility matrix is missing required structure: $($missingCompatibilityMembers -join ', ')." -Path $compatibilityMatrixPath))
+    $supportedCompatibilityVersions = @('1.0.0', '1.1.0')
+    $hasFunctionalWorkflows = $compatibilityMatrix.Contains('unreleasedContract') -and $compatibilityMatrix.unreleasedContract.Contains('functionalWorkflows')
+    $functionalWorkflowCount = if ($hasFunctionalWorkflows) { @($compatibilityMatrix.unreleasedContract.functionalWorkflows).Count } else { 0 }
+    $versionShapeInvalid =
+        ($compatibilityMatrix.schemaVersion -ceq '1.0.0' -and $hasFunctionalWorkflows) -or
+        ($compatibilityMatrix.schemaVersion -ceq '1.1.0' -and $functionalWorkflowCount -lt 1)
+    $schemaValid = $false
+    try {
+        $schemaValid = $compatibilityRaw | Test-Json -SchemaFile $compatibilitySchemaPath -ErrorAction Stop
+    }
+    catch {
+        $results.Add((New-ValidationResult -Status Failed -Message "Downstream compatibility JSON Schema validation failed: $($_.Exception.Message)" -Path $compatibilityMatrixPath))
+    }
+    if ($supportedCompatibilityVersions -cnotcontains [string]$compatibilityMatrix.schemaVersion -or
+        $missingCompatibilityMembers.Count -gt 0 -or
+        @($compatibilityMatrix.governanceReleases).Count -eq 0 -or
+        $versionShapeInvalid -or
+        -not $schemaValid) {
+        $results.Add((New-ValidationResult -Status Failed -Message "Downstream compatibility matrix is missing required version-aware structure: $($missingCompatibilityMembers -join ', ')." -Path $compatibilityMatrixPath))
     }
     else {
-        $results.Add((New-ValidationResult -Status Passed -Message 'Downstream compatibility matrix accepted.' -Path $compatibilityMatrixPath -Severity info))
+        $results.Add((New-ValidationResult -Status Passed -Message "Downstream compatibility matrix schema $($compatibilityMatrix.schemaVersion) accepted." -Path $compatibilityMatrixPath -Severity info))
     }
 }
 catch {
@@ -130,4 +150,3 @@ $report = [ordered]@{ generatedAtUtc=(Get-Date).ToUniversalTime().ToString('o');
 if ($OutputJson) { $report | ConvertTo-OrderedJson | Set-Content -LiteralPath $OutputJson -Encoding utf8 }
 $report.results | ForEach-Object { "[$($_.status)] $($_.path) $($_.message)" }
 if ($report.failed -gt 0) { exit 1 }
-exit 0

@@ -1,7 +1,7 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "repository": "AIAllTheThingz/Engineering-Standards",
-  "updatedAtUtc": "2026-07-26T06:12:59Z",
+  "updatedAtUtc": "2026-07-26T13:58:00Z",
   "ownerRole": "Release Maintainers",
   "supportPolicy": {
     "currentMajor": 1,

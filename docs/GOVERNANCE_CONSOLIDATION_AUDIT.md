@@ -21,7 +21,7 @@ The machine-readable companion is [`governance/standards-consistency.json`](../g
 | Published tag target | `2704049d7e826975d956611b194214dd79ea3686` |
 | Current audited `master` head | `e9fa50a0df28982b12ffc1ca55d40ac51d6e0ed3` |
 | Final PR #84 validated head | `66c868ad157e34449435685cb961c8bade646ffe` |
-| Current frozen self-CI implementation | `a9158d0c7dc37db966da3a518c6155645e985b0c` |
+| Current frozen self-CI implementation | `335452c509991729cf60d94eb756f8f59d190011` |
 | Workflow interface version | `1.0.0` |
 | Repository governance version | `1.1.0` |
 | Default branch | `master` |

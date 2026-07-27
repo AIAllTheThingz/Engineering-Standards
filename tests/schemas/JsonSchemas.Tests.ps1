@@ -55,6 +55,48 @@ Describe 'JSON schema validation' {
             (Get-Content -LiteralPath "$PSScriptRoot/../../governance/downstream-compatibility.json" -Raw | Test-Json -SchemaFile $schema) | Should -BeTrue
         }
 
+        It 'accepts legacy compatibility records and rejects version-shape mismatches' {
+            $schema = Resolve-Path "$PSScriptRoot/../../schemas/downstream-compatibility.schema.json"
+            $owned = Get-Content -LiteralPath "$PSScriptRoot/../../governance/downstream-compatibility.json" -Raw | ConvertFrom-Json
+
+            $legacy = $owned | ConvertTo-Json -Depth 30 | ConvertFrom-Json
+            $legacy.schemaVersion = '1.0.0'
+            $legacy.unreleasedContract.PSObject.Properties.Remove('functionalWorkflows')
+            ($legacy | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeTrue
+
+            $mislabeled = $owned | ConvertTo-Json -Depth 30 | ConvertFrom-Json
+            $mislabeled.schemaVersion = '1.0.0'
+            ($mislabeled | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeFalse
+
+            $incompleteCurrent = $owned | ConvertTo-Json -Depth 30 | ConvertFrom-Json
+            $incompleteCurrent.unreleasedContract.PSObject.Properties.Remove('functionalWorkflows')
+            ($incompleteCurrent | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeFalse
+        }
+
+        It 'accepts legacy and current standards consistency shapes by declared version' {
+            $schema = Resolve-Path "$PSScriptRoot/../../schemas/standards-consistency.schema.json"
+            $owned = Get-Content -LiteralPath "$PSScriptRoot/../../governance/standards-consistency.json" -Raw | ConvertFrom-Json
+            (Get-Content -LiteralPath "$PSScriptRoot/../../governance/standards-consistency.json" -Raw | Test-Json -SchemaFile $schema) | Should -BeTrue
+
+            $legacy = $owned | ConvertTo-Json -Depth 30 | ConvertFrom-Json
+            $legacy.schemaVersion = '1.0.0'
+            $legacy.PSObject.Properties.Remove('publishedRelease')
+            $legacy.PSObject.Properties.Remove('nextReleaseReadiness')
+            $legacy.releaseReadiness = [pscustomobject]@{
+                status = 'NotRun'
+                proposedVersion = '1.1.0'
+                proposedTag = 'v1.1.0'
+                targetCommitSha = '2704049d7e826975d956611b194214dd79ea3686'
+                releaseCreated = $true
+                reason = 'Synthetic legacy contract fixture.'
+            }
+            ($legacy | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeTrue
+
+            $hybrid = $owned | ConvertTo-Json -Depth 30 | ConvertFrom-Json
+            $hybrid.schemaVersion = '1.0.0'
+            ($hybrid | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeFalse
+        }
+
         It 'rejects a null workflow interface version for a 1.2.0 manifest' {
             $schema = Resolve-Path "$PSScriptRoot/../../schemas/project-manifest.schema.json"
             $manifest = Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/project-manifest-1.2.0-user.json" -Raw | ConvertFrom-Json
@@ -83,7 +125,7 @@ Describe 'JSON schema validation' {
                 'project-manifest' = @('1.0.0', '1.1.0', '1.2.0')
                 'governance-config' = @('1.0.0', '1.1.0', '1.2.0')
                 'verified-run' = @('1.0.0')
-                'standards-consistency' = @('1.0.0')
+                'standards-consistency' = @('1.0.0', '1.1.0')
             }
 
             foreach ($kind in $expectedVersions.Keys) {
@@ -97,6 +139,9 @@ Describe 'JSON schema validation' {
                     $expectedVersions[$kind] | Should -BeExactly @('1.0.0')
                 }
             }
+
+            $compatibility = Get-Content "$PSScriptRoot/../../schemas/downstream-compatibility.schema.json" -Raw | ConvertFrom-Json
+            @($compatibility.properties.schemaVersion.enum) | Should -BeExactly @('1.0.0', '1.1.0')
         }
     }
 }

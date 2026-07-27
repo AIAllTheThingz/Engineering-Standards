@@ -59,7 +59,7 @@ The home-lab packages under `examples/` are demonstrations, not Active productio
 
 - Published `v1.1.0` control set: `2704049d7e826975d956611b194214dd79ea3686` through tag `v1.1.0`.
 - Consumers requiring the final canary-validated repaired reusable workflow should pin `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e`.
-- Current frozen repository self-CI implementation: `a9158d0c7dc37db966da3a518c6155645e985b0c`.
+- Current frozen repository self-CI implementation: `335452c509991729cf60d94eb756f8f59d190011`.
 
 The second and third references are post-release implementation commits, not published semantic releases. The self-CI implementation SHA must not replace the canary-validated downstream reference without a new external canary verification.
 

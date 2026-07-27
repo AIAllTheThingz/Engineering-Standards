@@ -23,9 +23,9 @@ concurrency:
 jobs:
   governance:
     name: Governance
-    # Self-CI uses the frozen lifecycle-aware implementation commit so
+    # Self-CI uses the immutable fully validated version-aware implementation commit so
     # pull-request changes cannot redefine the validator checkout labeled trusted.
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@a9158d0c7dc37db966da3a518c6155645e985b0c
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@335452c509991729cf60d94eb756f8f59d190011
     with:
       project-path: .
       governance-version: 1.1.0
@@ -33,6 +33,6 @@ jobs:
 
   candidate_implementation:
     name: Candidate implementation validation
-    # Keep the trusted baseline and candidate harness on the same frozen reviewed
-    # commit, as required by the repository workflow-architecture contract.
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-candidate.yml@a9158d0c7dc37db966da3a518c6155645e985b0c
+    # Keep the trusted baseline and candidate harness on the same immutable
+    # fully validated implementation commit, as required by the workflow architecture contract.
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-candidate.yml@335452c509991729cf60d94eb756f8f59d190011

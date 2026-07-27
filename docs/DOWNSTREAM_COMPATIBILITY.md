@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Status | Active |
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Owner role | Release Maintainers |
 | Last reviewed | 2026-07-26 |
 
@@ -11,7 +11,23 @@
 
 This document defines how maintainers and downstream consumers determine whether a governance release, evidence schema, project-manifest schema, central reusable-workflow interface, or language-specific functional workflow remains supported. The machine-readable source of truth is [`governance/downstream-compatibility.json`](../governance/downstream-compatibility.json), validated against [`schemas/downstream-compatibility.schema.json`](../schemas/downstream-compatibility.schema.json).
 
-The matrix distinguishes an immutable published release from the unreleased contract on `master`. A moving branch is never release evidence. Consumers must select an immutable release target or an explicitly recorded immutable workflow authority and must not infer compatibility from a matching semantic version alone.
+The matrix distinguishes an immutable published release from the unreleased contract on `master`. A moving branch is never release evidence. Consumers MUST select an immutable release target or an explicitly recorded immutable workflow authority and MUST NOT infer compatibility from a matching semantic version alone.
+
+## Contract Schema Versions
+
+The compatibility document has two supported versions:
+
+- `1.0.0` preserves the historical shape and does not contain `functionalWorkflows`.
+- `1.1.0` requires `functionalWorkflows` in the unreleased contract.
+
+The current schema accepts historical `1.0.0` records without forcing the new field. It rejects `functionalWorkflows` when the record still declares `1.0.0`, and it rejects a `1.1.0` record that omits them.
+
+The standards-consistency document follows the same version boundary:
+
+- `1.0.0` uses the original six-field `releaseReadiness` object.
+- `1.1.0` requires `publishedRelease` and `nextReleaseReadiness`, plus a status-only legacy alias.
+
+These document versions are independent from the repository governance release version.
 
 ## Compatibility Dimensions
 
@@ -40,53 +56,51 @@ Later Python, Bash, pull-request governance, release-lifecycle, controlled evalu
 
 ## Unreleased Contract
 
-Current unreleased development retains governance version `1.1.0` and central workflow interface `1.0.0`. It preserves the published schema versions and adds project-manifest schema `1.2.0` as Preview.
+Current unreleased development retains governance version `1.1.0` and central workflow interface `1.0.0`. The owned compatibility record uses document schema `1.1.0`.
 
 The independently canary-validated central downstream workflow authority remains:
 
 `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e`
 
-Repository self-CI currently freezes trusted and candidate governance validation at `a9158d0c7dc37db966da3a518c6155645e985b0c`. That self-CI implementation is not substituted for the external canary authority without a fresh five-scenario downstream verification.
+Repository self-CI remains separate from that downstream authority until a fresh external validation is recorded.
 
 ## Functional Workflow Authorities
 
-The machine-readable compatibility contract now identifies the separate Python and Bash functional authorities instead of merely telling consumers to go hunting for them:
-
 | Language | Reusable workflow | Interface | Immutable authority | Support | Validation boundary |
 | --- | --- | --- | --- | --- | --- |
-| Python | `.github/workflows/python-ci-reusable.yml` | `1.0.0` | `e066df32a0deaee38fed4a4cd477d1f4b4b549ed` | Preview | Maintained first-party Python example and hosted Python example CI passed; no five-scenario functional external canary is claimed. |
-| Bash | `.github/workflows/bash-ci-reusable.yml` | `1.0.0` | `d55bb8e6778030f5490e900ba52ba99ac6403827` | Preview | Maintained first-party Bash example and hosted Bash example CI passed; no five-scenario functional external canary is claimed. |
+| Python | `.github/workflows/python-ci-reusable.yml` | `1.0.0` | `e066df32a0deaee38fed4a4cd477d1f4b4b549ed` | Preview | Maintained Python example and hosted Python CI passed; no external functional canary is claimed. |
+| Bash | `.github/workflows/bash-ci-reusable.yml` | `1.0.0` | `d55bb8e6778030f5490e900ba52ba99ac6403827` | Preview | Maintained Bash example and hosted Bash CI passed; no external functional canary is claimed. |
 
-These functional workflow SHAs are distribution authorities recorded by `workflows/python-ci.yml` and `workflows/bash-ci.yml`. They are distinct from the central governance canary SHA and from repository self-CI.
+These SHAs are distribution authorities recorded by `workflows/python-ci.yml` and `workflows/bash-ci.yml`. They are distinct from the central governance authority and repository self-CI.
 
 ## Consumer Procedure
 
 1. Identify the exact published release or Preview contract.
-2. Confirm every schema version used by the downstream repository.
-3. Confirm the central governance workflow interface and immutable authority.
-4. When Python or Bash functional validation is required, select the matching functional workflow entry by language and pin its exact `immutableSha`.
-5. Confirm the entry's support and validation status without treating first-party evidence as an external canary.
-6. Retain adoption evidence with the chosen compatibility entry and limitations.
+2. Confirm the compatibility-document schema version.
+3. Confirm every schema version used by the downstream repository.
+4. Confirm the central workflow interface and immutable authority.
+5. When Python or Bash functional validation is required, pin the matching functional workflow `immutableSha`.
+6. Retain adoption evidence with the chosen entry and its stated limitations.
 
-Consumers must not substitute `master`, a mutable tag, an undocumented self-CI pin, or a convenient schema version. When a required combination is absent, stop adoption and open a compatibility issue.
+Consumers MUST NOT substitute `master`, a mutable tag, an undocumented self-CI pin, or a convenient schema version. When a required combination is absent, adoption MUST stop until the compatibility record is corrected or an approved exception exists.
 
 ## Release Gate
 
-Before release approval, maintainers must update the compatibility matrix in the same unchanged candidate head as `VERSION`, changelog, release notes, schema declarations, workflow interfaces, migration guidance, and exact functional workflow authorities.
+Before release approval, maintainers MUST update the matrix in the same unchanged candidate head as `VERSION`, changelog, release notes, schema declarations, workflow interfaces, migration guidance, and functional workflow authorities.
 
 ```powershell
 pwsh -NoProfile -File scripts/Test-ReleaseLifecycle.ps1 -Path . -EvidencePath <release-lifecycle-record.json> -Stage PreRelease
 ```
 
-The pre-release gate compares the lifecycle record with the matrix. Publication cannot make an unsupported combination valid merely by creating a tag. Reusable-workflow changes also require the applicable exact-candidate canary contract; self-CI is necessary but does not replace external consumer proof.
+The pre-release gate compares the lifecycle record with the matrix. Publication cannot make an unsupported combination valid merely by creating a tag. Reusable-workflow changes also require the applicable exact-candidate external canary contract; repository self-CI is necessary but does not replace external consumer proof.
 
 ## Support, Evidence, And Exceptions
 
-A deprecation must identify announcement time, replacement, intended removal version, downstream impact, and migration guidance. Removal requires a separately reviewed major release unless an urgent security condition is documented.
+A deprecation MUST identify announcement time, replacement, intended removal version, downstream impact, and migration guidance. A supported contract MUST be removed only through a separately reviewed major release with migration guidance.
 
-Evidence must identify commands, outcomes, candidate SHA, supported schemas, workflow interfaces, immutable workflow authorities, migration path, artifact hashes, approvals, and limitations. `Blocked`, `NotRun`, and `NotApplicable` must remain visible and cannot be relabeled as Passed.
+Evidence MUST identify commands, outcomes, candidate SHA, supported schemas, workflow interfaces, immutable workflow authorities, migration path, artifact hashes, approvals, and limitations. `Blocked`, `NotRun`, and `NotApplicable` remain visible and cannot be relabeled as `Passed`.
 
-An exception to a support window or compatibility gate requires a `GOV-*` record with owner, scope, rationale, expiration, compensating controls, and migration plan. Exceptions do not rewrite historical matrix entries and cannot convert unavailable external validation into Passed.
+An Exception requires a `GOV-*` record with owner, scope, rationale, expiration, compensating controls, and migration plan. Exceptions do not rewrite historical matrix entries and cannot convert unavailable external validation into `Passed`.
 
 ## Related
 
