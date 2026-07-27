@@ -4,10 +4,9 @@ BeforeAll {
 }
 
 Describe 'Verified-run branch provenance' {
-    It 'accepts Git-valid branch fixture <Fixture> through document and exported object validation' -ForEach @(
+    It 'accepts GitHub-valid branch fixture <Fixture> through document and exported object validation' -ForEach @(
         @{ Fixture = 'pr-branch.json' },
-        @{ Fixture = 'underscore-feature.json' },
-        @{ Fixture = 'at-sign.json' }
+        @{ Fixture = 'underscore-feature.json' }
     ) {
         $path = Join-Path $script:root "tests/fixtures/verified-run-branches/valid/$Fixture"
         $record = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable
@@ -18,20 +17,19 @@ Describe 'Verified-run branch provenance' {
             Should -HaveCount 0
     }
 
-    It 'accepts a refs-prefixed branch shorthand through document and exported object validation' {
-        $record = Get-Content -LiteralPath (Join-Path $script:root 'evidence/latest-verified-run.json') -Raw |
-            ConvertFrom-Json -AsHashtable
-        $record.branch = 'refs/feature'
-        $path = Join-Path $TestDrive 'refs-prefix.json'
-        $record | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $path -Encoding utf8
+    It 'accepts a long multi-component GitHub branch fixture without a synthetic total-length cap' {
+        $path = Join-Path $script:root 'tests/fixtures/verified-run-branches/valid/at-sign.json'
+        $record = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable
 
+        $record.branch.Length | Should -BeGreaterThan 255
+        @($record.branch -split '/') | Should -HaveCount 3
         @((Test-GovernanceJsonDocument -Path $path -Kind verified-run) | Where-Object status -EQ Failed) |
             Should -HaveCount 0
         @((Test-VerifiedRunObject -Run $record -Path $path) | Where-Object status -EQ Failed) |
             Should -HaveCount 0
     }
 
-    It 'counts Unicode branch length by code point in both public validators' {
+    It 'accepts an astral-Unicode branch through both public validators' {
         $record = Get-Content -LiteralPath (Join-Path $script:root 'evidence/latest-verified-run.json') -Raw |
             ConvertFrom-Json -AsHashtable
         $record.branch = (('😀' * 50) + '/' + ('😀' * 50) + '/' + ('😀' * 50))
@@ -42,14 +40,6 @@ Describe 'Verified-run branch provenance' {
             Should -HaveCount 0
         @((Test-VerifiedRunObject -Run $record -Path $path) | Where-Object status -EQ Failed) |
             Should -HaveCount 0
-
-        $record.branch = ('a' * 256)
-        $tooLongPath = Join-Path $TestDrive 'overlong-branch.json'
-        $record | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $tooLongPath -Encoding utf8
-        @((Test-GovernanceJsonDocument -Path $tooLongPath -Kind verified-run) | Where-Object status -EQ Failed).Count |
-            Should -BeGreaterThan 0
-        @((Test-VerifiedRunObject -Run $record -Path $tooLongPath) | Where-Object status -EQ Failed).Count |
-            Should -BeGreaterThan 0
     }
 
     It 'preserves backward compatibility for master records' {
@@ -62,7 +52,7 @@ Describe 'Verified-run branch provenance' {
             Should -HaveCount 0
     }
 
-    It 'rejects malformed branch fixture <Fixture> through document and exported object validation' -ForEach @(
+    It 'rejects malformed or GitHub-reserved branch fixture <Fixture> through both public validators' -ForEach @(
         @{ Fixture = 'full-ref.json' },
         @{ Fixture = 'double-slash.json' },
         @{ Fixture = 'lock-suffix.json' },
