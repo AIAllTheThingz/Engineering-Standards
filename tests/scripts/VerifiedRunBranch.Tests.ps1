@@ -5,7 +5,7 @@ BeforeAll {
 
 Describe 'Verified-run branch provenance' {
     It 'accepts the actual pull-request branch through document and exported object validation' {
-        $path = Join-Path $script:root 'tests/fixtures/valid/verified-run-pr-branch.json'
+        $path = Join-Path $script:root 'tests/fixtures/verified-run-branches/valid/pr-branch.json'
         $record = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable
 
         @((Test-GovernanceJsonDocument -Path $path -Kind verified-run) | Where-Object status -EQ Failed) |
@@ -25,11 +25,11 @@ Describe 'Verified-run branch provenance' {
     }
 
     It 'rejects malformed branch fixture <Fixture> through document and exported object validation' -ForEach @(
-        @{ Fixture = 'verified-run-full-ref.json' },
-        @{ Fixture = 'verified-run-double-slash.json' },
-        @{ Fixture = 'verified-run-lock-suffix.json' }
+        @{ Fixture = 'full-ref.json' },
+        @{ Fixture = 'double-slash.json' },
+        @{ Fixture = 'lock-suffix.json' }
     ) {
-        $path = Join-Path $script:root "tests/fixtures/invalid/$Fixture"
+        $path = Join-Path $script:root "tests/fixtures/verified-run-branches/invalid/$Fixture"
         $record = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable
 
         @((Test-GovernanceJsonDocument -Path $path -Kind verified-run) | Where-Object status -EQ Failed).Count |
