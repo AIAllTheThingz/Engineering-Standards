@@ -36,7 +36,6 @@ $script:ForwardedCommands = [ordered]@{
     'Test-GovernanceContractSemantics' = 'Test-LegacyGovernanceContractSemantics'
     'Test-TestEvidenceObject' = 'Test-LegacyTestEvidenceObject'
     'Test-ArtifactRecordObject' = 'Test-LegacyArtifactRecordObject'
-    'Test-VerifiedRunObject' = 'Test-LegacyVerifiedRunObject'
     'ConvertTo-OrderedJson' = 'ConvertTo-LegacyOrderedJson'
     'ConvertTo-SanitizedWorkflowOutputLine' = 'ConvertTo-LegacySanitizedWorkflowOutputLine'
     'ConvertTo-SanitizedWorkflowFailureMessage' = 'ConvertTo-LegacySanitizedWorkflowFailureMessage'
@@ -53,15 +52,46 @@ function Test-VerifiedRunBranchName {
     if ($Value -isnot [string]) { return $false }
     $branch = [string]$Value
     if ($branch.Length -lt 1 -or $branch.Length -gt 255) { return $false }
-    if ($branch -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._/-]*$') { return $false }
-    if ($branch -cmatch '^refs/' -or
+    if ($branch -ceq 'HEAD' -or
+        $branch -cmatch '^refs/' -or
+        $branch -cmatch '^[-/]' -or
         $branch -cmatch '(^|/)\.' -or
         $branch -cmatch '\.lock($|/)' -or
         $branch -cmatch '\.\.|//|@\{' -or
-        $branch -cmatch '[/.]$') {
+        $branch -cmatch '[/.]$' -or
+        $branch -cmatch '[\x00-\x20\x7F~^:?*\[\\]') {
         return $false
     }
     return $true
+}
+
+function Test-VerifiedRunObject {
+    <#
+    .SYNOPSIS
+    Validates verified GitHub run metadata with exact branch provenance.
+    .DESCRIPTION
+    Preserves the established verified-run semantic checks while accepting safe
+    Git branch names rather than forcing every record to claim master. Only a
+    temporary compatibility copy is projected to master for the legacy branch
+    assertion; the caller's object is not modified.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]$Run,
+        [Parameter(Mandatory)][string]$Path
+    )
+
+    $findings = [System.Collections.Generic.List[object]]::new()
+    if (-not (Test-VerifiedRunBranchName -Value $Run.branch)) {
+        $findings.Add((New-LegacyValidationResult -Status Failed -Message 'Verified run branch must be a safe Git branch name, not HEAD, a full ref, or a malformed path.' -Path $Path))
+    }
+
+    $legacyCopy = ($Run | ConvertTo-Json -Depth 100 | ConvertFrom-Json -Depth 100 -AsHashtable)
+    $legacyCopy.branch = 'master'
+    $legacyResults = @(Test-LegacyVerifiedRunObject -Run $legacyCopy -Path $Path)
+
+    if ($findings.Count -eq 0) { return @($legacyResults) }
+    @($legacyResults | Where-Object status -cne 'Passed') + @($findings)
 }
 
 function Test-GovernanceJsonDocument {
@@ -105,28 +135,14 @@ function Test-GovernanceJsonDocument {
             $findings.Add((New-LegacyValidationResult -Status Failed -Message "Verified-run JSON Schema validation failed: $($_.Exception.Message)" -Path $Path))
         }
 
-        if (-not (Test-VerifiedRunBranchName -Value $json.branch)) {
-            $findings.Add((New-LegacyValidationResult -Status Failed -Message 'Verified run branch must be a safe Git branch name, not a full ref or malformed path.' -Path $Path))
+        foreach ($result in @(Test-VerifiedRunObject -Run $json -Path $Path | Where-Object status -cne 'Passed')) {
+            $findings.Add($result)
         }
 
-        $legacyCopy = ($json | ConvertTo-Json -Depth 100 | ConvertFrom-Json -Depth 100 -AsHashtable)
-        $legacyCopy.branch = 'master'
-        $temporaryPath = Join-Path ([IO.Path]::GetTempPath()) ("verified-run-$([guid]::NewGuid().ToString('N')).json")
-        try {
-            $legacyCopy | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $temporaryPath -Encoding utf8
-            $legacyResults = @(Test-LegacyGovernanceJsonDocument -Path $temporaryPath -Kind $Kind)
-            foreach ($result in $legacyResults) {
-                if ($result.PSObject.Properties.Name -contains 'path') { $result.path = $Path }
-            }
+        if ($findings.Count -eq 0) {
+            return @((New-LegacyValidationResult -Status Passed -Message 'verified-run validation passed.' -Path $Path -Severity info))
         }
-        finally {
-            if (Test-Path -LiteralPath $temporaryPath -PathType Leaf) {
-                Remove-Item -LiteralPath $temporaryPath -Force
-            }
-        }
-
-        if ($findings.Count -eq 0) { return @($legacyResults) }
-        return @($legacyResults | Where-Object status -cne 'Passed') + @($findings)
+        return @($findings)
     }
 
     if ($Kind -cne 'standards-consistency') {
@@ -285,35 +301,4 @@ function Test-GovernanceJsonDocument {
     @($legacyResults | Where-Object status -cne 'Passed') + @($findings)
 }
 
-Export-ModuleMember -Function (@('Test-GovernanceJsonDocument') + @($script:ForwardedCommands.Values)) -Alias @($script:ForwardedCommands.Keys)
-
-Remove-Item Alias:Test-VerifiedRunObject -Force
-function Test-VerifiedRunObject {
-    <#
-    .SYNOPSIS
-    Validates verified GitHub run metadata with exact branch provenance.
-    .DESCRIPTION
-    Preserves the established verified-run semantic checks while accepting safe
-    Git branch names rather than forcing every record to claim master. Only a
-    temporary compatibility copy is projected to master for the legacy branch
-    assertion; the caller's object is not modified.
-    #>
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]$Run,
-        [Parameter(Mandatory)][string]$Path
-    )
-
-    $findings = [System.Collections.Generic.List[object]]::new()
-    if (-not (Test-VerifiedRunBranchName -Value $Run.branch)) {
-        $findings.Add((New-LegacyValidationResult -Status Failed -Message 'Verified run branch must be a safe Git branch name, not a full ref or malformed path.' -Path $Path))
-    }
-
-    $legacyCopy = ($Run | ConvertTo-Json -Depth 100 | ConvertFrom-Json -Depth 100 -AsHashtable)
-    $legacyCopy.branch = 'master'
-    $legacyResults = @(Test-LegacyVerifiedRunObject -Run $legacyCopy -Path $Path)
-
-    if ($findings.Count -eq 0) { return @($legacyResults) }
-    @($legacyResults | Where-Object status -cne 'Passed') + @($findings)
-}
-Export-ModuleMember -Function Test-VerifiedRunObject
+Export-ModuleMember -Function (@('Test-GovernanceJsonDocument','Test-VerifiedRunObject') + @($script:ForwardedCommands.Values)) -Alias @($script:ForwardedCommands.Keys)
