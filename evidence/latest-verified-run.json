@@ -6,7 +6,7 @@
   "runId": 30232343849,
   "runAttempt": 1,
   "validatedCommitSha": "d75a37a60f2c82a8ea7cefafd714ce0309ea237e",
-  "branch": "agent/version-consolidation-contracts",
+  "branch": "master",
   "trigger": "pull_request",
   "conclusion": "success",
   "checkName": "Governance / Governance validation",
