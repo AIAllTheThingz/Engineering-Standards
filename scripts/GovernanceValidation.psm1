@@ -36,7 +36,7 @@ $script:ForwardedCommands = [ordered]@{
     'Test-GovernanceContractSemantics' = 'Test-LegacyGovernanceContractSemantics'
     'Test-TestEvidenceObject' = 'Test-LegacyTestEvidenceObject'
     'Test-ArtifactRecordObject' = 'Test-LegacyArtifactRecordObject'
-    'ConvertTo-OrderedJson' = 'ConvertTo-LegacyOrderedJson'
+    'ConvertTo-OrderedJson' = 'Convert-LegacyToOrderedJson'
     'ConvertTo-SanitizedWorkflowOutputLine' = 'ConvertTo-LegacySanitizedWorkflowOutputLine'
     'ConvertTo-SanitizedWorkflowFailureMessage' = 'ConvertTo-LegacySanitizedWorkflowFailureMessage'
     'Write-GovernanceBootstrapFailureReport' = 'Write-LegacyGovernanceBootstrapFailureReport'
@@ -45,15 +45,36 @@ foreach ($publicName in $script:ForwardedCommands.Keys) {
     Set-Alias -Name $publicName -Value $script:ForwardedCommands[$publicName] -Scope Script -Force
 }
 
+function Get-UnicodeCodePointCount {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Value)
+
+    $count = 0
+    for ($index = 0; $index -lt $Value.Length; $index++) {
+        $character = $Value[$index]
+        if ([char]::IsHighSurrogate($character)) {
+            if ($index + 1 -ge $Value.Length -or -not [char]::IsLowSurrogate($Value[$index + 1])) {
+                return -1
+            }
+            $index++
+        }
+        elseif ([char]::IsLowSurrogate($character)) {
+            return -1
+        }
+        $count++
+    }
+    return $count
+}
+
 function Test-VerifiedRunBranchName {
     [CmdletBinding()]
     param([AllowNull()][object]$Value)
 
     if ($Value -isnot [string]) { return $false }
     $branch = [string]$Value
-    if ($branch.Length -lt 1 -or $branch.Length -gt 255) { return $false }
+    $codePointCount = Get-UnicodeCodePointCount -Value $branch
+    if ($codePointCount -lt 1 -or $codePointCount -gt 255) { return $false }
     if ($branch -ceq 'HEAD' -or
-        $branch -cmatch '^refs/' -or
         $branch -cmatch '^[-/]' -or
         $branch -cmatch '(^|/)\.' -or
         $branch -cmatch '\.lock($|/)' -or
@@ -83,7 +104,7 @@ function Test-VerifiedRunObject {
 
     $findings = [System.Collections.Generic.List[object]]::new()
     if (-not (Test-VerifiedRunBranchName -Value $Run.branch)) {
-        $findings.Add((New-LegacyValidationResult -Status Failed -Message 'Verified run branch must be a safe Git branch name, not HEAD, a full ref, or a malformed path.' -Path $Path))
+        $findings.Add((New-LegacyValidationResult -Status Failed -Message 'Verified run branch must be a Git-valid branch shorthand, not HEAD or a malformed path.' -Path $Path))
     }
 
     $legacyCopy = ($Run | ConvertTo-Json -Depth 100 | ConvertFrom-Json -Depth 100 -AsHashtable)
