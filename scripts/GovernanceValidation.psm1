@@ -124,6 +124,19 @@ function Test-GovernanceJsonDocument {
         $findings.Add((New-LegacyValidationResult -Status Failed -Message $Message -Path $Path))
     }
 
+    function Test-StandardsConsistencyObject {
+        param(
+            [AllowNull()][object]$Value,
+            [Parameter(Mandatory)][string]$Name
+        )
+
+        if ($null -eq $Value -or $Value -isnot [System.Collections.IDictionary]) {
+            Add-StandardsConsistencyFinding "$Name must be an object."
+            return $false
+        }
+        return $true
+    }
+
     if ($schemaValidationMessage) {
         Add-StandardsConsistencyFinding $schemaValidationMessage
     }
@@ -139,7 +152,7 @@ function Test-GovernanceJsonDocument {
         if (-not $json.ContainsKey('releaseReadiness')) {
             Add-StandardsConsistencyFinding "Standards-consistency schema 1.0.0 requires legacy 'releaseReadiness'."
         }
-        else {
+        elseif (Test-StandardsConsistencyObject -Value $json.releaseReadiness -Name 'Legacy releaseReadiness') {
             foreach ($member in @('status','proposedVersion','proposedTag','targetCommitSha','releaseCreated','reason')) {
                 if (-not (Test-LegacyJsonMember -InputObject $json.releaseReadiness -Name $member)) {
                     Add-StandardsConsistencyFinding "Legacy releaseReadiness is missing required member '$member'."
@@ -153,7 +166,7 @@ function Test-GovernanceJsonDocument {
                 Add-StandardsConsistencyFinding "Standards-consistency schema 1.1.0 is missing required member '$member'."
             }
         }
-        if ($json.ContainsKey('publishedRelease')) {
+        if ($json.ContainsKey('publishedRelease') -and (Test-StandardsConsistencyObject -Value $json.publishedRelease -Name 'publishedRelease')) {
             $published = $json.publishedRelease
             foreach ($member in @('status','version','tag','targetCommitSha','releaseCreated','reason')) {
                 if (-not (Test-LegacyJsonMember -InputObject $published -Name $member)) { Add-StandardsConsistencyFinding "publishedRelease is missing required member '$member'." }
@@ -164,7 +177,7 @@ function Test-GovernanceJsonDocument {
             if ((Test-LegacyJsonMember -InputObject $published -Name 'targetCommitSha') -and [string]$published.targetCommitSha -cnotmatch '^[0-9a-f]{40}$') { Add-StandardsConsistencyFinding 'publishedRelease.targetCommitSha must be a full lowercase commit SHA.' }
             if ((Test-LegacyJsonMember -InputObject $published -Name 'releaseCreated') -and $published.releaseCreated -isnot [bool]) { Add-StandardsConsistencyFinding 'publishedRelease.releaseCreated must be boolean.' }
         }
-        if ($json.ContainsKey('nextReleaseReadiness')) {
+        if ($json.ContainsKey('nextReleaseReadiness') -and (Test-StandardsConsistencyObject -Value $json.nextReleaseReadiness -Name 'nextReleaseReadiness')) {
             $next = $json.nextReleaseReadiness
             foreach ($member in @('status','proposedVersion','proposedTag','targetCommitSha','reason')) {
                 if (-not (Test-LegacyJsonMember -InputObject $next -Name $member)) { Add-StandardsConsistencyFinding "nextReleaseReadiness is missing required member '$member'." }
@@ -181,7 +194,7 @@ function Test-GovernanceJsonDocument {
                 if ([string]$next.targetCommitSha -cnotmatch '^[0-9a-f]{40}$') { Add-StandardsConsistencyFinding 'nextReleaseReadiness.targetCommitSha must be a full lowercase commit SHA for an active candidate state.' }
             }
         }
-        if ($json.ContainsKey('releaseReadiness')) {
+        if ($json.ContainsKey('releaseReadiness') -and (Test-StandardsConsistencyObject -Value $json.releaseReadiness -Name 'Deprecated releaseReadiness alias')) {
             $alias = $json.releaseReadiness
             foreach ($member in @('status','reason')) {
                 if (-not (Test-LegacyJsonMember -InputObject $alias -Name $member)) {
