@@ -335,6 +335,7 @@ Describe 'Governed Bash project support' {
             'schemas/downstream-compatibility.schema.json',
             'schemas/release-lifecycle.schema.json',
             'schemas/standards-consistency.schema.json',
+            'schemas/verified-run.schema.json',
             'scripts/GovernanceValidation.Legacy.psm1',
             'scripts/GovernanceValidation.psm1',
             'scripts/Test-JsonSchemas.ps1',
