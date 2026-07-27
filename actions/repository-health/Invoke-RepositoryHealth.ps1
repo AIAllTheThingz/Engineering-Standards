@@ -119,7 +119,7 @@ foreach ($generated in $trackedGenerated) {
     $results.Add((New-ValidationResult -Status Failed -Message 'Generated build output must not be tracked.' -Path $generated))
 }
 
-foreach ($json in Get-ChildItem -LiteralPath $root -Filter '*.json' -Recurse -File | Where-Object { $_.FullName -notmatch '\.git\|node_modules|bin\|obj\|dist\' }) {
+foreach ($json in Get-ChildItem -LiteralPath $root -Filter '*.json' -Recurse -File | Where-Object { $_.FullName -notmatch '\\.git\\|node_modules|bin\\|obj\\|dist\\' }) {
     try {
         Read-JsonFile -Path $json.FullName | Out-Null
     }
