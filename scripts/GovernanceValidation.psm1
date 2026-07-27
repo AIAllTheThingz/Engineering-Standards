@@ -46,20 +46,88 @@ foreach ($publicName in $script:ForwardedCommands.Keys) {
     Set-Alias -Name $publicName -Value $script:ForwardedCommands[$publicName] -Scope Script -Force
 }
 
+function Test-VerifiedRunBranchName {
+    [CmdletBinding()]
+    param([AllowNull()][object]$Value)
+
+    if ($Value -isnot [string]) { return $false }
+    $branch = [string]$Value
+    if ($branch.Length -lt 1 -or $branch.Length -gt 255) { return $false }
+    if ($branch -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._/-]*$') { return $false }
+    if ($branch -cmatch '^refs/' -or
+        $branch -cmatch '(^|/)\.' -or
+        $branch -cmatch '\.lock($|/)' -or
+        $branch -cmatch '\.\.|//|@\{' -or
+        $branch -cmatch '[/.]$') {
+        return $false
+    }
+    return $true
+}
+
 function Test-GovernanceJsonDocument {
     <#
     .SYNOPSIS
     Validates known governance JSON documents.
     .DESCRIPTION
-    Delegates established validation to the preserved core module and adds
-    version-aware standards-consistency checks for the 1.0.0 legacy release
-    readiness shape and the 1.1.0 split published/next-release state model.
+    Delegates established validation to the preserved core module and adds a
+    backward-compatible verified-run branch provenance bridge plus version-aware
+    standards-consistency checks for the 1.0.0 legacy release-readiness shape and
+    the 1.1.0 split published/next-release state model.
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Path,
         [Parameter(Mandatory)][ValidateSet('completion-result','test-evidence','artifact-record','project-manifest','governance-config','verified-run','standards-consistency')][string]$Kind
     )
+
+    if ($Kind -ceq 'verified-run') {
+        try {
+            $json = Read-LegacyJsonFile -Path $Path
+        }
+        catch {
+            return @(Test-LegacyGovernanceJsonDocument -Path $Path -Kind $Kind)
+        }
+
+        $schemaVersion = [string]$json.schemaVersion
+        if (@($script:GovernanceSchemaVersionsByKind[$Kind]) -cnotcontains $schemaVersion) {
+            return @((New-LegacyValidationResult -Status Failed -Message "Unsupported schemaVersion '$schemaVersion' for governance document kind '$Kind'. Supported versions: $(@($script:GovernanceSchemaVersionsByKind[$Kind]) -join ', ')." -Path $Path))
+        }
+
+        $findings = [System.Collections.Generic.List[object]]::new()
+        $schemaPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'schemas/verified-run.schema.json'
+        try {
+            $schemaRaw = Get-Content -LiteralPath $Path -Raw
+            if (-not ($schemaRaw | Test-Json -SchemaFile $schemaPath -ErrorAction Stop)) {
+                $findings.Add((New-LegacyValidationResult -Status Failed -Message 'Verified-run JSON Schema validation failed.' -Path $Path))
+            }
+        }
+        catch {
+            $findings.Add((New-LegacyValidationResult -Status Failed -Message "Verified-run JSON Schema validation failed: $($_.Exception.Message)" -Path $Path))
+        }
+
+        if (-not (Test-VerifiedRunBranchName -Value $json.branch)) {
+            $findings.Add((New-LegacyValidationResult -Status Failed -Message 'Verified run branch must be a safe Git branch name, not a full ref or malformed path.' -Path $Path))
+        }
+
+        $legacyCopy = ($json | ConvertTo-Json -Depth 100 | ConvertFrom-Json -Depth 100 -AsHashtable)
+        $legacyCopy.branch = 'master'
+        $temporaryPath = Join-Path ([IO.Path]::GetTempPath()) ("verified-run-$([guid]::NewGuid().ToString('N')).json")
+        try {
+            $legacyCopy | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $temporaryPath -Encoding utf8
+            $legacyResults = @(Test-LegacyGovernanceJsonDocument -Path $temporaryPath -Kind $Kind)
+            foreach ($result in $legacyResults) {
+                if ($result.PSObject.Properties.Name -contains 'path') { $result.path = $Path }
+            }
+        }
+        finally {
+            if (Test-Path -LiteralPath $temporaryPath -PathType Leaf) {
+                Remove-Item -LiteralPath $temporaryPath -Force
+            }
+        }
+
+        if ($findings.Count -eq 0) { return @($legacyResults) }
+        return @($legacyResults | Where-Object status -cne 'Passed') + @($findings)
+    }
 
     if ($Kind -cne 'standards-consistency') {
         return @(Test-LegacyGovernanceJsonDocument -Path $Path -Kind $Kind)
