@@ -146,6 +146,17 @@ if (Test-Path -LiteralPath $consistencyPath -PathType Leaf) {
         $results.Add((New-ValidationResult -Status Passed -Message 'Standards consistency matrix accepted.' -Path $consistencyPath -Severity info))
     }
 }
+$verifiedRunPath = Join-Path $root 'evidence/latest-verified-run.json'
+if (Test-Path -LiteralPath $verifiedRunPath -PathType Leaf) {
+    $verifiedRunResults = @(Test-GovernanceJsonDocument -Path $verifiedRunPath -Kind 'verified-run')
+    $hasFailure = @($verifiedRunResults | Where-Object status -eq 'Failed').Count -gt 0
+    if ($hasFailure) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Latest verified-run record validation failed.' -Path $verifiedRunPath -Data $verifiedRunResults))
+    }
+    else {
+        $results.Add((New-ValidationResult -Status Passed -Message 'Latest verified-run record accepted with exact branch provenance.' -Path $verifiedRunPath -Severity info))
+    }
+}
 $report = [ordered]@{ generatedAtUtc=(Get-Date).ToUniversalTime().ToString('o'); results=@($results); failed=@($results | Where-Object status -eq 'Failed').Count }
 if ($OutputJson) { $report | ConvertTo-OrderedJson | Set-Content -LiteralPath $OutputJson -Encoding utf8 }
 $report.results | ForEach-Object { "[$($_.status)] $($_.path) $($_.message)" }

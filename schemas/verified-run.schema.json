@@ -33,7 +33,11 @@
     "runId": { "type": "integer", "minimum": 1 },
     "runAttempt": { "type": "integer", "minimum": 1 },
     "validatedCommitSha": { "type": "string", "pattern": "^[A-Fa-f0-9]{40}$" },
-    "branch": { "type": "string", "const": "master" },
+    "branch": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!HEAD$)(?!refs/)(?![-/.])(?!.*(?:/\\.|\\.lock(?:/|$)|\\.\\.|//|@\\{|[/.]$))[^\\u0000-\\u0020\\u007F~^:?*\\[\\\\]+$"
+    },
     "trigger": { "type": "string", "enum": [ "workflow_dispatch", "push", "pull_request", "schedule" ] },
     "conclusion": { "type": "string", "enum": [ "success", "failure", "cancelled", "timed_out", "neutral", "skipped" ] },
     "checkName": { "type": "string", "minLength": 3 },

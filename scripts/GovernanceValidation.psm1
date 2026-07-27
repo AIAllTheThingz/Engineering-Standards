@@ -36,7 +36,6 @@ $script:ForwardedCommands = [ordered]@{
     'Test-GovernanceContractSemantics' = 'Test-LegacyGovernanceContractSemantics'
     'Test-TestEvidenceObject' = 'Test-LegacyTestEvidenceObject'
     'Test-ArtifactRecordObject' = 'Test-LegacyArtifactRecordObject'
-    'Test-VerifiedRunObject' = 'Test-LegacyVerifiedRunObject'
     'ConvertTo-OrderedJson' = 'ConvertTo-LegacyOrderedJson'
     'ConvertTo-SanitizedWorkflowOutputLine' = 'ConvertTo-LegacySanitizedWorkflowOutputLine'
     'ConvertTo-SanitizedWorkflowFailureMessage' = 'ConvertTo-LegacySanitizedWorkflowFailureMessage'
@@ -46,20 +45,110 @@ foreach ($publicName in $script:ForwardedCommands.Keys) {
     Set-Alias -Name $publicName -Value $script:ForwardedCommands[$publicName] -Scope Script -Force
 }
 
+function Test-VerifiedRunBranchName {
+    [CmdletBinding()]
+    param([AllowNull()][object]$Value)
+
+    if ($Value -isnot [string]) { return $false }
+    $branch = [string]$Value
+    if ([string]::IsNullOrEmpty($branch)) { return $false }
+    if ($branch -ceq 'HEAD' -or
+        $branch -cmatch '^refs/' -or
+        $branch -cmatch '^[-/]' -or
+        $branch -cmatch '(^|/)\.' -or
+        $branch -cmatch '\.lock($|/)' -or
+        $branch -cmatch '\.\.|//|@\{' -or
+        $branch -cmatch '[/.]$' -or
+        $branch -cmatch '[\x00-\x20\x7F~^:?*\[\\]') {
+        return $false
+    }
+    return $true
+}
+
+function Test-VerifiedRunObject {
+    <#
+    .SYNOPSIS
+    Validates verified GitHub run metadata with exact branch provenance.
+    .DESCRIPTION
+    Preserves the established verified-run semantic checks while accepting valid
+    GitHub branch names rather than forcing every record to claim master. Only a
+    temporary compatibility copy is projected to master for the legacy branch
+    assertion; the caller's object is not modified.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]$Run,
+        [Parameter(Mandatory)][string]$Path
+    )
+
+    $findings = [System.Collections.Generic.List[object]]::new()
+    if (-not (Test-VerifiedRunBranchName -Value $Run.branch)) {
+        $findings.Add((New-LegacyValidationResult -Status Failed -Message 'Verified run branch must be a GitHub-valid branch name, not HEAD, a refs/-prefixed name, or a malformed path.' -Path $Path))
+    }
+
+    $legacyCopy = ($Run | ConvertTo-Json -Depth 100 | ConvertFrom-Json -Depth 100 -AsHashtable)
+    $legacyCopy.branch = 'master'
+    $legacyResults = @(Test-LegacyVerifiedRunObject -Run $legacyCopy -Path $Path)
+
+    if ($findings.Count -eq 0) { return @($legacyResults) }
+    @($legacyResults | Where-Object status -cne 'Passed') + @($findings)
+}
+
 function Test-GovernanceJsonDocument {
     <#
     .SYNOPSIS
     Validates known governance JSON documents.
     .DESCRIPTION
-    Delegates established validation to the preserved core module and adds
-    version-aware standards-consistency checks for the 1.0.0 legacy release
-    readiness shape and the 1.1.0 split published/next-release state model.
+    Delegates established validation to the preserved core module and adds a
+    backward-compatible verified-run branch provenance bridge plus version-aware
+    standards-consistency checks for the 1.0.0 legacy release-readiness shape and
+    the 1.1.0 split published/next-release state model.
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Path,
         [Parameter(Mandatory)][ValidateSet('completion-result','test-evidence','artifact-record','project-manifest','governance-config','verified-run','standards-consistency')][string]$Kind
     )
+
+    if ($Kind -ceq 'verified-run') {
+        try {
+            $json = Read-LegacyJsonFile -Path $Path
+        }
+        catch {
+            return @(Test-LegacyGovernanceJsonDocument -Path $Path -Kind $Kind)
+        }
+
+        $schemaVersion = [string]$json.schemaVersion
+        if (@($script:GovernanceSchemaVersionsByKind[$Kind]) -cnotcontains $schemaVersion) {
+            return @((New-LegacyValidationResult -Status Failed -Message "Unsupported schemaVersion '$schemaVersion' for governance document kind '$Kind'. Supported versions: $(@($script:GovernanceSchemaVersionsByKind[$Kind]) -join ', ')." -Path $Path))
+        }
+
+        $findings = [System.Collections.Generic.List[object]]::new()
+        $schemaValid = $true
+        $schemaPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'schemas/verified-run.schema.json'
+        try {
+            $schemaRaw = Get-Content -LiteralPath $Path -Raw
+            if (-not ($schemaRaw | Test-Json -SchemaFile $schemaPath -ErrorAction Stop)) {
+                $schemaValid = $false
+                $findings.Add((New-LegacyValidationResult -Status Failed -Message 'Verified-run JSON Schema validation failed.' -Path $Path))
+            }
+        }
+        catch {
+            $schemaValid = $false
+            $findings.Add((New-LegacyValidationResult -Status Failed -Message "Verified-run JSON Schema validation failed: $($_.Exception.Message)" -Path $Path))
+        }
+
+        if ($schemaValid) {
+            foreach ($result in @(Test-VerifiedRunObject -Run $json -Path $Path | Where-Object status -cne 'Passed')) {
+                $findings.Add($result)
+            }
+        }
+
+        if ($findings.Count -eq 0) {
+            return @((New-LegacyValidationResult -Status Passed -Message 'verified-run validation passed.' -Path $Path -Severity info))
+        }
+        return @($findings)
+    }
 
     if ($Kind -cne 'standards-consistency') {
         return @(Test-LegacyGovernanceJsonDocument -Path $Path -Kind $Kind)
@@ -217,4 +306,4 @@ function Test-GovernanceJsonDocument {
     @($legacyResults | Where-Object status -cne 'Passed') + @($findings)
 }
 
-Export-ModuleMember -Function (@('Test-GovernanceJsonDocument') + @($script:ForwardedCommands.Values)) -Alias @($script:ForwardedCommands.Keys)
+Export-ModuleMember -Function (@('Test-GovernanceJsonDocument','Test-VerifiedRunObject') + @($script:ForwardedCommands.Values)) -Alias @($script:ForwardedCommands.Keys)

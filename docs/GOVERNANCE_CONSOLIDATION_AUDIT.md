@@ -5,11 +5,11 @@
 | Status | Active |
 | Version | 1.1.0 |
 | Owner role | Engineering Standards Maintainers |
-| Last reviewed | 2026-07-25 |
+| Last reviewed | 2026-07-27 |
 
 ## Purpose
 
-This audit records the consolidated state of `AIAllTheThingz/Engineering-Standards` after the Python, Bash, governed example, dependency, and workflow-pin work completed through PR #84. It separates the published `v1.1.0` release from later unreleased development and identifies the exact evidence and remaining gates for a future release.
+This audit records the consolidated state of `AIAllTheThingz/Engineering-Standards` after the Python, Bash, governed example, dependency, workflow-pin, release-contract, and compatibility work completed through PR #90. It separates the published `v1.1.0` release from later unreleased development and identifies the exact evidence and remaining gates for a future release.
 
 The machine-readable companion is [`governance/standards-consistency.json`](../governance/standards-consistency.json), validated against [`schemas/standards-consistency.schema.json`](../schemas/standards-consistency.schema.json).
 
@@ -19,15 +19,15 @@ The machine-readable companion is [`governance/standards-consistency.json`](../g
 | --- | --- |
 | Latest published version | `1.1.0` |
 | Published tag target | `2704049d7e826975d956611b194214dd79ea3686` |
-| Current audited `master` head | `e9fa50a0df28982b12ffc1ca55d40ac51d6e0ed3` |
-| Final PR #84 validated head | `66c868ad157e34449435685cb961c8bade646ffe` |
+| Current audited `master` head | `16277a220035446924ef19f18d713486c6d364c1` |
+| Final PR #90 validated head | `d75a37a60f2c82a8ea7cefafd714ce0309ea237e` |
 | Current frozen self-CI implementation | `335452c509991729cf60d94eb756f8f59d190011` |
 | Workflow interface version | `1.0.0` |
 | Repository governance version | `1.1.0` |
 | Default branch | `master` |
 | Repository risk | `High` |
 
-Git comparison found no file differences between final validated PR #84 head `66c868ad157e34449435685cb961c8bade646ffe` and merge commit `e9fa50a0df28982b12ffc1ca55d40ac51d6e0ed3`. The merge commit is therefore a metadata-only descendant with an identical repository tree.
+Git comparison found no file differences between final validated PR #90 head `d75a37a60f2c82a8ea7cefafd714ce0309ea237e` and merge commit `16277a220035446924ef19f18d713486c6d364c1`. The merge commit is therefore a metadata-only descendant with an identical repository tree.
 
 `VERSION` remains `1.1.0` because it identifies the latest published release. Current `master` is unreleased development and must not be represented as content of `v1.1.0`.
 
@@ -91,28 +91,28 @@ The trusted governance baseline and unprivileged candidate harness use the same 
 
 ## Verified Workflow Artifacts
 
-All four final PR #84 workflow artifacts were retrieved through the GitHub API, independently SHA-256 hashed, opened as ZIP archives, and JSON parsed.
+All four final PR #90 workflow artifacts were retrieved through the GitHub API, independently SHA-256 hashed, opened as ZIP archives, and JSON parsed.
 
-| Workflow | Run | Artifact ID | Entries | SHA-256 | Result |
+| Workflow | Run | Artifact ID | JSON files | SHA-256 | Result |
 | --- | ---: | ---: | ---: | --- | --- |
-| Governance CI | `30184347651` | `8626616228` | 14 | `cddb475abd83a11afcaa0d14caff32e3917b50a4977edc6afbecf43661e98d7c` | Passed |
-| Bash example CI | `30184347667` | `8626554934` | 11 | `0050a52137bd1aa2c9b9d9cd9dd7e1099d065292ecfebaf1fc2df49ffa5048f4` | Passed |
-| Python example CI | `30184347650` | `8626555641` | 12 | `5ced6414e4623c2343f3be3b357811faa2b2cbb25f011cf453e45e5355b13d2a` | Passed |
-| Pull Request Governance | `30184347707` | `8626552424` | 2 | `c805850081843465a8c870057e7dcb26e652b56558d8df0051d6c4dc5a823170` | Passed |
+| Governance CI | `30232343849` | `8640640280` | 14 | `f41437b4c8457225fc111f8c9d78b2d8a53463241630afc4c6145d9eb84c0914` | Passed |
+| Bash example CI | `30232343840` | `8640496837` | 11 | `bc05a83235a76d619b8590d177ed2f1a7995be8012197d40764c4b549051a70e` | Passed |
+| Python example CI | `30232343796` | `8640499356` | 11 | `6cd9a75cd33057b78d646153a4b328fef68b50357d0ed33e5bcfc5c31dca0c81` | Passed |
+| Pull Request Governance | `30233092086` | `8640716524` | 2 | `185af693d1e5a38d29324e8f65aff02c6224923edf425a9fdec08ca98954a3a0` | Passed |
 
-Each independently computed ZIP hash matched the digest reported by GitHub. Every JSON file parsed successfully.
+Each independently computed ZIP hash matched the digest reported by GitHub. All 38 JSON files parsed successfully.
 
-The governance artifact truthfully contains one `Blocked` lifecycle result for the suspended `enterprise-powershell` skill and nine `NotRun` declarations for model behavior that deterministic validation did not execute. These are governed non-passing lifecycle records, not hidden workflow failures; the overall completion and mandatory governance enforcement passed.
+The governance artifact truthfully contains one `Blocked` lifecycle result for the suspended `enterprise-powershell` skill and nine `NotRun` declarations for model behavior that deterministic validation did not execute. These are governed non-passing lifecycle records, not hidden workflow failures; the overall completion and mandatory governance enforcement passed. No final artifact contained a `Failed` result.
 
-[`evidence/latest-verified-run.json`](../evidence/latest-verified-run.json) records the refreshed exact run, artifact identity, independent hashes, content observations, and historical controlled-failure boundary.
+The PR #90 table above is the retained historical evidence record for that validation boundary, including its independent hashes and the merge-tree comparison documented in this audit. [`evidence/latest-verified-run.json`](../evidence/latest-verified-run.json) intentionally records the newer independently verified PR #92 run and must not be read as the machine-readable PR #90 record.
 
 ## Dependency And Compatibility Reconciliation
 
-The central validator dependency model now records PyYAML `6.0.3` as one exact reviewed CPython 3.12 Linux X64 wheel. The PSD1 lock, requirements hash, source URL, package identity, documentation, and immutable governance pins were updated together.
+The central validator dependency model records PyYAML `6.0.3` as one exact reviewed CPython 3.12 Linux X64 wheel. The PSD1 lock, requirements hash, source URL, package identity, documentation, and immutable governance pins are synchronized.
 
 Ruff remains `0.15.22`. Ruff `0.16.0` was not adopted because it is a breaking migration requiring a separate compatibility change rather than an isolated bot-generated version edit.
 
-The published compatibility entry for `v1.1.0` remains immutable. The unreleased contract retains workflow interface `1.0.0`, adds project-manifest schema `1.2.0` as Preview, and preserves the independently canary-validated workflow SHA `de32b77e2043f5336a54b92ab9ed867abe93ba7e`. The current self-CI implementation SHA is not substituted for the canary record without a new external canary verification.
+The published compatibility entry for `v1.1.0` remains immutable. The unreleased contract retains workflow interface `1.0.0`, adds project-manifest schema `1.2.0` as Preview, and preserves the independently canary-validated workflow SHA `de32b77e2043f5336a54b92ab9ed867abe93ba7e`. PR #90 introduced version-aware compatibility-document and standards-consistency contracts that preserve historical `1.0.0` records while requiring the current `1.1.0` shapes. The current self-CI implementation SHA is not substituted for the canary record without a new external canary verification.
 
 ## Temporary And Diagnostic Code Review
 

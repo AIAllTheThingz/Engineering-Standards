@@ -335,6 +335,7 @@ Describe 'Governed Bash project support' {
             'schemas/downstream-compatibility.schema.json',
             'schemas/release-lifecycle.schema.json',
             'schemas/standards-consistency.schema.json',
+            'schemas/verified-run.schema.json',
             'scripts/GovernanceValidation.Legacy.psm1',
             'scripts/GovernanceValidation.psm1',
             'scripts/Test-JsonSchemas.ps1',
@@ -344,13 +345,21 @@ Describe 'Governed Bash project support' {
             'tests/fixtures/invalid/standards-consistency-v1.1-missing-release-states.json',
             'tests/fixtures/release-lifecycle/invalid/missing-canary.json',
             'tests/fixtures/release-lifecycle/valid/full-lifecycle.json',
+            'tests/fixtures/verified-run-branches/invalid/double-slash.json',
+            'tests/fixtures/verified-run-branches/invalid/full-ref.json',
+            'tests/fixtures/verified-run-branches/invalid/head.json',
+            'tests/fixtures/verified-run-branches/invalid/lock-suffix.json',
+            'tests/fixtures/verified-run-branches/valid/at-sign.json',
+            'tests/fixtures/verified-run-branches/valid/pr-branch.json',
+            'tests/fixtures/verified-run-branches/valid/underscore-feature.json',
             'tests/schemas/JsonSchemas.Tests.ps1',
             'tests/scripts/BashExampleCleanup.Tests.ps1',
             'tests/scripts/BashProjectSupport.Tests.ps1',
             'tests/scripts/ConsolidationContracts.Tests.ps1',
             'tests/scripts/GovernanceValidationModule.Tests.ps1',
             'tests/scripts/ReleaseLifecycle.Tests.ps1',
-            'tests/scripts/StandardsConsistencyAlias.Tests.ps1'
+            'tests/scripts/StandardsConsistencyAlias.Tests.ps1',
+            'tests/scripts/VerifiedRunBranch.Tests.ps1'
         )
         @($changedAfterValidation | Where-Object {
             -not $_.StartsWith('examples/bash-project/evidence/', [StringComparison]::Ordinal) -and

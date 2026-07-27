@@ -8,12 +8,14 @@
 | PR #88 consolidation merge | `dee27948aafbc6f7dcb646921e8e1c9c9c4add56` |
 | PR #89 correction validated head | `11d7c3200be8be5ce694887f2331f1df49d3d62b` |
 | PR #89 correction merge | `c2fd32e94142d50ac16bbbf6913c849122d58b8d` |
-| Audited master commit | `c2fd32e94142d50ac16bbbf6913c849122d58b8d` |
-| Last reviewed | 2026-07-26 |
+| PR #90 versioned-contract validated head | `d75a37a60f2c82a8ea7cefafd714ce0309ea237e` |
+| PR #90 versioned-contract merge | `16277a220035446924ef19f18d713486c6d364c1` |
+| Audited master commit | `16277a220035446924ef19f18d713486c6d364c1` |
+| Last reviewed | 2026-07-27 |
 
 ## Summary
 
-This record consolidates the post-`v1.1.0` development completed through PR #88 and binds the corrective contract work from PR #89 to its own validated head and merge commit. It is release-preparation documentation only. It does not select a new semantic version, authorize a tag, publish a GitHub Release, or add current development to historical `v1.1.0`.
+This record consolidates the post-`v1.1.0` development completed through PR #88, the corrective contract work from PR #89, and the version-aware compatibility and release-state implementation completed by PR #90. It is release-preparation documentation only. It does not select a new semantic version, authorize a tag, publish a GitHub Release, or add current development to historical `v1.1.0`.
 
 ## Included Unreleased Work
 
@@ -34,6 +36,7 @@ This record consolidates the post-`v1.1.0` development completed through PR #88 
 - Restored mandatory cross-standard handoff relationships in the standards consistency matrix.
 - Separate published-release state and next-release readiness records.
 - Versioned compatibility-document and standards-consistency contracts with preserved `1.0.0` shapes and current `1.1.0` shapes.
+- Version-aware semantic validation that rejects missing, hybrid, malformed, null, and contradictory release-state records.
 
 ## Compatibility
 
@@ -78,16 +81,27 @@ The final artifacts were independently downloaded, SHA-256 checked against GitHu
 
 All 38 JSON files parsed successfully and no final artifact contained a `Failed` result. PR #89 merged as `c2fd32e94142d50ac16bbbf6913c849122d58b8d`.
 
-## Post-Merge Schema Versioning Follow-Up
+## PR #90 Versioned Contract Validation
 
-The PR #89 post-merge review identified four additional contract concerns:
+PR #90 resolved the four post-merge schema-versioning concerns from PR #89 by versioning both owned document contracts as `1.1.0`, preserving their historical `1.0.0` shapes, enforcing the current split release-state model semantically, retaining the established validator implementation behind a reviewed wrapper, and aligning release-lifecycle fixtures, repository-health checks, documentation, and Bash evidence-freshness classifications.
 
-1. Required functional workflow records were added under unchanged document schema `1.0.0`.
-2. Split release-state records were required under unchanged standards-consistency schema `1.0.0`.
-3. The semantic validator did not require the new authoritative release-state objects.
-4. The release-preparation record still identified PR #88 as the final validation boundary for PR #89 corrections.
+Final PR #90 head `d75a37a60f2c82a8ea7cefafd714ce0309ea237e` passed:
 
-The current follow-up versions both document contracts as `1.1.0`, preserves their historical `1.0.0` shapes, adds version-aware semantic validation and invalid fixtures, and records the distinct PR #88 and PR #89 evidence boundaries. Hosted validation for this follow-up must remain separate and must not be inferred from the PR #89 runs listed above.
+- Governance CI run `30232343849`, including trusted Governance validation and candidate implementation validation.
+- Python example CI run `30232343796`.
+- Bash example CI run `30232343840`.
+- Final Pull Request Governance run `30233092086` after the PR body was synchronized with the completed evidence.
+
+The final artifacts were independently downloaded, SHA-256 checked against GitHub digests, and JSON parsed:
+
+| Workflow | Artifact ID | JSON files | SHA-256 |
+| --- | ---: | ---: | --- |
+| Governance CI | `8640640280` | 14 | `f41437b4c8457225fc111f8c9d78b2d8a53463241630afc4c6145d9eb84c0914` |
+| Python example CI | `8640499356` | 11 | `6cd9a75cd33057b78d646153a4b328fef68b50357d0ed33e5bcfc5c31dca0c81` |
+| Bash example CI | `8640496837` | 11 | `bc05a83235a76d619b8590d177ed2f1a7995be8012197d40764c4b549051a70e` |
+| Pull Request Governance | `8640716524` | 2 | `185af693d1e5a38d29324e8f65aff02c6224923edf425a9fdec08ca98954a3a0` |
+
+All 38 JSON files parsed successfully. No final artifact contained a `Failed` result. The Governance artifact truthfully retained one `Blocked` result for the suspended `enterprise-powershell` behavior gate and nine `NotRun` model-behavior declarations. Git comparison confirmed that PR #90 merge commit `16277a220035446924ef19f18d713486c6d364c1` is one commit ahead of the validated head with no file differences.
 
 ## Lifecycle Limitations
 
