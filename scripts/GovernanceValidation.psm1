@@ -45,36 +45,15 @@ foreach ($publicName in $script:ForwardedCommands.Keys) {
     Set-Alias -Name $publicName -Value $script:ForwardedCommands[$publicName] -Scope Script -Force
 }
 
-function Get-UnicodeCodePointCount {
-    [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Value)
-
-    $count = 0
-    for ($index = 0; $index -lt $Value.Length; $index++) {
-        $character = $Value[$index]
-        if ([char]::IsHighSurrogate($character)) {
-            if ($index + 1 -ge $Value.Length -or -not [char]::IsLowSurrogate($Value[$index + 1])) {
-                return -1
-            }
-            $index++
-        }
-        elseif ([char]::IsLowSurrogate($character)) {
-            return -1
-        }
-        $count++
-    }
-    return $count
-}
-
 function Test-VerifiedRunBranchName {
     [CmdletBinding()]
     param([AllowNull()][object]$Value)
 
     if ($Value -isnot [string]) { return $false }
     $branch = [string]$Value
-    $codePointCount = Get-UnicodeCodePointCount -Value $branch
-    if ($codePointCount -lt 1 -or $codePointCount -gt 255) { return $false }
+    if ([string]::IsNullOrEmpty($branch)) { return $false }
     if ($branch -ceq 'HEAD' -or
+        $branch -cmatch '^refs/' -or
         $branch -cmatch '^[-/]' -or
         $branch -cmatch '(^|/)\.' -or
         $branch -cmatch '\.lock($|/)' -or
@@ -91,8 +70,8 @@ function Test-VerifiedRunObject {
     .SYNOPSIS
     Validates verified GitHub run metadata with exact branch provenance.
     .DESCRIPTION
-    Preserves the established verified-run semantic checks while accepting safe
-    Git branch names rather than forcing every record to claim master. Only a
+    Preserves the established verified-run semantic checks while accepting valid
+    GitHub branch names rather than forcing every record to claim master. Only a
     temporary compatibility copy is projected to master for the legacy branch
     assertion; the caller's object is not modified.
     #>
@@ -104,7 +83,7 @@ function Test-VerifiedRunObject {
 
     $findings = [System.Collections.Generic.List[object]]::new()
     if (-not (Test-VerifiedRunBranchName -Value $Run.branch)) {
-        $findings.Add((New-LegacyValidationResult -Status Failed -Message 'Verified run branch must be a Git-valid branch shorthand, not HEAD or a malformed path.' -Path $Path))
+        $findings.Add((New-LegacyValidationResult -Status Failed -Message 'Verified run branch must be a GitHub-valid branch name, not HEAD, a refs/-prefixed name, or a malformed path.' -Path $Path))
     }
 
     $legacyCopy = ($Run | ConvertTo-Json -Depth 100 | ConvertFrom-Json -Depth 100 -AsHashtable)
