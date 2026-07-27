@@ -66,6 +66,30 @@ foreach ($mode in @('valid','invalid')) {
     }
 }
 
+$releaseStateFixturePath = Join-Path $root 'tests/fixtures/invalid/standards-consistency-v1.1-missing-release-states.json'
+if (-not (Test-Path -LiteralPath $releaseStateFixturePath -PathType Leaf)) {
+    $results.Add((New-ValidationResult -Status Failed -Message 'Missing-release-state standards-consistency fixture is missing.' -Path $releaseStateFixturePath))
+}
+else {
+    $releaseStateResults = @(Test-GovernanceJsonDocument -Path $releaseStateFixturePath -Kind 'standards-consistency')
+    foreach ($member in @('publishedRelease','nextReleaseReadiness')) {
+        $expectedMessage = "Standards-consistency schema 1.1.0 is missing required member '$member'."
+        if (@($releaseStateResults | Where-Object { $_.status -eq 'Failed' -and $_.message -eq $expectedMessage }).Count -eq 1) {
+            $results.Add((New-ValidationResult -Status Passed -Message "Missing-release-state fixture rejects absent '$member' as intended." -Path $releaseStateFixturePath -Severity info))
+        }
+        else {
+            $results.Add((New-ValidationResult -Status Failed -Message "Missing-release-state fixture did not emit the required '$member' diagnostic." -Path $releaseStateFixturePath -Data $releaseStateResults))
+        }
+    }
+    $catalogFailures = @($releaseStateResults | Where-Object { $_.status -eq 'Failed' -and $_.message -match '^Consistency matrix missing document ' })
+    if ($catalogFailures.Count -eq 0) {
+        $results.Add((New-ValidationResult -Status Passed -Message 'Missing-release-state fixture preserves the mandatory document catalog.' -Path $releaseStateFixturePath -Severity info))
+    }
+    else {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Missing-release-state fixture contains unrelated document-catalog failures.' -Path $releaseStateFixturePath -Data $catalogFailures))
+    }
+}
+
 $releaseLifecycleValidator = Join-Path $root 'scripts/Test-ReleaseLifecycle.ps1'
 $releaseLifecycleFixtures = @(
     [ordered]@{
