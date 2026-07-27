@@ -5,7 +5,7 @@
 | Status | Active |
 | Published version | 1.1.0 |
 | Owner role | Release Maintainers |
-| Last verified | 2026-07-25 |
+| Last verified | 2026-07-27 |
 
 ## Published Release
 
@@ -17,7 +17,7 @@ The historical GitHub Release body retains stale preparation-era statements that
 
 ## Unreleased Development
 
-Current `master` contains development after the published target `v1.1.0`. The audited post-PR #84 merge commit is `e9fa50a0df28982b12ffc1ca55d40ac51d6e0ed3`. The authoritative feature inventory is [`CHANGELOG.md` `[Unreleased]`](../CHANGELOG.md#unreleased).
+Current `master` contains development after the published target `v1.1.0`. The audited post-PR #90 merge commit is `16277a220035446924ef19f18d713486c6d364c1`. The authoritative feature inventory is [`CHANGELOG.md` `[Unreleased]`](../CHANGELOG.md#unreleased).
 
 `VERSION` remains `1.1.0` because it identifies the latest published release. It does not imply that current `master` is identical to the published tag.
 
@@ -25,29 +25,30 @@ Unreleased development now includes:
 
 - Governance contract and aggregate validation improvements.
 - Pull-request body governance.
-- Release lifecycle and downstream compatibility controls.
+- Release lifecycle and version-aware downstream compatibility controls.
 - First-class Python and Bash standards, trusted static analysis, functional reusable workflows, maintained examples, and evidence.
 - Isolated home-lab skill demonstrations and the reconciled examples catalog.
 - The suspended `enterprise-powershell` production skill and its controlled behavior-evaluation framework.
 - Exact validator dependency locking, including PyYAML `6.0.3`, Ruff `0.15.22`, and ShellCheck `0.11.0`.
 - Coordinated immutable self-CI pins, full trusted Git history for evidence validation, and corrected Bash evidence-freshness boundaries.
+- Preserved historical `1.0.0` compatibility records and current `1.1.0` split release-state contracts.
 
 None of those changes is retroactively part of `v1.1.0`.
 
 ## Current Validation Baseline
 
-Final PR #84 head `66c868ad157e34449435685cb961c8bade646ffe` passed Governance CI, Python example CI, Bash example CI, and Pull Request Governance. Git comparison confirmed that merge commit `e9fa50a0df28982b12ffc1ca55d40ac51d6e0ed3` is one commit ahead with no file differences. Historical evidence for those commits does not validate current `master`.
+Final PR #90 head `d75a37a60f2c82a8ea7cefafd714ce0309ea237e` passed Governance CI, candidate implementation validation, Python example CI, Bash example CI, and Pull Request Governance. Git comparison confirmed that merge commit `16277a220035446924ef19f18d713486c6d364c1` is one commit ahead with no file differences. The validated head and merged `master` therefore have identical repository content.
 
 The four final artifacts were independently downloaded, SHA-256 hashed, opened, and JSON parsed:
 
 | Workflow | Run | Artifact | SHA-256 |
 | --- | ---: | ---: | --- |
-| Governance CI | `30184347651` | `8626616228` | `cddb475abd83a11afcaa0d14caff32e3917b50a4977edc6afbecf43661e98d7c` |
-| Bash example CI | `30184347667` | `8626554934` | `0050a52137bd1aa2c9b9d9cd9dd7e1099d065292ecfebaf1fc2df49ffa5048f4` |
-| Python example CI | `30184347650` | `8626555641` | `5ced6414e4623c2343f3be3b357811faa2b2cbb25f011cf453e45e5355b13d2a` |
-| Pull Request Governance | `30184347707` | `8626552424` | `c805850081843465a8c870057e7dcb26e652b56558d8df0051d6c4dc5a823170` |
+| Governance CI | `30232343849` | `8640640280` | `f41437b4c8457225fc111f8c9d78b2d8a53463241630afc4c6145d9eb84c0914` |
+| Bash example CI | `30232343840` | `8640496837` | `bc05a83235a76d619b8590d177ed2f1a7995be8012197d40764c4b549051a70e` |
+| Python example CI | `30232343796` | `8640499356` | `6cd9a75cd33057b78d646153a4b328fef68b50357d0ed33e5bcfc5c31dca0c81` |
+| Pull Request Governance | `30233092086` | `8640716524` | `185af693d1e5a38d29324e8f65aff02c6224923edf425a9fdec08ca98954a3a0` |
 
-Every independently computed ZIP hash matched the GitHub digest, and every JSON file parsed successfully. [`evidence/latest-verified-run.json`](../evidence/latest-verified-run.json) contains the full verification record and historical controlled-failure boundary.
+Every independently computed ZIP hash matched the GitHub digest, and all 38 JSON files parsed successfully. The Governance artifact truthfully retains one `Blocked` result for the suspended `enterprise-powershell` behavior gate and nine `NotRun` declarations for model behavior that was not executed. No final artifact contained a `Failed` result. [`evidence/latest-verified-run.json`](../evidence/latest-verified-run.json) contains the full verification record and historical controlled-failure boundary.
 
 ## Skill Lifecycle Boundary
 
