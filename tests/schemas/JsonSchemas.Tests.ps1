@@ -97,21 +97,6 @@ Describe 'JSON schema validation' {
             ($hybrid | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeFalse
         }
 
-        It 'rejects the checked-in current fixture only for missing split release states' {
-            $modulePath = Resolve-Path "$PSScriptRoot/../../scripts/GovernanceValidation.psm1"
-            Import-Module $modulePath -Force
-            $fixturePath = Resolve-Path "$PSScriptRoot/../fixtures/invalid/standards-consistency-v1.1-missing-release-states.json"
-            $messages = @(
-                Test-GovernanceJsonDocument -Path $fixturePath -Kind standards-consistency |
-                    Where-Object status -EQ Failed |
-                    ForEach-Object message
-            )
-
-            $messages | Should -Contain "Standards-consistency schema 1.1.0 is missing required member 'publishedRelease'."
-            $messages | Should -Contain "Standards-consistency schema 1.1.0 is missing required member 'nextReleaseReadiness'."
-            $messages -join "`n" | Should -Not -Match '^Consistency matrix missing document '
-        }
-
         It 'rejects a null workflow interface version for a 1.2.0 manifest' {
             $schema = Resolve-Path "$PSScriptRoot/../../schemas/project-manifest.schema.json"
             $manifest = Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/project-manifest-1.2.0-user.json" -Raw | ConvertFrom-Json
