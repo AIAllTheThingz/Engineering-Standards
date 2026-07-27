@@ -39,6 +39,8 @@ None of those changes is retroactively part of `v1.1.0`.
 
 Final PR #90 head `d75a37a60f2c82a8ea7cefafd714ce0309ea237e` passed Governance CI, candidate implementation validation, Python example CI, Bash example CI, and Pull Request Governance. Git comparison confirmed that merge commit `16277a220035446924ef19f18d713486c6d364c1` is one commit ahead with no file differences. The validated head and merged `master` therefore have identical repository content.
 
+This historical PR #90 evidence validates only the recorded equivalent tree and does not validate current `master` after later file changes.
+
 The four final artifacts were independently downloaded, SHA-256 hashed, opened, and JSON parsed:
 
 | Workflow | Run | Artifact | SHA-256 |
