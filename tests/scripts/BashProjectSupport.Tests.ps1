@@ -343,15 +343,20 @@ Describe 'Governed Bash project support' {
             'scripts/Test-ReleaseConsistency.ps1',
             'scripts/bash-project-validation.py',
             'tests/fixtures/invalid/standards-consistency-v1.1-missing-release-states.json',
+            'tests/fixtures/invalid/verified-run-double-slash.json',
+            'tests/fixtures/invalid/verified-run-full-ref.json',
+            'tests/fixtures/invalid/verified-run-lock-suffix.json',
             'tests/fixtures/release-lifecycle/invalid/missing-canary.json',
             'tests/fixtures/release-lifecycle/valid/full-lifecycle.json',
+            'tests/fixtures/valid/verified-run-pr-branch.json',
             'tests/schemas/JsonSchemas.Tests.ps1',
             'tests/scripts/BashExampleCleanup.Tests.ps1',
             'tests/scripts/BashProjectSupport.Tests.ps1',
             'tests/scripts/ConsolidationContracts.Tests.ps1',
             'tests/scripts/GovernanceValidationModule.Tests.ps1',
             'tests/scripts/ReleaseLifecycle.Tests.ps1',
-            'tests/scripts/StandardsConsistencyAlias.Tests.ps1'
+            'tests/scripts/StandardsConsistencyAlias.Tests.ps1',
+            'tests/scripts/VerifiedRunBranch.Tests.ps1'
         )
         @($changedAfterValidation | Where-Object {
             -not $_.StartsWith('examples/bash-project/evidence/', [StringComparison]::Ordinal) -and
