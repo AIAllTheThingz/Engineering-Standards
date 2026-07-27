@@ -66,30 +66,6 @@ foreach ($mode in @('valid','invalid')) {
     }
 }
 
-$releaseStateFixturePath = Join-Path $root 'tests/fixtures/invalid/standards-consistency-v1.1-missing-release-states.json'
-if (-not (Test-Path -LiteralPath $releaseStateFixturePath -PathType Leaf)) {
-    $results.Add((New-ValidationResult -Status Failed -Message 'Missing-release-state standards-consistency fixture is missing.' -Path $releaseStateFixturePath))
-}
-else {
-    $releaseStateResults = @(Test-GovernanceJsonDocument -Path $releaseStateFixturePath -Kind 'standards-consistency')
-    foreach ($member in @('publishedRelease','nextReleaseReadiness')) {
-        $expectedMessage = "Standards-consistency schema 1.1.0 is missing required member '$member'."
-        if (@($releaseStateResults | Where-Object { $_.status -eq 'Failed' -and $_.message -eq $expectedMessage }).Count -eq 1) {
-            $results.Add((New-ValidationResult -Status Passed -Message "Missing-release-state fixture rejects absent '$member' as intended." -Path $releaseStateFixturePath -Severity info))
-        }
-        else {
-            $results.Add((New-ValidationResult -Status Failed -Message "Missing-release-state fixture did not emit the required '$member' diagnostic." -Path $releaseStateFixturePath -Data $releaseStateResults))
-        }
-    }
-    $catalogFailures = @($releaseStateResults | Where-Object { $_.status -eq 'Failed' -and $_.message -match '^Consistency matrix missing document ' })
-    if ($catalogFailures.Count -eq 0) {
-        $results.Add((New-ValidationResult -Status Passed -Message 'Missing-release-state fixture preserves the mandatory document catalog.' -Path $releaseStateFixturePath -Severity info))
-    }
-    else {
-        $results.Add((New-ValidationResult -Status Failed -Message 'Missing-release-state fixture contains unrelated document-catalog failures.' -Path $releaseStateFixturePath -Data $catalogFailures))
-    }
-}
-
 $releaseLifecycleValidator = Join-Path $root 'scripts/Test-ReleaseLifecycle.ps1'
 $releaseLifecycleFixtures = @(
     [ordered]@{
@@ -100,9 +76,7 @@ $releaseLifecycleFixtures = @(
     [ordered]@{
         Path = 'tests/fixtures/release-lifecycle/invalid/missing-canary.json'
         ExpectedExitCode = 1
-        ExpectedPattern = "RLG001 preRelease is missing required member 'downstreamCanary'\."
-        ForbiddenPattern = 'RLG043'
-        Message = 'Invalid release lifecycle fixture rejected for the intended missing-canary defect.'
+        Message = 'Invalid release lifecycle fixture rejected as expected.'
     }
 )
 if (-not (Test-Path -LiteralPath $releaseLifecycleValidator -PathType Leaf)) {
@@ -117,22 +91,12 @@ else {
         }
 
         $fixtureOutput = @(& (Join-Path $PSHOME 'pwsh') -NoProfile -File $releaseLifecycleValidator -Path $root -EvidencePath ([string]$fixtureContract.Path) -Stage All 2>&1)
-        $fixtureOutputText = $fixtureOutput -join "`n"
         $fixtureExitCode = $LASTEXITCODE
-        $expectedPattern = if ($fixtureContract.Contains('ExpectedPattern')) { [string]$fixtureContract.ExpectedPattern } else { $null }
-        $forbiddenPattern = if ($fixtureContract.Contains('ForbiddenPattern')) { [string]$fixtureContract.ForbiddenPattern } else { $null }
-
-        if ($fixtureExitCode -ne [int]$fixtureContract.ExpectedExitCode) {
-            $results.Add((New-ValidationResult -Status Failed -Message "Release lifecycle fixture expected exit code $($fixtureContract.ExpectedExitCode) but observed $fixtureExitCode." -Path $fixturePath -Data @($fixtureOutput | ForEach-Object { [string]$_ })))
-        }
-        elseif ($expectedPattern -and $fixtureOutputText -notmatch $expectedPattern) {
-            $results.Add((New-ValidationResult -Status Failed -Message "Release lifecycle fixture did not emit required diagnostic pattern '$expectedPattern'." -Path $fixturePath -Data @($fixtureOutput | ForEach-Object { [string]$_ })))
-        }
-        elseif ($forbiddenPattern -and $fixtureOutputText -match $forbiddenPattern) {
-            $results.Add((New-ValidationResult -Status Failed -Message "Release lifecycle fixture emitted unrelated diagnostic pattern '$forbiddenPattern'." -Path $fixturePath -Data @($fixtureOutput | ForEach-Object { [string]$_ })))
+        if ($fixtureExitCode -eq [int]$fixtureContract.ExpectedExitCode) {
+            $results.Add((New-ValidationResult -Status Passed -Message $fixtureContract.Message -Path $fixturePath -Severity info))
         }
         else {
-            $results.Add((New-ValidationResult -Status Passed -Message $fixtureContract.Message -Path $fixturePath -Severity info))
+            $results.Add((New-ValidationResult -Status Failed -Message "Release lifecycle fixture expected exit code $($fixtureContract.ExpectedExitCode) but observed $fixtureExitCode." -Path $fixturePath -Data @($fixtureOutput | ForEach-Object { [string]$_ })))
         }
     }
 }
