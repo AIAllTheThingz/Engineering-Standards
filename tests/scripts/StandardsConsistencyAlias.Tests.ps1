@@ -54,6 +54,17 @@ Describe 'Standards-consistency release-state schema and semantics' {
         @($results | Where-Object { $_.status -eq 'Failed' -and $_.message -eq 'Deprecated releaseReadiness alias reason must contain at least 20 non-whitespace characters.' }) | Should -HaveCount 1
     }
 
+    It 'rejects a null published release as a structured validation failure' {
+        $path = New-ConsistencyTestDocument -Name 'null-published-release' -Mutate {
+            param($document)
+            $document.publishedRelease = $null
+        }
+
+        $results = @(Test-GovernanceJsonDocument -Path $path -Kind 'standards-consistency')
+
+        @($results | Where-Object { $_.status -eq 'Failed' -and $_.message -eq 'publishedRelease must be an object.' }) | Should -HaveCount 1
+    }
+
     It 'rejects a published release reason shorter than the authoritative schema minimum' {
         $path = New-ConsistencyTestDocument -Name 'short-published-reason' -Mutate {
             param($document)
