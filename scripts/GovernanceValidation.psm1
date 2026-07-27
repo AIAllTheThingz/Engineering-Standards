@@ -124,19 +124,24 @@ function Test-GovernanceJsonDocument {
         }
 
         $findings = [System.Collections.Generic.List[object]]::new()
+        $schemaValid = $true
         $schemaPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'schemas/verified-run.schema.json'
         try {
             $schemaRaw = Get-Content -LiteralPath $Path -Raw
             if (-not ($schemaRaw | Test-Json -SchemaFile $schemaPath -ErrorAction Stop)) {
+                $schemaValid = $false
                 $findings.Add((New-LegacyValidationResult -Status Failed -Message 'Verified-run JSON Schema validation failed.' -Path $Path))
             }
         }
         catch {
+            $schemaValid = $false
             $findings.Add((New-LegacyValidationResult -Status Failed -Message "Verified-run JSON Schema validation failed: $($_.Exception.Message)" -Path $Path))
         }
 
-        foreach ($result in @(Test-VerifiedRunObject -Run $json -Path $Path | Where-Object status -cne 'Passed')) {
-            $findings.Add($result)
+        if ($schemaValid) {
+            foreach ($result in @(Test-VerifiedRunObject -Run $json -Path $Path | Where-Object status -cne 'Passed')) {
+                $findings.Add($result)
+            }
         }
 
         if ($findings.Count -eq 0) {
