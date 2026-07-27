@@ -104,7 +104,7 @@ Each independently computed ZIP hash matched the digest reported by GitHub. All 
 
 The governance artifact truthfully contains one `Blocked` lifecycle result for the suspended `enterprise-powershell` skill and nine `NotRun` declarations for model behavior that deterministic validation did not execute. These are governed non-passing lifecycle records, not hidden workflow failures; the overall completion and mandatory governance enforcement passed. No final artifact contained a `Failed` result.
 
-[`evidence/latest-verified-run.json`](../evidence/latest-verified-run.json) records the refreshed exact run, artifact identity, independent hashes, content observations, merge-tree comparison, and historical controlled-failure boundary.
+The PR #90 table above is the retained historical evidence record for that validation boundary, including its independent hashes and the merge-tree comparison documented in this audit. [`evidence/latest-verified-run.json`](../evidence/latest-verified-run.json) intentionally records the newer independently verified PR #92 run and must not be read as the machine-readable PR #90 record.
 
 ## Dependency And Compatibility Reconciliation
 
