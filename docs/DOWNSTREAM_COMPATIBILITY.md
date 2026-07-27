@@ -98,9 +98,9 @@ The pre-release gate compares the lifecycle record with the matrix. Publication 
 
 A deprecation MUST identify announcement time, replacement, intended removal version, downstream impact, and migration guidance. A supported contract MUST be removed only through a separately reviewed major release with migration guidance.
 
-Evidence MUST identify commands, outcomes, candidate SHA, supported schemas, workflow interfaces, immutable workflow authorities, migration path, artifact hashes, approvals, and limitations. `Blocked`, `NotRun`, and `NotApplicable` remain visible.
+Evidence MUST identify commands, outcomes, candidate SHA, supported schemas, workflow interfaces, immutable workflow authorities, migration path, artifact hashes, approvals, and limitations. `Blocked`, `NotRun`, and `NotApplicable` remain visible and cannot be relabeled as `Passed`.
 
-An Exception requires a `GOV-*` record with owner, scope, rationale, expiration, compensating controls, and migration plan.
+An Exception requires a `GOV-*` record with owner, scope, rationale, expiration, compensating controls, and migration plan. Exceptions do not rewrite historical matrix entries and cannot convert unavailable external validation into `Passed`.
 
 ## Related
 
