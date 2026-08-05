@@ -5,6 +5,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # Internal reusable-workflow SHAs are governed trust anchors and advance only
+      # through deliberate, evidence-backed maintenance PRs.
+      - dependency-name: "AIAllTheThingz/Engineering-Standards/.github/workflows/*"
   - package-ecosystem: pip
     directory: /.github/dependencies
     schedule:
