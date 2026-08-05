@@ -265,7 +265,7 @@ Describe 'Validate evidence action' {
 
         It 'rejects a contradictory caller-supplied status' {
             & $script:NewTempEvidence -Status Failed -TestStatus Failed
-            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Status Passed -Summary 'Generated evidence should reject contradictory passed status from caller.' -TestResultPath 'evidence/test-results.json' -ArtifactPath @('evidence/report.json') -CommandsExecuted @('test command')
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Status Passed -Summary 'Generated evidence should reject contradictory passed status from caller.' -TestResultPath 'evidence/test-results.json' -ArtifactPath @('evidence/report.json') -CommandsExecuted @('test command') 2>$null
             $LASTEXITCODE | Should -Not -Be 0
         }
     }
