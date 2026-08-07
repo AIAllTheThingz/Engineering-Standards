@@ -13,6 +13,118 @@ function Get-Sha256String {
     ([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($bytes))).Replace('-', '').ToLowerInvariant()
 }
 
+function Start-CodexBoundedStreamRead {
+    <#
+    .SYNOPSIS
+    Drains a process stream while retaining at most the requested characters.
+    .DESCRIPTION
+    The reader continues to drain after its in-memory retention bound is met,
+    preventing a verbose subprocess from blocking on a full redirected pipe.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][IO.StreamReader]$Reader,
+        [Parameter(Mandatory)][ValidateRange(1, 65536)][int]$MaximumCharacters
+    )
+
+    if ($null -eq ('CodexBehaviorBoundedStreamReader' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
+
+public static class CodexBehaviorBoundedStreamReader
+{
+    public static async Task<string> ReadAsync(StreamReader reader, int maximumCharacters)
+    {
+        var buffer = new char[Math.Min(4096, Math.Max(1, maximumCharacters))];
+        var retained = new StringBuilder(Math.Min(4096, maximumCharacters));
+        int read;
+        while ((read = await reader.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) != 0)
+        {
+            var remaining = maximumCharacters - retained.Length;
+            if (remaining > 0)
+            {
+                retained.Append(buffer, 0, Math.Min(remaining, read));
+            }
+        }
+        return retained.ToString();
+    }
+}
+'@ | Out-Null
+    }
+
+    [CodexBehaviorBoundedStreamReader]::ReadAsync($Reader, $MaximumCharacters)
+}
+
+function Get-CodexProviderFailureCategory {
+    param([AllowEmptyString()][string]$Inspection)
+
+    if ($null -eq $Inspection) { return [pscustomobject]@{ MatchCount = 0; Category = $null } }
+    $matchedCategories = [Collections.Generic.List[string]]::new()
+    $normalized = $Inspection.ToLowerInvariant()
+    $isQuota = $normalized -match 'insufficient[_ -]?quota|quota (?:has been )?exceeded|billing (?:hard )?limit'
+    if ($normalized -match '(?<![0-9])401(?![0-9])|invalid (?:api[ _-]?key|authentication|credentials?)|authentication failed|unauthorized') { [void]$matchedCategories.Add('AuthenticationFailed') }
+    if ($normalized -match '(?<![0-9])403(?![0-9])|insufficient (?:permission|permissions)|forbidden|not authorized to access|model access (?:is )?denied') { [void]$matchedCategories.Add('AuthorizationFailed') }
+    if ($isQuota) { [void]$matchedCategories.Add('QuotaExceeded') }
+    if (-not $isQuota -and $normalized -match '(?<![0-9])429(?![0-9])|rate[_ -]?limit(?:ed)?|too many requests') { [void]$matchedCategories.Add('RateLimited') }
+    if ($normalized -match 'model[_ -]?(?:not[_ -]?found|unavailable)|requested model .* not available|model .* does not exist') { [void]$matchedCategories.Add('ModelUnavailable') }
+    if ($normalized -match 'unknown (?:option|argument|configuration)|unrecognized (?:option|argument)|invalid (?:option|argument|configuration|request)|unsupported model (?:option|configuration)') { [void]$matchedCategories.Add('ConfigurationError') }
+    if ($normalized -match 'network error|connection (?:refused|reset|timed out|timeout)|socket hang up|dns (?:lookup )?failed|econn(?:refused|reset)|enotfound|tls handshake') { [void]$matchedCategories.Add('TransportFailure') }
+    if ($normalized -match '(?<![0-9])5[0-9]{2}(?![0-9])|internal server error|service unavailable|provider error') { [void]$matchedCategories.Add('ProviderError') }
+    [pscustomobject]@{ MatchCount = $matchedCategories.Count; Category = if ($matchedCategories.Count -eq 1) { $matchedCategories[0] } else { $null } }
+}
+
+function Get-CodexProviderFailureDiagnostic {
+    <#
+    .SYNOPSIS
+    Classifies bounded Codex process output without returning the output itself.
+    .DESCRIPTION
+    The classifier deliberately recognizes only small, stable provider and CLI
+    failure signatures. It returns a canonical, transcript-free result and
+    falls back to UnknownProviderFailure when a signature is absent or
+    ambiguous. The bounded inspection text never leaves this function.
+    #>
+    [CmdletBinding()]
+    param(
+        [AllowEmptyString()][string]$StandardOutput,
+        [AllowEmptyString()][string]$StandardError,
+        [Parameter(Mandatory)][int]$ExitCode,
+        [string[]]$RetryableReasons = @(),
+        [ValidateRange(2, 65536)][int]$MaximumInspectionCharacters = 16384
+    )
+
+    if ($null -eq $StandardOutput) { $StandardOutput = '' }
+    if ($null -eq $StandardError) { $StandardError = '' }
+
+    # Allocate the inspection budget across both streams so verbose provider
+    # output cannot make diagnostic processing unbounded.
+    $perStreamMaximum = [Math]::Floor($MaximumInspectionCharacters / 2)
+    $boundedOutput = if ($StandardOutput.Length -gt $perStreamMaximum) { $StandardOutput.Substring(0, $perStreamMaximum) } else { $StandardOutput }
+    $boundedError = if ($StandardError.Length -gt $perStreamMaximum) { $StandardError.Substring(0, $perStreamMaximum) } else { $StandardError }
+    if ($ExitCode -eq 0) { throw 'Provider failure diagnostics require a nonzero process exit code.' }
+    $stderrClassification = Get-CodexProviderFailureCategory -Inspection $boundedError
+    $stdoutClassification = Get-CodexProviderFailureCategory -Inspection $boundedOutput
+    $streamCategories = @(
+        @($stderrClassification.Category, $stdoutClassification.Category) | Where-Object { $null -ne $_ }
+    )
+    $category = if ($stderrClassification.MatchCount -gt 1 -or $stdoutClassification.MatchCount -gt 1 -or
+        $streamCategories.Count -eq 0 -or @($streamCategories | Select-Object -Unique).Count -ne 1) {
+        'UnknownProviderFailure'
+    }
+    else { $streamCategories[0] }
+
+    $retryPermitted = $category -in @($RetryableReasons)
+    $retryMessage = if ($retryPermitted) { 'permitted' } else { 'not permitted' }
+    [pscustomobject]@{
+        Category = $category
+        ExitCode = $ExitCode
+        RetryPermitted = $retryPermitted
+        FailureReason = "$category`: Codex exited with code $ExitCode. Retry is $retryMessage by the governed retry policy."
+    }
+}
+
 function Get-BoundedInputHash {
     param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][string[]]$RelativePaths)
     $parts = foreach ($relative in ($RelativePaths | Sort-Object -Unique)) {
@@ -504,4 +616,4 @@ function Invoke-CodexSkillBehaviorEvaluation {
     }
 }
 
-Export-ModuleMember -Function Get-Sha256String, Get-BoundedInputHash, Get-CodexBehaviorInput, Resolve-CodexBehaviorOutputPath, New-CodexBehaviorOutputRoot, Test-CodexBehaviorCandidateTrust, Invoke-CodexSkillBehaviorEvaluation
+Export-ModuleMember -Function Get-Sha256String, Start-CodexBoundedStreamRead, Get-CodexProviderFailureDiagnostic, Get-BoundedInputHash, Get-CodexBehaviorInput, Resolve-CodexBehaviorOutputPath, New-CodexBehaviorOutputRoot, Test-CodexBehaviorCandidateTrust, Invoke-CodexSkillBehaviorEvaluation

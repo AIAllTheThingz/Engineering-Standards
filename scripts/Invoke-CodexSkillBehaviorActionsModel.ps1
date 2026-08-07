@@ -22,6 +22,7 @@ $root = (Resolve-Path -LiteralPath $Path).Path
 $codex = (Resolve-Path -LiteralPath $CodexPath).Path
 $inputs = Get-CodexBehaviorInput -Path $root
 $config = $inputs.Configuration
+$maximumDiagnosticInspectionCharacters = 16384
 $credential = [Environment]::GetEnvironmentVariable($ApiKeyEnvironmentVariable)
 if ([string]::IsNullOrWhiteSpace($credential)) { throw "Approved nonproduction key is unavailable in $ApiKeyEnvironmentVariable." }
 $trustedOutput = (Resolve-Path -LiteralPath $TrustedOutputRoot).Path
@@ -76,32 +77,53 @@ User request: $($case.prompt)
                 foreach ($argument in $arguments) { [void]$psi.ArgumentList.Add($argument) }
                 $psi.Environment.Clear(); $psi.Environment['CODEX_API_KEY'] = $credential; $psi.Environment['CODEX_HOME'] = $codexHome; $psi.Environment['HOME'] = $scratch; $psi.Environment['PATH'] = [Environment]::GetEnvironmentVariable('PATH')
                 $process = [Diagnostics.Process]::new(); $process.StartInfo = $psi; [void]$process.Start()
-                $stdoutTask = $process.StandardOutput.ReadToEndAsync(); $stderrTask = $process.StandardError.ReadToEndAsync()
-                $remainingMilliseconds = [Math]::Max(1, [Math]::Floor(($overallDeadline - [DateTime]::UtcNow).TotalMilliseconds))
-                $attemptTimeoutMilliseconds = [Math]::Min([int]$config.Limits.PerSampleTimeoutSeconds * 1000, $remainingMilliseconds)
-                if (-not $process.WaitForExit($attemptTimeoutMilliseconds)) {
-                    $process.Kill($true); $process.WaitForExit(); $reason = 'TransportTimeout: the bounded Codex request timed out.'
-                }
-                elseif ($process.ExitCode -ne 0) { $reason = 'ModelUnavailable: Codex did not return a successful structured response.' }
-                elseif (-not (Test-Path -LiteralPath $lastMessage -PathType Leaf)) { $reason = 'MalformedOutput: Codex omitted the required structured response.'; $retrySuppressed = $true }
-                else {
-                    try {
-                        $observation = Get-Content -LiteralPath $lastMessage -Raw | ConvertFrom-Json
-                        $serializedObservation = $observation | ConvertTo-Json -Depth 12 -Compress
-                        if ($serializedObservation.Contains($credential, [StringComparison]::Ordinal)) {
-                            [pscustomobject]@{ status = 'Blocked'; attemptCount = $attempt; failureReason = 'SecretRedaction: the structured response contained protected credential material and was discarded.'; selection = $null; safetyOutcome = $null; quality = $null; responseSummary = $null; toolEvents = @(); unsafeToolAccess = $true } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $destination -Encoding utf8
-                        }
-                        else {
-                            $observation | Add-Member -NotePropertyName status -NotePropertyValue 'Passed' -Force
-                            $observation | Add-Member -NotePropertyName attemptCount -NotePropertyValue $attempt -Force
-                            $observation | Add-Member -NotePropertyName failureReason -NotePropertyValue $null -Force
-                            $observation | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $destination -Encoding utf8
-                        }
-                        $completed = $true
+                $maximumDiagnosticStreamCharacters = [Math]::Floor($maximumDiagnosticInspectionCharacters / 2)
+                $stdoutTask = Start-CodexBoundedStreamRead -Reader $process.StandardOutput -MaximumCharacters $maximumDiagnosticStreamCharacters
+                $stderrTask = Start-CodexBoundedStreamRead -Reader $process.StandardError -MaximumCharacters $maximumDiagnosticStreamCharacters
+                $stdout = $null; $stderr = $null; $streamsDrained = $false
+                try {
+                    $remainingMilliseconds = [Math]::Max(1, [Math]::Floor(($overallDeadline - [DateTime]::UtcNow).TotalMilliseconds))
+                    $attemptTimeoutMilliseconds = [Math]::Min([int]$config.Limits.PerSampleTimeoutSeconds * 1000, $remainingMilliseconds)
+                    if (-not $process.WaitForExit($attemptTimeoutMilliseconds)) {
+                        $process.Kill($true); $process.WaitForExit(); $reason = 'TransportTimeout: the bounded Codex request timed out.'
                     }
-                    catch { $reason = 'MalformedOutput: Codex returned JSON that did not satisfy the observation contract.'; $retrySuppressed = $true }
+                    else {
+                        $stdout = $stdoutTask.Result
+                        $stderr = $stderrTask.Result
+                        $streamsDrained = $true
+                        if ($process.ExitCode -ne 0) {
+                            $diagnostic = Get-CodexProviderFailureDiagnostic -StandardOutput $stdout -StandardError $stderr -ExitCode $process.ExitCode -RetryableReasons @($config.RetryPolicy.RetryableReasons) -MaximumInspectionCharacters $maximumDiagnosticInspectionCharacters
+                            $reason = $diagnostic.FailureReason
+                            $retrySuppressed = -not $diagnostic.RetryPermitted
+                        }
+                        elseif (-not (Test-Path -LiteralPath $lastMessage -PathType Leaf)) { $reason = 'MalformedOutput: Codex omitted the required structured response.'; $retrySuppressed = $true }
+                        else {
+                            try {
+                                $observation = Get-Content -LiteralPath $lastMessage -Raw | ConvertFrom-Json
+                                $serializedObservation = $observation | ConvertTo-Json -Depth 12 -Compress
+                                if ($serializedObservation.Contains($credential, [StringComparison]::Ordinal)) {
+                                    [pscustomobject]@{ status = 'Blocked'; attemptCount = $attempt; failureReason = 'SecretRedaction: the structured response contained protected credential material and was discarded.'; selection = $null; safetyOutcome = $null; quality = $null; responseSummary = $null; toolEvents = @(); unsafeToolAccess = $true } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $destination -Encoding utf8
+                                }
+                                else {
+                                    $observation | Add-Member -NotePropertyName status -NotePropertyValue 'Passed' -Force
+                                    $observation | Add-Member -NotePropertyName attemptCount -NotePropertyValue $attempt -Force
+                                    $observation | Add-Member -NotePropertyName failureReason -NotePropertyValue $null -Force
+                                    $observation | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $destination -Encoding utf8
+                                }
+                                $completed = $true
+                            }
+                            catch { $reason = 'MalformedOutput: Codex returned JSON that did not satisfy the observation contract.'; $retrySuppressed = $true }
+                        }
+                    }
                 }
-                [void]$stdoutTask.Result; [void]$stderrTask.Result
+                finally {
+                    if (-not $streamsDrained) {
+                        $stdout = $stdoutTask.Result
+                        $stderr = $stderrTask.Result
+                    }
+                    $stdout = $null; $stderr = $null; $stdoutTask = $null; $stderrTask = $null
+                    $process.Dispose()
+                }
                 if (-not $completed -and ($retrySuppressed -or $attempt -gt [int]$config.RetryPolicy.MaximumTransportRetries)) {
                     [pscustomobject]@{ status = 'Blocked'; attemptCount = $attempt; failureReason = $reason; selection = $null; safetyOutcome = $null; quality = $null; responseSummary = $null; toolEvents = @(); unsafeToolAccess = $false } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $destination -Encoding utf8
                     $completed = $true

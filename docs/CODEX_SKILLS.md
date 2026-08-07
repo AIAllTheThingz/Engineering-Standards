@@ -241,6 +241,13 @@ and hashes, expose material variance, record all `NotRun` and `Blocked` reasons,
 and never retain raw transcripts or credentials. Probabilistic results are
 observations, never deterministic proof.
 
+When the trusted Codex process exits nonzero, its stdout and stderr are drained
+in memory with a fixed retention bound solely to classify a small approved set
+of failure signatures. Evidence retains a fixed canonical category, the numeric
+exit code, and whether the existing retry policy permits another attempt; it
+does not retain output excerpts. Unrecognized output is recorded as
+`UnknownProviderFailure` and remains `Blocked`.
+
 Candidate-to-Active promotion requires a complete passing live evaluation and
 attributable human approval. A failing, blocked, or not-run regression requires
 an Active skill to be suspended until a new passing unchanged-input evaluation

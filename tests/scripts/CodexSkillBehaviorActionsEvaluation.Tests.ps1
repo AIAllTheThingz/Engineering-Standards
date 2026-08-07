@@ -249,6 +249,105 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $evaluationWrapper | Should -Match 'must not exist before trusted evaluation'
     }
 
+    It 'classifies bounded provider failures without persisting provider output' -ForEach @(
+        @{ name = 'authentication'; output = 'HTTP 401: invalid api key'; category = 'AuthenticationFailed'; retry = $false }
+        @{ name = 'authorization'; output = 'HTTP 403: insufficient permissions for the requested model'; category = 'AuthorizationFailed'; retry = $false }
+        @{ name = 'quota'; output = 'insufficient_quota'; category = 'QuotaExceeded'; retry = $false }
+        @{ name = 'rate limit'; output = 'HTTP 429: rate limit reached'; category = 'RateLimited'; retry = $false }
+        @{ name = 'model unavailable'; output = 'model_not_found'; category = 'ModelUnavailable'; retry = $true }
+        @{ name = 'configuration'; output = 'unknown option --reasoning-effort'; category = 'ConfigurationError'; retry = $false }
+        @{ name = 'transport'; output = 'network error: ECONNRESET'; category = 'TransportFailure'; retry = $false }
+        @{ name = 'provider'; output = 'HTTP 503: service unavailable'; category = 'ProviderError'; retry = $false }
+        @{ name = 'unknown'; output = 'unrecognized failure shape'; category = 'UnknownProviderFailure'; retry = $false }
+    ) {
+        $syntheticCredentialMarker = 'example-token-not-a-secret'
+        $syntheticProjectCredentialMarker = @('sk', 'proj', $syntheticCredentialMarker) -join '-'
+        $queryParameterName = @('api', 'key') -join '_'
+        $rawOutput = "Authorization: Bearer $syntheticProjectCredentialMarker`nhttps://example.invalid/?$queryParameterName=$syntheticCredentialMarker"
+        $diagnostic = Get-CodexProviderFailureDiagnostic -StandardOutput $rawOutput -StandardError $output -ExitCode 17 -RetryableReasons @('ModelUnavailable', 'TransportTimeout')
+
+        $diagnostic.Category | Should -Be $category
+        $diagnostic.ExitCode | Should -Be 17
+        $diagnostic.RetryPermitted | Should -Be $retry
+        $diagnostic.FailureReason | Should -Match "^$($category): Codex exited with code 17\. Retry is "
+        ($diagnostic | ConvertTo-Json -Compress) | Should -Not -Match [regex]::Escape($syntheticCredentialMarker)
+        ($diagnostic | ConvertTo-Json -Compress) | Should -Not -Match [regex]::Escape($syntheticProjectCredentialMarker)
+        ($diagnostic | ConvertTo-Json -Compress) | Should -Not -Match "Authorization:|$queryParameterName=|Bearer "
+        ($diagnostic | ConvertTo-Json -Compress) | Should -Not -Match [regex]::Escape($rawOutput)
+    }
+
+    It 'limits classification to the configured inspection bound' {
+        $diagnostic = Get-CodexProviderFailureDiagnostic -StandardOutput '' -StandardError (('x' * 64) + ' invalid api key') -ExitCode 1 -MaximumInspectionCharacters 64
+
+        $diagnostic.Category | Should -Be 'UnknownProviderFailure'
+        $diagnostic.FailureReason.Length | Should -BeLessOrEqual 600
+    }
+
+    It 'drains a bounded provider stream without retaining its tail' {
+        $tailMarker = 'provider-tail-marker'
+        $source = ('x' * 70000) + $tailMarker
+        $stream = [IO.MemoryStream]::new([Text.Encoding]::UTF8.GetBytes($source))
+        $reader = [IO.StreamReader]::new($stream)
+        try {
+            $captured = (Start-CodexBoundedStreamRead -Reader $reader -MaximumCharacters 1024).Result
+
+            $captured.Length | Should -Be 1024
+            $captured | Should -Not -Match [regex]::Escape($tailMarker)
+            $stream.Position | Should -Be $stream.Length
+        }
+        finally { $reader.Dispose(); $stream.Dispose() }
+    }
+
+    It 'fails closed for conflicting signatures across either output stream' {
+        $conflict = Get-CodexProviderFailureDiagnostic -StandardError 'HTTP 401 invalid api key; HTTP 503 service unavailable' -ExitCode -1073741510
+        $crossStreamConflict = Get-CodexProviderFailureDiagnostic -StandardError 'HTTP 503 service unavailable' -StandardOutput 'HTTP 401 invalid api key' -ExitCode 1
+        $quotaRefines429 = Get-CodexProviderFailureDiagnostic -StandardError 'HTTP 429 insufficient_quota' -ExitCode 1
+
+        $conflict.Category | Should -Be 'UnknownProviderFailure'
+        $conflict.ExitCode | Should -Be -1073741510
+        $crossStreamConflict.Category | Should -Be 'UnknownProviderFailure'
+        $quotaRefines429.Category | Should -Be 'QuotaExceeded'
+    }
+
+    It 'stores only a sanitized diagnostic when a synthetic Codex subprocess fails' -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
+        $testRoot = Join-Path $TestDrive 'collector-provider-diagnostic'
+        $observationRoot = Join-Path $testRoot 'observations'
+        $syntheticCredentialMarker = 'example-token-not-a-secret'
+        $syntheticProjectCredentialMarker = @('sk', 'proj', $syntheticCredentialMarker) -join '-'
+        $queryParameterName = @('api', 'key') -join '_'
+        $syntheticOutput = "HTTP 401 invalid api key`nAuthorization: Bearer $syntheticProjectCredentialMarker`nhttps://example.invalid/?$queryParameterName=$syntheticCredentialMarker"
+        $encodedOutput = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($syntheticOutput))
+        $pythonPath = (Get-Command python -ErrorAction Stop).Source
+        $prior = $env:CODEX_BEHAVIOR_TEST_KEY
+        New-Item -ItemType Directory -Path $testRoot | Out-Null
+        try {
+            $fakeCodex = Join-Path $testRoot 'exec'
+            "import base64, sys`nsys.stderr.write(base64.b64decode('$encodedOutput').decode('utf-8') + '\\n')`nsys.exit(17)" | Set-Content -LiteralPath $fakeCodex -NoNewline
+            $env:CODEX_BEHAVIOR_TEST_KEY = $syntheticCredentialMarker
+
+            Push-Location $testRoot
+            try {
+                & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1') -Path $repoRoot -CodexPath $pythonPath -TrustedOutputRoot $testRoot -OutputDirectory $observationRoot -ApiKeyEnvironmentVariable CODEX_BEHAVIOR_TEST_KEY 2>$null
+                $LASTEXITCODE | Should -Be 0
+            }
+            finally { Pop-Location }
+            $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
+
+            $observations.Count | Should -Be 27
+            @($observations | Where-Object { $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 }).Count | Should -Be 0
+            @($observations.failureReason | Select-Object -Unique) | Should -Be @('AuthenticationFailed: Codex exited with code 17. Retry is not permitted by the governed retry policy.')
+            $serialized = $observations | ConvertTo-Json -Depth 8 -Compress
+            $serialized | Should -Not -Match [regex]::Escape($syntheticCredentialMarker)
+            $serialized | Should -Not -Match [regex]::Escape($syntheticProjectCredentialMarker)
+            $serialized | Should -Not -Match "Authorization:|$queryParameterName=|Bearer "
+            $serialized | Should -Not -Match [regex]::Escape($syntheticOutput)
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_TEST_KEY = $prior }
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'hashes the root catalog and a new skill-local README without touching an existing skill file' {
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
         $inputs.SkillPaths | Should -Contain '.agents/suspended-skills/README.md'
