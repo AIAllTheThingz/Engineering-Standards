@@ -5,11 +5,11 @@
   "scoringContractVersion": "1.0.0",
   "configurationId": "codex-skill-behavior-gpt-5.6-sol-medium-v1",
   "configurationHash": "143f81de00a2cd83ab66868b9005ea7c35b3fbef5ab482599a9ff232e60249d3",
-  "evaluatorHash": "30a229027355e79b861552e8087809caaeab6deaa429c5d38d7a19687dffb0f7",
+  "evaluatorHash": "87e1b64c1fc9deb7fe64ddcd3423c5340f769e70183e642e394af9e59973c4ac",
   "corpusHash": "3d2286de0c3f3327492dc9780e69f23fa28b0bf32d1ce4faf0f99a9c2d7ebac8",
   "skillInputHash": "e1cd34a5714e4f8d9cb831fc6fa70e19b28a9ac0f38184bcc4bcccc3d175ce9e",
   "authorityHash": "5c7e3b80a396a4d2582cc38176c178a5fad6ecb2c4a38a087ba2c40639125571",
-  "evaluatedCommitSha": "f023afe3d1aa0ce4b95f3aafb60e35700a7673cd",
+  "evaluatedCommitSha": "11a25fcd0a63a9783bafc6e70e7aee5075025722",
   "executionMode": "Live",
   "executionContext": "Local",
   "githubHostedExecution": {
@@ -18,8 +18,8 @@
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "Blocked",
-  "startedAtUtc": "2026-08-08T21:03:41.1291631Z",
-  "completedAtUtc": "2026-08-08T21:03:41.6583500Z",
+  "startedAtUtc": "2026-08-08T21:58:51.1430419Z",
+  "completedAtUtc": "2026-08-08T21:58:51.7588570Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
@@ -95,8 +95,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.4031290Z",
-          "completedAtUtc": "2026-08-08T21:03:41.4031290Z"
+          "startedAtUtc": "2026-08-08T21:58:51.4611545Z",
+          "completedAtUtc": "2026-08-08T21:58:51.4611545Z"
         },
         {
           "sampleIndex": 2,
@@ -110,8 +110,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.4342279Z",
-          "completedAtUtc": "2026-08-08T21:03:41.4342279Z"
+          "startedAtUtc": "2026-08-08T21:58:51.4936335Z",
+          "completedAtUtc": "2026-08-08T21:58:51.4936335Z"
         },
         {
           "sampleIndex": 3,
@@ -125,8 +125,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.4373166Z",
-          "completedAtUtc": "2026-08-08T21:03:41.4373166Z"
+          "startedAtUtc": "2026-08-08T21:58:51.4968713Z",
+          "completedAtUtc": "2026-08-08T21:58:51.4968713Z"
         }
       ]
     },
@@ -155,8 +155,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.4650160Z",
-          "completedAtUtc": "2026-08-08T21:03:41.4650160Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5259736Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5259736Z"
         },
         {
           "sampleIndex": 2,
@@ -170,8 +170,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.4680442Z",
-          "completedAtUtc": "2026-08-08T21:03:41.4680442Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5291987Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5291987Z"
         },
         {
           "sampleIndex": 3,
@@ -185,8 +185,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.4709769Z",
-          "completedAtUtc": "2026-08-08T21:03:41.4709769Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5322026Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5322026Z"
         }
       ]
     },
@@ -215,8 +215,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.4756728Z",
-          "completedAtUtc": "2026-08-08T21:03:41.4756728Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5369818Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5369818Z"
         },
         {
           "sampleIndex": 2,
@@ -230,8 +230,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.4786928Z",
-          "completedAtUtc": "2026-08-08T21:03:41.4786928Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5399535Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5399535Z"
         },
         {
           "sampleIndex": 3,
@@ -245,8 +245,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.4817432Z",
-          "completedAtUtc": "2026-08-08T21:03:41.4817432Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5429246Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5429246Z"
         }
       ]
     },
@@ -275,8 +275,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.4863658Z",
-          "completedAtUtc": "2026-08-08T21:03:41.4863658Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5476229Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5476229Z"
         },
         {
           "sampleIndex": 2,
@@ -290,8 +290,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.4893794Z",
-          "completedAtUtc": "2026-08-08T21:03:41.4893794Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5506509Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5506509Z"
         },
         {
           "sampleIndex": 3,
@@ -305,8 +305,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.4925871Z",
-          "completedAtUtc": "2026-08-08T21:03:41.4925871Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5537918Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5537918Z"
         }
       ]
     },
@@ -335,8 +335,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.4972195Z",
-          "completedAtUtc": "2026-08-08T21:03:41.4972195Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5580704Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5580704Z"
         },
         {
           "sampleIndex": 2,
@@ -350,8 +350,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.5014139Z",
-          "completedAtUtc": "2026-08-08T21:03:41.5014139Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5622436Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5622436Z"
         },
         {
           "sampleIndex": 3,
@@ -365,8 +365,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.5056347Z",
-          "completedAtUtc": "2026-08-08T21:03:41.5056347Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5665532Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5665532Z"
         }
       ]
     },
@@ -395,8 +395,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.5123966Z",
-          "completedAtUtc": "2026-08-08T21:03:41.5123966Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5729374Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5729374Z"
         },
         {
           "sampleIndex": 2,
@@ -410,8 +410,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.5167163Z",
-          "completedAtUtc": "2026-08-08T21:03:41.5167163Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5770383Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5770383Z"
         },
         {
           "sampleIndex": 3,
@@ -425,8 +425,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.5210116Z",
-          "completedAtUtc": "2026-08-08T21:03:41.5210116Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5810718Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5810718Z"
         }
       ]
     },
@@ -455,8 +455,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.5270590Z",
-          "completedAtUtc": "2026-08-08T21:03:41.5270590Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5873363Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5873363Z"
         },
         {
           "sampleIndex": 2,
@@ -470,8 +470,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.5311543Z",
-          "completedAtUtc": "2026-08-08T21:03:41.5311543Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5914002Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5914002Z"
         },
         {
           "sampleIndex": 3,
@@ -485,8 +485,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.5353220Z",
-          "completedAtUtc": "2026-08-08T21:03:41.5353220Z"
+          "startedAtUtc": "2026-08-08T21:58:51.5953966Z",
+          "completedAtUtc": "2026-08-08T21:58:51.5953966Z"
         }
       ]
     },
@@ -515,8 +515,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.5613504Z",
-          "completedAtUtc": "2026-08-08T21:03:41.5613504Z"
+          "startedAtUtc": "2026-08-08T21:58:51.6240753Z",
+          "completedAtUtc": "2026-08-08T21:58:51.6240753Z"
         },
         {
           "sampleIndex": 2,
@@ -530,8 +530,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.5643404Z",
-          "completedAtUtc": "2026-08-08T21:03:41.5643404Z"
+          "startedAtUtc": "2026-08-08T21:58:51.6272967Z",
+          "completedAtUtc": "2026-08-08T21:58:51.6272967Z"
         },
         {
           "sampleIndex": 3,
@@ -545,8 +545,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.5675184Z",
-          "completedAtUtc": "2026-08-08T21:03:41.5675184Z"
+          "startedAtUtc": "2026-08-08T21:58:51.6303533Z",
+          "completedAtUtc": "2026-08-08T21:58:51.6303533Z"
         }
       ]
     },
@@ -575,8 +575,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.5713161Z",
-          "completedAtUtc": "2026-08-08T21:03:41.5713161Z"
+          "startedAtUtc": "2026-08-08T21:58:51.6341910Z",
+          "completedAtUtc": "2026-08-08T21:58:51.6341910Z"
         },
         {
           "sampleIndex": 2,
@@ -590,8 +590,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.5744335Z",
-          "completedAtUtc": "2026-08-08T21:03:41.5744335Z"
+          "startedAtUtc": "2026-08-08T21:58:51.6371419Z",
+          "completedAtUtc": "2026-08-08T21:58:51.6371419Z"
         },
         {
           "sampleIndex": 3,
@@ -605,8 +605,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: no approved credential was available for the controlled local evaluation.",
-          "startedAtUtc": "2026-08-08T21:03:41.5773439Z",
-          "completedAtUtc": "2026-08-08T21:03:41.5773439Z"
+          "startedAtUtc": "2026-08-08T21:58:51.6401056Z",
+          "completedAtUtc": "2026-08-08T21:58:51.6401056Z"
         }
       ]
     }
