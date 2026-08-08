@@ -301,10 +301,12 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $reader = [IO.StreamReader]::new($stream)
         try {
             $captured = (Start-CodexBoundedStreamRead -Reader $reader -MaximumCharacters 1024).Result
+            $tailPattern = [regex]::Escape($tailMarker)
+            $headPattern = [regex]::Escape($headMarker)
 
             $captured.Length | Should -Be 1024
-            $captured | Should -Match [regex]::Escape($tailMarker)
-            $captured | Should -Not -Match [regex]::Escape($headMarker)
+            $captured | Should -Match $tailPattern
+            $captured | Should -Not -Match $headPattern
             $stream.Position | Should -Be $stream.Length
         }
         finally { $reader.Dispose(); $stream.Dispose() }
