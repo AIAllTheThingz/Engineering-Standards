@@ -4,18 +4,18 @@
   "evaluatorVersion": "1.0.0",
   "scoringContractVersion": "1.0.0",
   "configurationId": "codex-skill-behavior-gpt-5.6-sol-medium-v1",
-  "configurationHash": "743dd761caaf2e465a4d747f3b5cabc94b416b5f608663e93e232f6691cbaebb",
-  "evaluatorHash": "95600170e7a0890b10ba96af0d648785aea302386e2fba1fb68b28380b1a48e2",
+  "configurationHash": "143f81de00a2cd83ab66868b9005ea7c35b3fbef5ab482599a9ff232e60249d3",
+  "evaluatorHash": "6d9120a0acff34f229bb1168ff8b4ac9a6feaf14b8465734ea5d71f4f4f236bf",
   "corpusHash": "3d2286de0c3f3327492dc9780e69f23fa28b0bf32d1ce4faf0f99a9c2d7ebac8",
   "skillInputHash": "e1cd34a5714e4f8d9cb831fc6fa70e19b28a9ac0f38184bcc4bcccc3d175ce9e",
   "authorityHash": "5c7e3b80a396a4d2582cc38176c178a5fad6ecb2c4a38a087ba2c40639125571",
-  "evaluatedCommitSha": "0ab6eb0035f728c8be27fbdddb0ed6d4f1000fb0",
+  "evaluatedCommitSha": "9567e21ff6e55a3068336d5401c08ba96fa1e874",
   "executionMode": "Live",
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "Blocked",
-  "startedAtUtc": "2026-07-20T03:09:37.3725414Z",
-  "completedAtUtc": "2026-07-20T03:09:37.7483412Z",
+  "startedAtUtc": "2026-08-08T16:27:24.0794342Z",
+  "completedAtUtc": "2026-08-08T16:27:24.4607761Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
@@ -34,7 +34,9 @@
     "maximumTransportRetries": 1,
     "retryableReasons": [
       "ModelUnavailable",
-      "TransportTimeout"
+      "TransportTimeout",
+      "TransportFailure",
+      "ProviderError"
     ],
     "retryDelaySeconds": 2,
     "preserveEveryAttempt": false,
@@ -89,8 +91,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.5394555Z",
-          "completedAtUtc": "2026-07-20T03:09:37.5394555Z"
+          "startedAtUtc": "2026-08-08T16:27:24.2825513Z",
+          "completedAtUtc": "2026-08-08T16:27:24.2825513Z"
         },
         {
           "sampleIndex": 2,
@@ -104,8 +106,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.5784584Z",
-          "completedAtUtc": "2026-07-20T03:09:37.5784584Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3101146Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3101146Z"
         },
         {
           "sampleIndex": 3,
@@ -119,8 +121,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.5894279Z",
-          "completedAtUtc": "2026-07-20T03:09:37.5894279Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3108364Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3108364Z"
         }
       ]
     },
@@ -149,8 +151,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6232571Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6232571Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3400560Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3400560Z"
         },
         {
           "sampleIndex": 2,
@@ -164,8 +166,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6243698Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6243698Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3408856Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3408856Z"
         },
         {
           "sampleIndex": 3,
@@ -179,8 +181,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6251538Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6251538Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3415516Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3415516Z"
         }
       ]
     },
@@ -209,8 +211,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6277144Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6277144Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3439046Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3439046Z"
         },
         {
           "sampleIndex": 2,
@@ -224,8 +226,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6284883Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6284883Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3445358Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3445358Z"
         },
         {
           "sampleIndex": 3,
@@ -239,8 +241,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6291578Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6291578Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3452413Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3452413Z"
         }
       ]
     },
@@ -269,8 +271,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6317323Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6317323Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3477110Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3477110Z"
         },
         {
           "sampleIndex": 2,
@@ -284,8 +286,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6324643Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6324643Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3483680Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3483680Z"
         },
         {
           "sampleIndex": 3,
@@ -299,8 +301,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6330945Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6330945Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3490474Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3490474Z"
         }
       ]
     },
@@ -329,8 +331,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6352157Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6352157Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3506372Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3506372Z"
         },
         {
           "sampleIndex": 2,
@@ -344,8 +346,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6360340Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6360340Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3512820Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3512820Z"
         },
         {
           "sampleIndex": 3,
@@ -359,8 +361,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6367727Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6367727Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3519175Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3519175Z"
         }
       ]
     },
@@ -389,8 +391,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6396105Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6396105Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3544690Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3544690Z"
         },
         {
           "sampleIndex": 2,
@@ -404,8 +406,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6407109Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6407109Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3551441Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3551441Z"
         },
         {
           "sampleIndex": 3,
@@ -419,8 +421,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6420714Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6420714Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3557703Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3557703Z"
         }
       ]
     },
@@ -449,8 +451,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6454132Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6454132Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3581236Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3581236Z"
         },
         {
           "sampleIndex": 2,
@@ -464,8 +466,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6464255Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6464255Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3588129Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3588129Z"
         },
         {
           "sampleIndex": 3,
@@ -479,8 +481,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6473702Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6473702Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3594337Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3594337Z"
         }
       ]
     },
@@ -509,8 +511,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6496046Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6496046Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3609080Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3609080Z"
         },
         {
           "sampleIndex": 2,
@@ -524,8 +526,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6505988Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6505988Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3615131Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3615131Z"
         },
         {
           "sampleIndex": 3,
@@ -539,8 +541,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6515558Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6515558Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3621085Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3621085Z"
         }
       ]
     },
@@ -569,8 +571,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6536493Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6536493Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3635253Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3635253Z"
         },
         {
           "sampleIndex": 2,
@@ -584,8 +586,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6546052Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6546052Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3641700Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3641700Z"
         },
         {
           "sampleIndex": 3,
@@ -599,8 +601,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6554562Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6554562Z"
+          "startedAtUtc": "2026-08-08T16:27:24.3648321Z",
+          "completedAtUtc": "2026-08-08T16:27:24.3648321Z"
         }
       ]
     }
