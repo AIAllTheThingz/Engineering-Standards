@@ -47,7 +47,7 @@ try {
     if ($usesExecutionProvenance -and ($evidence.executionContext -ne 'Local' -or $evidence.githubHostedExecution.status -ne 'NotRun')) { throw 'Behavior evidence cannot claim GitHub-hosted execution without a separately verified workflow artifact.' }
     if (-not $evidence.probabilistic -or ($evidence.limitations -join ' ') -notmatch 'not deterministic proof') { throw 'Evidence must explicitly identify probabilistic limitations.' }
     if ($evidence.configurationId -ne $config.ConfigurationId -or $evidence.evaluatorVersion -ne $config.EvaluatorVersion -or $evidence.scoringContractVersion -ne $config.ScoringContractVersion) { throw 'Evidence version or approved configuration identity is stale.' }
-    if ($evidence.configurationHash -ne (Get-Sha256String -Value ([IO.File]::ReadAllText((Join-Path $root $inputs.ConfigurationPath))))) { throw 'Evidence configuration hash is stale or fabricated.' }
+    if ($evidence.configurationHash -ne (Get-BoundedInputHash -Root $root -RelativePaths @($inputs.ConfigurationPath))) { throw 'Evidence configuration hash is stale or fabricated.' }
     if ($evidence.evaluatorHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.EvaluatorPaths)) { throw 'Evidence evaluator hash is stale or fabricated.' }
     if ($evidence.corpusHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.CorpusPaths)) { throw 'Evidence corpus hash is stale or fabricated.' }
     if ($evidence.skillInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.SkillPaths)) { throw 'Evidence skill input hash is stale or fabricated.' }
