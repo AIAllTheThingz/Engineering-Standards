@@ -20,6 +20,13 @@ function Start-CodexBoundedStreamRead {
     .DESCRIPTION
     The reader continues to drain after its in-memory retention bound is met,
     preventing a verbose subprocess from blocking on a full redirected pipe.
+    .EXAMPLE
+    Start-CodexBoundedStreamRead -Reader $process.StandardError -MaximumCharacters 8192
+    .INPUTS
+    System.IO.StreamReader.
+    .OUTPUTS
+    System.Threading.Tasks.Task[string]. The completed task contains at most the
+    requested number of characters while the underlying stream is fully drained.
     #>
     [CmdletBinding()]
     param(
@@ -85,6 +92,12 @@ function Get-CodexProviderFailureDiagnostic {
     failure signatures. It returns a canonical, transcript-free result and
     falls back to UnknownProviderFailure when a signature is absent or
     ambiguous. The bounded inspection text never leaves this function.
+    .EXAMPLE
+    Get-CodexProviderFailureDiagnostic -StandardError 'HTTP 503: service unavailable' -ExitCode 1 -RetryableReasons 'ProviderError'
+    .INPUTS
+    String values containing bounded process output and a nonzero Int32 exit code.
+    .OUTPUTS
+    PSCustomObject with Category, ExitCode, RetryPermitted, and sanitized FailureReason.
     #>
     [CmdletBinding()]
     param(
@@ -602,17 +615,19 @@ function Invoke-CodexSkillBehaviorEvaluation {
     $decisionAction = if ($overall -eq 'Passed') { 'Continue' } elseif ($skillStatus -eq 'Active' -and $overall -in @($config.Promotion.SuspensionStatuses)) { 'Suspend' } else { 'BlockPromotion' }
     $notRunReason = if ($ExecutionMode -eq 'Replay') { 'Replay exercises the evaluator contract but is not a live probabilistic model evaluation.' } else { $null }
     $blockedReason = if ($overall -eq 'Blocked') { 'At least one required model sample was incomplete or unusable; evaluation failed closed.' } else { $null }
+    $executionContext = if ($env:GITHUB_ACTIONS -ceq 'true') { 'GitHubActions' } else { 'Local' }
+    $githubHostedExecutionStatus = if ($executionContext -eq 'GitHubActions') { $overall } else { 'NotRun' }
     [pscustomobject]@{
         schemaVersion = '1.0.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
         configurationId = $config.ConfigurationId; configurationHash = $inputs.ConfigurationHash
         evaluatorHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.EvaluatorPaths
         corpusHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.CorpusPaths; skillInputHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.SkillPaths
         authorityHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.AuthorityPaths
-        evaluatedCommitSha = $EvaluatedCommitSha; executionMode = $ExecutionMode; probabilistic = $true; deterministicStructureStatus = 'Passed'; status = $overall
+        evaluatedCommitSha = $EvaluatedCommitSha; executionMode = $ExecutionMode; executionContext = $executionContext; githubHostedExecution = [pscustomobject]@{ status = $githubHostedExecutionStatus }; probabilistic = $true; deterministicStructureStatus = 'Passed'; status = $overall
         startedAtUtc = $started.ToString('o'); completedAtUtc = [DateTime]::UtcNow.ToString('o')
         model = [pscustomobject]@{ provider = $config.Model.Provider; surface = $config.Model.Surface; modelId = $config.Model.ModelId; reasoningEffort = $config.Model.ReasoningEffort; runnerVersion = $RunnerVersion }
         sampling = [pscustomobject]@{ samplesPerCase = $config.Sampling.SamplesPerCase; temperature = $config.Sampling.Temperature; topP = $config.Sampling.TopP; seed = $config.Sampling.Seed; unsupportedParameterReason = $config.Sampling.UnsupportedParameterReason }
-        retryPolicy = [pscustomobject]@{ maximumTransportRetries = $config.RetryPolicy.MaximumTransportRetries; retryableReasons = @($config.RetryPolicy.RetryableReasons); retryDelaySeconds = $config.RetryPolicy.RetryDelaySeconds; preserveEveryAttempt = $config.RetryPolicy.PreserveEveryAttempt; retryMalformedOutput = $config.RetryPolicy.RetryMalformedOutput; retryThresholdFailure = $config.RetryPolicy.RetryThresholdFailure }
+        retryPolicy = [pscustomobject]@{ maximumTransportRetries = $config.RetryPolicy.MaximumTransportRetries; retryableReasons = @($inputs.RetryableProviderFailureReasons); retryDelaySeconds = $config.RetryPolicy.RetryDelaySeconds; preserveEveryAttempt = $config.RetryPolicy.PreserveEveryAttempt; retryMalformedOutput = $config.RetryPolicy.RetryMalformedOutput; retryThresholdFailure = $config.RetryPolicy.RetryThresholdFailure }
         isolation = [pscustomobject]@{ production = $config.Isolation.Production; sandboxMode = $config.Isolation.SandboxMode; approvalPolicy = $config.Isolation.ApprovalPolicy; ephemeralSession = $config.Isolation.EphemeralSession; mcpEnabled = $config.Isolation.McpEnabled; externalWriteAuthority = $config.Isolation.ExternalWriteAuthority; productionCredentialsAllowed = $config.Isolation.ProductionCredentialsAllowed; rawTranscriptRetention = $config.Isolation.RawTranscriptRetention }
         thresholds = [pscustomobject]@{ explicitInvocationMinimum = $config.Thresholds.ExplicitInvocationMinimum; implicitInvocationMinimum = $config.Thresholds.ImplicitInvocationMinimum; nonTriggerMinimum = $config.Thresholds.NonTriggerMinimum; ambiguityMinimum = $config.Thresholds.AmbiguityMinimum; safetyMinimum = $config.Thresholds.SafetyMinimum; qualityAverageMinimum = $config.Thresholds.QualityAverageMinimum; qualityDimensionMinimum = $config.Thresholds.QualityDimensionMinimum; maximumMaterialVarianceCases = $config.Thresholds.MaximumMaterialVarianceCases; safetyVarianceAllowed = $config.Thresholds.SafetyVarianceAllowed; nonTriggerVarianceAllowed = $config.Thresholds.NonTriggerVarianceAllowed }
         caseOutcomes = @($caseOutcomes)

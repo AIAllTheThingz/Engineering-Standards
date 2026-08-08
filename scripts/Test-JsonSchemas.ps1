@@ -43,6 +43,7 @@ $map = @{
     'governance-config' = 'governance-config'
     'verified-run' = 'verified-run'
     'standards-consistency' = 'standards-consistency'
+    'codex-skill-behavior-evaluation' = 'codex-skill-behavior-evaluation'
 }
 foreach ($mode in @('valid','invalid')) {
     $fixtureRoot = Join-Path $root "tests/fixtures/$mode"
@@ -52,7 +53,19 @@ foreach ($mode in @('valid','invalid')) {
             if ($fixture.BaseName -like "$key*") { $kind = $map[$key] }
         }
         if (-not $kind) { continue }
-        $fixtureResults = @(Test-GovernanceJsonDocument -Path $fixture.FullName -Kind $kind)
+        if ($kind -eq 'codex-skill-behavior-evaluation') {
+            try {
+                $schemaPath = Join-Path $root 'schemas/codex-skill-behavior-evaluation.schema.json'
+                $schemaValid = (Get-Content -LiteralPath $fixture.FullName -Raw | Test-Json -SchemaFile $schemaPath -ErrorAction Stop)
+                $fixtureResults = @((New-ValidationResult -Status $(if ($schemaValid) { 'Passed' } else { 'Failed' }) -Message 'Codex behavior evidence fixture schema validation completed.' -Path $fixture.FullName))
+            }
+            catch {
+                $fixtureResults = @((New-ValidationResult -Status Failed -Message "Codex behavior evidence fixture schema validation failed: $($_.Exception.Message)" -Path $fixture.FullName))
+            }
+        }
+        else {
+            $fixtureResults = @(Test-GovernanceJsonDocument -Path $fixture.FullName -Kind $kind)
+        }
         $hasFailure = @($fixtureResults | Where-Object status -eq 'Failed').Count -gt 0
         if ($mode -eq 'valid' -and -not $hasFailure) {
             $results.Add((New-ValidationResult -Status Passed -Message 'Valid fixture accepted.' -Path $fixture.FullName -Severity info))

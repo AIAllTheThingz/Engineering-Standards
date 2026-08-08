@@ -24,7 +24,7 @@ $inputs = Get-CodexBehaviorInput -Path $root
 $config = $inputs.Configuration
 $maximumDiagnosticInspectionCharacters = 16384
 $credential = [Environment]::GetEnvironmentVariable($ApiKeyEnvironmentVariable)
-if ([string]::IsNullOrWhiteSpace($credential)) { throw "Approved nonproduction key is unavailable in $ApiKeyEnvironmentVariable." }
+$preflightFailureReason = if ([string]::IsNullOrWhiteSpace($credential)) { 'PreflightUnavailable: the approved nonproduction model credential is unavailable.' } else { $null }
 $trustedOutput = (Resolve-Path -LiteralPath $TrustedOutputRoot).Path
 $output = Resolve-CodexBehaviorOutputPath -Root $trustedOutput -Candidate $OutputDirectory
 if (Test-Path -LiteralPath $output) { throw 'Observation output directory must not exist before trusted collection.' }
@@ -55,6 +55,10 @@ try {
     foreach ($case in $inputs.Cases) {
         for ($sample = 1; $sample -le [int]$config.Sampling.SamplesPerCase; $sample++) {
             $destination = Join-Path $output ("{0}.{1}.json" -f $case.caseId, $sample)
+            if ($preflightFailureReason) {
+                [pscustomobject]@{ status = 'Blocked'; attemptCount = 1; failureReason = $preflightFailureReason; selection = $null; safetyOutcome = $null; quality = $null; responseSummary = $null; toolEvents = @(); unsafeToolAccess = $false } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $destination -Encoding utf8
+                continue
+            }
             if ([DateTime]::UtcNow -ge $overallDeadline) {
                 [pscustomobject]@{ status = 'Blocked'; attemptCount = 1; failureReason = 'OverallTimeout: the governed evaluation deadline was exhausted before this sample could run.'; selection = $null; safetyOutcome = $null; quality = $null; responseSummary = $null; toolEvents = @(); unsafeToolAccess = $false } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $destination -Encoding utf8
                 continue

@@ -361,6 +361,37 @@ Describe 'Controlled Codex skill behavior evaluation' {
         }
     }
 
+    It 'records a missing credential as a one-attempt preflight block without invoking Codex' {
+        $testRoot = Join-Path $TestDrive 'collector-preflight'
+        New-Item -ItemType Directory -Path $testRoot | Out-Null
+        $outputRoot = New-CodexBehaviorOutputRoot -RunnerTemp $testRoot -RunId '123456' -RunAttempt 1
+        $observationRoot = Join-Path $outputRoot.RunRoot 'observations'
+        $codexPath = (Get-Command pwsh -CommandType Application | Select-Object -First 1).Source
+        $prior = $env:CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY
+        try {
+            Remove-Item Env:CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY -ErrorAction SilentlyContinue
+            $collectorOutput = @(& (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1') -Path $repoRoot -CodexPath $codexPath -TrustedOutputRoot $outputRoot.RunRoot -OutputDirectory $observationRoot -ApiKeyEnvironmentVariable CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY 2>&1)
+            if ($LASTEXITCODE -ne 0) { throw ($collectorOutput -join [Environment]::NewLine) }
+            $LASTEXITCODE | Should -Be 0
+
+            $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
+            $observations.Count | Should -Be 27
+            @($observations | Where-Object { $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 -or $_.failureReason -ne 'PreflightUnavailable: the approved nonproduction model credential is unavailable.' }).Count | Should -Be 0
+
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsEvaluation.ps1') -Path $repoRoot -TrustedOutputRoot $outputRoot.RunRoot -ObservationDirectory $observationRoot -OutputJson (Join-Path $outputRoot.ArtifactRoot 'report.json') -ExecutionMode Live -EvaluatedCommitSha ((& git -C $repoRoot rev-parse HEAD).Trim()) 2>$null
+            $LASTEXITCODE | Should -Be 2
+            $report = Get-Content -LiteralPath (Join-Path $outputRoot.ArtifactRoot 'report.json') -Raw | ConvertFrom-Json
+            $report.status | Should -Be 'Blocked'
+            $report.executionContext | Should -Be 'Local'
+            $report.githubHostedExecution.status | Should -Be 'NotRun'
+            @($report.caseOutcomes.samples | Where-Object attemptCount -ne 1).Count | Should -Be 0
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY = $prior }
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'hashes the root catalog and a new skill-local README without touching an existing skill file' {
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
         $inputs.SkillPaths | Should -Contain '.agents/suspended-skills/README.md'
@@ -524,6 +555,9 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $report.aggregates.samplesExpected | Should -Be 27
         $report.aggregates.samplesCompleted | Should -Be 27
         $report.limitations -join ' ' | Should -Match 'not deterministic proof'
+        $report.executionContext | Should -Be 'Local'
+        $report.githubHostedExecution.status | Should -Be 'NotRun'
+        $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
     }
 
