@@ -364,7 +364,12 @@ Describe 'Governed Bash project support' {
             'tests/scripts/StandardsConsistencyAlias.Tests.ps1',
             'tests/scripts/VerifiedRunBranch.Tests.ps1'
         )
-        @($changedAfterValidation | Where-Object {
+        # Completion evidence is owned by the Bash example. Independent changes that
+        # occur after its validation commit must not invalidate that evidence binding.
+        $changedBashProjectAfterValidation = @($changedAfterValidation | Where-Object {
+            $_.StartsWith('examples/bash-project/', [StringComparison]::Ordinal)
+        })
+        @($changedBashProjectAfterValidation | Where-Object {
             -not $_.StartsWith('examples/bash-project/evidence/', [StringComparison]::Ordinal) -and
             $allowedAfterValidation -cnotcontains $_
         }) | Should -BeNullOrEmpty
