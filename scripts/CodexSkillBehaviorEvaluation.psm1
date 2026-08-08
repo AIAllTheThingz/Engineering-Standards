@@ -37,10 +37,14 @@ function Get-CodexBehaviorInput {
     $configurationPath = 'governance/codex-skill-behavior-evaluation.psd1'
     $configuration = Import-PowerShellDataFile -LiteralPath (Join-Path $root $configurationPath)
     $configuredRetryableProviderFailureReasons = @($configuration.RetryPolicy.RetryableReasons)
-    if ($configuredRetryableProviderFailureReasons.Count -ne $retryableProviderFailureReasons.Count -or
+    # The configuration is hash-approved before this evaluator runs. It cannot
+    # expand the immutable provider retry policy; it may retain a narrower,
+    # legacy list while the trusted policy governs newly classified transient
+    # provider failures.
+    if ($configuredRetryableProviderFailureReasons -is [string] -or $configuredRetryableProviderFailureReasons.Count -lt 1 -or
         @($configuredRetryableProviderFailureReasons | Where-Object { $_ -notin $retryableProviderFailureReasons }).Count -gt 0 -or
         @($configuredRetryableProviderFailureReasons | Select-Object -Unique).Count -ne $configuredRetryableProviderFailureReasons.Count) {
-        throw 'The approved behavior configuration retry policy must exactly match the trusted provider retry policy.'
+        throw 'The approved behavior configuration retry policy must not expand the trusted provider retry policy.'
     }
     $corpus = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests/fixtures/codex-skills/prompt-behavior') -Filter '*.json' -File | Sort-Object Name)
     if ($corpus.Count -lt 1) { throw 'The governed prompt corpus is empty.' }

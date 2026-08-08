@@ -149,7 +149,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $result = Test-CodexBehaviorCandidateTrust -TrustedPath $repoRoot -CandidatePath $candidate -CandidateSha $sha
         $result.status | Should -BeExactly 'Passed'
         $result.configurationId | Should -BeExactly 'codex-skill-behavior-gpt-5.6-sol-medium-v1'
-        $result.configurationHash | Should -BeExactly '1a72cf44a7711cce75cca0f755bfc169df4517e1bb63e86d878ab962375ca763'
+        $result.configurationHash | Should -BeExactly '9a24ce3d74448b2787e3470dbb9cace027aa5ae9fddbeff507a0019ccd700de6'
     }
 
     It 'rejects a candidate configuration absent from the trusted allowlist' {

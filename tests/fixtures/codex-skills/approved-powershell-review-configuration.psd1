@@ -35,7 +35,7 @@
 
     RetryPolicy = @{
         MaximumTransportRetries = 1
-        RetryableReasons = @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
+        RetryableReasons = @('ModelUnavailable', 'TransportTimeout')
         RetryDelaySeconds = 2
         PreserveEveryAttempt = $false
         RetryMalformedOutput = $false

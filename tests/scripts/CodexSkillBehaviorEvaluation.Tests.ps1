@@ -126,6 +126,14 @@ Describe 'Controlled Codex skill behavior evaluation' {
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
     }
 
+    It 'lets the immutable trust policy govern new transient provider categories without widening the approved configuration' {
+        $inputs = Get-CodexBehaviorInput -Path $repoRoot
+        $configuration = Import-PowerShellDataFile -LiteralPath (Join-Path $repoRoot 'governance/codex-skill-behavior-evaluation.psd1')
+
+        @($configuration.RetryPolicy.RetryableReasons) | Should -Be @('ModelUnavailable', 'TransportTimeout')
+        @($inputs.RetryableProviderFailureReasons) | Should -Be @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
+    }
+
     It 'does not treat a process environment claim as GitHub-hosted provenance' {
         $prior = $env:GITHUB_ACTIONS
         try {

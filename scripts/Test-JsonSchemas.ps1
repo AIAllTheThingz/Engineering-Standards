@@ -87,6 +87,7 @@ try {
     $legacyEvidence.schemaVersion = '1.0.0'
     $legacyEvidence.PSObject.Properties.Remove('executionContext')
     $legacyEvidence.PSObject.Properties.Remove('githubHostedExecution')
+    $legacyEvidence.retryPolicy.retryableReasons = @('ModelUnavailable', 'TransportTimeout')
     $legacyIsAccepted = $legacyEvidence | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $behaviorSchemaPath -ErrorAction Stop
 
     $legacyWithProvenance = $behaviorFixtureRaw | ConvertFrom-Json
@@ -97,11 +98,22 @@ try {
     catch {
         $legacyProvenanceIsRejected = $true
     }
-    if ($legacyIsAccepted -and $legacyProvenanceIsRejected) {
-        $results.Add((New-ValidationResult -Status Passed -Message 'Behavior evidence schema preserves 1.0.0 compatibility without 1.1.0 execution provenance.' -Path $behaviorSchemaPath -Severity info))
+
+    $legacyWithExpandedRetryReasons = $behaviorFixtureRaw | ConvertFrom-Json
+    $legacyWithExpandedRetryReasons.schemaVersion = '1.0.0'
+    $legacyWithExpandedRetryReasons.PSObject.Properties.Remove('executionContext')
+    $legacyWithExpandedRetryReasons.PSObject.Properties.Remove('githubHostedExecution')
+    try {
+        $legacyExpandedReasonsAreRejected = -not ($legacyWithExpandedRetryReasons | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $behaviorSchemaPath -ErrorAction Stop)
+    }
+    catch {
+        $legacyExpandedReasonsAreRejected = $true
+    }
+    if ($legacyIsAccepted -and $legacyProvenanceIsRejected -and $legacyExpandedReasonsAreRejected) {
+        $results.Add((New-ValidationResult -Status Passed -Message 'Behavior evidence schema preserves 1.0.0 provenance and retry-reason compatibility while limiting expanded transient reasons to 1.1.0.' -Path $behaviorSchemaPath -Severity info))
     }
     else {
-        $results.Add((New-ValidationResult -Status Failed -Message 'Behavior evidence schema does not correctly separate 1.0.0 and 1.1.0 execution provenance.' -Path $behaviorSchemaPath))
+        $results.Add((New-ValidationResult -Status Failed -Message 'Behavior evidence schema does not correctly separate 1.0.0 and 1.1.0 provenance or retry-reason contracts.' -Path $behaviorSchemaPath))
     }
 }
 catch {

@@ -188,7 +188,22 @@
   "allOf": [
     {
       "if": { "properties": { "schemaVersion": { "const": "1.0.0" } }, "required": ["schemaVersion"] },
-      "then": { "not": { "anyOf": [{ "required": ["executionContext"] }, { "required": ["githubHostedExecution"] }] } }
+      "then": {
+        "allOf": [
+          { "not": { "anyOf": [{ "required": ["executionContext"] }, { "required": ["githubHostedExecution"] }] } },
+          {
+            "properties": {
+              "retryPolicy": {
+                "properties": {
+                  "retryableReasons": {
+                    "items": { "enum": ["ModelUnavailable", "TransportTimeout"] }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
     },
     {
       "if": { "properties": { "schemaVersion": { "const": "1.1.0" } }, "required": ["schemaVersion"] },
