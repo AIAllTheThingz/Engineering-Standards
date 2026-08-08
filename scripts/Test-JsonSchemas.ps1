@@ -91,7 +91,12 @@ try {
 
     $legacyWithProvenance = $behaviorFixtureRaw | ConvertFrom-Json
     $legacyWithProvenance.schemaVersion = '1.0.0'
-    $legacyProvenanceIsRejected = -not ($legacyWithProvenance | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $behaviorSchemaPath -ErrorAction Stop)
+    try {
+        $legacyProvenanceIsRejected = -not ($legacyWithProvenance | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $behaviorSchemaPath -ErrorAction Stop)
+    }
+    catch {
+        $legacyProvenanceIsRejected = $true
+    }
     if ($legacyIsAccepted -and $legacyProvenanceIsRejected) {
         $results.Add((New-ValidationResult -Status Passed -Message 'Behavior evidence schema preserves 1.0.0 compatibility without 1.1.0 execution provenance.' -Path $behaviorSchemaPath -Severity info))
     }

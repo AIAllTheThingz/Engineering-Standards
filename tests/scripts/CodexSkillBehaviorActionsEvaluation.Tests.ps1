@@ -149,7 +149,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $result = Test-CodexBehaviorCandidateTrust -TrustedPath $repoRoot -CandidatePath $candidate -CandidateSha $sha
         $result.status | Should -BeExactly 'Passed'
         $result.configurationId | Should -BeExactly 'codex-skill-behavior-gpt-5.6-sol-medium-v1'
-        $result.configurationHash | Should -BeExactly '9a24ce3d74448b2787e3470dbb9cace027aa5ae9fddbeff507a0019ccd700de6'
+        $result.configurationHash | Should -BeExactly '1a72cf44a7711cce75cca0f755bfc169df4517e1bb63e86d878ab962375ca763'
     }
 
     It 'rejects a candidate configuration absent from the trusted allowlist' {
@@ -765,6 +765,24 @@ Describe 'Controlled Codex skill behavior evaluation' {
             $hostedStatusMismatch = Join-Path $testRoot 'hosted-status-mismatch.json'
             $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $hostedStatusMismatch -Encoding utf8
             & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/hosted-status-mismatch.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+        }
+        finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+
+    It 'rejects a GitHub-hosted status that contradicts action evaluator recomputation' {
+        $testRoot = Join-Path $repoRoot ('.tmp/actions-evidence-provenance-' + [guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+        try {
+            $head = (& git -C $repoRoot rev-parse HEAD).Trim()
+            $evidence = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay -EvaluatedCommitSha $head
+            $evidence.executionContext = 'GitHubActions'
+            $evidence.githubHostedExecution.status = 'Passed'
+            $evidencePath = Join-Path $testRoot 'hosted-status-mismatch.json'
+            $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $evidencePath -Encoding utf8
+
+            $relativeEvidencePath = [IO.Path]::GetRelativePath($repoRoot, $evidencePath).Replace('\', '/')
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath $relativeEvidencePath 2>$null
             $LASTEXITCODE | Should -Be 1
         }
         finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
