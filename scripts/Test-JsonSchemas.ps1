@@ -79,6 +79,30 @@ foreach ($mode in @('valid','invalid')) {
     }
 }
 
+$behaviorSchemaPath = Join-Path $root 'schemas/codex-skill-behavior-evaluation.schema.json'
+$behaviorFixturePath = Join-Path $root 'tests/fixtures/valid/codex-skill-behavior-evaluation-retryable-reasons.json'
+try {
+    $behaviorFixtureRaw = Get-Content -LiteralPath $behaviorFixturePath -Raw
+    $legacyEvidence = $behaviorFixtureRaw | ConvertFrom-Json
+    $legacyEvidence.schemaVersion = '1.0.0'
+    $legacyEvidence.PSObject.Properties.Remove('executionContext')
+    $legacyEvidence.PSObject.Properties.Remove('githubHostedExecution')
+    $legacyIsAccepted = $legacyEvidence | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $behaviorSchemaPath -ErrorAction Stop
+
+    $legacyWithProvenance = $behaviorFixtureRaw | ConvertFrom-Json
+    $legacyWithProvenance.schemaVersion = '1.0.0'
+    $legacyProvenanceIsRejected = -not ($legacyWithProvenance | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $behaviorSchemaPath -ErrorAction Stop)
+    if ($legacyIsAccepted -and $legacyProvenanceIsRejected) {
+        $results.Add((New-ValidationResult -Status Passed -Message 'Behavior evidence schema preserves 1.0.0 compatibility without 1.1.0 execution provenance.' -Path $behaviorSchemaPath -Severity info))
+    }
+    else {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Behavior evidence schema does not correctly separate 1.0.0 and 1.1.0 execution provenance.' -Path $behaviorSchemaPath))
+    }
+}
+catch {
+    $results.Add((New-ValidationResult -Status Failed -Message "Behavior evidence schema compatibility validation failed: $($_.Exception.Message)" -Path $behaviorSchemaPath))
+}
+
 $releaseLifecycleValidator = Join-Path $root 'scripts/Test-ReleaseLifecycle.ps1'
 $releaseLifecycleFixtures = @(
     [ordered]@{

@@ -7,13 +7,13 @@
   "required": [
     "schemaVersion", "evidenceKind", "evaluatorVersion", "scoringContractVersion",
     "configurationId", "configurationHash", "evaluatorHash", "corpusHash", "skillInputHash",
-    "authorityHash", "evaluatedCommitSha", "executionMode", "executionContext", "githubHostedExecution", "probabilistic", "deterministicStructureStatus",
+    "authorityHash", "evaluatedCommitSha", "executionMode", "probabilistic", "deterministicStructureStatus",
     "status", "startedAtUtc", "completedAtUtc", "model", "sampling", "retryPolicy",
     "isolation", "thresholds", "caseOutcomes", "aggregates", "varianceObservations",
     "humanAdjudication", "decision", "notRunReason", "blockedReason", "warnings", "limitations"
   ],
   "properties": {
-    "schemaVersion": { "const": "1.0.0" },
+    "schemaVersion": { "enum": ["1.0.0", "1.1.0"] },
     "evidenceKind": { "const": "ProbabilisticCodexSkillBehaviorEvaluation" },
     "evaluatorVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "scoringContractVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
@@ -186,7 +186,18 @@
     }
   },
   "allOf": [
-    { "if": { "properties": { "executionContext": { "const": "Local" } } }, "then": { "properties": { "githubHostedExecution": { "properties": { "status": { "const": "NotRun" } } } } } },
+    {
+      "if": { "properties": { "schemaVersion": { "const": "1.0.0" } }, "required": ["schemaVersion"] },
+      "then": { "not": { "anyOf": [{ "required": ["executionContext"] }, { "required": ["githubHostedExecution"] }] } }
+    },
+    {
+      "if": { "properties": { "schemaVersion": { "const": "1.1.0" } }, "required": ["schemaVersion"] },
+      "then": { "required": ["executionContext", "githubHostedExecution"] }
+    },
+    {
+      "if": { "properties": { "schemaVersion": { "const": "1.1.0" }, "executionContext": { "const": "Local" } }, "required": ["schemaVersion", "executionContext"] },
+      "then": { "properties": { "githubHostedExecution": { "properties": { "status": { "const": "NotRun" } } } } }
+    },
     { "if": { "properties": { "status": { "const": "NotRun" } } }, "then": { "properties": { "notRunReason": { "type": "string", "minLength": 10 } } } },
     { "if": { "properties": { "status": { "const": "Blocked" } } }, "then": { "properties": { "blockedReason": { "type": "string", "minLength": 10 } } } }
   ]

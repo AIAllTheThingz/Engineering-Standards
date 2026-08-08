@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "evidenceKind": "ProbabilisticCodexSkillBehaviorEvaluation",
   "evaluatorVersion": "1.0.0",
   "scoringContractVersion": "1.0.0",

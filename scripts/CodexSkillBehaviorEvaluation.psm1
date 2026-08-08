@@ -30,8 +30,17 @@ function Get-CodexBehaviorInput {
     $retryableProviderFailureReasons = @($trustPolicy.RetryableProviderFailureReasons)
     $expectedRetryableProviderFailureReasons = @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
     if ($retryableProviderFailureReasons.Count -ne $expectedRetryableProviderFailureReasons.Count -or
-        @($retryableProviderFailureReasons | Where-Object { $_ -notin $expectedRetryableProviderFailureReasons }).Count -gt 0) {
+        @($retryableProviderFailureReasons | Where-Object { $_ -notin $expectedRetryableProviderFailureReasons }).Count -gt 0 -or
+        @($retryableProviderFailureReasons | Select-Object -Unique).Count -ne $retryableProviderFailureReasons.Count) {
         throw 'The trusted provider retry policy is malformed.'
+    }
+    $configurationPath = 'governance/codex-skill-behavior-evaluation.psd1'
+    $configuration = Import-PowerShellDataFile -LiteralPath (Join-Path $root $configurationPath)
+    $configuredRetryableProviderFailureReasons = @($configuration.RetryPolicy.RetryableReasons)
+    if ($configuredRetryableProviderFailureReasons.Count -ne $retryableProviderFailureReasons.Count -or
+        @($configuredRetryableProviderFailureReasons | Where-Object { $_ -notin $retryableProviderFailureReasons }).Count -gt 0 -or
+        @($configuredRetryableProviderFailureReasons | Select-Object -Unique).Count -ne $configuredRetryableProviderFailureReasons.Count) {
+        throw 'The approved behavior configuration retry policy must exactly match the trusted provider retry policy.'
     }
     $corpus = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests/fixtures/codex-skills/prompt-behavior') -Filter '*.json' -File | Sort-Object Name)
     if ($corpus.Count -lt 1) { throw 'The governed prompt corpus is empty.' }
@@ -52,8 +61,8 @@ function Get-CodexBehaviorInput {
         CorpusPaths = @($corpus | ForEach-Object { ([IO.Path]::GetRelativePath($root, $_.FullName)).Replace('\','/') })
         SkillPaths = @($skillFiles | ForEach-Object { ([IO.Path]::GetRelativePath($root, $_.FullName)).Replace('\','/') })
         AuthorityPaths = $authorityPaths
-        ConfigurationPath = 'governance/codex-skill-behavior-evaluation.psd1'
-        EvaluatorPaths = @('.github/dependencies/codex-evaluator/behavior-trust-policy.psd1', 'scripts/CodexSkillBehaviorEvaluation.psm1', 'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1', 'scripts/Invoke-CodexSkillBehaviorModel.ps1', 'scripts/Test-CodexSkillBehaviorEvidence.ps1', 'schemas/codex-skill-behavior-evaluation.schema.json', 'schemas/codex-skill-behavior-observation.schema.json')
+        ConfigurationPath = $configurationPath
+        EvaluatorPaths = @('scripts/CodexSkillBehaviorEvaluation.psm1', 'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1', 'scripts/Invoke-CodexSkillBehaviorModel.ps1', 'scripts/Test-CodexSkillBehaviorEvidence.ps1', 'schemas/codex-skill-behavior-evaluation.schema.json', 'schemas/codex-skill-behavior-observation.schema.json')
         RetryableProviderFailureReasons = $retryableProviderFailureReasons
     }
 }
@@ -188,7 +197,7 @@ function Invoke-CodexSkillBehaviorEvaluation {
     $executionContext = if ($env:GITHUB_ACTIONS -ceq 'true') { 'GitHubActions' } else { 'Local' }
     $githubHostedExecutionStatus = if ($executionContext -eq 'GitHubActions') { $overall } else { 'NotRun' }
     [pscustomobject]@{
-        schemaVersion = '1.0.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
+        schemaVersion = '1.1.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
         configurationId = $config.ConfigurationId; configurationHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths @($inputs.ConfigurationPath)
         evaluatorHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.EvaluatorPaths
         corpusHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.CorpusPaths; skillInputHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.SkillPaths

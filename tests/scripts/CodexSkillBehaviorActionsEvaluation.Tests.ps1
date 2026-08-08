@@ -555,6 +555,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $report.aggregates.samplesExpected | Should -Be 27
         $report.aggregates.samplesCompleted | Should -Be 27
         $report.limitations -join ' ' | Should -Match 'not deterministic proof'
+        $report.schemaVersion | Should -Be '1.1.0'
         $report.executionContext | Should -Be 'Local'
         $report.githubHostedExecution.status | Should -Be 'NotRun'
         $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
@@ -756,6 +757,14 @@ Describe 'Controlled Codex skill behavior evaluation' {
             $contradictory = Join-Path $testRoot 'contradictory.json'
             $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $contradictory -Encoding utf8
             & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/contradictory.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+
+            $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
+            $evidence.executionContext = 'GitHubActions'
+            $evidence.githubHostedExecution.status = if ($evidence.status -eq 'Passed') { 'Blocked' } else { 'Passed' }
+            $hostedStatusMismatch = Join-Path $testRoot 'hosted-status-mismatch.json'
+            $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $hostedStatusMismatch -Encoding utf8
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/hosted-status-mismatch.json' 2>$null
             $LASTEXITCODE | Should -Be 1
         }
         finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
