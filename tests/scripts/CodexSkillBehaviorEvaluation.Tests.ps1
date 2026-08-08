@@ -122,6 +122,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $report.schemaVersion | Should -Be '1.1.0'
         $report.executionContext | Should -Be 'Local'
         $report.githubHostedExecution.status | Should -Be 'NotRun'
+        $report.configurationHash | Should -Be (Get-Sha256String -Value ([IO.File]::ReadAllText((Join-Path $repoRoot 'governance/codex-skill-behavior-evaluation.psd1'))))
         $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
     }

@@ -205,7 +205,7 @@ function Invoke-CodexSkillBehaviorEvaluation {
     $githubHostedExecutionStatus = 'NotRun'
     [pscustomobject]@{
         schemaVersion = '1.1.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
-        configurationId = $config.ConfigurationId; configurationHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths @($inputs.ConfigurationPath)
+        configurationId = $config.ConfigurationId; configurationHash = Get-Sha256String -Value ([IO.File]::ReadAllText((Join-Path $inputs.Root $inputs.ConfigurationPath)))
         evaluatorHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.EvaluatorPaths
         corpusHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.CorpusPaths; skillInputHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.SkillPaths
         authorityHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.AuthorityPaths
