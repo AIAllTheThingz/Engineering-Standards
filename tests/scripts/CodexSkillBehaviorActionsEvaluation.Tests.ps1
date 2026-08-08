@@ -243,6 +243,16 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Match 'TrustedOutputRoot'
         $runner | Should -Match 'must not exist before trusted collection'
         $runner | Should -Not -Match '\$attempt = \[int\]\$config\.RetryPolicy\.MaximumTransportRetries \+ 1'
+        $cleanupStart = $runner.IndexOf('                finally {', [StringComparison]::Ordinal)
+        $cleanupStart | Should -BeGreaterThan -1
+        $cleanupTail = $runner.Substring($cleanupStart)
+        $cleanupEnd = $cleanupTail.IndexOf('                if (-not $completed', [StringComparison]::Ordinal)
+        $cleanupEnd | Should -BeGreaterThan 0
+        $cleanup = $cleanupTail.Substring(0, $cleanupEnd)
+        $cleanup | Should -Match 'foreach \(\$drainTask in @\(\$stdoutTask, \$stderrTask\)\)'
+        $cleanup | Should -Match 'try \{ \[void\]\$drainTask\.Wait\(5000\) \}'
+        $cleanup | Should -Not -Match '\.Result'
+        $cleanup | Should -Match 'try \{ \$process\.Dispose\(\) \}'
         $evaluationWrapper = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsEvaluation.ps1') -Raw
         $evaluationWrapper | Should -Match 'Resolve-CodexBehaviorOutputPath'
         $evaluationWrapper | Should -Match 'TrustedOutputRoot'

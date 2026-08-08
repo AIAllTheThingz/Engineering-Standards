@@ -118,11 +118,18 @@ User request: $($case.prompt)
                 }
                 finally {
                     if (-not $streamsDrained) {
-                        $stdout = $stdoutTask.Result
-                        $stderr = $stderrTask.Result
+                        foreach ($drainTask in @($stdoutTask, $stderrTask)) {
+                            try { [void]$drainTask.Wait(5000) }
+                            catch {
+                                # Discarded reader faults must not mask the sample outcome.
+                            }
+                        }
                     }
                     $stdout = $null; $stderr = $null; $stdoutTask = $null; $stderrTask = $null
-                    $process.Dispose()
+                    try { $process.Dispose() }
+                    catch {
+                        # Cleanup errors must not replace an already-determined result.
+                    }
                 }
                 if (-not $completed -and ($retrySuppressed -or $attempt -gt [int]$config.RetryPolicy.MaximumTransportRetries)) {
                     [pscustomobject]@{ status = 'Blocked'; attemptCount = $attempt; failureReason = $reason; selection = $null; safetyOutcome = $null; quality = $null; responseSummary = $null; toolEvents = @(); unsafeToolAccess = $false } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $destination -Encoding utf8
