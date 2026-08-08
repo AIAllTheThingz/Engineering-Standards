@@ -4,12 +4,12 @@
   "evaluatorVersion": "1.0.0",
   "scoringContractVersion": "1.0.0",
   "configurationId": "codex-skill-behavior-gpt-5.6-sol-medium-v1",
-  "configurationHash": "26edd6a335bfcc359e32f35959cf1a5bd514125f0fd94d88b688083c782f1515",
-  "evaluatorHash": "4d74a1810cb95338212f3eaa2059e2538d955698257c96514f7272617929391d",
+  "configurationHash": "743dd761caaf2e465a4d747f3b5cabc94b416b5f608663e93e232f6691cbaebb",
+  "evaluatorHash": "73c118bd4ff520e41b903f591de7ede2abeff34e1f6ccb435ed4e615b81209c5",
   "corpusHash": "3d2286de0c3f3327492dc9780e69f23fa28b0bf32d1ce4faf0f99a9c2d7ebac8",
   "skillInputHash": "e1cd34a5714e4f8d9cb831fc6fa70e19b28a9ac0f38184bcc4bcccc3d175ce9e",
   "authorityHash": "5c7e3b80a396a4d2582cc38176c178a5fad6ecb2c4a38a087ba2c40639125571",
-  "evaluatedCommitSha": "a780a73601d1ae02a46371afec51cf6bca319a04",
+  "evaluatedCommitSha": "0e7bf574cd0ab9fa85e18d093baf4c887aab8688",
   "executionMode": "Live",
   "executionContext": "Local",
   "githubHostedExecution": {
@@ -18,14 +18,14 @@
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "Blocked",
-  "startedAtUtc": "2026-08-08T22:39:29.2245311Z",
-  "completedAtUtc": "2026-08-08T22:39:29.5651889Z",
+  "startedAtUtc": "2026-08-08T23:04:22.5052845Z",
+  "completedAtUtc": "2026-08-08T23:04:22.8386226Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
     "modelId": "gpt-5.6-sol",
     "reasoningEffort": "medium",
-    "runnerVersion": "local-preflight-no-model"
+    "runnerVersion": "codex-cli unavailable"
   },
   "sampling": {
     "samplesPerCase": 3,
@@ -95,8 +95,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4036900Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4036900Z"
+          "startedAtUtc": "2026-08-08T23:04:22.6842526Z",
+          "completedAtUtc": "2026-08-08T23:04:22.6842526Z"
         },
         {
           "sampleIndex": 2,
@@ -110,8 +110,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4281090Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4281090Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7069642Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7069642Z"
         },
         {
           "sampleIndex": 3,
@@ -125,8 +125,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4289313Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4289313Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7076963Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7076963Z"
         }
       ]
     },
@@ -155,8 +155,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4546760Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4546760Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7317621Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7317621Z"
         },
         {
           "sampleIndex": 2,
@@ -170,8 +170,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4553651Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4553651Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7325611Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7325611Z"
         },
         {
           "sampleIndex": 3,
@@ -185,8 +185,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4560384Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4560384Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7331525Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7331525Z"
         }
       ]
     },
@@ -215,8 +215,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4582794Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4582794Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7352868Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7352868Z"
         },
         {
           "sampleIndex": 2,
@@ -230,8 +230,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4589684Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4589684Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7359924Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7359924Z"
         },
         {
           "sampleIndex": 3,
@@ -245,8 +245,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4596562Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4596562Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7366079Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7366079Z"
         }
       ]
     },
@@ -275,8 +275,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4621445Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4621445Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7389525Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7389525Z"
         },
         {
           "sampleIndex": 2,
@@ -290,8 +290,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4627406Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4627406Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7395616Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7395616Z"
         },
         {
           "sampleIndex": 3,
@@ -305,8 +305,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4634149Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4634149Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7401407Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7401407Z"
         }
       ]
     },
@@ -335,8 +335,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4650397Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4650397Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7416283Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7416283Z"
         },
         {
           "sampleIndex": 2,
@@ -350,8 +350,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4657383Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4657383Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7422605Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7422605Z"
         },
         {
           "sampleIndex": 3,
@@ -365,8 +365,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4664434Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4664434Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7428530Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7428530Z"
         }
       ]
     },
@@ -395,8 +395,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4689057Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4689057Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7452022Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7452022Z"
         },
         {
           "sampleIndex": 2,
@@ -410,8 +410,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4695192Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4695192Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7458350Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7458350Z"
         },
         {
           "sampleIndex": 3,
@@ -425,8 +425,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4702148Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4702148Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7464342Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7464342Z"
         }
       ]
     },
@@ -455,8 +455,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4726737Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4726737Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7489459Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7489459Z"
         },
         {
           "sampleIndex": 2,
@@ -470,8 +470,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4733486Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4733486Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7495531Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7495531Z"
         },
         {
           "sampleIndex": 3,
@@ -485,8 +485,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4740113Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4740113Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7502534Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7502534Z"
         }
       ]
     },
@@ -515,8 +515,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4755623Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4755623Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7516537Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7516537Z"
         },
         {
           "sampleIndex": 2,
@@ -530,8 +530,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4762534Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4762534Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7522777Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7522777Z"
         },
         {
           "sampleIndex": 3,
@@ -545,8 +545,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4768788Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4768788Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7528555Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7528555Z"
         }
       ]
     },
@@ -575,8 +575,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4783543Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4783543Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7542227Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7542227Z"
         },
         {
           "sampleIndex": 2,
@@ -590,8 +590,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4790095Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4790095Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7548176Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7548176Z"
         },
         {
           "sampleIndex": 3,
@@ -605,8 +605,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-08T22:39:29.4796578Z",
-          "completedAtUtc": "2026-08-08T22:39:29.4796578Z"
+          "startedAtUtc": "2026-08-08T23:04:22.7555159Z",
+          "completedAtUtc": "2026-08-08T23:04:22.7555159Z"
         }
       ]
     }
