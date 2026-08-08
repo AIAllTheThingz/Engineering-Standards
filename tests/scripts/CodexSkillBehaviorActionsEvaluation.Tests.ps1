@@ -274,7 +274,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $syntheticProjectCredentialMarker = @('sk', 'proj', $syntheticCredentialMarker) -join '-'
         $queryParameterName = @('api', 'key') -join '_'
         $rawOutput = "Authorization: Bearer $syntheticProjectCredentialMarker`nhttps://example.invalid/?$queryParameterName=$syntheticCredentialMarker"
-        $diagnostic = Get-CodexProviderFailureDiagnostic -StandardOutput $rawOutput -StandardError $output -ExitCode 17 -RetryableReasons @((Get-CodexBehaviorInput -Path $repoRoot).Configuration.RetryPolicy.RetryableReasons)
+        $diagnostic = Get-CodexProviderFailureDiagnostic -StandardOutput $rawOutput -StandardError $output -ExitCode 17 -RetryableReasons @((Get-CodexBehaviorInput -Path $repoRoot).RetryableProviderFailureReasons)
 
         $diagnostic.Category | Should -Be $category
         $diagnostic.ExitCode | Should -Be 17

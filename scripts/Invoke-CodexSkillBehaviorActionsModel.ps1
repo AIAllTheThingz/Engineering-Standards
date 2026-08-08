@@ -92,7 +92,7 @@ User request: $($case.prompt)
                         $stderr = $stderrTask.Result
                         $streamsDrained = $true
                         if ($process.ExitCode -ne 0) {
-                            $diagnostic = Get-CodexProviderFailureDiagnostic -StandardOutput $stdout -StandardError $stderr -ExitCode $process.ExitCode -RetryableReasons @($config.RetryPolicy.RetryableReasons) -MaximumInspectionCharacters $maximumDiagnosticInspectionCharacters
+                            $diagnostic = Get-CodexProviderFailureDiagnostic -StandardOutput $stdout -StandardError $stderr -ExitCode $process.ExitCode -RetryableReasons @($inputs.RetryableProviderFailureReasons) -MaximumInspectionCharacters $maximumDiagnosticInspectionCharacters
                             $reason = $diagnostic.FailureReason
                             $retrySuppressed = -not $diagnostic.RetryPermitted
                         }

@@ -90,7 +90,6 @@ Describe 'Validator dependency integrity controls' {
         $policy.EvaluatorPaths | Should -Contain 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1'
         $policy.EvaluatorPaths | Should -Not -Contain 'scripts/CodexSkillBehaviorEvaluation.psm1'
         $policy.EvaluatorPaths | Should -Not -Contain $policy.ConfigurationPath
-        $hashes | Should -Contain '8964ff08a933e24662ea774c293989acf103c06630cc678a6b1f631a9f75fbce'
         $hashes | Should -Contain '26edd6a335bfcc359e32f35959cf1a5bd514125f0fd94d88b688083c782f1515'
         $hashes | Should -Contain '9a24ce3d74448b2787e3470dbb9cace027aa5ae9fddbeff507a0019ccd700de6'
         $policy.InputLimits.MaximumPromptFileCount | Should -BeGreaterThan 0

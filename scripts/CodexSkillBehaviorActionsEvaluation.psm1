@@ -209,6 +209,12 @@ function Import-CodexBehaviorTrustPolicy {
     foreach ($entry in @($policy.ApprovedConfigurations)) {
         if ([string]$entry.Sha256 -cnotmatch '^[0-9a-f]{64}$') { throw 'Trusted behavior policy contains an invalid approved configuration hash.' }
     }
+    $retryableProviderFailureReasons = @($policy.RetryableProviderFailureReasons)
+    if ($retryableProviderFailureReasons -is [string] -or $retryableProviderFailureReasons.Count -lt 1 -or
+        @($retryableProviderFailureReasons | Where-Object { $_ -notin @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError') }).Count -gt 0 -or
+        @($retryableProviderFailureReasons | Select-Object -Unique).Count -ne $retryableProviderFailureReasons.Count) {
+        throw 'Trusted behavior policy has an invalid retryable provider-failure category list.'
+    }
     $policy
 }
 
@@ -266,6 +272,7 @@ function Get-CodexBehaviorInput {
     $policy = Import-CodexBehaviorTrustPolicy -Path $TrustPolicyPath
     $approved = Get-CodexBehaviorApprovedConfiguration -Root $root -Policy $policy
     $config = $approved.Configuration
+    $retryableProviderFailureReasons = @($policy.RetryableProviderFailureReasons)
     $limits = $policy.InputLimits
 
     $corpusRoot = Join-Path $root 'tests/fixtures/codex-skills/prompt-behavior'
@@ -329,6 +336,7 @@ function Get-CodexBehaviorInput {
         Configuration = $config
         ConfigurationHash = $approved.ConfigurationHash
         ApprovedConfiguration = $approved.ApprovedEntry
+        RetryableProviderFailureReasons = $retryableProviderFailureReasons
         TrustPolicy = $policy
     }
 }
@@ -604,7 +612,7 @@ function Invoke-CodexSkillBehaviorEvaluation {
         startedAtUtc = $started.ToString('o'); completedAtUtc = [DateTime]::UtcNow.ToString('o')
         model = [pscustomobject]@{ provider = $config.Model.Provider; surface = $config.Model.Surface; modelId = $config.Model.ModelId; reasoningEffort = $config.Model.ReasoningEffort; runnerVersion = $RunnerVersion }
         sampling = [pscustomobject]@{ samplesPerCase = $config.Sampling.SamplesPerCase; temperature = $config.Sampling.Temperature; topP = $config.Sampling.TopP; seed = $config.Sampling.Seed; unsupportedParameterReason = $config.Sampling.UnsupportedParameterReason }
-        retryPolicy = [pscustomobject]@{ maximumTransportRetries = $config.RetryPolicy.MaximumTransportRetries; retryableReasons = @($config.RetryPolicy.RetryableReasons); retryDelaySeconds = $config.RetryPolicy.RetryDelaySeconds; preserveEveryAttempt = $config.RetryPolicy.PreserveEveryAttempt; retryMalformedOutput = $config.RetryPolicy.RetryMalformedOutput; retryThresholdFailure = $config.RetryPolicy.RetryThresholdFailure }
+        retryPolicy = [pscustomobject]@{ maximumTransportRetries = $config.RetryPolicy.MaximumTransportRetries; retryableReasons = @($inputs.RetryableProviderFailureReasons); retryDelaySeconds = $config.RetryPolicy.RetryDelaySeconds; preserveEveryAttempt = $config.RetryPolicy.PreserveEveryAttempt; retryMalformedOutput = $config.RetryPolicy.RetryMalformedOutput; retryThresholdFailure = $config.RetryPolicy.RetryThresholdFailure }
         isolation = [pscustomobject]@{ production = $config.Isolation.Production; sandboxMode = $config.Isolation.SandboxMode; approvalPolicy = $config.Isolation.ApprovalPolicy; ephemeralSession = $config.Isolation.EphemeralSession; mcpEnabled = $config.Isolation.McpEnabled; externalWriteAuthority = $config.Isolation.ExternalWriteAuthority; productionCredentialsAllowed = $config.Isolation.ProductionCredentialsAllowed; rawTranscriptRetention = $config.Isolation.RawTranscriptRetention }
         thresholds = [pscustomobject]@{ explicitInvocationMinimum = $config.Thresholds.ExplicitInvocationMinimum; implicitInvocationMinimum = $config.Thresholds.ImplicitInvocationMinimum; nonTriggerMinimum = $config.Thresholds.NonTriggerMinimum; ambiguityMinimum = $config.Thresholds.AmbiguityMinimum; safetyMinimum = $config.Thresholds.SafetyMinimum; qualityAverageMinimum = $config.Thresholds.QualityAverageMinimum; qualityDimensionMinimum = $config.Thresholds.QualityDimensionMinimum; maximumMaterialVarianceCases = $config.Thresholds.MaximumMaterialVarianceCases; safetyVarianceAllowed = $config.Thresholds.SafetyVarianceAllowed; nonTriggerVarianceAllowed = $config.Thresholds.NonTriggerVarianceAllowed }
         caseOutcomes = @($caseOutcomes)

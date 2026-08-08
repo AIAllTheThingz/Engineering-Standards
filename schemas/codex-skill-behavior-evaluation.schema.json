@@ -57,7 +57,7 @@
       "required": ["maximumTransportRetries", "retryableReasons", "retryDelaySeconds", "preserveEveryAttempt", "retryMalformedOutput", "retryThresholdFailure"],
       "properties": {
         "maximumTransportRetries": { "type": "integer", "minimum": 0, "maximum": 3 },
-        "retryableReasons": { "type": "array", "items": { "enum": ["ModelUnavailable", "TransportTimeout", "TransportFailure", "ProviderError"] }, "uniqueItems": true },
+        "retryableReasons": { "type": "array", "items": { "enum": ["ModelUnavailable", "TransportTimeout"] }, "uniqueItems": true },
         "retryDelaySeconds": { "type": "integer", "minimum": 0, "maximum": 30 },
         "preserveEveryAttempt": { "const": false },
         "retryMalformedOutput": { "const": false },
