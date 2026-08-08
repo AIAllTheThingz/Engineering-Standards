@@ -126,6 +126,20 @@ Describe 'Controlled Codex skill behavior evaluation' {
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
     }
 
+    It 'does not treat a process environment claim as GitHub-hosted provenance' {
+        $prior = $env:GITHUB_ACTIONS
+        try {
+            $env:GITHUB_ACTIONS = 'true'
+            $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Live
+
+            $report.executionContext | Should -Be 'Local'
+            $report.githubHostedExecution.status | Should -Be 'NotRun'
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:GITHUB_ACTIONS -ErrorAction SilentlyContinue } else { $env:GITHUB_ACTIONS = $prior }
+        }
+    }
+
     It 'classifies replay evidence as NotRun even when observations pass' {
         $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay
         $report.status | Should -Be 'NotRun'

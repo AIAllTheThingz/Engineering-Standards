@@ -16,7 +16,7 @@ function Get-Sha256String {
 function Start-CodexBoundedStreamRead {
     <#
     .SYNOPSIS
-    Drains a process stream while retaining at most the requested characters.
+    Drains a process stream while retaining the most recent requested characters.
     .DESCRIPTION
     The reader continues to drain after its in-memory retention bound is met,
     preventing a verbose subprocess from blocking on a full redirected pipe.
@@ -26,7 +26,7 @@ function Start-CodexBoundedStreamRead {
     System.IO.StreamReader.
     .OUTPUTS
     System.Threading.Tasks.Task[string]. The completed task contains at most the
-    requested number of characters while the underlying stream is fully drained.
+    requested number of trailing characters while the underlying stream is fully drained.
     #>
     [CmdletBinding()]
     param(
@@ -38,7 +38,6 @@ function Start-CodexBoundedStreamRead {
         Add-Type -TypeDefinition @'
 using System;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 
 public static class CodexBehaviorBoundedStreamReader
@@ -46,17 +45,31 @@ public static class CodexBehaviorBoundedStreamReader
     public static async Task<string> ReadAsync(StreamReader reader, int maximumCharacters)
     {
         var buffer = new char[Math.Min(4096, Math.Max(1, maximumCharacters))];
-        var retained = new StringBuilder(Math.Min(4096, maximumCharacters));
+        var retained = new char[maximumCharacters];
+        var retainedLength = 0;
+        var writeIndex = 0;
         int read;
         while ((read = await reader.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) != 0)
         {
-            var remaining = maximumCharacters - retained.Length;
-            if (remaining > 0)
+            for (var index = 0; index < read; index++)
             {
-                retained.Append(buffer, 0, Math.Min(remaining, read));
+                retained[writeIndex] = buffer[index];
+                writeIndex = (writeIndex + 1) % retained.Length;
+                if (retainedLength < retained.Length)
+                {
+                    retainedLength++;
+                }
             }
         }
-        return retained.ToString();
+        if (retainedLength < retained.Length)
+        {
+            return new string(retained, 0, retainedLength);
+        }
+        var output = new char[retainedLength];
+        var firstSegmentLength = retained.Length - writeIndex;
+        Array.Copy(retained, writeIndex, output, 0, firstSegmentLength);
+        Array.Copy(retained, 0, output, firstSegmentLength, writeIndex);
+        return new string(output);
     }
 }
 '@ | Out-Null
@@ -114,8 +127,8 @@ function Get-CodexProviderFailureDiagnostic {
     # Allocate the inspection budget across both streams so verbose provider
     # output cannot make diagnostic processing unbounded.
     $perStreamMaximum = [Math]::Floor($MaximumInspectionCharacters / 2)
-    $boundedOutput = if ($StandardOutput.Length -gt $perStreamMaximum) { $StandardOutput.Substring(0, $perStreamMaximum) } else { $StandardOutput }
-    $boundedError = if ($StandardError.Length -gt $perStreamMaximum) { $StandardError.Substring(0, $perStreamMaximum) } else { $StandardError }
+    $boundedOutput = if ($StandardOutput.Length -gt $perStreamMaximum) { $StandardOutput.Substring($StandardOutput.Length - $perStreamMaximum) } else { $StandardOutput }
+    $boundedError = if ($StandardError.Length -gt $perStreamMaximum) { $StandardError.Substring($StandardError.Length - $perStreamMaximum) } else { $StandardError }
     if ($ExitCode -eq 0) { throw 'Provider failure diagnostics require a nonzero process exit code.' }
     $stderrClassification = Get-CodexProviderFailureCategory -Inspection $boundedError
     $stdoutClassification = Get-CodexProviderFailureCategory -Inspection $boundedOutput
@@ -615,8 +628,11 @@ function Invoke-CodexSkillBehaviorEvaluation {
     $decisionAction = if ($overall -eq 'Passed') { 'Continue' } elseif ($skillStatus -eq 'Active' -and $overall -in @($config.Promotion.SuspensionStatuses)) { 'Suspend' } else { 'BlockPromotion' }
     $notRunReason = if ($ExecutionMode -eq 'Replay') { 'Replay exercises the evaluator contract but is not a live probabilistic model evaluation.' } else { $null }
     $blockedReason = if ($overall -eq 'Blocked') { 'At least one required model sample was incomplete or unusable; evaluation failed closed.' } else { $null }
-    $executionContext = if ($env:GITHUB_ACTIONS -ceq 'true') { 'GitHubActions' } else { 'Local' }
-    $githubHostedExecutionStatus = if ($executionContext -eq 'GitHubActions') { $overall } else { 'NotRun' }
+    # Process environment variables cannot authenticate GitHub-hosted provenance.
+    # A behavior report is therefore local evidence only; authoritative hosted
+    # execution is established by the separately verified workflow artifact.
+    $executionContext = 'Local'
+    $githubHostedExecutionStatus = 'NotRun'
     [pscustomobject]@{
         schemaVersion = '1.1.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
         configurationId = $config.ConfigurationId; configurationHash = $inputs.ConfigurationHash

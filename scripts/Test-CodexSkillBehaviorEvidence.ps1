@@ -44,7 +44,7 @@ try {
     }
     if ($evidence.status -notin @('Passed','Failed','NotRun','Blocked','NotApplicable')) { throw 'Evidence uses a noncanonical status.' }
     $usesExecutionProvenance = $evidence.schemaVersion -ceq '1.1.0'
-    if ($usesExecutionProvenance -and $evidence.executionContext -eq 'Local' -and $evidence.githubHostedExecution.status -ne 'NotRun') { throw 'Local evidence must explicitly record GitHub-hosted execution as NotRun.' }
+    if ($usesExecutionProvenance -and ($evidence.executionContext -ne 'Local' -or $evidence.githubHostedExecution.status -ne 'NotRun')) { throw 'Behavior evidence cannot claim GitHub-hosted execution without a separately verified workflow artifact.' }
     if (-not $evidence.probabilistic -or ($evidence.limitations -join ' ') -notmatch 'not deterministic proof') { throw 'Evidence must explicitly identify probabilistic limitations.' }
     if ($evidence.configurationId -ne $config.ConfigurationId -or $evidence.evaluatorVersion -ne $config.EvaluatorVersion -or $evidence.scoringContractVersion -ne $config.ScoringContractVersion) { throw 'Evidence version or approved configuration identity is stale.' }
     if ($evidence.configurationHash -ne (Get-BoundedInputHash -Root $root -RelativePaths @($inputs.ConfigurationPath))) { throw 'Evidence configuration hash is stale or fabricated.' }
@@ -101,7 +101,6 @@ try {
         if ($actualSection -cne $expectedSection) { throw "Evidence section '$section' contradicts evaluator-recomputed results." }
     }
     if ($evidence.status -cne $recomputed.status) { throw 'Evidence status contradicts evaluator-recomputed status.' }
-    if ($usesExecutionProvenance -and $evidence.executionContext -eq 'GitHubActions' -and $evidence.githubHostedExecution.status -cne $recomputed.status) { throw 'GitHub-hosted execution status contradicts evaluator-recomputed status.' }
     if ($evidence.status -eq 'Passed' -and (-not $evidence.aggregates.thresholdsPassed -or $evidence.executionMode -ne 'Live')) { throw 'Passing evidence contradicts its mode or thresholds.' }
     if ($evidence.status -eq 'Blocked' -and [string]::IsNullOrWhiteSpace([string]$evidence.blockedReason)) { throw 'Blocked evidence requires an explicit reason.' }
     if ($evidence.status -eq 'NotRun' -and [string]::IsNullOrWhiteSpace([string]$evidence.notRunReason)) { throw 'NotRun evidence requires an explicit reason.' }

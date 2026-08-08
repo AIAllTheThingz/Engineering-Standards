@@ -194,8 +194,11 @@ function Invoke-CodexSkillBehaviorEvaluation {
     $decisionAction = if ($overall -eq 'Passed') { 'Continue' } elseif ($skillStatus -eq 'Active' -and $overall -in @($config.Promotion.SuspensionStatuses)) { 'Suspend' } else { 'BlockPromotion' }
     $notRunReason = if ($ExecutionMode -eq 'Replay') { 'Replay exercises the evaluator contract but is not a live probabilistic model evaluation.' } else { $null }
     $blockedReason = if ($overall -eq 'Blocked') { 'At least one required model sample was incomplete or unusable; evaluation failed closed.' } else { $null }
-    $executionContext = if ($env:GITHUB_ACTIONS -ceq 'true') { 'GitHubActions' } else { 'Local' }
-    $githubHostedExecutionStatus = if ($executionContext -eq 'GitHubActions') { $overall } else { 'NotRun' }
+    # Process environment variables cannot authenticate GitHub-hosted provenance.
+    # A behavior report is therefore local evidence only; authoritative hosted
+    # execution is established by the separately verified workflow artifact.
+    $executionContext = 'Local'
+    $githubHostedExecutionStatus = 'NotRun'
     [pscustomobject]@{
         schemaVersion = '1.1.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
         configurationId = $config.ConfigurationId; configurationHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths @($inputs.ConfigurationPath)

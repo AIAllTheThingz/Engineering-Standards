@@ -286,23 +286,25 @@ Describe 'Controlled Codex skill behavior evaluation' {
         ($diagnostic | ConvertTo-Json -Compress) | Should -Not -Match [regex]::Escape($rawOutput)
     }
 
-    It 'limits classification to the configured inspection bound' {
+    It 'classifies a trailing provider signature within the configured inspection bound' {
         $diagnostic = Get-CodexProviderFailureDiagnostic -StandardOutput '' -StandardError (('x' * 64) + ' invalid api key') -ExitCode 1 -MaximumInspectionCharacters 64
 
-        $diagnostic.Category | Should -Be 'UnknownProviderFailure'
+        $diagnostic.Category | Should -Be 'AuthenticationFailed'
         $diagnostic.FailureReason.Length | Should -BeLessOrEqual 600
     }
 
-    It 'drains a bounded provider stream without retaining its tail' {
+    It 'drains a bounded provider stream while retaining its tail' {
+        $headMarker = 'provider-head-marker'
         $tailMarker = 'provider-tail-marker'
-        $source = ('x' * 70000) + $tailMarker
+        $source = $headMarker + ('x' * 70000) + $tailMarker
         $stream = [IO.MemoryStream]::new([Text.Encoding]::UTF8.GetBytes($source))
         $reader = [IO.StreamReader]::new($stream)
         try {
             $captured = (Start-CodexBoundedStreamRead -Reader $reader -MaximumCharacters 1024).Result
 
             $captured.Length | Should -Be 1024
-            $captured | Should -Not -Match [regex]::Escape($tailMarker)
+            $captured | Should -Match [regex]::Escape($tailMarker)
+            $captured | Should -Not -Match [regex]::Escape($headMarker)
             $stream.Position | Should -Be $stream.Length
         }
         finally { $reader.Dispose(); $stream.Dispose() }
@@ -322,6 +324,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
     It 'stores only a sanitized diagnostic when a synthetic Codex subprocess fails' -ForEach @(
         @{ Name='non-retryable authentication'; ProviderOutput='HTTP 401 invalid api key'; Category='AuthenticationFailed'; ExpectedAttempts=1; RetryMessage='not permitted' }
         @{ Name='retryable transport'; ProviderOutput='network error: ECONNRESET'; Category='TransportFailure'; ExpectedAttempts=2; RetryMessage='permitted' }
+        @{ Name='trailing retryable transport'; ProviderOutput=(('x' * 9000) + ' network error: ECONNRESET'); Category='TransportFailure'; ExpectedAttempts=2; RetryMessage='permitted' }
     ) -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
         $testRoot = Join-Path $TestDrive 'collector-provider-diagnostic'
         $observationRoot = Join-Path $testRoot 'observations'
@@ -562,6 +565,20 @@ Describe 'Controlled Codex skill behavior evaluation' {
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
     }
 
+    It 'does not treat a process environment claim as GitHub-hosted provenance' {
+        $prior = $env:GITHUB_ACTIONS
+        try {
+            $env:GITHUB_ACTIONS = 'true'
+            $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Live
+
+            $report.executionContext | Should -Be 'Local'
+            $report.githubHostedExecution.status | Should -Be 'NotRun'
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:GITHUB_ACTIONS -ErrorAction SilentlyContinue } else { $env:GITHUB_ACTIONS = $prior }
+        }
+    }
+
     It 'classifies replay evidence as NotRun even when observations pass' {
         $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay
         $report.status | Should -Be 'NotRun'
@@ -770,7 +787,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
     }
 
-    It 'rejects a GitHub-hosted status that contradicts action evaluator recomputation' {
+    It 'rejects an unauthenticated GitHub-hosted status claim' {
         $testRoot = Join-Path $repoRoot ('.tmp/actions-evidence-provenance-' + [guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
         try {

@@ -25,7 +25,7 @@
     "authorityHash": { "$ref": "#/$defs/sha256" },
     "evaluatedCommitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
     "executionMode": { "enum": ["Live", "Replay"] },
-    "executionContext": { "enum": ["Local", "GitHubActions"] },
+    "executionContext": { "const": "Local" },
     "githubHostedExecution": {
       "type": "object", "additionalProperties": false,
       "required": ["status"],
