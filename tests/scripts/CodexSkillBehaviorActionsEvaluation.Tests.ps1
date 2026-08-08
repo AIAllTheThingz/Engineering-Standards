@@ -266,15 +266,15 @@ Describe 'Controlled Codex skill behavior evaluation' {
         @{ name = 'rate limit'; output = 'HTTP 429: rate limit reached'; category = 'RateLimited'; retry = $false }
         @{ name = 'model unavailable'; output = 'model_not_found'; category = 'ModelUnavailable'; retry = $true }
         @{ name = 'configuration'; output = 'unknown option --reasoning-effort'; category = 'ConfigurationError'; retry = $false }
-        @{ name = 'transport'; output = 'network error: ECONNRESET'; category = 'TransportFailure'; retry = $false }
-        @{ name = 'provider'; output = 'HTTP 503: service unavailable'; category = 'ProviderError'; retry = $false }
+        @{ name = 'transport'; output = 'network error: ECONNRESET'; category = 'TransportFailure'; retry = $true }
+        @{ name = 'provider'; output = 'HTTP 503: service unavailable'; category = 'ProviderError'; retry = $true }
         @{ name = 'unknown'; output = 'unrecognized failure shape'; category = 'UnknownProviderFailure'; retry = $false }
     ) {
         $syntheticCredentialMarker = 'example-token-not-a-secret'
         $syntheticProjectCredentialMarker = @('sk', 'proj', $syntheticCredentialMarker) -join '-'
         $queryParameterName = @('api', 'key') -join '_'
         $rawOutput = "Authorization: Bearer $syntheticProjectCredentialMarker`nhttps://example.invalid/?$queryParameterName=$syntheticCredentialMarker"
-        $diagnostic = Get-CodexProviderFailureDiagnostic -StandardOutput $rawOutput -StandardError $output -ExitCode 17 -RetryableReasons @('ModelUnavailable', 'TransportTimeout')
+        $diagnostic = Get-CodexProviderFailureDiagnostic -StandardOutput $rawOutput -StandardError $output -ExitCode 17 -RetryableReasons @((Get-CodexBehaviorInput -Path $repoRoot).Configuration.RetryPolicy.RetryableReasons)
 
         $diagnostic.Category | Should -Be $category
         $diagnostic.ExitCode | Should -Be 17
@@ -319,13 +319,16 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $quotaRefines429.Category | Should -Be 'QuotaExceeded'
     }
 
-    It 'stores only a sanitized diagnostic when a synthetic Codex subprocess fails' -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
+    It 'stores only a sanitized diagnostic when a synthetic Codex subprocess fails' -ForEach @(
+        @{ Name='non-retryable authentication'; ProviderOutput='HTTP 401 invalid api key'; Category='AuthenticationFailed'; ExpectedAttempts=1; RetryMessage='not permitted' }
+        @{ Name='retryable transport'; ProviderOutput='network error: ECONNRESET'; Category='TransportFailure'; ExpectedAttempts=2; RetryMessage='permitted' }
+    ) -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
         $testRoot = Join-Path $TestDrive 'collector-provider-diagnostic'
         $observationRoot = Join-Path $testRoot 'observations'
         $syntheticCredentialMarker = 'example-token-not-a-secret'
         $syntheticProjectCredentialMarker = @('sk', 'proj', $syntheticCredentialMarker) -join '-'
         $queryParameterName = @('api', 'key') -join '_'
-        $syntheticOutput = "HTTP 401 invalid api key`nAuthorization: Bearer $syntheticProjectCredentialMarker`nhttps://example.invalid/?$queryParameterName=$syntheticCredentialMarker"
+        $syntheticOutput = "$ProviderOutput`nAuthorization: Bearer $syntheticProjectCredentialMarker`nhttps://example.invalid/?$queryParameterName=$syntheticCredentialMarker"
         $encodedOutput = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($syntheticOutput))
         $pythonPath = (Get-Command python -ErrorAction Stop).Source
         $prior = $env:CODEX_BEHAVIOR_TEST_KEY
@@ -344,8 +347,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
             $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
 
             $observations.Count | Should -Be 27
-            @($observations | Where-Object { $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 }).Count | Should -Be 0
-            @($observations.failureReason | Select-Object -Unique) | Should -Be @('AuthenticationFailed: Codex exited with code 17. Retry is not permitted by the governed retry policy.')
+            @($observations | Where-Object { $_.status -ne 'Blocked' -or $_.attemptCount -ne $ExpectedAttempts }).Count | Should -Be 0
+            @($observations.failureReason | Select-Object -Unique) | Should -Be @("$Category`: Codex exited with code 17. Retry is $RetryMessage by the governed retry policy.")
             $serialized = $observations | ConvertTo-Json -Depth 8 -Compress
             $serialized | Should -Not -Match [regex]::Escape($syntheticCredentialMarker)
             $serialized | Should -Not -Match [regex]::Escape($syntheticProjectCredentialMarker)

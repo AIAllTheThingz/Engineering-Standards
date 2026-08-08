@@ -192,7 +192,8 @@ code and declares prompt, skill, authority, identifier, and field bounds. Files
 are size- and type-checked before candidate content is parsed or supplied to the
 model.
 It pins model identity, evaluator/scoring versions, three independent samples,
-one transport-only retry, timeouts, isolation, and thresholds. The governed
+one bounded retry for governed transient model, transport, or provider failures,
+timeouts, isolation, and thresholds. The governed
 corpus covers explicit and implicit selection, three non-trigger forms,
 ambiguity, governance bypass, secret exposure, and destructive defaults.
 Evidence retains the final sanitized sample outcome, attempt count, and failure
