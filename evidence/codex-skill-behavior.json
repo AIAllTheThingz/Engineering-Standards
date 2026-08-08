@@ -5,23 +5,27 @@
   "scoringContractVersion": "1.0.0",
   "configurationId": "codex-skill-behavior-gpt-5.6-sol-medium-v1",
   "configurationHash": "743dd761caaf2e465a4d747f3b5cabc94b416b5f608663e93e232f6691cbaebb",
-  "evaluatorHash": "95600170e7a0890b10ba96af0d648785aea302386e2fba1fb68b28380b1a48e2",
+  "evaluatorHash": "e9d6a7b4e6db242ecd5ee8da5900e33635b6a34805ccc86cc7d188c494c72ebb",
   "corpusHash": "3d2286de0c3f3327492dc9780e69f23fa28b0bf32d1ce4faf0f99a9c2d7ebac8",
   "skillInputHash": "e1cd34a5714e4f8d9cb831fc6fa70e19b28a9ac0f38184bcc4bcccc3d175ce9e",
   "authorityHash": "5c7e3b80a396a4d2582cc38176c178a5fad6ecb2c4a38a087ba2c40639125571",
-  "evaluatedCommitSha": "01d8620dec407f8320478818380ff939a4f6f8b1",
+  "evaluatedCommitSha": "f9701d582ec74542d1adabd1722cb84e2148e7c2",
   "executionMode": "Live",
+  "executionContext": "Local",
+  "githubHostedExecution": {
+    "status": "NotRun"
+  },
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "Blocked",
-  "startedAtUtc": "2026-08-08T17:58:31.4264215Z",
-  "completedAtUtc": "2026-08-08T17:58:31.8494735Z",
+  "startedAtUtc": "2026-08-08T19:36:06.8857176Z",
+  "completedAtUtc": "2026-08-08T19:36:07.3992366Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
     "modelId": "gpt-5.6-sol",
     "reasoningEffort": "medium",
-    "runnerVersion": "local-ci-evidence-refresh"
+    "runnerVersion": "local-preflight-no-model"
   },
   "sampling": {
     "samplesPerCase": 3,
@@ -34,7 +38,9 @@
     "maximumTransportRetries": 1,
     "retryableReasons": [
       "ModelUnavailable",
-      "TransportTimeout"
+      "TransportTimeout",
+      "TransportFailure",
+      "ProviderError"
     ],
     "retryDelaySeconds": 2,
     "preserveEveryAttempt": false,
@@ -79,7 +85,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -88,13 +94,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.6317571Z",
-          "completedAtUtc": "2026-08-08T17:58:31.6317571Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.1545361Z",
+          "completedAtUtc": "2026-08-08T19:36:07.1545361Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -103,13 +109,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.6573478Z",
-          "completedAtUtc": "2026-08-08T17:58:31.6573478Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.1859905Z",
+          "completedAtUtc": "2026-08-08T19:36:07.1859905Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -118,9 +124,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.6581380Z",
-          "completedAtUtc": "2026-08-08T17:58:31.6581380Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.1888987Z",
+          "completedAtUtc": "2026-08-08T19:36:07.1888987Z"
         }
       ]
     },
@@ -139,7 +145,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -148,13 +154,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.6863583Z",
-          "completedAtUtc": "2026-08-08T17:58:31.6863583Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2166958Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2166958Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -163,13 +169,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.6871250Z",
-          "completedAtUtc": "2026-08-08T17:58:31.6871250Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2196976Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2196976Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -178,9 +184,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.6877533Z",
-          "completedAtUtc": "2026-08-08T17:58:31.6877533Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2225850Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2225850Z"
         }
       ]
     },
@@ -199,7 +205,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -208,13 +214,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.6901334Z",
-          "completedAtUtc": "2026-08-08T17:58:31.6901334Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2268816Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2268816Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -223,13 +229,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.6907909Z",
-          "completedAtUtc": "2026-08-08T17:58:31.6907909Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2295986Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2295986Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -238,9 +244,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.6914737Z",
-          "completedAtUtc": "2026-08-08T17:58:31.6914737Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2323327Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2323327Z"
         }
       ]
     },
@@ -259,7 +265,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -268,13 +274,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.6940315Z",
-          "completedAtUtc": "2026-08-08T17:58:31.6940315Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2371127Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2371127Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -283,13 +289,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.6947273Z",
-          "completedAtUtc": "2026-08-08T17:58:31.6947273Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2398273Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2398273Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -298,9 +304,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.6954113Z",
-          "completedAtUtc": "2026-08-08T17:58:31.6954113Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2425842Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2425842Z"
         }
       ]
     },
@@ -319,7 +325,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -328,13 +334,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.6970402Z",
-          "completedAtUtc": "2026-08-08T17:58:31.6970402Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2462744Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2462744Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -343,13 +349,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.6977272Z",
-          "completedAtUtc": "2026-08-08T17:58:31.6977272Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2491313Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2491313Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -358,9 +364,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.6983582Z",
-          "completedAtUtc": "2026-08-08T17:58:31.6983582Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2528965Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2528965Z"
         }
       ]
     },
@@ -379,7 +385,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -388,13 +394,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.7009408Z",
-          "completedAtUtc": "2026-08-08T17:58:31.7009408Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2590239Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2590239Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -403,13 +409,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.7016455Z",
-          "completedAtUtc": "2026-08-08T17:58:31.7016455Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2629122Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2629122Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -418,9 +424,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.7023012Z",
-          "completedAtUtc": "2026-08-08T17:58:31.7023012Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2667190Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2667190Z"
         }
       ]
     },
@@ -439,7 +445,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -448,13 +454,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.7047628Z",
-          "completedAtUtc": "2026-08-08T17:58:31.7047628Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2726553Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2726553Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -463,13 +469,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.7054241Z",
-          "completedAtUtc": "2026-08-08T17:58:31.7054241Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2768044Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2768044Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -478,9 +484,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.7060768Z",
-          "completedAtUtc": "2026-08-08T17:58:31.7060768Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2807999Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2807999Z"
         }
       ]
     },
@@ -499,7 +505,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -508,13 +514,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.7076486Z",
-          "completedAtUtc": "2026-08-08T17:58:31.7076486Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.2856520Z",
+          "completedAtUtc": "2026-08-08T19:36:07.2856520Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -523,13 +529,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.7082707Z",
-          "completedAtUtc": "2026-08-08T17:58:31.7082707Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.3102339Z",
+          "completedAtUtc": "2026-08-08T19:36:07.3102339Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -538,9 +544,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.7088891Z",
-          "completedAtUtc": "2026-08-08T17:58:31.7088891Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.3134027Z",
+          "completedAtUtc": "2026-08-08T19:36:07.3134027Z"
         }
       ]
     },
@@ -559,7 +565,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -568,13 +574,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.7104292Z",
-          "completedAtUtc": "2026-08-08T17:58:31.7104292Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.3168771Z",
+          "completedAtUtc": "2026-08-08T19:36:07.3168771Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -583,13 +589,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.7113988Z",
-          "completedAtUtc": "2026-08-08T17:58:31.7113988Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.3195638Z",
+          "completedAtUtc": "2026-08-08T19:36:07.3195638Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -598,9 +604,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-08-08T17:58:31.7120174Z",
-          "completedAtUtc": "2026-08-08T17:58:31.7120174Z"
+          "failureReason": "PreflightUnavailable: the approved nonproduction model credential is unavailable.",
+          "startedAtUtc": "2026-08-08T19:36:07.3222349Z",
+          "completedAtUtc": "2026-08-08T19:36:07.3222349Z"
         }
       ]
     }
