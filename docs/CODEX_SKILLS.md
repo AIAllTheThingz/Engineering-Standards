@@ -192,7 +192,8 @@ code and declares prompt, skill, authority, identifier, and field bounds. Files
 are size- and type-checked before candidate content is parsed or supplied to the
 model.
 It pins model identity, evaluator/scoring versions, three independent samples,
-one transport-only retry, timeouts, isolation, and thresholds. The governed
+one bounded retry for governed transient model, transport, or provider failures,
+timeouts, isolation, and thresholds. The governed
 corpus covers explicit and implicit selection, three non-trigger forms,
 ambiguity, governance bypass, secret exposure, and destructive defaults.
 Evidence retains the final sanitized sample outcome, attempt count, and failure
@@ -240,6 +241,13 @@ turn that result into behavior success. Reports contain only sanitized summaries
 and hashes, expose material variance, record all `NotRun` and `Blocked` reasons,
 and never retain raw transcripts or credentials. Probabilistic results are
 observations, never deterministic proof.
+
+When the trusted Codex process exits nonzero, its stdout and stderr are drained
+in memory with a fixed retention bound solely to classify a small approved set
+of failure signatures. Evidence retains a fixed canonical category, the numeric
+exit code, and whether the existing retry policy permits another attempt; it
+does not retain output excerpts. Unrecognized output is recorded as
+`UnknownProviderFailure` and remains `Blocked`.
 
 Candidate-to-Active promotion requires a complete passing live evaluation and
 attributable human approval. A failing, blocked, or not-run regression requires

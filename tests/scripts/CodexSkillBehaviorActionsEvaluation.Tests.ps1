@@ -243,10 +243,158 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Match 'TrustedOutputRoot'
         $runner | Should -Match 'must not exist before trusted collection'
         $runner | Should -Not -Match '\$attempt = \[int\]\$config\.RetryPolicy\.MaximumTransportRetries \+ 1'
+        $cleanupStart = $runner.IndexOf('                finally {', [StringComparison]::Ordinal)
+        $cleanupStart | Should -BeGreaterThan -1
+        $cleanupTail = $runner.Substring($cleanupStart)
+        $cleanupEnd = $cleanupTail.IndexOf('                if (-not $completed', [StringComparison]::Ordinal)
+        $cleanupEnd | Should -BeGreaterThan 0
+        $cleanup = $cleanupTail.Substring(0, $cleanupEnd)
+        $cleanup | Should -Match 'foreach \(\$drainTask in @\(\$stdoutTask, \$stderrTask\)\)'
+        $cleanup | Should -Match 'try \{ \[void\]\$drainTask\.Wait\(5000\) \}'
+        $cleanup | Should -Not -Match '\.Result'
+        $cleanup | Should -Match 'try \{ \$process\.Dispose\(\) \}'
         $evaluationWrapper = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsEvaluation.ps1') -Raw
         $evaluationWrapper | Should -Match 'Resolve-CodexBehaviorOutputPath'
         $evaluationWrapper | Should -Match 'TrustedOutputRoot'
         $evaluationWrapper | Should -Match 'must not exist before trusted evaluation'
+    }
+
+    It 'classifies bounded provider failures without persisting provider output' -ForEach @(
+        @{ name = 'authentication'; output = 'HTTP 401: invalid api key'; category = 'AuthenticationFailed'; retry = $false }
+        @{ name = 'authorization'; output = 'HTTP 403: insufficient permissions for the requested model'; category = 'AuthorizationFailed'; retry = $false }
+        @{ name = 'quota'; output = 'insufficient_quota'; category = 'QuotaExceeded'; retry = $false }
+        @{ name = 'rate limit'; output = 'HTTP 429: rate limit reached'; category = 'RateLimited'; retry = $false }
+        @{ name = 'model unavailable'; output = 'model_not_found'; category = 'ModelUnavailable'; retry = $true }
+        @{ name = 'configuration'; output = 'unknown option --reasoning-effort'; category = 'ConfigurationError'; retry = $false }
+        @{ name = 'transport'; output = 'network error: ECONNRESET'; category = 'TransportFailure'; retry = $true }
+        @{ name = 'provider'; output = 'HTTP 503: service unavailable'; category = 'ProviderError'; retry = $true }
+        @{ name = 'unknown'; output = 'unrecognized failure shape'; category = 'UnknownProviderFailure'; retry = $false }
+    ) {
+        $syntheticCredentialMarker = 'example-token-not-a-secret'
+        $syntheticProjectCredentialMarker = @('sk', 'proj', $syntheticCredentialMarker) -join '-'
+        $queryParameterName = @('api', 'key') -join '_'
+        $rawOutput = "Authorization: Bearer $syntheticProjectCredentialMarker`nhttps://example.invalid/?$queryParameterName=$syntheticCredentialMarker"
+        $diagnostic = Get-CodexProviderFailureDiagnostic -StandardOutput $rawOutput -StandardError $output -ExitCode 17 -RetryableReasons @((Get-CodexBehaviorInput -Path $repoRoot).RetryableProviderFailureReasons)
+
+        $diagnostic.Category | Should -Be $category
+        $diagnostic.ExitCode | Should -Be 17
+        $diagnostic.RetryPermitted | Should -Be $retry
+        $diagnostic.FailureReason | Should -Match "^$($category): Codex exited with code 17\. Retry is "
+        ($diagnostic | ConvertTo-Json -Compress) | Should -Not -Match [regex]::Escape($syntheticCredentialMarker)
+        ($diagnostic | ConvertTo-Json -Compress) | Should -Not -Match [regex]::Escape($syntheticProjectCredentialMarker)
+        ($diagnostic | ConvertTo-Json -Compress) | Should -Not -Match "Authorization:|$queryParameterName=|Bearer "
+        ($diagnostic | ConvertTo-Json -Compress) | Should -Not -Match [regex]::Escape($rawOutput)
+    }
+
+    It 'classifies a trailing provider signature within the configured inspection bound' {
+        $diagnostic = Get-CodexProviderFailureDiagnostic -StandardOutput '' -StandardError (('x' * 64) + ' invalid api key') -ExitCode 1 -MaximumInspectionCharacters 64
+
+        $diagnostic.Category | Should -Be 'AuthenticationFailed'
+        $diagnostic.FailureReason.Length | Should -BeLessOrEqual 600
+    }
+
+    It 'drains a bounded provider stream while retaining its tail' {
+        $headMarker = 'provider-head-marker'
+        $tailMarker = 'provider-tail-marker'
+        $source = $headMarker + ('x' * 70000) + $tailMarker
+        $stream = [IO.MemoryStream]::new([Text.Encoding]::UTF8.GetBytes($source))
+        $reader = [IO.StreamReader]::new($stream)
+        try {
+            $captured = (Start-CodexBoundedStreamRead -Reader $reader -MaximumCharacters 1024).Result
+            $tailPattern = [regex]::Escape($tailMarker)
+            $headPattern = [regex]::Escape($headMarker)
+
+            $captured.Length | Should -Be 1024
+            $captured | Should -Match $tailPattern
+            $captured | Should -Not -Match $headPattern
+            $stream.Position | Should -Be $stream.Length
+        }
+        finally { $reader.Dispose(); $stream.Dispose() }
+    }
+
+    It 'fails closed for conflicting signatures across either output stream' {
+        $conflict = Get-CodexProviderFailureDiagnostic -StandardError 'HTTP 401 invalid api key; HTTP 503 service unavailable' -ExitCode -1073741510
+        $crossStreamConflict = Get-CodexProviderFailureDiagnostic -StandardError 'HTTP 503 service unavailable' -StandardOutput 'HTTP 401 invalid api key' -ExitCode 1
+        $quotaRefines429 = Get-CodexProviderFailureDiagnostic -StandardError 'HTTP 429 insufficient_quota' -ExitCode 1
+
+        $conflict.Category | Should -Be 'UnknownProviderFailure'
+        $conflict.ExitCode | Should -Be -1073741510
+        $crossStreamConflict.Category | Should -Be 'UnknownProviderFailure'
+        $quotaRefines429.Category | Should -Be 'QuotaExceeded'
+    }
+
+    It 'stores only a sanitized diagnostic when a synthetic Codex subprocess fails' -ForEach @(
+        @{ Name='non-retryable authentication'; ProviderOutput='HTTP 401 invalid api key'; Category='AuthenticationFailed'; ExpectedAttempts=1; RetryMessage='not permitted' }
+        @{ Name='retryable transport'; ProviderOutput='network error: ECONNRESET'; Category='TransportFailure'; ExpectedAttempts=2; RetryMessage='permitted' }
+        @{ Name='trailing retryable transport'; ProviderOutput=(('x' * 9000) + ' network error: ECONNRESET'); Category='TransportFailure'; ExpectedAttempts=2; RetryMessage='permitted' }
+    ) -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
+        $testRoot = Join-Path $TestDrive 'collector-provider-diagnostic'
+        $observationRoot = Join-Path $testRoot 'observations'
+        $syntheticCredentialMarker = 'example-token-not-a-secret'
+        $syntheticProjectCredentialMarker = @('sk', 'proj', $syntheticCredentialMarker) -join '-'
+        $queryParameterName = @('api', 'key') -join '_'
+        $syntheticOutput = "$ProviderOutput`nAuthorization: Bearer $syntheticProjectCredentialMarker`nhttps://example.invalid/?$queryParameterName=$syntheticCredentialMarker"
+        $encodedOutput = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($syntheticOutput))
+        $pythonPath = (Get-Command python -ErrorAction Stop).Source
+        $prior = $env:CODEX_BEHAVIOR_TEST_KEY
+        New-Item -ItemType Directory -Path $testRoot | Out-Null
+        try {
+            $fakeCodex = Join-Path $testRoot 'exec'
+            "import base64, sys`nsys.stderr.write(base64.b64decode('$encodedOutput').decode('utf-8') + '\\n')`nsys.exit(17)" | Set-Content -LiteralPath $fakeCodex -NoNewline
+            $env:CODEX_BEHAVIOR_TEST_KEY = $syntheticCredentialMarker
+
+            Push-Location $testRoot
+            try {
+                & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1') -Path $repoRoot -CodexPath $pythonPath -TrustedOutputRoot $testRoot -OutputDirectory $observationRoot -ApiKeyEnvironmentVariable CODEX_BEHAVIOR_TEST_KEY 2>$null
+                $LASTEXITCODE | Should -Be 0
+            }
+            finally { Pop-Location }
+            $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
+
+            $observations.Count | Should -Be 27
+            @($observations | Where-Object { $_.status -ne 'Blocked' -or $_.attemptCount -ne $ExpectedAttempts }).Count | Should -Be 0
+            @($observations.failureReason | Select-Object -Unique) | Should -Be @("$Category`: Codex exited with code 17. Retry is $RetryMessage by the governed retry policy.")
+            $serialized = $observations | ConvertTo-Json -Depth 8 -Compress
+            $serialized | Should -Not -Match [regex]::Escape($syntheticCredentialMarker)
+            $serialized | Should -Not -Match [regex]::Escape($syntheticProjectCredentialMarker)
+            $serialized | Should -Not -Match "Authorization:|$queryParameterName=|Bearer "
+            $serialized | Should -Not -Match [regex]::Escape($syntheticOutput)
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_TEST_KEY = $prior }
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'records a missing credential as a one-attempt preflight block without invoking Codex' {
+        $testRoot = Join-Path $TestDrive 'collector-preflight'
+        New-Item -ItemType Directory -Path $testRoot | Out-Null
+        $outputRoot = New-CodexBehaviorOutputRoot -RunnerTemp $testRoot -RunId '123456' -RunAttempt 1
+        $observationRoot = Join-Path $outputRoot.RunRoot 'observations'
+        $codexPath = (Get-Command pwsh -CommandType Application | Select-Object -First 1).Source
+        $prior = $env:CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY
+        try {
+            Remove-Item Env:CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY -ErrorAction SilentlyContinue
+            $collectorOutput = @(& (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1') -Path $repoRoot -CodexPath $codexPath -TrustedOutputRoot $outputRoot.RunRoot -OutputDirectory $observationRoot -ApiKeyEnvironmentVariable CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY 2>&1)
+            if ($LASTEXITCODE -ne 0) { throw ($collectorOutput -join [Environment]::NewLine) }
+            $LASTEXITCODE | Should -Be 0
+
+            $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
+            $observations.Count | Should -Be 27
+            @($observations | Where-Object { $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 -or $_.failureReason -ne 'PreflightUnavailable: the approved nonproduction model credential is unavailable.' }).Count | Should -Be 0
+
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsEvaluation.ps1') -Path $repoRoot -TrustedOutputRoot $outputRoot.RunRoot -ObservationDirectory $observationRoot -OutputJson (Join-Path $outputRoot.ArtifactRoot 'report.json') -ExecutionMode Live -EvaluatedCommitSha ((& git -C $repoRoot rev-parse HEAD).Trim()) 2>$null
+            $LASTEXITCODE | Should -Be 2
+            $report = Get-Content -LiteralPath (Join-Path $outputRoot.ArtifactRoot 'report.json') -Raw | ConvertFrom-Json
+            $report.status | Should -Be 'Blocked'
+            $report.executionContext | Should -Be 'Local'
+            $report.githubHostedExecution.status | Should -Be 'NotRun'
+            @($report.caseOutcomes.samples | Where-Object attemptCount -ne 1).Count | Should -Be 0
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY = $prior }
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 
     It 'hashes the root catalog and a new skill-local README without touching an existing skill file' {
@@ -412,7 +560,25 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $report.aggregates.samplesExpected | Should -Be 27
         $report.aggregates.samplesCompleted | Should -Be 27
         $report.limitations -join ' ' | Should -Match 'not deterministic proof'
+        $report.schemaVersion | Should -Be '1.1.0'
+        $report.executionContext | Should -Be 'Local'
+        $report.githubHostedExecution.status | Should -Be 'NotRun'
+        $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
+    }
+
+    It 'does not treat a process environment claim as GitHub-hosted provenance' {
+        $prior = $env:GITHUB_ACTIONS
+        try {
+            $env:GITHUB_ACTIONS = 'true'
+            $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Live
+
+            $report.executionContext | Should -Be 'Local'
+            $report.githubHostedExecution.status | Should -Be 'NotRun'
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:GITHUB_ACTIONS -ErrorAction SilentlyContinue } else { $env:GITHUB_ACTIONS = $prior }
+        }
     }
 
     It 'classifies replay evidence as NotRun even when observations pass' {
@@ -610,6 +776,32 @@ Describe 'Controlled Codex skill behavior evaluation' {
             $contradictory = Join-Path $testRoot 'contradictory.json'
             $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $contradictory -Encoding utf8
             & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/contradictory.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+
+            $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
+            $evidence.executionContext = 'GitHubActions'
+            $evidence.githubHostedExecution.status = if ($evidence.status -eq 'Passed') { 'Blocked' } else { 'Passed' }
+            $hostedStatusMismatch = Join-Path $testRoot 'hosted-status-mismatch.json'
+            $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $hostedStatusMismatch -Encoding utf8
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/hosted-status-mismatch.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+        }
+        finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+
+    It 'rejects an unauthenticated GitHub-hosted status claim' {
+        $testRoot = Join-Path $repoRoot ('.tmp/actions-evidence-provenance-' + [guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+        try {
+            $head = (& git -C $repoRoot rev-parse HEAD).Trim()
+            $evidence = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay -EvaluatedCommitSha $head
+            $evidence.executionContext = 'GitHubActions'
+            $evidence.githubHostedExecution.status = 'Passed'
+            $evidencePath = Join-Path $testRoot 'hosted-status-mismatch.json'
+            $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $evidencePath -Encoding utf8
+
+            $relativeEvidencePath = [IO.Path]::GetRelativePath($repoRoot, $evidencePath).Replace('\', '/')
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath $relativeEvidencePath 2>$null
             $LASTEXITCODE | Should -Be 1
         }
         finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }

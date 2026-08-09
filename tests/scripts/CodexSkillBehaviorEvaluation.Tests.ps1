@@ -36,6 +36,33 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $evaluationWrapper | Should -Match 'must not traverse a symbolic link, junction, or reparse point'
     }
 
+    It 'classifies manual collector subprocess failures through the trusted retry policy' -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
+        $testRoot = Join-Path $TestDrive 'manual-collector-provider-diagnostic'
+        $observationRoot = Join-Path $repoRoot ('.tmp/manual-collector-provider-diagnostic-' + [guid]::NewGuid().ToString('N'))
+        $pythonPath = (Get-Command python -ErrorAction Stop).Source
+        $prior = $env:CODEX_BEHAVIOR_MANUAL_TEST_KEY
+        New-Item -ItemType Directory -Path $testRoot | Out-Null
+        try {
+            $fakeCodex = Join-Path $testRoot 'exec'
+            "import sys`nsys.stderr.write('HTTP 401 invalid api key\\n')`nsys.exit(17)" | Set-Content -LiteralPath $fakeCodex -NoNewline
+            $env:CODEX_BEHAVIOR_MANUAL_TEST_KEY = 'nonproduction-test-value'
+            Push-Location $testRoot
+            try {
+                & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorModel.ps1') -Path $repoRoot -CodexPath $pythonPath -OutputDirectory $observationRoot -ApiKeyEnvironmentVariable CODEX_BEHAVIOR_MANUAL_TEST_KEY 2>$null
+                $LASTEXITCODE | Should -Be 0
+            }
+            finally { Pop-Location }
+            $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
+            $observations.Count | Should -Be 27
+            @($observations | Where-Object { $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 -or $_.failureReason -ne 'AuthenticationFailed: Codex exited with code 17. Retry is not permitted by the governed retry policy.' }).Count | Should -Be 0
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_MANUAL_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_MANUAL_TEST_KEY = $prior }
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $observationRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'hashes the root catalog and a new skill-local README without touching an existing skill file' {
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
         $inputs.SkillPaths | Should -Contain '.agents/suspended-skills/README.md'
@@ -92,7 +119,34 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $report.aggregates.samplesExpected | Should -Be 27
         $report.aggregates.samplesCompleted | Should -Be 27
         $report.limitations -join ' ' | Should -Match 'not deterministic proof'
+        $report.schemaVersion | Should -Be '1.1.0'
+        $report.executionContext | Should -Be 'Local'
+        $report.githubHostedExecution.status | Should -Be 'NotRun'
+        $report.configurationHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths @('governance/codex-skill-behavior-evaluation.psd1'))
+        $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout')
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
+    }
+
+    It 'lets the immutable trust policy govern new transient provider categories without widening the approved configuration' {
+        $inputs = Get-CodexBehaviorInput -Path $repoRoot
+        $configuration = Import-PowerShellDataFile -LiteralPath (Join-Path $repoRoot 'governance/codex-skill-behavior-evaluation.psd1')
+
+        @($configuration.RetryPolicy.RetryableReasons) | Should -Be @('ModelUnavailable', 'TransportTimeout')
+        @($inputs.RetryableProviderFailureReasons) | Should -Be @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
+    }
+
+    It 'does not treat a process environment claim as GitHub-hosted provenance' {
+        $prior = $env:GITHUB_ACTIONS
+        try {
+            $env:GITHUB_ACTIONS = 'true'
+            $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Live
+
+            $report.executionContext | Should -Be 'Local'
+            $report.githubHostedExecution.status | Should -Be 'NotRun'
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:GITHUB_ACTIONS -ErrorAction SilentlyContinue } else { $env:GITHUB_ACTIONS = $prior }
+        }
     }
 
     It 'classifies replay evidence as NotRun even when observations pass' {
@@ -290,6 +344,14 @@ Describe 'Controlled Codex skill behavior evaluation' {
             $contradictory = Join-Path $testRoot 'contradictory.json'
             $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $contradictory -Encoding utf8
             & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/contradictory.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+
+            $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
+            $evidence.executionContext = 'GitHubActions'
+            $evidence.githubHostedExecution.status = if ($evidence.status -eq 'Passed') { 'Blocked' } else { 'Passed' }
+            $hostedStatusMismatch = Join-Path $testRoot 'hosted-status-mismatch.json'
+            $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $hostedStatusMismatch -Encoding utf8
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/hosted-status-mismatch.json' 2>$null
             $LASTEXITCODE | Should -Be 1
         }
         finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }

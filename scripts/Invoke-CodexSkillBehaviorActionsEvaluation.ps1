@@ -33,7 +33,7 @@ $provider = {
     param($case, $index, $config)
     if ($declaredUnavailableReason) {
         $detail = if ($declaredUnavailableDetail) { $declaredUnavailableDetail } else { 'The approved model transport was unavailable.' }
-        return [pscustomobject]@{ status = 'Blocked'; attemptCount = 2; failureReason = "$declaredUnavailableReason`: $detail" }
+        return [pscustomobject]@{ status = 'Blocked'; attemptCount = 1; failureReason = "PreflightUnavailable: $declaredUnavailableReason`: $detail" }
     }
     $file = Join-Path $observations ("{0}.{1}.json" -f $case.caseId, $index)
     if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { return [pscustomobject]@{ status = 'Blocked'; failureReason = 'Required observation file is missing from this partial run.' } }

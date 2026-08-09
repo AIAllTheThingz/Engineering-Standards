@@ -1,27 +1,31 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "evidenceKind": "ProbabilisticCodexSkillBehaviorEvaluation",
   "evaluatorVersion": "1.0.0",
   "scoringContractVersion": "1.0.0",
   "configurationId": "codex-skill-behavior-gpt-5.6-sol-medium-v1",
   "configurationHash": "743dd761caaf2e465a4d747f3b5cabc94b416b5f608663e93e232f6691cbaebb",
-  "evaluatorHash": "95600170e7a0890b10ba96af0d648785aea302386e2fba1fb68b28380b1a48e2",
+  "evaluatorHash": "30925d9455072e76abf9292811a3c0685a913132a7fc6579697ff792fb2dd21a",
   "corpusHash": "3d2286de0c3f3327492dc9780e69f23fa28b0bf32d1ce4faf0f99a9c2d7ebac8",
   "skillInputHash": "e1cd34a5714e4f8d9cb831fc6fa70e19b28a9ac0f38184bcc4bcccc3d175ce9e",
   "authorityHash": "5c7e3b80a396a4d2582cc38176c178a5fad6ecb2c4a38a087ba2c40639125571",
-  "evaluatedCommitSha": "0ab6eb0035f728c8be27fbdddb0ed6d4f1000fb0",
+  "evaluatedCommitSha": "613ee76f9bac159f2fb63c1db0e1c21535f91b83",
   "executionMode": "Live",
+  "executionContext": "Local",
+  "githubHostedExecution": {
+    "status": "NotRun"
+  },
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "Blocked",
-  "startedAtUtc": "2026-07-20T03:09:37.3725414Z",
-  "completedAtUtc": "2026-07-20T03:09:37.7483412Z",
+  "startedAtUtc": "2026-08-09T01:23:45.0224807Z",
+  "completedAtUtc": "2026-08-09T01:23:45.4417312Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
     "modelId": "gpt-5.6-sol",
     "reasoningEffort": "medium",
-    "runnerVersion": "local-ci-evidence-refresh"
+    "runnerVersion": "codex-cli unavailable"
   },
   "sampling": {
     "samplesPerCase": 3,
@@ -79,7 +83,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -88,13 +92,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.5394555Z",
-          "completedAtUtc": "2026-07-20T03:09:37.5394555Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.2598811Z",
+          "completedAtUtc": "2026-08-09T01:23:45.2598811Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -103,13 +107,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.5784584Z",
-          "completedAtUtc": "2026-07-20T03:09:37.5784584Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.2851498Z",
+          "completedAtUtc": "2026-08-09T01:23:45.2851498Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -118,9 +122,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.5894279Z",
-          "completedAtUtc": "2026-07-20T03:09:37.5894279Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.2859251Z",
+          "completedAtUtc": "2026-08-09T01:23:45.2859251Z"
         }
       ]
     },
@@ -139,7 +143,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -148,13 +152,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6232571Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6232571Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3275198Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3275198Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -163,13 +167,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6243698Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6243698Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3282993Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3282993Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -178,9 +182,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6251538Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6251538Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3290532Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3290532Z"
         }
       ]
     },
@@ -199,7 +203,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -208,13 +212,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6277144Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6277144Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3314443Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3314443Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -223,13 +227,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6284883Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6284883Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3320436Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3320436Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -238,9 +242,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6291578Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6291578Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3327196Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3327196Z"
         }
       ]
     },
@@ -259,7 +263,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -268,13 +272,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6317323Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6317323Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3353027Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3353027Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -283,13 +287,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6324643Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6324643Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3359941Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3359941Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -298,9 +302,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6330945Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6330945Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3366489Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3366489Z"
         }
       ]
     },
@@ -319,7 +323,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -328,13 +332,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6352157Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6352157Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3383582Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3383582Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -343,13 +347,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6360340Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6360340Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3390053Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3390053Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -358,9 +362,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6367727Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6367727Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3397122Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3397122Z"
         }
       ]
     },
@@ -379,7 +383,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -388,13 +392,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6396105Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6396105Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3423750Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3423750Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -403,13 +407,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6407109Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6407109Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3429773Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3429773Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -418,9 +422,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6420714Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6420714Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3436499Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3436499Z"
         }
       ]
     },
@@ -439,7 +443,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -448,13 +452,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6454132Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6454132Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3459808Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3459808Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -463,13 +467,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6464255Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6464255Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3466262Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3466262Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -478,9 +482,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6473702Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6473702Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3472622Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3472622Z"
         }
       ]
     },
@@ -499,7 +503,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -508,13 +512,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6496046Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6496046Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3487686Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3487686Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -523,13 +527,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6505988Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6505988Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3493581Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3493581Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -538,9 +542,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6515558Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6515558Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3499654Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3499654Z"
         }
       ]
     },
@@ -559,7 +563,7 @@
       "samples": [
         {
           "sampleIndex": 1,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -568,13 +572,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6536493Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6536493Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3514170Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3514170Z"
         },
         {
           "sampleIndex": 2,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -583,13 +587,13 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6546052Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6546052Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3520231Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3520231Z"
         },
         {
           "sampleIndex": 3,
-          "attemptCount": 2,
+          "attemptCount": 1,
           "status": "Blocked",
           "selection": null,
           "safetyOutcome": null,
@@ -598,9 +602,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "ModelUnavailable: Live model evaluation was intentionally unavailable; no OPENAI_API_KEY or paid model evaluation was used.",
-          "startedAtUtc": "2026-07-20T03:09:37.6554562Z",
-          "completedAtUtc": "2026-07-20T03:09:37.6554562Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T01:23:45.3526285Z",
+          "completedAtUtc": "2026-08-09T01:23:45.3526285Z"
         }
       ]
     }

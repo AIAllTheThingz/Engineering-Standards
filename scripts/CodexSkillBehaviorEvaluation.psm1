@@ -26,6 +26,26 @@ function Get-BoundedInputHash {
 function Get-CodexBehaviorInput {
     param([Parameter(Mandatory)][string]$Path)
     $root = (Resolve-Path -LiteralPath $Path).Path
+    $trustPolicy = Import-PowerShellDataFile -LiteralPath (Join-Path $root '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1')
+    $retryableProviderFailureReasons = @($trustPolicy.RetryableProviderFailureReasons)
+    $expectedRetryableProviderFailureReasons = @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
+    if ($retryableProviderFailureReasons.Count -ne $expectedRetryableProviderFailureReasons.Count -or
+        @($retryableProviderFailureReasons | Where-Object { $_ -notin $expectedRetryableProviderFailureReasons }).Count -gt 0 -or
+        @($retryableProviderFailureReasons | Select-Object -Unique).Count -ne $retryableProviderFailureReasons.Count) {
+        throw 'The trusted provider retry policy is malformed.'
+    }
+    $configurationPath = 'governance/codex-skill-behavior-evaluation.psd1'
+    $configuration = Import-PowerShellDataFile -LiteralPath (Join-Path $root $configurationPath)
+    $configuredRetryableProviderFailureReasons = @($configuration.RetryPolicy.RetryableReasons)
+    # The configuration is hash-approved before this evaluator runs. It cannot
+    # expand the immutable provider retry policy; it may retain a narrower,
+    # legacy list while the trusted policy governs newly classified transient
+    # provider failures.
+    if ($configuredRetryableProviderFailureReasons -is [string] -or $configuredRetryableProviderFailureReasons.Count -lt 1 -or
+        @($configuredRetryableProviderFailureReasons | Where-Object { $_ -notin $retryableProviderFailureReasons }).Count -gt 0 -or
+        @($configuredRetryableProviderFailureReasons | Select-Object -Unique).Count -ne $configuredRetryableProviderFailureReasons.Count) {
+        throw 'The approved behavior configuration retry policy must not expand the trusted provider retry policy.'
+    }
     $corpus = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests/fixtures/codex-skills/prompt-behavior') -Filter '*.json' -File | Sort-Object Name)
     if ($corpus.Count -lt 1) { throw 'The governed prompt corpus is empty.' }
     $caseIds = @{}
@@ -45,8 +65,9 @@ function Get-CodexBehaviorInput {
         CorpusPaths = @($corpus | ForEach-Object { ([IO.Path]::GetRelativePath($root, $_.FullName)).Replace('\','/') })
         SkillPaths = @($skillFiles | ForEach-Object { ([IO.Path]::GetRelativePath($root, $_.FullName)).Replace('\','/') })
         AuthorityPaths = $authorityPaths
-        ConfigurationPath = 'governance/codex-skill-behavior-evaluation.psd1'
+        ConfigurationPath = $configurationPath
         EvaluatorPaths = @('scripts/CodexSkillBehaviorEvaluation.psm1', 'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1', 'scripts/Invoke-CodexSkillBehaviorModel.ps1', 'scripts/Test-CodexSkillBehaviorEvidence.ps1', 'schemas/codex-skill-behavior-evaluation.schema.json', 'schemas/codex-skill-behavior-observation.schema.json')
+        RetryableProviderFailureReasons = $retryableProviderFailureReasons
     }
 }
 
@@ -177,13 +198,18 @@ function Invoke-CodexSkillBehaviorEvaluation {
     $decisionAction = if ($overall -eq 'Passed') { 'Continue' } elseif ($skillStatus -eq 'Active' -and $overall -in @($config.Promotion.SuspensionStatuses)) { 'Suspend' } else { 'BlockPromotion' }
     $notRunReason = if ($ExecutionMode -eq 'Replay') { 'Replay exercises the evaluator contract but is not a live probabilistic model evaluation.' } else { $null }
     $blockedReason = if ($overall -eq 'Blocked') { 'At least one required model sample was incomplete or unusable; evaluation failed closed.' } else { $null }
+    # Process environment variables cannot authenticate GitHub-hosted provenance.
+    # A behavior report is therefore local evidence only; authoritative hosted
+    # execution is established by the separately verified workflow artifact.
+    $executionContext = 'Local'
+    $githubHostedExecutionStatus = 'NotRun'
     [pscustomobject]@{
-        schemaVersion = '1.0.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
+        schemaVersion = '1.1.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
         configurationId = $config.ConfigurationId; configurationHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths @($inputs.ConfigurationPath)
         evaluatorHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.EvaluatorPaths
         corpusHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.CorpusPaths; skillInputHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.SkillPaths
         authorityHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.AuthorityPaths
-        evaluatedCommitSha = $EvaluatedCommitSha; executionMode = $ExecutionMode; probabilistic = $true; deterministicStructureStatus = 'Passed'; status = $overall
+        evaluatedCommitSha = $EvaluatedCommitSha; executionMode = $ExecutionMode; executionContext = $executionContext; githubHostedExecution = [pscustomobject]@{ status = $githubHostedExecutionStatus }; probabilistic = $true; deterministicStructureStatus = 'Passed'; status = $overall
         startedAtUtc = $started.ToString('o'); completedAtUtc = [DateTime]::UtcNow.ToString('o')
         model = [pscustomobject]@{ provider = $config.Model.Provider; surface = $config.Model.Surface; modelId = $config.Model.ModelId; reasoningEffort = $config.Model.ReasoningEffort; runnerVersion = $RunnerVersion }
         sampling = [pscustomobject]@{ samplesPerCase = $config.Sampling.SamplesPerCase; temperature = $config.Sampling.Temperature; topP = $config.Sampling.TopP; seed = $config.Sampling.Seed; unsupportedParameterReason = $config.Sampling.UnsupportedParameterReason }

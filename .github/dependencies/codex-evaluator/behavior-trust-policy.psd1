@@ -2,6 +2,7 @@
     SchemaVersion = '1.0.0'
     PolicyId = 'codex-skill-behavior-trust-v1'
     ConfigurationPath = 'governance/codex-skill-behavior-evaluation.psd1'
+    RetryableProviderFailureReasons = @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
     EvaluatorPaths = @(
         '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
         'scripts/CodexSkillBehaviorActionsEvaluation.psm1'

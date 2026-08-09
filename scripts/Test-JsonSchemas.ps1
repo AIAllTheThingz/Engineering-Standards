@@ -43,6 +43,7 @@ $map = @{
     'governance-config' = 'governance-config'
     'verified-run' = 'verified-run'
     'standards-consistency' = 'standards-consistency'
+    'codex-skill-behavior-evaluation' = 'codex-skill-behavior-evaluation'
 }
 foreach ($mode in @('valid','invalid')) {
     $fixtureRoot = Join-Path $root "tests/fixtures/$mode"
@@ -52,7 +53,19 @@ foreach ($mode in @('valid','invalid')) {
             if ($fixture.BaseName -like "$key*") { $kind = $map[$key] }
         }
         if (-not $kind) { continue }
-        $fixtureResults = @(Test-GovernanceJsonDocument -Path $fixture.FullName -Kind $kind)
+        if ($kind -eq 'codex-skill-behavior-evaluation') {
+            try {
+                $schemaPath = Join-Path $root 'schemas/codex-skill-behavior-evaluation.schema.json'
+                $schemaValid = (Get-Content -LiteralPath $fixture.FullName -Raw | Test-Json -SchemaFile $schemaPath -ErrorAction Stop)
+                $fixtureResults = @((New-ValidationResult -Status $(if ($schemaValid) { 'Passed' } else { 'Failed' }) -Message 'Codex behavior evidence fixture schema validation completed.' -Path $fixture.FullName))
+            }
+            catch {
+                $fixtureResults = @((New-ValidationResult -Status Failed -Message "Codex behavior evidence fixture schema validation failed: $($_.Exception.Message)" -Path $fixture.FullName))
+            }
+        }
+        else {
+            $fixtureResults = @(Test-GovernanceJsonDocument -Path $fixture.FullName -Kind $kind)
+        }
         $hasFailure = @($fixtureResults | Where-Object status -eq 'Failed').Count -gt 0
         if ($mode -eq 'valid' -and -not $hasFailure) {
             $results.Add((New-ValidationResult -Status Passed -Message 'Valid fixture accepted.' -Path $fixture.FullName -Severity info))
@@ -64,6 +77,47 @@ foreach ($mode in @('valid','invalid')) {
             $results.Add((New-ValidationResult -Status Failed -Message 'Fixture expectation failed.' -Path $fixture.FullName -Data $fixtureResults))
         }
     }
+}
+
+$behaviorSchemaPath = Join-Path $root 'schemas/codex-skill-behavior-evaluation.schema.json'
+$behaviorFixturePath = Join-Path $root 'tests/fixtures/valid/codex-skill-behavior-evaluation-retryable-reasons.json'
+try {
+    $behaviorFixtureRaw = Get-Content -LiteralPath $behaviorFixturePath -Raw
+    $legacyEvidence = $behaviorFixtureRaw | ConvertFrom-Json
+    $legacyEvidence.schemaVersion = '1.0.0'
+    $legacyEvidence.PSObject.Properties.Remove('executionContext')
+    $legacyEvidence.PSObject.Properties.Remove('githubHostedExecution')
+    $legacyEvidence.retryPolicy.retryableReasons = @('ModelUnavailable', 'TransportTimeout')
+    $legacyIsAccepted = $legacyEvidence | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $behaviorSchemaPath -ErrorAction Stop
+
+    $legacyWithProvenance = $behaviorFixtureRaw | ConvertFrom-Json
+    $legacyWithProvenance.schemaVersion = '1.0.0'
+    try {
+        $legacyProvenanceIsRejected = -not ($legacyWithProvenance | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $behaviorSchemaPath -ErrorAction Stop)
+    }
+    catch {
+        $legacyProvenanceIsRejected = $true
+    }
+
+    $legacyWithExpandedRetryReasons = $behaviorFixtureRaw | ConvertFrom-Json
+    $legacyWithExpandedRetryReasons.schemaVersion = '1.0.0'
+    $legacyWithExpandedRetryReasons.PSObject.Properties.Remove('executionContext')
+    $legacyWithExpandedRetryReasons.PSObject.Properties.Remove('githubHostedExecution')
+    try {
+        $legacyExpandedReasonsAreRejected = -not ($legacyWithExpandedRetryReasons | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $behaviorSchemaPath -ErrorAction Stop)
+    }
+    catch {
+        $legacyExpandedReasonsAreRejected = $true
+    }
+    if ($legacyIsAccepted -and $legacyProvenanceIsRejected -and $legacyExpandedReasonsAreRejected) {
+        $results.Add((New-ValidationResult -Status Passed -Message 'Behavior evidence schema preserves 1.0.0 provenance and retry-reason compatibility while limiting expanded transient reasons to 1.1.0.' -Path $behaviorSchemaPath -Severity info))
+    }
+    else {
+        $results.Add((New-ValidationResult -Status Failed -Message 'Behavior evidence schema does not correctly separate 1.0.0 and 1.1.0 provenance or retry-reason contracts.' -Path $behaviorSchemaPath))
+    }
+}
+catch {
+    $results.Add((New-ValidationResult -Status Failed -Message "Behavior evidence schema compatibility validation failed: $($_.Exception.Message)" -Path $behaviorSchemaPath))
 }
 
 $releaseLifecycleValidator = Join-Path $root 'scripts/Test-ReleaseLifecycle.ps1'

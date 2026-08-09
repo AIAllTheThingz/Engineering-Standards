@@ -126,6 +126,23 @@ function Test-BashExampleWrapperControls {
     @($failures)
 }
 
+function Get-BashCompletionEvidenceInputChanges {
+    param([Parameter(Mandatory)][string[]]$ChangedPaths)
+
+    $validatorDependencies = @(
+        'scripts/GovernanceValidation.psm1',
+        'scripts/GovernanceValidation.Legacy.psm1',
+        'scripts/Install-BashProjectToolchain.py',
+        'scripts/bash-project-validation.py',
+        'scripts/Normalize-BashFunctionalEvidence.py',
+        'scripts/New-CompletionEvidence.ps1'
+    )
+    @($ChangedPaths | Where-Object {
+        $_.StartsWith('examples/bash-project/', [StringComparison]::Ordinal) -or
+        $validatorDependencies -ccontains $_
+    })
+}
+
 function Test-BashDriverControls {
     param([Parameter(Mandatory)][string]$Text)
     $failures = [Collections.Generic.List[string]]::new()
@@ -364,10 +381,27 @@ Describe 'Governed Bash project support' {
             'tests/scripts/StandardsConsistencyAlias.Tests.ps1',
             'tests/scripts/VerifiedRunBranch.Tests.ps1'
         )
-        @($changedAfterValidation | Where-Object {
+        # Completion evidence is owned by the Bash example and its standards-owned
+        # validator dependencies. Independent changes must not invalidate it.
+        $changedCompletionEvidenceInputs = @(Get-BashCompletionEvidenceInputChanges -ChangedPaths $changedAfterValidation)
+        @($changedCompletionEvidenceInputs | Where-Object {
             -not $_.StartsWith('examples/bash-project/evidence/', [StringComparison]::Ordinal) -and
             $allowedAfterValidation -cnotcontains $_
         }) | Should -BeNullOrEmpty
+    }
+
+    It 'tracks standards-owned Bash completion validator dependencies' {
+        $changed = @(Get-BashCompletionEvidenceInputChanges -ChangedPaths @(
+            'docs/TROUBLESHOOTING.md',
+            'examples/bash-project/README.md',
+            'scripts/bash-project-validation.py',
+            'scripts/New-CompletionEvidence.ps1'
+        ))
+
+        $changed | Should -Contain 'examples/bash-project/README.md'
+        $changed | Should -Contain 'scripts/bash-project-validation.py'
+        $changed | Should -Contain 'scripts/New-CompletionEvidence.ps1'
+        $changed | Should -Not -Contain 'docs/TROUBLESHOOTING.md'
     }
 
     It 'detects local completion identity and NotRun metadata mutations' -ForEach @(

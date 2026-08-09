@@ -43,6 +43,8 @@ try {
         if ($evidence.PSObject.Properties.Name -notcontains $property) { throw "Evidence is missing required property '$property'." }
     }
     if ($evidence.status -notin @('Passed','Failed','NotRun','Blocked','NotApplicable')) { throw 'Evidence uses a noncanonical status.' }
+    $usesExecutionProvenance = $evidence.schemaVersion -ceq '1.1.0'
+    if ($usesExecutionProvenance -and ($evidence.executionContext -ne 'Local' -or $evidence.githubHostedExecution.status -ne 'NotRun')) { throw 'Behavior evidence cannot claim GitHub-hosted execution without a separately verified workflow artifact.' }
     if (-not $evidence.probabilistic -or ($evidence.limitations -join ' ') -notmatch 'not deterministic proof') { throw 'Evidence must explicitly identify probabilistic limitations.' }
     if ($evidence.configurationId -ne $config.ConfigurationId -or $evidence.evaluatorVersion -ne $config.EvaluatorVersion -or $evidence.scoringContractVersion -ne $config.ScoringContractVersion) { throw 'Evidence version or approved configuration identity is stale.' }
     if ($evidence.configurationHash -ne $inputs.ConfigurationHash) { throw 'Evidence configuration hash is stale or fabricated.' }

@@ -13,7 +13,7 @@
     "humanAdjudication", "decision", "notRunReason", "blockedReason", "warnings", "limitations"
   ],
   "properties": {
-    "schemaVersion": { "const": "1.0.0" },
+    "schemaVersion": { "enum": ["1.0.0", "1.1.0"] },
     "evidenceKind": { "const": "ProbabilisticCodexSkillBehaviorEvaluation" },
     "evaluatorVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "scoringContractVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
@@ -25,6 +25,14 @@
     "authorityHash": { "$ref": "#/$defs/sha256" },
     "evaluatedCommitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
     "executionMode": { "enum": ["Live", "Replay"] },
+    "executionContext": { "const": "Local" },
+    "githubHostedExecution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" }
+      }
+    },
     "probabilistic": { "const": true },
     "deterministicStructureStatus": { "$ref": "#/$defs/status" },
     "status": { "$ref": "#/$defs/status" },
@@ -57,7 +65,7 @@
       "required": ["maximumTransportRetries", "retryableReasons", "retryDelaySeconds", "preserveEveryAttempt", "retryMalformedOutput", "retryThresholdFailure"],
       "properties": {
         "maximumTransportRetries": { "type": "integer", "minimum": 0, "maximum": 3 },
-        "retryableReasons": { "type": "array", "items": { "enum": ["ModelUnavailable", "TransportTimeout"] }, "uniqueItems": true },
+        "retryableReasons": { "type": "array", "items": { "enum": ["ModelUnavailable", "TransportTimeout", "TransportFailure", "ProviderError"] }, "uniqueItems": true },
         "retryDelaySeconds": { "type": "integer", "minimum": 0, "maximum": 30 },
         "preserveEveryAttempt": { "const": false },
         "retryMalformedOutput": { "const": false },
@@ -178,6 +186,33 @@
     }
   },
   "allOf": [
+    {
+      "if": { "properties": { "schemaVersion": { "const": "1.0.0" } }, "required": ["schemaVersion"] },
+      "then": {
+        "allOf": [
+          { "not": { "anyOf": [{ "required": ["executionContext"] }, { "required": ["githubHostedExecution"] }] } },
+          {
+            "properties": {
+              "retryPolicy": {
+                "properties": {
+                  "retryableReasons": {
+                    "items": { "enum": ["ModelUnavailable", "TransportTimeout"] }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": { "properties": { "schemaVersion": { "const": "1.1.0" } }, "required": ["schemaVersion"] },
+      "then": { "required": ["executionContext", "githubHostedExecution"] }
+    },
+    {
+      "if": { "properties": { "schemaVersion": { "const": "1.1.0" }, "executionContext": { "const": "Local" } }, "required": ["schemaVersion", "executionContext"] },
+      "then": { "properties": { "githubHostedExecution": { "properties": { "status": { "const": "NotRun" } } } } }
+    },
     { "if": { "properties": { "status": { "const": "NotRun" } } }, "then": { "properties": { "notRunReason": { "type": "string", "minLength": 10 } } } },
     { "if": { "properties": { "status": { "const": "Blocked" } } }, "then": { "properties": { "blockedReason": { "type": "string", "minLength": 10 } } } }
   ]
