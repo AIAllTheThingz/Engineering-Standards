@@ -5,11 +5,11 @@
   "scoringContractVersion": "1.0.0",
   "configurationId": "codex-skill-behavior-gpt-5.6-sol-medium-v1",
   "configurationHash": "743dd761caaf2e465a4d747f3b5cabc94b416b5f608663e93e232f6691cbaebb",
-  "evaluatorHash": "30925d9455072e76abf9292811a3c0685a913132a7fc6579697ff792fb2dd21a",
+  "evaluatorHash": "54a230258fb2991f01a6f803f4b855a9580a4be40b0444d8fc634a1e81551c08",
   "corpusHash": "3d2286de0c3f3327492dc9780e69f23fa28b0bf32d1ce4faf0f99a9c2d7ebac8",
   "skillInputHash": "e1cd34a5714e4f8d9cb831fc6fa70e19b28a9ac0f38184bcc4bcccc3d175ce9e",
   "authorityHash": "5c7e3b80a396a4d2582cc38176c178a5fad6ecb2c4a38a087ba2c40639125571",
-  "evaluatedCommitSha": "613ee76f9bac159f2fb63c1db0e1c21535f91b83",
+  "evaluatedCommitSha": "43ca9cd953b12eb44e761e96ff95392c6363fe76",
   "executionMode": "Live",
   "executionContext": "Local",
   "githubHostedExecution": {
@@ -18,14 +18,14 @@
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "Blocked",
-  "startedAtUtc": "2026-08-09T01:23:45.0224807Z",
-  "completedAtUtc": "2026-08-09T01:23:45.4417312Z",
+  "startedAtUtc": "2026-08-09T06:35:01.3005089Z",
+  "completedAtUtc": "2026-08-09T06:35:01.6861992Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
     "modelId": "gpt-5.6-sol",
     "reasoningEffort": "medium",
-    "runnerVersion": "codex-cli unavailable"
+    "runnerVersion": ""
   },
   "sampling": {
     "samplesPerCase": 3,
@@ -92,9 +92,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.2598811Z",
-          "completedAtUtc": "2026-08-09T01:23:45.2598811Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5080501Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5080501Z"
         },
         {
           "sampleIndex": 2,
@@ -107,9 +107,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.2851498Z",
-          "completedAtUtc": "2026-08-09T01:23:45.2851498Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5342138Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5342138Z"
         },
         {
           "sampleIndex": 3,
@@ -122,9 +122,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.2859251Z",
-          "completedAtUtc": "2026-08-09T01:23:45.2859251Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5350584Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5350584Z"
         }
       ]
     },
@@ -152,9 +152,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3275198Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3275198Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5645685Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5645685Z"
         },
         {
           "sampleIndex": 2,
@@ -167,9 +167,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3282993Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3282993Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5654244Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5654244Z"
         },
         {
           "sampleIndex": 3,
@@ -182,9 +182,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3290532Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3290532Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5661611Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5661611Z"
         }
       ]
     },
@@ -212,9 +212,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3314443Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3314443Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5689390Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5689390Z"
         },
         {
           "sampleIndex": 2,
@@ -227,9 +227,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3320436Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3320436Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5696693Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5696693Z"
         },
         {
           "sampleIndex": 3,
@@ -242,9 +242,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3327196Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3327196Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5703782Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5703782Z"
         }
       ]
     },
@@ -272,9 +272,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3353027Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3353027Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5729469Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5729469Z"
         },
         {
           "sampleIndex": 2,
@@ -287,9 +287,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3359941Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3359941Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5736798Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5736798Z"
         },
         {
           "sampleIndex": 3,
@@ -302,9 +302,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3366489Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3366489Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5743858Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5743858Z"
         }
       ]
     },
@@ -332,9 +332,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3383582Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3383582Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5761224Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5761224Z"
         },
         {
           "sampleIndex": 2,
@@ -347,9 +347,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3390053Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3390053Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5767844Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5767844Z"
         },
         {
           "sampleIndex": 3,
@@ -362,9 +362,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3397122Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3397122Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5774969Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5774969Z"
         }
       ]
     },
@@ -392,9 +392,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3423750Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3423750Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5804263Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5804263Z"
         },
         {
           "sampleIndex": 2,
@@ -407,9 +407,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3429773Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3429773Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5811416Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5811416Z"
         },
         {
           "sampleIndex": 3,
@@ -422,9 +422,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3436499Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3436499Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5818074Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5818074Z"
         }
       ]
     },
@@ -452,9 +452,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3459808Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3459808Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5844182Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5844182Z"
         },
         {
           "sampleIndex": 2,
@@ -467,9 +467,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3466262Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3466262Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5851065Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5851065Z"
         },
         {
           "sampleIndex": 3,
@@ -482,9 +482,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3472622Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3472622Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5857567Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5857567Z"
         }
       ]
     },
@@ -512,9 +512,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3487686Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3487686Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5873505Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5873505Z"
         },
         {
           "sampleIndex": 2,
@@ -527,9 +527,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3493581Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3493581Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5880980Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5880980Z"
         },
         {
           "sampleIndex": 3,
@@ -542,9 +542,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3499654Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3499654Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5887187Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5887187Z"
         }
       ]
     },
@@ -572,9 +572,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3514170Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3514170Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5903221Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5903221Z"
         },
         {
           "sampleIndex": 2,
@@ -587,9 +587,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3520231Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3520231Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5909389Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5909389Z"
         },
         {
           "sampleIndex": 3,
@@ -602,9 +602,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: No approved provider credential was supplied for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T01:23:45.3526285Z",
-          "completedAtUtc": "2026-08-09T01:23:45.3526285Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
+          "startedAtUtc": "2026-08-09T06:35:01.5916583Z",
+          "completedAtUtc": "2026-08-09T06:35:01.5916583Z"
         }
       ]
     }
