@@ -208,6 +208,14 @@ then validates and persists the existing
 contract. Malformed, incomplete, unexpected, or credential-containing model
 responses fail closed; the persisted observation contract remains the
 authoritative backward-compatible evidence boundary.
+Before corpus collection, the trusted runner performs one bounded preflight with
+the same governed `codex exec` arguments. The retry-provider overrides that
+conflict with Codex's reserved `openai` provider are intentionally absent. A
+permanent preflight failure is classified without retaining diagnostics and
+produces the canonical blocked observation for every required sample slot; it
+does not repeatedly invoke Codex for a failure that already prevents evaluation.
+Model-output files and in-memory JSON are both limited by the approved
+`MaximumOutputBytes` before schema validation or deserialization.
 Behavior-evidence version `1.2.0` retains the immutable legacy evaluator hash
 for pre-merge compatibility and adds `persistenceBoundaryHash`, which binds the
 shared persistence module, both observation-producing runners, and the

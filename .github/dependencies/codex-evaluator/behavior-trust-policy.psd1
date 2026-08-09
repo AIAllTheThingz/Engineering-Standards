@@ -12,6 +12,15 @@
         'schemas/codex-skill-behavior-evaluation.schema.json'
         'schemas/codex-skill-behavior-observation.schema.json'
     )
+    # This independently binds the code that receives model output before it
+    # can become a persisted observation. Keep this list identical to the
+    # manual evaluator's persistence-boundary contract.
+    PersistenceBoundaryPaths = @(
+        'scripts/CodexSkillBehaviorActionsEvaluation.psm1'
+        'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1'
+        'scripts/Invoke-CodexSkillBehaviorModel.ps1'
+        'schemas/codex-skill-behavior-model-output.schema.json'
+    )
     InputLimits = @{
         MaximumConfigurationBytes = 16384
         MaximumPromptFileCount = 64

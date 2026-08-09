@@ -43,12 +43,18 @@ try {
         if ($evidence.PSObject.Properties.Name -notcontains $property) { throw "Evidence is missing required property '$property'." }
     }
     if ($evidence.status -notin @('Passed','Failed','NotRun','Blocked','NotApplicable')) { throw 'Evidence uses a noncanonical status.' }
-    $usesExecutionProvenance = $evidence.schemaVersion -ceq '1.1.0'
+    $usesExecutionProvenance = $evidence.schemaVersion -in @('1.1.0','1.2.0')
     if ($usesExecutionProvenance -and ($evidence.executionContext -ne 'Local' -or $evidence.githubHostedExecution.status -ne 'NotRun')) { throw 'Behavior evidence cannot claim GitHub-hosted execution without a separately verified workflow artifact.' }
     if (-not $evidence.probabilistic -or ($evidence.limitations -join ' ') -notmatch 'not deterministic proof') { throw 'Evidence must explicitly identify probabilistic limitations.' }
     if ($evidence.configurationId -ne $config.ConfigurationId -or $evidence.evaluatorVersion -ne $config.EvaluatorVersion -or $evidence.scoringContractVersion -ne $config.ScoringContractVersion) { throw 'Evidence version or approved configuration identity is stale.' }
     if ($evidence.configurationHash -ne $inputs.ConfigurationHash) { throw 'Evidence configuration hash is stale or fabricated.' }
     if ($evidence.evaluatorHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.EvaluatorPaths)) { throw 'Evidence evaluator hash is stale or fabricated.' }
+    $evaluatedEvaluatorSource = (& git -C $root show "$($evidence.evaluatedCommitSha):scripts/CodexSkillBehaviorActionsEvaluation.psm1" 2>$null) -join "`n"
+    if ($LASTEXITCODE -ne 0) { throw 'The evaluated Actions evaluator source is unavailable.' }
+    $requiresPersistenceBoundary = $evaluatedEvaluatorSource -match '\bPersistenceBoundaryPaths\b'
+    if ($requiresPersistenceBoundary -and $evidence.schemaVersion -cne '1.2.0') { throw 'Evidence schema version does not meet the evaluated persistence-boundary contract.' }
+    if ($requiresPersistenceBoundary -and $evidence.PSObject.Properties.Name -notcontains 'persistenceBoundaryHash') { throw 'Evidence is missing the evaluated persistence-boundary hash.' }
+    if ($requiresPersistenceBoundary -and $evidence.persistenceBoundaryHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.PersistenceBoundaryPaths)) { throw 'Evidence persistence-boundary hash is stale or fabricated.' }
     if ($evidence.corpusHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.CorpusPaths)) { throw 'Evidence corpus hash is stale or fabricated.' }
     if ($evidence.skillInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.SkillPaths)) { throw 'Evidence skill input hash is stale or fabricated.' }
     if ($evidence.authorityHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.AuthorityPaths)) { throw 'Evidence authority input hash is stale or fabricated.' }
@@ -59,7 +65,7 @@ try {
     # (for example, a subsequently deleted case or skill file) remain visible.
     # Static inputs stay individually bounded; changing the module that declares
     # those sets is itself an evaluator change.
-    $boundInputPaths = @($inputs.ConfigurationPath) + @($inputs.EvaluatorPaths) + @($inputs.AuthorityPaths) + @(
+    $boundInputPaths = @($inputs.ConfigurationPath) + @($inputs.EvaluatorPaths) + @($inputs.PersistenceBoundaryPaths) + @($inputs.AuthorityPaths) + @(
         'tests/fixtures/codex-skills/prompt-behavior',
         '.agents/skills',
         '.agents/suspended-skills'

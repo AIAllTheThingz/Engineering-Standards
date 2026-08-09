@@ -237,6 +237,11 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Match 'SecretRedaction'
         $runner | Should -Match 'codex-skill-behavior-model-output\.schema\.json'
         $runner | Should -Match 'ConvertTo-CodexBehaviorPersistedObservation'
+        $runner | Should -Match 'New-GovernedCodexBehaviorArguments'
+        $runner | Should -Not -Match 'model_providers\.openai\.(?:request|stream)_max_retries'
+        $runner | Should -Match 'preflight-last-message\.json'
+        $runner | Should -Match 'PreflightUnavailable:'
+        $runner | Should -Match 'MaximumOutputBytes'
         $runner | Should -Not -Match 'Case category:'
         $runner | Should -Not -Match 'Copy-Item -LiteralPath \(Join-Path \$root ''\.agents''\)'
         $runner | Should -Match 'foreach \(\$skillInput in \$inputs\.SkillPaths\)'
@@ -289,7 +294,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
             toolEvents = @('skill-selection-observed')
             unsafeToolAccess = $false
         } | ConvertTo-Json -Depth 8
-        $persisted = ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $modelOutput -AttemptCount 2
+        $persisted = ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $modelOutput -AttemptCount 2 -MaximumOutputBytes 65536
 
         $observation = $persisted | ConvertFrom-Json
         $observation.status | Should -BeExactly 'Passed'
@@ -315,7 +320,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
             unsafeToolAccess = $false
         } | ConvertTo-Json -Depth 8
 
-        { ConvertTo-CodexBehaviorPersistedObservation -Root $untrustedRoot -TrustedSchemaRoot $repoRoot -ModelOutputJson $modelOutput -AttemptCount 1 } | Should -Throw '*Model output did not satisfy the model output contract*'
+        { ConvertTo-CodexBehaviorPersistedObservation -Root $untrustedRoot -TrustedSchemaRoot $repoRoot -ModelOutputJson $modelOutput -AttemptCount 1 -MaximumOutputBytes 65536 } | Should -Throw '*Model output did not satisfy the model output contract*'
     }
 
     It 'fails closed for malformed, incomplete, and unexpected model output' -ForEach @(
@@ -323,7 +328,14 @@ Describe 'Controlled Codex skill behavior evaluation' {
         @{ name = 'incomplete'; json = '{"selection":"Selected","safetyOutcome":"Proceed","responseSummary":"Sanitized structured model output that is long enough to be retained safely.","toolEvents":["skill-selection-observed"],"unsafeToolAccess":false}'; credential = '' }
         @{ name = 'unexpected property'; json = '{"selection":"Selected","safetyOutcome":"Proceed","responseSummary":"Sanitized structured model output that is long enough to be retained safely.","quality":{"taskFit":4,"safety":4,"clarity":4,"governance":4},"toolEvents":["skill-selection-observed"],"unsafeToolAccess":false,"status":"Passed"}'; credential = '' }
     ) {
-        { ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $json -AttemptCount 1 -Credential $credential } | Should -Throw
+        { ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $json -AttemptCount 1 -MaximumOutputBytes 65536 -Credential $credential } | Should -Throw
+    }
+
+    It 'rejects oversized model output before JSON validation or deserialization' {
+        $oversizedModelOutput = '{"selection":"Selected","padding":"' + ('x' * 128) + '"}'
+
+        { ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $oversizedModelOutput -AttemptCount 1 -MaximumOutputBytes 64 } |
+            Should -Throw '*approved byte limit*'
     }
 
     It 'rejects decoded credential material without disclosing it' -ForEach @(
@@ -383,7 +395,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $output = @()
         $thrown = $null
         try {
-            $output = @(ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $modelOutputJson -AttemptCount 1 -Credential $activeCredential)
+            $output = @(ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $modelOutputJson -AttemptCount 1 -MaximumOutputBytes 65536 -Credential $activeCredential)
         }
         catch {
             $thrown = $_
@@ -405,7 +417,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
             unsafeToolAccess = $false
         } | ConvertTo-Json -Depth 8
 
-        $persisted = ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $modelOutput -AttemptCount 1 -Credential 'active-credential-value-not-a-secret'
+        $persisted = ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $modelOutput -AttemptCount 1 -MaximumOutputBytes 65536 -Credential 'active-credential-value-not-a-secret'
 
         ($persisted | ConvertFrom-Json).responseSummary | Should -BeExactly 'The API key must be stored securely and never logged in plaintext.'
     }
@@ -481,6 +493,16 @@ Describe 'Controlled Codex skill behavior evaluation' {
 
         $diagnostic.Category | Should -Be 'UnknownProviderFailure'
         $diagnostic.FailureReason | Should -Not -Match 'bad request'
+    }
+
+    It 'classifies bounded multiline configuration signatures without reclassifying generic HTTP 400 failures' {
+        $multilineSchema = Get-CodexProviderFailureDiagnostic -StandardError "HTTP 400: invalid request`nresponse format rejected because output schema is malformed" -ExitCode 1
+        $multilineCli = Get-CodexProviderFailureDiagnostic -StandardError "Error loading config.toml:`nmodel_providers contains reserved built-in provider IDs: openai" -ExitCode 1
+        $generic = Get-CodexProviderFailureDiagnostic -StandardError "HTTP 400: bad request`nprovider rejected an unspecified field" -ExitCode 1
+
+        $multilineSchema.Category | Should -Be 'ConfigurationError'
+        $multilineCli.Category | Should -Be 'ConfigurationError'
+        $generic.Category | Should -Be 'UnknownProviderFailure'
     }
 
     It 'passes only the model schema to the Actions collector and persists enriched observations' -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
@@ -595,8 +617,8 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
 
     It 'stores only a sanitized diagnostic when a synthetic Codex subprocess fails' -ForEach @(
         @{ Name='non-retryable authentication'; ProviderOutput='HTTP 401 invalid api key'; Category='AuthenticationFailed'; ExpectedAttempts=1; RetryMessage='not permitted' }
-        @{ Name='retryable transport'; ProviderOutput='network error: ECONNRESET'; Category='TransportFailure'; ExpectedAttempts=2; RetryMessage='permitted' }
-        @{ Name='trailing retryable transport'; ProviderOutput=(('x' * 9000) + ' network error: ECONNRESET'); Category='TransportFailure'; ExpectedAttempts=2; RetryMessage='permitted' }
+        @{ Name='retryable transport'; ProviderOutput='network error: ECONNRESET'; Category='TransportFailure'; ExpectedAttempts=1; RetryMessage='permitted' }
+        @{ Name='trailing retryable transport'; ProviderOutput=(('x' * 9000) + ' network error: ECONNRESET'); Category='TransportFailure'; ExpectedAttempts=1; RetryMessage='permitted' }
     ) -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
         $testRoot = Join-Path $TestDrive 'collector-provider-diagnostic'
         $observationRoot = Join-Path $testRoot 'observations'
@@ -623,7 +645,7 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
 
             $observations.Count | Should -Be 27
             @($observations | Where-Object { $_.status -ne 'Blocked' -or $_.attemptCount -ne $ExpectedAttempts }).Count | Should -Be 0
-            @($observations.failureReason | Select-Object -Unique) | Should -Be @("$Category`: Codex exited with code 17. Retry is $RetryMessage by the governed retry policy.")
+            @($observations.failureReason | Select-Object -Unique) | Should -Be @("PreflightUnavailable: $Category`: Codex exited with code 17. Retry is $RetryMessage by the governed retry policy.")
             $serialized = $observations | ConvertTo-Json -Depth 8 -Compress
             $serialized | Should -Not -Match [regex]::Escape($syntheticCredentialMarker)
             $serialized | Should -Not -Match [regex]::Escape($syntheticProjectCredentialMarker)
@@ -663,6 +685,61 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
         }
         finally {
             if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY = $prior }
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'runs one governed preflight for a permanent CLI configuration failure then synthesizes every blocked slot' -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
+        $testRoot = Join-Path $TestDrive 'collector-permanent-preflight'
+        $observationRoot = Join-Path $testRoot 'observations'
+        $pythonPath = (Get-Command python -ErrorAction Stop).Source
+        $counterPath = Join-Path $testRoot 'codex-invocations.txt'
+        $encodedCounterPath = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($counterPath))
+        $prior = $env:CODEX_BEHAVIOR_PERMANENT_PREFLIGHT_TEST_KEY
+        New-Item -ItemType Directory -Path $testRoot | Out-Null
+        try {
+            $fakeCodex = Join-Path $testRoot 'exec'
+            @"
+import base64
+import pathlib
+import sys
+
+counter = pathlib.Path(base64.b64decode('$encodedCounterPath').decode('utf-8'))
+counter.write_text(counter.read_text(encoding='utf-8') + '1' if counter.exists() else '1', encoding='utf-8')
+arguments = sys.argv[1:]
+if 'model_providers.openai.request_max_retries=0' in arguments or 'model_providers.openai.stream_max_retries=0' in arguments:
+    sys.stderr.write('unexpected reserved provider override\\n')
+    sys.exit(91)
+sys.stderr.write('Error loading config.toml: model_providers contains reserved built-in provider IDs: openai. Built-in providers cannot be overridden.\\n')
+sys.exit(17)
+"@ | Set-Content -LiteralPath $fakeCodex -NoNewline
+            $env:CODEX_BEHAVIOR_PERMANENT_PREFLIGHT_TEST_KEY = 'nonproduction-test-value'
+            Push-Location $testRoot
+            try {
+                & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1') -Path $repoRoot -CodexPath $pythonPath -TrustedOutputRoot $testRoot -OutputDirectory $observationRoot -ApiKeyEnvironmentVariable CODEX_BEHAVIOR_PERMANENT_PREFLIGHT_TEST_KEY 2>$null
+                $LASTEXITCODE | Should -Be 0
+            }
+            finally { Pop-Location }
+
+            (Get-Content -LiteralPath $counterPath -Raw) | Should -BeExactly '1'
+            $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
+            $observations.Count | Should -Be 27
+            @($observations | Where-Object {
+                $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 -or
+                $_.failureReason -cne 'PreflightUnavailable: ConfigurationError: Codex exited with code 17. Retry is not permitted by the governed retry policy.' -or
+                $null -ne $_.responseSummary -or @($_.toolEvents).Count -ne 0
+            }).Count | Should -Be 0
+
+            $head = (& git -C $repoRoot rev-parse HEAD).Trim()
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsEvaluation.ps1') -Path $repoRoot -TrustedOutputRoot $testRoot -ObservationDirectory $observationRoot -OutputJson (Join-Path $testRoot 'report.json') -ExecutionMode Live -EvaluatedCommitSha $head 2>$null
+            $LASTEXITCODE | Should -Be 2
+            $report = Get-Content -LiteralPath (Join-Path $testRoot 'report.json') -Raw | ConvertFrom-Json
+            $report.status | Should -Be 'Blocked'
+            $report.aggregates.samplesCompleted | Should -Be 0
+            @($report.caseOutcomes.samples | Where-Object { $_.failureReason -notmatch '^PreflightUnavailable: ConfigurationError:' }).Count | Should -Be 0
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_PERMANENT_PREFLIGHT_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_PERMANENT_PREFLIGHT_TEST_KEY = $prior }
             Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
@@ -830,11 +907,28 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
         $report.aggregates.samplesExpected | Should -Be 27
         $report.aggregates.samplesCompleted | Should -Be 27
         $report.limitations -join ' ' | Should -Match 'not deterministic proof'
-        $report.schemaVersion | Should -Be '1.1.0'
+        $report.schemaVersion | Should -Be '1.2.0'
         $report.executionContext | Should -Be 'Local'
         $report.githubHostedExecution.status | Should -Be 'NotRun'
         $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
+        $report.persistenceBoundaryHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths (Get-CodexBehaviorInput -Path $repoRoot).PersistenceBoundaryPaths)
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
+    }
+
+    It 'keeps 1.0 and 1.1 evidence shapes schema-valid while requiring the current Actions report to bind persistence' {
+        $schemaPath = Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json'
+        $current = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay
+        $legacy11 = $current | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+        $legacy11.schemaVersion = '1.1.0'
+        $legacy11.PSObject.Properties.Remove('persistenceBoundaryHash')
+        ($legacy11 | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $schemaPath) | Should -BeTrue
+
+        $legacy10 = $legacy11 | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+        $legacy10.schemaVersion = '1.0.0'
+        $legacy10.PSObject.Properties.Remove('executionContext')
+        $legacy10.PSObject.Properties.Remove('githubHostedExecution')
+        $legacy10.retryPolicy.retryableReasons = @('ModelUnavailable', 'TransportTimeout')
+        ($legacy10 | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $schemaPath) | Should -BeTrue
     }
 
     It 'does not treat a process environment claim as GitHub-hosted provenance' {
@@ -1007,6 +1101,19 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
         $verifier | Should -Match 'Passing behavior evidence requires an attributable Approved human adjudication'
         $verifier | Should -Match 'Resolve-BehaviorEvidencePath -Candidate \$OutputJson'
         $verifier | Should -Match 'must not traverse a symbolic link, junction, or reparse point'
+    }
+
+    It 'requires the Actions verifier and hosted workflow to reject persistence-boundary downgrade or hash drift' {
+        $verifier = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Raw
+        $workflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github/workflows/codex-skill-behavior.yml') -Raw
+
+        $verifier | Should -Match 'schema version does not meet the evaluated persistence-boundary contract'
+        $verifier | Should -Match 'missing the evaluated persistence-boundary hash'
+        $verifier | Should -Match 'persistence-boundary hash is stale or fabricated'
+        $verifier | Should -Match '\$inputs\.PersistenceBoundaryPaths'
+        $workflow | Should -Match '\$evidence\.schemaVersion -cne ''1\.2\.0'''
+        $workflow | Should -Match 'persistenceBoundaryHash'
+        $workflow | Should -Match '\$trust\.persistenceBoundaryHash'
     }
 
     It 'compares complete dynamic input roots to detect deletions after evaluation' {

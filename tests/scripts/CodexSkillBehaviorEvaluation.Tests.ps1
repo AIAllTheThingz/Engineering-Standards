@@ -26,6 +26,10 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Match 'overallDeadline'
         $runner | Should -Match 'codex-skill-behavior-model-output\.schema\.json'
         $runner | Should -Match 'ConvertTo-CodexBehaviorPersistedObservation'
+        $runner | Should -Match 'New-GovernedCodexBehaviorArguments'
+        $runner | Should -Not -Match 'model_providers\.openai\.(?:request|stream)_max_retries'
+        $runner | Should -Match 'preflight-last-message\.json'
+        $runner | Should -Match 'MaximumOutputBytes'
         $runner | Should -Not -Match 'Case category:'
         $runner | Should -Not -Match 'Copy-Item -LiteralPath \(Join-Path \$root ''\.agents''\)'
         $runner | Should -Match 'foreach \(\$skillInput in \$inputs\.SkillPaths\)'
@@ -59,7 +63,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
             finally { Pop-Location }
             $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
             $observations.Count | Should -Be 27
-            @($observations | Where-Object { $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 -or $_.failureReason -ne 'AuthenticationFailed: Codex exited with code 17. Retry is not permitted by the governed retry policy.' }).Count | Should -Be 0
+            @($observations | Where-Object { $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 -or $_.failureReason -ne 'PreflightUnavailable: AuthenticationFailed: Codex exited with code 17. Retry is not permitted by the governed retry policy.' }).Count | Should -Be 0
         }
         finally {
             if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_MANUAL_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_MANUAL_TEST_KEY = $prior }

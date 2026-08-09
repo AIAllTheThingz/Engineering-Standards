@@ -97,9 +97,10 @@ function Get-CodexProviderFailureCategory {
         'unrecognized (?:option|argument)',
         'invalid (?:option|argument|configuration)',
         'unsupported model (?:option|configuration)',
-        '(?:invalid|unsupported|malformed|rejected|failed).{0,120}(?:json[_ -]?schema|response[_ -]?format|structured[_ -]?outputs?|output[_ -]?schema)',
-        '(?:json[_ -]?schema|response[_ -]?format|structured[_ -]?outputs?|output[_ -]?schema).{0,120}(?:invalid|unsupported|malformed|rejected|failed)',
-        '(?<![0-9])400(?![0-9]).{0,160}(?:json[_ -]?schema|response[_ -]?format|structured[_ -]?outputs?|output[_ -]?schema)'
+        'error loading config\.toml|reserved built-in provider ids|built-in providers cannot be overridden',
+        '(?:invalid|unsupported|malformed|rejected|failed)[\s\S]{0,120}(?:json[_ -]?schema|response[_ -]?format|structured[_ -]?outputs?|output[_ -]?schema)',
+        '(?:json[_ -]?schema|response[_ -]?format|structured[_ -]?outputs?|output[_ -]?schema)[\s\S]{0,120}(?:invalid|unsupported|malformed|rejected|failed)',
+        '(?<![0-9])400(?![0-9])[\s\S]{0,160}(?:json[_ -]?schema|response[_ -]?format|structured[_ -]?outputs?|output[_ -]?schema)'
     )
     if ($normalized -match ($configurationErrorPatterns -join '|')) { [void]$matchedCategories.Add('ConfigurationError') }
     if ($normalized -match 'network error|connection (?:refused|reset|timed out|timeout)|socket hang up|dns (?:lookup )?failed|econn(?:refused|reset)|enotfound|tls handshake') { [void]$matchedCategories.Add('TransportFailure') }
@@ -253,9 +254,13 @@ function ConvertTo-CodexBehaviorPersistedObservation {
         [string]$TrustedSchemaRoot = $Root,
         [Parameter(Mandatory)][AllowEmptyString()][string]$ModelOutputJson,
         [Parameter(Mandatory)][ValidateRange(1, 2147483647)][int]$AttemptCount,
+        [Parameter(Mandatory)][ValidateRange(1, 2147483647)][int]$MaximumOutputBytes,
         [AllowEmptyString()][string]$Credential = ''
     )
 
+    if ([Text.Encoding]::UTF8.GetByteCount($ModelOutputJson) -gt $MaximumOutputBytes) {
+        throw 'Model output exceeded the approved byte limit.'
+    }
     $schemaRoot = (Resolve-Path -LiteralPath $TrustedSchemaRoot).Path
     $modelSchema = Get-CodexBehaviorRegularFile -Root $schemaRoot -RelativePath $script:ModelOutputSchemaRelativePath -MaximumBytes 65536 -Kind 'Model output schema'
     $observationSchema = Get-CodexBehaviorRegularFile -Root $schemaRoot -RelativePath $script:ObservationSchemaRelativePath -MaximumBytes 65536 -Kind 'Observation schema'
@@ -324,11 +329,23 @@ function Import-CodexBehaviorTrustPolicy {
         'ApprovedCategories','ExpectedSelections','ExpectedSafetyOutcomes','ApprovedDeterministicAssertions'
     )
     if ([string]$policy.SchemaVersion -cne '1.0.0' -or [string]$policy.ConfigurationPath -cne $script:ConfigurationRelativePath -or
-        @($policy.ApprovedConfigurations).Count -lt 1 -or @($policy.EvaluatorPaths).Count -lt 1) {
+        @($policy.ApprovedConfigurations).Count -lt 1 -or @($policy.EvaluatorPaths).Count -lt 1 -or
+        @($policy.PersistenceBoundaryPaths).Count -lt 1) {
         throw 'Trusted behavior policy is malformed or incomplete.'
     }
     if ($script:TrustPolicyRelativePath -notin @($policy.EvaluatorPaths) -or $script:ConfigurationRelativePath -in @($policy.EvaluatorPaths)) {
         throw 'Trusted behavior policy must hash-bind itself and keep candidate configuration separate.'
+    }
+    $expectedPersistenceBoundaryPaths = @(
+        'scripts/CodexSkillBehaviorActionsEvaluation.psm1',
+        'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1',
+        'scripts/Invoke-CodexSkillBehaviorModel.ps1',
+        'schemas/codex-skill-behavior-model-output.schema.json'
+    )
+    if (@($policy.PersistenceBoundaryPaths).Count -ne $expectedPersistenceBoundaryPaths.Count -or
+        @($policy.PersistenceBoundaryPaths | Where-Object { $_ -notin $expectedPersistenceBoundaryPaths }).Count -gt 0 -or
+        @($policy.PersistenceBoundaryPaths | Select-Object -Unique).Count -ne @($policy.PersistenceBoundaryPaths).Count) {
+        throw 'Trusted behavior policy has an invalid persistence-boundary path list.'
     }
     foreach ($name in $requiredLimits) {
         if (-not $policy.InputLimits.ContainsKey($name)) { throw 'Trusted behavior policy is missing a required input bound.' }
@@ -460,6 +477,7 @@ function Get-CodexBehaviorInput {
         AuthorityPaths = $authorityPaths
         ConfigurationPath = [string]$policy.ConfigurationPath
         EvaluatorPaths = @($policy.EvaluatorPaths)
+        PersistenceBoundaryPaths = @($policy.PersistenceBoundaryPaths)
         Configuration = $config
         ConfigurationHash = $approved.ConfigurationHash
         ApprovedConfiguration = $approved.ApprovedEntry
@@ -596,6 +614,7 @@ function Test-CodexBehaviorCandidateTrust {
         configurationId = [string]$approved.Configuration.ConfigurationId
         configurationHash = $approved.ConfigurationHash
         evaluatorHash = Get-BoundedInputHash -Root $trustedRoot -RelativePaths @($policy.EvaluatorPaths)
+        persistenceBoundaryHash = Get-BoundedInputHash -Root $trustedRoot -RelativePaths @($policy.PersistenceBoundaryPaths)
         promptFileCount = @($inputs.CorpusPaths).Count
         skillFileCount = @($inputs.SkillPaths).Count
         evaluatorFiles = @($hashes)
@@ -735,9 +754,10 @@ function Invoke-CodexSkillBehaviorEvaluation {
     $executionContext = 'Local'
     $githubHostedExecutionStatus = 'NotRun'
     [pscustomobject]@{
-        schemaVersion = '1.1.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
+        schemaVersion = '1.2.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
         configurationId = $config.ConfigurationId; configurationHash = $inputs.ConfigurationHash
         evaluatorHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.EvaluatorPaths
+        persistenceBoundaryHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.PersistenceBoundaryPaths
         corpusHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.CorpusPaths; skillInputHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.SkillPaths
         authorityHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.AuthorityPaths
         evaluatedCommitSha = $EvaluatedCommitSha; executionMode = $ExecutionMode; executionContext = $executionContext; githubHostedExecution = [pscustomobject]@{ status = $githubHostedExecutionStatus }; probabilistic = $true; deterministicStructureStatus = 'Passed'; status = $overall
