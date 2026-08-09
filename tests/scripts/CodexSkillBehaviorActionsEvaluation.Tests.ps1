@@ -15,7 +15,7 @@ BeforeAll {
 Describe 'Controlled Codex skill behavior evaluation' {
     It 'scopes a mixed governed corpus to the approved configuration skill' {
         $candidate = Join-Path $TestDrive 'mixed-corpus-candidate'
-        & git clone --quiet --no-hardlinks $repoRoot $candidate
+        & git -c core.longpaths=true clone --quiet --no-hardlinks $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $foreignPath = Join-Path $candidate 'tests/fixtures/codex-skills/prompt-behavior/powershell-review-synthetic.json'
         @{
@@ -39,7 +39,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
 
     It 'accepts an exact candidate with trusted evaluator hashes' {
         $candidate = Join-Path $TestDrive 'trusted-candidate'
-        & git clone --quiet --no-hardlinks $repoRoot $candidate
+        & git -c core.longpaths=true clone --quiet --no-hardlinks $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
         foreach ($relativePath in $inputs.EvaluatorPaths) {
@@ -125,9 +125,20 @@ Describe 'Controlled Codex skill behavior evaluation' {
 
     It 'accepts a hash-approved candidate configuration that differs from the trusted default' {
         $candidate = Join-Path $TestDrive 'approved-configuration-candidate'
-        & git clone --quiet --no-hardlinks $repoRoot $candidate
+        & git -c core.longpaths=true clone --quiet --no-hardlinks --no-checkout $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
+        $checkoutPaths = @(
+            '.github/dependencies/codex-evaluator', 'scripts', 'schemas', 'governance',
+            'tests/fixtures/codex-skills/prompt-behavior', '.agents/suspended-skills/enterprise-powershell',
+            '.agents/suspended-skills/README.md', 'AGENTS.md', 'agents'
+        )
+        & git -C $candidate sparse-checkout init --no-cone
+        $LASTEXITCODE | Should -Be 0
+        & git -C $candidate sparse-checkout set --no-cone -- $checkoutPaths
+        $LASTEXITCODE | Should -Be 0
+        & git -C $candidate read-tree -mu HEAD
+        $LASTEXITCODE | Should -Be 0
         foreach ($relativePath in $inputs.EvaluatorPaths) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
@@ -154,9 +165,20 @@ Describe 'Controlled Codex skill behavior evaluation' {
 
     It 'rejects a candidate configuration absent from the trusted allowlist' {
         $candidate = Join-Path $TestDrive 'unapproved-configuration-candidate'
-        & git clone --quiet --no-hardlinks $repoRoot $candidate
+        & git -c core.longpaths=true clone --quiet --no-hardlinks --no-checkout $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
+        $checkoutPaths = @(
+            '.github/dependencies/codex-evaluator', 'scripts', 'schemas', 'governance',
+            'tests/fixtures/codex-skills/prompt-behavior', '.agents/suspended-skills/enterprise-powershell',
+            '.agents/suspended-skills/README.md', 'AGENTS.md', 'agents'
+        )
+        & git -C $candidate sparse-checkout init --no-cone
+        $LASTEXITCODE | Should -Be 0
+        & git -C $candidate sparse-checkout set --no-cone -- $checkoutPaths
+        $LASTEXITCODE | Should -Be 0
+        & git -C $candidate read-tree -mu HEAD
+        $LASTEXITCODE | Should -Be 0
         foreach ($relativePath in $inputs.EvaluatorPaths) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
