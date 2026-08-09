@@ -215,7 +215,7 @@
       "then": { "required": ["executionContext", "githubHostedExecution", "persistenceBoundaryHash"] }
     },
     {
-      "if": { "properties": { "schemaVersion": { "const": "1.1.0" }, "executionContext": { "const": "Local" } }, "required": ["schemaVersion", "executionContext"] },
+      "if": { "properties": { "schemaVersion": { "enum": ["1.1.0", "1.2.0"] }, "executionContext": { "const": "Local" } }, "required": ["schemaVersion", "executionContext"] },
       "then": { "properties": { "githubHostedExecution": { "properties": { "status": { "const": "NotRun" } } } } }
     },
     { "if": { "properties": { "status": { "const": "NotRun" } } }, "then": { "properties": { "notRunReason": { "type": "string", "minLength": 10 } } } },

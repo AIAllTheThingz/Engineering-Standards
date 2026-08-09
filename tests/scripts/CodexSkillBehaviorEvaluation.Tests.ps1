@@ -186,9 +186,14 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
         $report.executionContext | Should -Be 'Local'
         $report.githubHostedExecution.status | Should -Be 'NotRun'
         $report.configurationHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths @('governance/codex-skill-behavior-evaluation.psd1'))
-        $report.persistenceBoundaryHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths (Get-CodexBehaviorInput -Path $repoRoot).PersistenceBoundaryPaths)
+        $persistenceBoundaryPaths = (Get-CodexBehaviorInput -Path $repoRoot).PersistenceBoundaryPaths
+        $persistenceBoundaryPaths | Should -Contain 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1'
+        $persistenceBoundaryPaths | Should -Contain 'scripts/Invoke-CodexSkillBehaviorModel.ps1'
+        $report.persistenceBoundaryHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths $persistenceBoundaryPaths)
         $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout')
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
+        $report.githubHostedExecution.status = 'Passed'
+        ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json') -ErrorAction SilentlyContinue) | Should -BeFalse
     }
 
     It 'lets the immutable trust policy govern new transient provider categories without widening the approved configuration' {
@@ -394,6 +399,14 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
             $persistenceBoundaryMismatch = Join-Path $testRoot 'persistence-boundary-mismatch.json'
             $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $persistenceBoundaryMismatch -Encoding utf8
             & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/persistence-boundary-mismatch.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+
+            $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
+            $evidence.schemaVersion = '1.1.0'
+            $evidence.PSObject.Properties.Remove('persistenceBoundaryHash')
+            $downgraded = Join-Path $testRoot 'downgraded.json'
+            $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $downgraded -Encoding utf8
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/downgraded.json' 2>$null
             $LASTEXITCODE | Should -Be 1
 
             $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json

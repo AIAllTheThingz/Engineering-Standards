@@ -18,6 +18,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'CodexSkillBehaviorActionsEvaluation.psm1') -Force
 $root = (Resolve-Path -LiteralPath $Path).Path
+$trustedSchemaRoot = (Resolve-Path -LiteralPath (Split-Path -Parent $PSScriptRoot)).Path
 $codex = (Resolve-Path -LiteralPath $CodexPath).Path
 $inputs = Get-CodexBehaviorInput -Path $root
 $config = $inputs.Configuration
@@ -58,7 +59,7 @@ try {
         New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
         Copy-Item -LiteralPath (Join-Path $root $authority) -Destination $destination
     }
-    $schema = Join-Path $root 'schemas/codex-skill-behavior-model-output.schema.json'
+    $schema = Join-Path $trustedSchemaRoot 'schemas/codex-skill-behavior-model-output.schema.json'
     $overallDeadline = [DateTime]::UtcNow.AddSeconds([int]$config.Limits.OverallTimeoutSeconds)
     foreach ($case in $inputs.Cases) {
         for ($sample = 1; $sample -le [int]$config.Sampling.SamplesPerCase; $sample++) {
@@ -112,7 +113,7 @@ User request: $($case.prompt)
                         else {
                             try {
                                 $modelOutputJson = Get-Content -LiteralPath $lastMessage -Raw
-                                $persistedObservationJson = ConvertTo-CodexBehaviorPersistedObservation -Root $root -ModelOutputJson $modelOutputJson -AttemptCount $attempt -Credential $credential
+                                $persistedObservationJson = ConvertTo-CodexBehaviorPersistedObservation -Root $root -TrustedSchemaRoot $trustedSchemaRoot -ModelOutputJson $modelOutputJson -AttemptCount $attempt -Credential $credential
                                 $persistedObservationJson | Set-Content -LiteralPath $destination -Encoding utf8
                                 $completed = $true
                             }

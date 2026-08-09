@@ -69,7 +69,7 @@ function Get-CodexBehaviorInput {
         # This compatibility set is validated by the immutable pre-merge
         # verifier. New persistence inputs are bound independently below.
         EvaluatorPaths = @('scripts/CodexSkillBehaviorEvaluation.psm1', 'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1', 'scripts/Invoke-CodexSkillBehaviorModel.ps1', 'scripts/Test-CodexSkillBehaviorEvidence.ps1', 'schemas/codex-skill-behavior-evaluation.schema.json', 'schemas/codex-skill-behavior-observation.schema.json')
-        PersistenceBoundaryPaths = @('scripts/CodexSkillBehaviorActionsEvaluation.psm1', 'schemas/codex-skill-behavior-model-output.schema.json')
+        PersistenceBoundaryPaths = @('scripts/CodexSkillBehaviorActionsEvaluation.psm1', 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1', 'scripts/Invoke-CodexSkillBehaviorModel.ps1', 'schemas/codex-skill-behavior-model-output.schema.json')
         RetryableProviderFailureReasons = $retryableProviderFailureReasons
     }
 }

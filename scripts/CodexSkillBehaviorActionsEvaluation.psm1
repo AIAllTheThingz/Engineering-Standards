@@ -250,14 +250,18 @@ function ConvertTo-CodexBehaviorPersistedObservation {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Root,
+        [string]$TrustedSchemaRoot = $Root,
         [Parameter(Mandatory)][AllowEmptyString()][string]$ModelOutputJson,
         [Parameter(Mandatory)][ValidateRange(1, 2147483647)][int]$AttemptCount,
         [AllowEmptyString()][string]$Credential = ''
     )
 
-    $modelSchema = Get-CodexBehaviorRegularFile -Root $Root -RelativePath $script:ModelOutputSchemaRelativePath -MaximumBytes 65536 -Kind 'Model output schema'
-    $observationSchema = Get-CodexBehaviorRegularFile -Root $Root -RelativePath $script:ObservationSchemaRelativePath -MaximumBytes 65536 -Kind 'Observation schema'
-    if (-not (Test-Json -Json $ModelOutputJson -SchemaFile $modelSchema.FullName -ErrorAction Stop)) {
+    $schemaRoot = (Resolve-Path -LiteralPath $TrustedSchemaRoot).Path
+    $modelSchema = Get-CodexBehaviorRegularFile -Root $schemaRoot -RelativePath $script:ModelOutputSchemaRelativePath -MaximumBytes 65536 -Kind 'Model output schema'
+    $observationSchema = Get-CodexBehaviorRegularFile -Root $schemaRoot -RelativePath $script:ObservationSchemaRelativePath -MaximumBytes 65536 -Kind 'Observation schema'
+    try { $modelOutputIsValid = Test-Json -Json $ModelOutputJson -SchemaFile $modelSchema.FullName -ErrorAction Stop }
+    catch { $modelOutputIsValid = $false }
+    if (-not $modelOutputIsValid) {
         throw 'Model output did not satisfy the model output contract.'
     }
     try { $modelOutput = $ModelOutputJson | ConvertFrom-Json -AsHashtable -ErrorAction Stop }

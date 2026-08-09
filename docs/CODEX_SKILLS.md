@@ -210,7 +210,8 @@ responses fail closed; the persisted observation contract remains the
 authoritative backward-compatible evidence boundary.
 Behavior-evidence version `1.2.0` retains the immutable legacy evaluator hash
 for pre-merge compatibility and adds `persistenceBoundaryHash`, which binds the
-shared persistence module and model-only schema before evidence is accepted.
+shared persistence module, both observation-producing runners, and the
+model-only schema before evidence is accepted.
 
 The trusted hosted path is the manual
 [`Codex Skill Behavior Evaluation`](../.github/workflows/codex-skill-behavior.yml)

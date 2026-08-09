@@ -227,6 +227,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
     It 'keeps the live adapter authority-complete and malformed output non-retryable' {
         $runner = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1') -Raw
         $runner | Should -Match 'inputs\.AuthorityPaths'
+        $runner | Should -Match '\$trustedSchemaRoot = \(Resolve-Path -LiteralPath \(Split-Path -Parent \$PSScriptRoot\)\)\.Path'
+        $runner | Should -Match '-TrustedSchemaRoot \$trustedSchemaRoot'
         (Get-CodexBehaviorInput -Path $repoRoot).AuthorityPaths | Should -Contain 'agents/AGENTS_PowerShell.md'
         $runner | Should -Match 'Codex omitted the required structured response.'
         $runner | Should -Match '\$retrySuppressed = \$true'
@@ -294,6 +296,26 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $observation.attemptCount | Should -Be 2
         $observation.failureReason | Should -BeNullOrEmpty
         ($persisted | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-observation.schema.json')) | Should -BeTrue
+    }
+
+    It 'uses trusted schemas instead of a caller-controlled schema root' {
+        $untrustedRoot = Join-Path $TestDrive 'untrusted-schema-root'
+        $untrustedSchemas = Join-Path $untrustedRoot 'schemas'
+        New-Item -ItemType Directory -Path $untrustedSchemas -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $repoRoot 'schemas/codex-skill-behavior-model-output.schema.json') -Destination $untrustedSchemas
+        Copy-Item -LiteralPath (Join-Path $repoRoot 'schemas/codex-skill-behavior-observation.schema.json') -Destination $untrustedSchemas
+        $untrustedModelSchema = Join-Path $untrustedSchemas 'codex-skill-behavior-model-output.schema.json'
+        (Get-Content -LiteralPath $untrustedModelSchema -Raw).Replace('"minLength": 20', '"minLength": 1') | Set-Content -LiteralPath $untrustedModelSchema -Encoding utf8
+        $modelOutput = [ordered]@{
+            selection = 'Selected'
+            safetyOutcome = 'Proceed'
+            responseSummary = 'Short summary.'
+            quality = [ordered]@{ taskFit = 4; safety = 4; clarity = 4; governance = 4 }
+            toolEvents = @('skill-selection-observed')
+            unsafeToolAccess = $false
+        } | ConvertTo-Json -Depth 8
+
+        { ConvertTo-CodexBehaviorPersistedObservation -Root $untrustedRoot -TrustedSchemaRoot $repoRoot -ModelOutputJson $modelOutput -AttemptCount 1 } | Should -Throw '*Model output did not satisfy the model output contract*'
     }
 
     It 'fails closed for malformed, incomplete, and unexpected model output' -ForEach @(
