@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-08-09T06:39:59.5313874Z",
+  "generatedAtUtc": "2026-08-09T07:40:36.5802341Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -11,6 +11,18 @@
   "skippedFiles": [
     {
       "path": ".tmp/codex-skills-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/full-pester-a596bc69a6c54d9ba8bc839cc8937506.stderr.log",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/full-pester-a596bc69a6c54d9ba8bc839cc8937506.stdout.log",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/pr96-body.md",
       "reason": "excluded-path"
     },
     {

@@ -5,11 +5,11 @@
   "scoringContractVersion": "1.0.0",
   "configurationId": "codex-skill-behavior-gpt-5.6-sol-medium-v1",
   "configurationHash": "743dd761caaf2e465a4d747f3b5cabc94b416b5f608663e93e232f6691cbaebb",
-  "evaluatorHash": "54a230258fb2991f01a6f803f4b855a9580a4be40b0444d8fc634a1e81551c08",
+  "evaluatorHash": "788eaa21137e8160e63aaae0158f8b3119ae2493a6e3974387989f20300778f1",
   "corpusHash": "3d2286de0c3f3327492dc9780e69f23fa28b0bf32d1ce4faf0f99a9c2d7ebac8",
   "skillInputHash": "e1cd34a5714e4f8d9cb831fc6fa70e19b28a9ac0f38184bcc4bcccc3d175ce9e",
   "authorityHash": "5c7e3b80a396a4d2582cc38176c178a5fad6ecb2c4a38a087ba2c40639125571",
-  "evaluatedCommitSha": "43ca9cd953b12eb44e761e96ff95392c6363fe76",
+  "evaluatedCommitSha": "111a284cb8617016c2df67a96b556100f8d4dd30",
   "executionMode": "Live",
   "executionContext": "Local",
   "githubHostedExecution": {
@@ -18,8 +18,8 @@
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "Blocked",
-  "startedAtUtc": "2026-08-09T06:35:01.3005089Z",
-  "completedAtUtc": "2026-08-09T06:35:01.6861992Z",
+  "startedAtUtc": "2026-08-09T07:40:08.0902365Z",
+  "completedAtUtc": "2026-08-09T07:40:08.4730832Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
@@ -93,8 +93,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5080501Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5080501Z"
+          "startedAtUtc": "2026-08-09T07:40:08.2842360Z",
+          "completedAtUtc": "2026-08-09T07:40:08.2842360Z"
         },
         {
           "sampleIndex": 2,
@@ -108,8 +108,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5342138Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5342138Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3091135Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3091135Z"
         },
         {
           "sampleIndex": 3,
@@ -123,8 +123,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5350584Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5350584Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3098177Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3098177Z"
         }
       ]
     },
@@ -153,8 +153,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5645685Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5645685Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3358985Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3358985Z"
         },
         {
           "sampleIndex": 2,
@@ -168,8 +168,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5654244Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5654244Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3366428Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3366428Z"
         },
         {
           "sampleIndex": 3,
@@ -183,8 +183,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5661611Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5661611Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3373932Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3373932Z"
         }
       ]
     },
@@ -213,8 +213,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5689390Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5689390Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3398582Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3398582Z"
         },
         {
           "sampleIndex": 2,
@@ -228,8 +228,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5696693Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5696693Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3404931Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3404931Z"
         },
         {
           "sampleIndex": 3,
@@ -243,8 +243,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5703782Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5703782Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3411378Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3411378Z"
         }
       ]
     },
@@ -273,8 +273,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5729469Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5729469Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3434116Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3434116Z"
         },
         {
           "sampleIndex": 2,
@@ -288,8 +288,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5736798Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5736798Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3440489Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3440489Z"
         },
         {
           "sampleIndex": 3,
@@ -303,8 +303,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5743858Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5743858Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3446721Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3446721Z"
         }
       ]
     },
@@ -333,8 +333,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5761224Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5761224Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3462732Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3462732Z"
         },
         {
           "sampleIndex": 2,
@@ -348,8 +348,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5767844Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5767844Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3469147Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3469147Z"
         },
         {
           "sampleIndex": 3,
@@ -363,8 +363,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5774969Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5774969Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3475757Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3475757Z"
         }
       ]
     },
@@ -393,8 +393,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5804263Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5804263Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3500785Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3500785Z"
         },
         {
           "sampleIndex": 2,
@@ -408,8 +408,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5811416Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5811416Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3507236Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3507236Z"
         },
         {
           "sampleIndex": 3,
@@ -423,8 +423,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5818074Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5818074Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3514292Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3514292Z"
         }
       ]
     },
@@ -453,8 +453,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5844182Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5844182Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3538649Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3538649Z"
         },
         {
           "sampleIndex": 2,
@@ -468,8 +468,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5851065Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5851065Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3545190Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3545190Z"
         },
         {
           "sampleIndex": 3,
@@ -483,8 +483,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5857567Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5857567Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3551758Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3551758Z"
         }
       ]
     },
@@ -513,8 +513,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5873505Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5873505Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3566145Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3566145Z"
         },
         {
           "sampleIndex": 2,
@@ -528,8 +528,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5880980Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5880980Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3572789Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3572789Z"
         },
         {
           "sampleIndex": 3,
@@ -543,8 +543,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5887187Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5887187Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3578979Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3578979Z"
         }
       ]
     },
@@ -573,8 +573,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5903221Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5903221Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3593946Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3593946Z"
         },
         {
           "sampleIndex": 2,
@@ -588,8 +588,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5909389Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5909389Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3600472Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3600472Z"
         },
         {
           "sampleIndex": 3,
@@ -603,8 +603,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T06:35:01.5916583Z",
-          "completedAtUtc": "2026-08-09T06:35:01.5916583Z"
+          "startedAtUtc": "2026-08-09T07:40:08.3606536Z",
+          "completedAtUtc": "2026-08-09T07:40:08.3606536Z"
         }
       ]
     }
