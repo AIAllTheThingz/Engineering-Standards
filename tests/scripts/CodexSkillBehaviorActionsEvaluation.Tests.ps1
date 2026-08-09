@@ -256,6 +256,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Match '\$retrySuppressed = \$true'
         $runner | Should -Match 'OverallTimeoutSeconds'
         $runner | Should -Match 'overallDeadline'
+        $runner | Should -Match '\$preflightProcessStarted'
+        $runner | Should -Match '\[void\]\$process\.WaitForExit\(5000\)'
         $runner | Should -Match 'SecretRedaction'
         $runner | Should -Match 'codex-skill-behavior-model-output\.schema\.json'
         $runner | Should -Match 'ConvertTo-CodexBehaviorPersistedObservation'
@@ -707,6 +709,32 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
         }
         finally {
             if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY = $prior }
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'treats a preflight launch failure as a permanent unavailable block' {
+        $testRoot = Join-Path $TestDrive 'collector-launch-failure'
+        New-Item -ItemType Directory -Path $testRoot | Out-Null
+        $outputRoot = New-CodexBehaviorOutputRoot -RunnerTemp $testRoot -RunId '123457' -RunAttempt 1
+        $observationRoot = Join-Path $outputRoot.RunRoot 'observations'
+        $invalidCodexPath = Join-Path $testRoot 'invalid-codex-launcher'
+        'this file is intentionally not an executable' | Set-Content -LiteralPath $invalidCodexPath -NoNewline
+        $prior = $env:CODEX_BEHAVIOR_LAUNCH_FAILURE_TEST_KEY
+        try {
+            $env:CODEX_BEHAVIOR_LAUNCH_FAILURE_TEST_KEY = 'nonproduction-test-value'
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1') -Path $repoRoot -CodexPath $invalidCodexPath -TrustedOutputRoot $outputRoot.RunRoot -OutputDirectory $observationRoot -ApiKeyEnvironmentVariable CODEX_BEHAVIOR_LAUNCH_FAILURE_TEST_KEY 2>$null
+            $LASTEXITCODE | Should -Be 0
+
+            $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
+            $observations.Count | Should -Be 27
+            @($observations | Where-Object {
+                $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 -or
+                $_.failureReason -cne 'PreflightUnavailable: the governed Codex preflight could not be started.'
+            }).Count | Should -Be 0
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_LAUNCH_FAILURE_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_LAUNCH_FAILURE_TEST_KEY = $prior }
             Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
         }
     }

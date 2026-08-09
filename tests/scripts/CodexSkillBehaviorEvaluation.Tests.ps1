@@ -24,6 +24,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Match '\$retrySuppressed = \$true'
         $runner | Should -Match 'OverallTimeoutSeconds'
         $runner | Should -Match 'overallDeadline'
+        $runner | Should -Match '\$preflightProcessStarted'
+        $runner | Should -Match '\[void\]\$process\.WaitForExit\(5000\)'
         $runner | Should -Match 'codex-skill-behavior-model-output\.schema\.json'
         $runner | Should -Match 'ConvertTo-CodexBehaviorPersistedObservation'
         $runner | Should -Match 'New-GovernedCodexBehaviorArguments'

@@ -88,20 +88,20 @@ try {
         $reason = 'TransportFailure: the governed Codex preflight could not be started.'
         $preflightFailureCategory = 'TransportFailure'
         $preflightSucceeded = $false
-        $process = $null; $stdoutTask = $null; $stderrTask = $null; $stdout = $null; $stderr = $null; $streamsDrained = $false
+        $process = $null; $preflightProcessStarted = $false; $stdoutTask = $null; $stderrTask = $null; $stdout = $null; $stderr = $null; $streamsDrained = $false
         try {
             $psi = [Diagnostics.ProcessStartInfo]::new($codex)
             $psi.UseShellExecute = $false; $psi.RedirectStandardOutput = $true; $psi.RedirectStandardError = $true; $psi.CreateNoWindow = $true
             foreach ($argument in $arguments) { [void]$psi.ArgumentList.Add($argument) }
             $psi.Environment.Clear(); $psi.Environment['CODEX_API_KEY'] = $credential; $psi.Environment['CODEX_HOME'] = $codexHome; $psi.Environment['HOME'] = $scratch; $psi.Environment['PATH'] = [Environment]::GetEnvironmentVariable('PATH')
-            $process = [Diagnostics.Process]::new(); $process.StartInfo = $psi; [void]$process.Start()
+            $process = [Diagnostics.Process]::new(); $process.StartInfo = $psi; $preflightProcessStarted = $process.Start()
             $maximumDiagnosticStreamCharacters = [Math]::Floor($maximumDiagnosticInspectionCharacters / 2)
             $stdoutTask = Start-CodexBoundedStreamRead -Reader $process.StandardOutput -MaximumCharacters $maximumDiagnosticStreamCharacters
             $stderrTask = Start-CodexBoundedStreamRead -Reader $process.StandardError -MaximumCharacters $maximumDiagnosticStreamCharacters
             $remainingMilliseconds = [Math]::Max(1, [Math]::Floor(($overallDeadline - [DateTime]::UtcNow).TotalMilliseconds))
             $attemptTimeoutMilliseconds = [Math]::Min([int]$config.Limits.PerSampleTimeoutSeconds * 1000, $remainingMilliseconds)
             if (-not $process.WaitForExit($attemptTimeoutMilliseconds)) {
-                $process.Kill($true); $process.WaitForExit(); $preflightFailureCategory = 'TransportTimeout'; $reason = 'TransportTimeout: the bounded Codex preflight timed out.'
+                $process.Kill($true); [void]$process.WaitForExit(5000); $preflightFailureCategory = 'TransportTimeout'; $reason = 'TransportTimeout: the bounded Codex preflight timed out.'
             }
             else {
                 $stdout = $stdoutTask.Result
@@ -121,8 +121,14 @@ try {
             }
         }
         catch {
-            $preflightFailureCategory = 'TransportFailure'
-            $reason = 'TransportFailure: the governed Codex preflight could not be started.'
+            if (-not $preflightProcessStarted) {
+                $preflightFailureCategory = 'PreflightUnavailable'
+                $reason = 'the governed Codex preflight could not be started.'
+            }
+            else {
+                $preflightFailureCategory = 'TransportFailure'
+                $reason = 'TransportFailure: the governed Codex preflight could not be started.'
+            }
         }
         finally {
             if (-not $streamsDrained) {
@@ -188,7 +194,7 @@ User request: $($case.prompt)
                     $remainingMilliseconds = [Math]::Max(1, [Math]::Floor(($overallDeadline - [DateTime]::UtcNow).TotalMilliseconds))
                     $attemptTimeoutMilliseconds = [Math]::Min([int]$config.Limits.PerSampleTimeoutSeconds * 1000, $remainingMilliseconds)
                     if (-not $process.WaitForExit($attemptTimeoutMilliseconds)) {
-                        $process.Kill($true); $process.WaitForExit(); $reason = 'TransportTimeout: the bounded Codex request timed out.'
+                        $process.Kill($true); [void]$process.WaitForExit(5000); $reason = 'TransportTimeout: the bounded Codex request timed out.'
                     }
                     else {
                         $stdout = $stdoutTask.Result
