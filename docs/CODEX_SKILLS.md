@@ -209,9 +209,10 @@ contract. Malformed, incomplete, unexpected, or credential-containing model
 responses fail closed; the persisted observation contract remains the
 authoritative backward-compatible evidence boundary.
 Before corpus collection, the trusted runner performs one bounded preflight with
-the same governed `codex exec` arguments. The retry-provider overrides that
-conflict with Codex's reserved `openai` provider are intentionally absent. A
-permanent preflight failure is classified without retaining diagnostics and
+the same governed `codex exec` arguments. It selects a non-built-in `governed`
+OpenAI-compatible provider with request and stream retry budgets set to zero;
+the outer evaluator owns the single approved transport retry. A permanent
+preflight failure is classified without retaining diagnostics and
 produces the canonical blocked observation for every required sample slot; it
 does not repeatedly invoke Codex for a failure that already prevents evaluation.
 Transient preflight categories continue into the existing per-sample bounded

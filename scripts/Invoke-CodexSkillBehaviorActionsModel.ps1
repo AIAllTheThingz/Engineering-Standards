@@ -38,6 +38,12 @@ function New-GovernedCodexBehaviorArguments {
     @(
         'exec','--ignore-user-config','--ephemeral','--skip-git-repo-check',
         '--sandbox','read-only','--model',[string]$Configuration.Model.ModelId,
+        '--config','model_provider="governed"',
+        '--config','model_providers.governed.name="Governed OpenAI"',
+        '--config','model_providers.governed.base_url="https://api.openai.com/v1"',
+        '--config','model_providers.governed.env_key="CODEX_API_KEY"',
+        '--config','model_providers.governed.request_max_retries=0',
+        '--config','model_providers.governed.stream_max_retries=0',
         '--config',("model_reasoning_effort=`"{0}`"" -f $Configuration.Model.ReasoningEffort),
         '--config','approval_policy="never"',
         '--config','shell_environment_policy.inherit="none"',

@@ -599,6 +599,18 @@ function Test-CodexBehaviorCandidateTrust {
         if ($candidateHash -cne $trustedHash) { throw "Candidate evaluator hash mismatch: $relativePath" }
         [pscustomobject]@{ path = $relativePath.Replace('\','/'); sha256 = $trustedHash }
     }
+    foreach ($relativePath in @($policy.PersistenceBoundaryPaths | Sort-Object -Unique)) {
+        $trustedFile = Join-Path $trustedRoot $relativePath
+        $candidateFile = Join-Path $candidateRoot $relativePath
+        if (-not (Test-Path -LiteralPath $trustedFile -PathType Leaf)) { throw "Trusted persistence-boundary file is missing: $relativePath" }
+        if (-not (Test-Path -LiteralPath $candidateFile -PathType Leaf)) { throw "Candidate persistence-boundary file is missing: $relativePath" }
+        $trustedItem = Get-CodexBehaviorRegularFile -Root $trustedRoot -RelativePath $relativePath -MaximumBytes ([long]::MaxValue) -Kind 'Trusted persistence-boundary'
+        $candidateItem = Get-CodexBehaviorRegularFile -Root $candidateRoot -RelativePath $relativePath -MaximumBytes ([long]$trustedItem.Length) -Kind 'Candidate persistence-boundary'
+        if ([long]$candidateItem.Length -ne [long]$trustedItem.Length) { throw "Candidate persistence-boundary size mismatch: $relativePath" }
+        $trustedHash = (Get-FileHash -LiteralPath $trustedFile -Algorithm SHA256).Hash.ToLowerInvariant()
+        $candidateHash = (Get-FileHash -LiteralPath $candidateFile -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($candidateHash -cne $trustedHash) { throw "Candidate persistence-boundary hash mismatch: $relativePath" }
+    }
     $approved = Get-CodexBehaviorApprovedConfiguration -Root $candidateRoot -Policy $policy
     $inputs = Get-CodexBehaviorInput -Path $candidateRoot -TrustPolicyPath $policyPath
 

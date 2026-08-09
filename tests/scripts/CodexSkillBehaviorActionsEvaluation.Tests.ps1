@@ -42,12 +42,12 @@ Describe 'Controlled Codex skill behavior evaluation' {
         & git -c core.longpaths=true clone --quiet --no-hardlinks $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
-        foreach ($relativePath in $inputs.EvaluatorPaths) {
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
         & git -C $candidate config user.email 'codex-evaluator@example.invalid'
         & git -C $candidate config user.name 'Codex Evaluator Test'
-        & git -C $candidate add -- @($inputs.EvaluatorPaths)
+        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths)
         & git -C $candidate commit --quiet -m 'test: synchronize evaluator inputs'
         $sha = (& git -C $candidate rev-parse HEAD).Trim()
 
@@ -63,7 +63,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         & git clone --quiet --no-hardlinks $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
-        foreach ($relativePath in $inputs.EvaluatorPaths) {
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
         $modulePath = 'scripts/CodexSkillBehaviorActionsEvaluation.psm1'
@@ -72,7 +72,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         [IO.File]::WriteAllText($moduleFile, $moduleText, [Text.UTF8Encoding]::new($false))
         & git -C $candidate config user.email 'codex-evaluator@example.invalid'
         & git -C $candidate config user.name 'Codex Evaluator Test'
-        & git -C $candidate add -- @($inputs.EvaluatorPaths)
+        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths)
         & git -C $candidate commit --quiet -m 'test: introduce evaluator mismatch'
         $sha = (& git -C $candidate rev-parse HEAD).Trim()
 
@@ -85,7 +85,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         & git clone --quiet --no-hardlinks $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
-        foreach ($relativePath in $inputs.EvaluatorPaths) {
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
         $modulePath = 'scripts/CodexSkillBehaviorActionsEvaluation.psm1'
@@ -93,7 +93,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         [IO.File]::WriteAllText((Join-Path $candidate $modulePath), ('x' * ($trustedLength + 1)), [Text.UTF8Encoding]::new($false))
         & git -C $candidate config user.email 'codex-evaluator@example.invalid'
         & git -C $candidate config user.name 'Codex Evaluator Test'
-        & git -C $candidate add -- @($inputs.EvaluatorPaths)
+        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths)
         & git -C $candidate commit --quiet -m 'test: oversize evaluator input'
         $sha = (& git -C $candidate rev-parse HEAD).Trim()
 
@@ -101,12 +101,34 @@ Describe 'Controlled Codex skill behavior evaluation' {
             Should -Throw '*Candidate evaluator input exceeds its trusted byte limit*'
     }
 
+    It 'rejects a candidate persistence-boundary hash mismatch before collection' {
+        $candidate = Join-Path $TestDrive 'mismatched-persistence-boundary-candidate'
+        & git -c core.longpaths=true clone --quiet --no-hardlinks $repoRoot $candidate
+        $LASTEXITCODE | Should -Be 0
+        $inputs = Get-CodexBehaviorInput -Path $repoRoot
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
+            Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
+        }
+        $boundaryPath = 'scripts/Invoke-CodexSkillBehaviorModel.ps1'
+        $boundaryFile = Join-Path $candidate $boundaryPath
+        $boundaryText = [IO.File]::ReadAllText($boundaryFile).Replace('$ErrorActionPreference', '$ErrorActionPreferencf')
+        [IO.File]::WriteAllText($boundaryFile, $boundaryText, [Text.UTF8Encoding]::new($false))
+        & git -C $candidate config user.email 'codex-evaluator@example.invalid'
+        & git -C $candidate config user.name 'Codex Evaluator Test'
+        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths)
+        & git -C $candidate commit --quiet -m 'test: introduce persistence-boundary mismatch'
+        $sha = (& git -C $candidate rev-parse HEAD).Trim()
+
+        { Test-CodexBehaviorCandidateTrust -TrustedPath $repoRoot -CandidatePath $candidate -CandidateSha $sha } |
+            Should -Throw '*persistence-boundary hash mismatch*'
+    }
+
     It 'ignores a committed candidate artifact file as untrusted data' {
         $candidate = Join-Path $TestDrive 'candidate-artifact-candidate'
         & git clone --quiet --no-hardlinks $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
-        foreach ($relativePath in $inputs.EvaluatorPaths) {
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
         $candidateArtifact = Join-Path $candidate '.tmp/codex-skill-behavior.json'
@@ -114,7 +136,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         '{"status":"Passed","configurationHash":"candidate-controlled"}' | Set-Content -LiteralPath $candidateArtifact -Encoding utf8
         & git -C $candidate config user.email 'codex-evaluator@example.invalid'
         & git -C $candidate config user.name 'Codex Evaluator Test'
-        & git -C $candidate add -f -- @($inputs.EvaluatorPaths + '.tmp/codex-skill-behavior.json')
+        & git -C $candidate add -f -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths + '.tmp/codex-skill-behavior.json')
         & git -C $candidate commit --quiet -m 'test: commit candidate-controlled artifact'
         $sha = (& git -C $candidate rev-parse HEAD).Trim()
 
@@ -139,7 +161,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $LASTEXITCODE | Should -Be 0
         & git -C $candidate read-tree -mu HEAD
         $LASTEXITCODE | Should -Be 0
-        foreach ($relativePath in $inputs.EvaluatorPaths) {
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
         Copy-Item -LiteralPath (Join-Path $repoRoot 'tests/fixtures/codex-skills/approved-powershell-review-configuration.psd1') -Destination (Join-Path $candidate $inputs.ConfigurationPath) -Force
@@ -153,7 +175,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         }
         & git -C $candidate config user.email 'codex-evaluator@example.invalid'
         & git -C $candidate config user.name 'Codex Evaluator Test'
-        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.ConfigurationPath + $inputs.CorpusPaths + '.agents/suspended-skills/powershell-review/SKILL.md')
+        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths + $inputs.ConfigurationPath + $inputs.CorpusPaths + '.agents/suspended-skills/powershell-review/SKILL.md')
         & git -C $candidate commit --quiet -m 'test: use approved alternate configuration'
         $sha = (& git -C $candidate rev-parse HEAD).Trim()
 
@@ -179,13 +201,13 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $LASTEXITCODE | Should -Be 0
         & git -C $candidate read-tree -mu HEAD
         $LASTEXITCODE | Should -Be 0
-        foreach ($relativePath in $inputs.EvaluatorPaths) {
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
         Add-Content -LiteralPath (Join-Path $candidate $inputs.ConfigurationPath) -Value '# synthetic unapproved configuration'
         & git -C $candidate config user.email 'codex-evaluator@example.invalid'
         & git -C $candidate config user.name 'Codex Evaluator Test'
-        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.ConfigurationPath)
+        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths + $inputs.ConfigurationPath)
         & git -C $candidate commit --quiet -m 'test: alter evaluator configuration'
         $sha = (& git -C $candidate rev-parse HEAD).Trim()
 
@@ -198,7 +220,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         & git clone --quiet --no-hardlinks $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
-        foreach ($relativePath in $inputs.EvaluatorPaths) {
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
         $policyFile = Join-Path $candidate '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
@@ -206,7 +228,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         [IO.File]::WriteAllText($policyFile, $policyText, [Text.UTF8Encoding]::new($false))
         & git -C $candidate config user.email 'codex-evaluator@example.invalid'
         & git -C $candidate config user.name 'Codex Evaluator Test'
-        & git -C $candidate add -- @($inputs.EvaluatorPaths)
+        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths)
         & git -C $candidate commit --quiet -m 'test: alter trusted policy manifest'
         $sha = (& git -C $candidate rev-parse HEAD).Trim()
 
@@ -262,7 +284,9 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Match 'codex-skill-behavior-model-output\.schema\.json'
         $runner | Should -Match 'ConvertTo-CodexBehaviorPersistedObservation'
         $runner | Should -Match 'New-GovernedCodexBehaviorArguments'
-        $runner | Should -Not -Match 'model_providers\.openai\.(?:request|stream)_max_retries'
+        $runner | Should -Match 'model_provider="governed"'
+        $runner | Should -Match 'model_providers\.governed\.request_max_retries=0'
+        $runner | Should -Match 'model_providers\.governed\.stream_max_retries=0'
         $runner | Should -Match 'preflight-last-message\.json'
         $runner | Should -Match 'PreflightUnavailable:'
         $runner | Should -Match 'MaximumOutputBytes'
