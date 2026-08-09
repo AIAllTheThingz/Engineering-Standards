@@ -616,9 +616,9 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
     }
 
     It 'stores only a sanitized diagnostic when a synthetic Codex subprocess fails' -ForEach @(
-        @{ Name='non-retryable authentication'; ProviderOutput='HTTP 401 invalid api key'; Category='AuthenticationFailed'; ExpectedAttempts=1; RetryMessage='not permitted' }
-        @{ Name='retryable transport'; ProviderOutput='network error: ECONNRESET'; Category='TransportFailure'; ExpectedAttempts=1; RetryMessage='permitted' }
-        @{ Name='trailing retryable transport'; ProviderOutput=(('x' * 9000) + ' network error: ECONNRESET'); Category='TransportFailure'; ExpectedAttempts=1; RetryMessage='permitted' }
+        @{ Name='non-retryable authentication'; ProviderOutput='HTTP 401 invalid api key'; Category='AuthenticationFailed'; ExpectedAttempts=1; FailurePrefix='PreflightUnavailable: '; RetryMessage='not permitted' }
+        @{ Name='retryable transport'; ProviderOutput='network error: ECONNRESET'; Category='TransportFailure'; ExpectedAttempts=2; FailurePrefix=''; RetryMessage='permitted' }
+        @{ Name='trailing retryable transport'; ProviderOutput=(('x' * 9000) + ' network error: ECONNRESET'); Category='TransportFailure'; ExpectedAttempts=2; FailurePrefix=''; RetryMessage='permitted' }
     ) -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
         $testRoot = Join-Path $TestDrive 'collector-provider-diagnostic'
         $observationRoot = Join-Path $testRoot 'observations'
@@ -645,7 +645,7 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
 
             $observations.Count | Should -Be 27
             @($observations | Where-Object { $_.status -ne 'Blocked' -or $_.attemptCount -ne $ExpectedAttempts }).Count | Should -Be 0
-            @($observations.failureReason | Select-Object -Unique) | Should -Be @("PreflightUnavailable: $Category`: Codex exited with code 17. Retry is $RetryMessage by the governed retry policy.")
+            @($observations.failureReason | Select-Object -Unique) | Should -Be @("$FailurePrefix$Category`: Codex exited with code 17. Retry is $RetryMessage by the governed retry policy.")
             $serialized = $observations | ConvertTo-Json -Depth 8 -Compress
             $serialized | Should -Not -Match [regex]::Escape($syntheticCredentialMarker)
             $serialized | Should -Not -Match [regex]::Escape($syntheticProjectCredentialMarker)
