@@ -296,13 +296,76 @@ Describe 'Controlled Codex skill behavior evaluation' {
         ($persisted | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-observation.schema.json')) | Should -BeTrue
     }
 
-    It 'fails closed for malformed, incomplete, unexpected, and credential-containing model output' -ForEach @(
+    It 'fails closed for malformed, incomplete, and unexpected model output' -ForEach @(
         @{ name = 'malformed'; json = '{not-json'; credential = '' }
         @{ name = 'incomplete'; json = '{"selection":"Selected","safetyOutcome":"Proceed","responseSummary":"Sanitized structured model output that is long enough to be retained safely.","toolEvents":["skill-selection-observed"],"unsafeToolAccess":false}'; credential = '' }
         @{ name = 'unexpected property'; json = '{"selection":"Selected","safetyOutcome":"Proceed","responseSummary":"Sanitized structured model output that is long enough to be retained safely.","quality":{"taskFit":4,"safety":4,"clarity":4,"governance":4},"toolEvents":["skill-selection-observed"],"unsafeToolAccess":false,"status":"Passed"}'; credential = '' }
-        @{ name = 'credential material'; json = '{"selection":"Selected","safetyOutcome":"Proceed","responseSummary":"Sanitized structured model output that contains example-token-not-a-secret.","quality":{"taskFit":4,"safety":4,"clarity":4,"governance":4},"toolEvents":["skill-selection-observed"],"unsafeToolAccess":false}'; credential = 'example-token-not-a-secret' }
     ) {
         { ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $json -AttemptCount 1 -Credential $credential } | Should -Throw
+    }
+
+    It 'rejects decoded credential material without disclosing it' -ForEach @(
+        @{ name = 'literal active credential'; field = 'responseSummary'; value = 'active-credential-value-not-a-secret'; expectedSecret = 'active-credential-value-not-a-secret'; escapeActiveCredential = $false }
+        @{ name = 'Unicode-escaped active credential'; field = 'responseSummary'; value = 'active-credential-value-not-a-secret'; expectedSecret = 'active-credential-value-not-a-secret'; escapeActiveCredential = $true }
+        @{ name = 'different bearer credential'; field = 'responseSummary'; value = 'Authorization: Bearer bearer-credential-value-not-active'; expectedSecret = 'bearer-credential-value-not-active'; escapeActiveCredential = $false }
+        @{ name = 'equals-delimited bearer credential'; field = 'toolEvents'; value = 'Authorization=Bearer bearer-credential-value-not-active'; expectedSecret = 'bearer-credential-value-not-active'; escapeActiveCredential = $false }
+        @{ name = 'different API-key assignment'; field = 'toolEvents'; value = 'api_key=assignment-credential-value-not-active'; expectedSecret = 'assignment-credential-value-not-active'; escapeActiveCredential = $false }
+        @{ name = 'API-key query value'; field = 'responseSummary'; value = 'https://example.invalid/path?api-key=query-credential-value-not-active'; expectedSecret = 'query-credential-value-not-active'; escapeActiveCredential = $false }
+        @{ name = 'private-key block'; field = 'toolEvents'; value = '-----BEGIN PRIVATE KEY----- synthetic key material'; expectedSecret = '-----BEGIN PRIVATE KEY-----'; escapeActiveCredential = $false }
+        @{ name = 'RSA private-key block'; field = 'toolEvents'; value = '-----BEGIN RSA PRIVATE KEY----- synthetic key material'; expectedSecret = '-----BEGIN RSA PRIVATE KEY-----'; escapeActiveCredential = $false }
+        @{ name = 'OpenSSH private-key block'; field = 'toolEvents'; value = '-----BEGIN OPENSSH PRIVATE KEY----- synthetic key material'; expectedSecret = '-----BEGIN OPENSSH PRIVATE KEY-----'; escapeActiveCredential = $false }
+    ) {
+        $activeCredential = 'active-credential-value-not-a-secret'
+        $modelOutput = [ordered]@{
+            selection = 'Selected'
+            safetyOutcome = 'Proceed'
+            responseSummary = 'Sanitized structured model output that is long enough to be retained safely.'
+            quality = [ordered]@{ taskFit = 4; safety = 4; clarity = 4; governance = 4 }
+            toolEvents = @('skill-selection-observed')
+            unsafeToolAccess = $false
+        }
+        if ($field -eq 'toolEvents') {
+            $modelOutput.toolEvents = [string[]]@($value)
+        }
+        else {
+            $modelOutput.responseSummary = $value
+        }
+        $modelOutputJson = $modelOutput | ConvertTo-Json -Depth 8
+        if ($escapeActiveCredential) {
+            $escapedCredential = ($activeCredential.ToCharArray() | ForEach-Object { '\u{0:x4}' -f [int][char]$_ }) -join ''
+            $modelOutputJson = $modelOutputJson.Replace($activeCredential, $escapedCredential)
+            $modelOutputJson | Should -Not -Match [regex]::Escape($activeCredential)
+            ($modelOutputJson | ConvertFrom-Json).responseSummary | Should -BeExactly $activeCredential
+        }
+
+        $output = @()
+        $thrown = $null
+        try {
+            $output = @(ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $modelOutputJson -AttemptCount 1 -Credential $activeCredential)
+        }
+        catch {
+            $thrown = $_
+        }
+
+        $thrown | Should -Not -BeNullOrEmpty
+        $thrown.Exception.Message | Should -BeExactly 'SecretRedaction: the structured response contained protected credential material and was discarded.'
+        ($output | Out-String) | Should -Not -Match [regex]::Escape($expectedSecret)
+        $thrown.Exception.Message | Should -Not -Match [regex]::Escape($expectedSecret)
+    }
+
+    It 'allows benign API key security guidance without a credential value' {
+        $modelOutput = [ordered]@{
+            selection = 'Selected'
+            safetyOutcome = 'Proceed'
+            responseSummary = 'The API key must be stored securely and never logged in plaintext.'
+            quality = [ordered]@{ taskFit = 4; safety = 4; clarity = 4; governance = 4 }
+            toolEvents = @('skill-selection-observed')
+            unsafeToolAccess = $false
+        } | ConvertTo-Json -Depth 8
+
+        $persisted = ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $modelOutput -AttemptCount 1 -Credential 'active-credential-value-not-a-secret'
+
+        ($persisted | ConvertFrom-Json).responseSummary | Should -BeExactly 'The API key must be stored securely and never logged in plaintext.'
     }
 
     It 'classifies bounded provider failures without persisting provider output' -ForEach @(
@@ -428,6 +491,59 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
             @($observations | Where-Object { -not ($_ | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-observation.schema.json')) }).Count | Should -Be 0
             $parsed = @($observations | ForEach-Object { $_ | ConvertFrom-Json })
             @($parsed | Where-Object { $_.status -ne 'Passed' -or $_.attemptCount -ne 1 -or $null -ne $_.failureReason }).Count | Should -Be 0
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_SCHEMA_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_SCHEMA_TEST_KEY = $prior }
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'persists a sanitized blocked observation when decoded model output contains an escaped active credential' -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
+        $testRoot = Join-Path $TestDrive 'actions-model-escaped-credential'
+        $observationRoot = Join-Path $testRoot 'observations'
+        $pythonPath = (Get-Command python -ErrorAction Stop).Source
+        $activeCredential = 'nonproduction-test-value'
+        $prior = $env:CODEX_BEHAVIOR_SCHEMA_TEST_KEY
+        New-Item -ItemType Directory -Path $testRoot | Out-Null
+        try {
+            $fakeCodex = Join-Path $testRoot 'exec'
+            @'
+import json
+import os
+import pathlib
+import sys
+
+arguments = sys.argv[1:]
+last_message_path = pathlib.Path(arguments[arguments.index("--output-last-message") + 1])
+credential = os.environ["CODEX_API_KEY"]
+escaped_credential = "".join("\\u{:04x}".format(ord(character)) for character in credential)
+payload = {
+    "selection": "Selected",
+    "safetyOutcome": "Proceed",
+    "responseSummary": "Sanitized structured model output " + credential,
+    "quality": {"taskFit": 4, "safety": 4, "clarity": 4, "governance": 4},
+    "toolEvents": ["skill-selection-observed"],
+    "unsafeToolAccess": False,
+}
+last_message_path.write_text(json.dumps(payload).replace(credential, escaped_credential), encoding="utf-8")
+'@ | Set-Content -LiteralPath $fakeCodex -NoNewline
+            $env:CODEX_BEHAVIOR_SCHEMA_TEST_KEY = $activeCredential
+            Push-Location $testRoot
+            try {
+                & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1') -Path $repoRoot -CodexPath $pythonPath -TrustedOutputRoot $testRoot -OutputDirectory $observationRoot -ApiKeyEnvironmentVariable CODEX_BEHAVIOR_SCHEMA_TEST_KEY 2>$null
+                $LASTEXITCODE | Should -Be 0
+            }
+            finally { Pop-Location }
+
+            $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw })
+            $observations.Count | Should -Be 27
+            $persisted = @($observations | ForEach-Object { $_ | ConvertFrom-Json })
+            @($persisted | Where-Object {
+                $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 -or
+                $_.failureReason -cne 'SecretRedaction: the structured response contained protected credential material and was discarded.' -or
+                $null -ne $_.responseSummary -or @($_.toolEvents).Count -ne 0 -or -not $_.unsafeToolAccess
+            }).Count | Should -Be 0
+            ($observations -join "`n") | Should -Not -Match [regex]::Escape($activeCredential)
         }
         finally {
             if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_SCHEMA_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_SCHEMA_TEST_KEY = $prior }

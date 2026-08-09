@@ -212,6 +212,31 @@ function Get-CodexBehaviorRegularFile {
     $item
 }
 
+function Test-CodexBehaviorProtectedCredentialMaterial {
+    param(
+        [AllowEmptyString()][string]$Credential = '',
+        [AllowEmptyString()][string]$ResponseSummary = '',
+        [AllowEmptyCollection()][string[]]$ToolEvents = @()
+    )
+
+    $credentialMaterialPatterns = @(
+        '(?i)\b(?:proxy-)?authorization\s*(?::|=)\s*bearer\s+\S+',
+        '(?i)(?:^|[?&\s;,(])(?:x-)?api(?:[_-]?key)\s*(?:=|:)\s*(?:"[^"]+"|''[^'']+''|[^\s,;)}\]]+)',
+        '(?i)[?&](?:x-)?api(?:[_-]?key)\s*=\s*(?:"[^"]+"|''[^'']+''|[^\s,;)}\]]+)',
+        '(?i)-----BEGIN(?: (?:RSA|EC|DSA|OPENSSH|ENCRYPTED))? PRIVATE KEY-----'
+    )
+
+    foreach ($value in @($ResponseSummary) + @($ToolEvents)) {
+        if (-not [string]::IsNullOrEmpty($Credential) -and $value.Contains($Credential, [StringComparison]::Ordinal)) {
+            return $true
+        }
+        foreach ($pattern in $credentialMaterialPatterns) {
+            if ($value -match $pattern) { return $true }
+        }
+    }
+    return $false
+}
+
 function ConvertTo-CodexBehaviorPersistedObservation {
     <#
     .SYNOPSIS
@@ -235,22 +260,36 @@ function ConvertTo-CodexBehaviorPersistedObservation {
     if (-not (Test-Json -Json $ModelOutputJson -SchemaFile $modelSchema.FullName -ErrorAction Stop)) {
         throw 'Model output did not satisfy the model output contract.'
     }
-    if (-not [string]::IsNullOrEmpty($Credential) -and $ModelOutputJson.Contains($Credential, [StringComparison]::Ordinal)) {
-        throw 'SecretRedaction: the structured response contained protected credential material and was discarded.'
-    }
     try { $modelOutput = $ModelOutputJson | ConvertFrom-Json -AsHashtable -ErrorAction Stop }
     catch { throw 'Model output did not satisfy the model output contract.' }
+
+    $normalizedModelOutput = [ordered]@{
+        selection = [string]$modelOutput.selection
+        safetyOutcome = [string]$modelOutput.safetyOutcome
+        responseSummary = [string]$modelOutput.responseSummary
+        quality = [ordered]@{
+            taskFit = [int]$modelOutput.quality.taskFit
+            safety = [int]$modelOutput.quality.safety
+            clarity = [int]$modelOutput.quality.clarity
+            governance = [int]$modelOutput.quality.governance
+        }
+        toolEvents = [string[]]@($modelOutput.toolEvents | ForEach-Object { [string]$_ })
+        unsafeToolAccess = [bool]$modelOutput.unsafeToolAccess
+    }
+    if (Test-CodexBehaviorProtectedCredentialMaterial -Credential $Credential -ResponseSummary $normalizedModelOutput.responseSummary -ToolEvents $normalizedModelOutput.toolEvents) {
+        throw 'SecretRedaction: the structured response contained protected credential material and was discarded.'
+    }
 
     $observation = [ordered]@{
         status = 'Passed'
         attemptCount = $AttemptCount
         failureReason = $null
-        selection = $modelOutput.selection
-        safetyOutcome = $modelOutput.safetyOutcome
-        responseSummary = $modelOutput.responseSummary
-        quality = $modelOutput.quality
-        toolEvents = $modelOutput.toolEvents
-        unsafeToolAccess = $modelOutput.unsafeToolAccess
+        selection = $normalizedModelOutput.selection
+        safetyOutcome = $normalizedModelOutput.safetyOutcome
+        responseSummary = $normalizedModelOutput.responseSummary
+        quality = $normalizedModelOutput.quality
+        toolEvents = $normalizedModelOutput.toolEvents
+        unsafeToolAccess = $normalizedModelOutput.unsafeToolAccess
     }
     $serializedObservation = $observation | ConvertTo-Json -Depth 12
     if (-not (Test-Json -Json $serializedObservation -SchemaFile $observationSchema.FullName -ErrorAction Stop)) {
