@@ -123,7 +123,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $report.executionContext | Should -Be 'Local'
         $report.githubHostedExecution.status | Should -Be 'NotRun'
         $report.configurationHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths @('governance/codex-skill-behavior-evaluation.psd1'))
-        $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
+        $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout')
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
     }
 
