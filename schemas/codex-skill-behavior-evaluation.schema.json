@@ -13,13 +13,14 @@
     "humanAdjudication", "decision", "notRunReason", "blockedReason", "warnings", "limitations"
   ],
   "properties": {
-    "schemaVersion": { "enum": ["1.0.0", "1.1.0"] },
+    "schemaVersion": { "enum": ["1.0.0", "1.1.0", "1.2.0"] },
     "evidenceKind": { "const": "ProbabilisticCodexSkillBehaviorEvaluation" },
     "evaluatorVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "scoringContractVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "configurationId": { "type": "string", "pattern": "^[a-z0-9]+(?:[a-z0-9.-]*[a-z0-9])$", "maxLength": 160 },
     "configurationHash": { "$ref": "#/$defs/sha256" },
     "evaluatorHash": { "$ref": "#/$defs/sha256" },
+    "persistenceBoundaryHash": { "$ref": "#/$defs/sha256" },
     "corpusHash": { "$ref": "#/$defs/sha256" },
     "skillInputHash": { "$ref": "#/$defs/sha256" },
     "authorityHash": { "$ref": "#/$defs/sha256" },
@@ -210,7 +211,11 @@
       "then": { "required": ["executionContext", "githubHostedExecution"] }
     },
     {
-      "if": { "properties": { "schemaVersion": { "const": "1.1.0" }, "executionContext": { "const": "Local" } }, "required": ["schemaVersion", "executionContext"] },
+      "if": { "properties": { "schemaVersion": { "const": "1.2.0" } }, "required": ["schemaVersion"] },
+      "then": { "required": ["executionContext", "githubHostedExecution", "persistenceBoundaryHash"] }
+    },
+    {
+      "if": { "properties": { "schemaVersion": { "enum": ["1.1.0", "1.2.0"] }, "executionContext": { "const": "Local" } }, "required": ["schemaVersion", "executionContext"] },
       "then": { "properties": { "githubHostedExecution": { "properties": { "status": { "const": "NotRun" } } } } }
     },
     { "if": { "properties": { "status": { "const": "NotRun" } } }, "then": { "properties": { "notRunReason": { "type": "string", "minLength": 10 } } } },

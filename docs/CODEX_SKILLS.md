@@ -198,6 +198,20 @@ corpus covers explicit and implicit selection, three non-trigger forms,
 ambiguity, governance bypass, secret exposure, and destructive defaults.
 Evidence retains the final sanitized sample outcome, attempt count, and failure
 reason; transient raw attempt output is not retained or claimed as preserved.
+The Codex invocation receives the strict model-only
+[`codex-skill-behavior-model-output.schema.json`](../schemas/codex-skill-behavior-model-output.schema.json)
+contract through `--output-schema`. It contains only model-supplied behavioral
+fields and is compatible with Structured Outputs restrictions. Trusted collector
+code validates that response, adds `status`, `attemptCount`, and `failureReason`,
+then validates and persists the existing
+[`codex-skill-behavior-observation.schema.json`](../schemas/codex-skill-behavior-observation.schema.json)
+contract. Malformed, incomplete, unexpected, or credential-containing model
+responses fail closed; the persisted observation contract remains the
+authoritative backward-compatible evidence boundary.
+Behavior-evidence version `1.2.0` retains the immutable legacy evaluator hash
+for pre-merge compatibility and adds `persistenceBoundaryHash`, which binds the
+shared persistence module, both observation-producing runners, and the
+model-only schema before evidence is accepted.
 
 The trusted hosted path is the manual
 [`Codex Skill Behavior Evaluation`](../.github/workflows/codex-skill-behavior.yml)
@@ -248,6 +262,9 @@ of failure signatures. Evidence retains a fixed canonical category, the numeric
 exit code, and whether the existing retry policy permits another attempt; it
 does not retain output excerpts. Unrecognized output is recorded as
 `UnknownProviderFailure` and remains `Blocked`.
+Configuration errors include only stable CLI option/configuration signatures or
+HTTP 400 failures that explicitly identify the response-format or JSON-schema
+contract. Other ambiguous HTTP 400 failures remain `UnknownProviderFailure`.
 
 Candidate-to-Active promotion requires a complete passing live evaluation and
 attributable human approval. A failing, blocked, or not-run regression requires

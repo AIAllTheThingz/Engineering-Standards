@@ -17,10 +17,15 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorModel.ps1') -Raw
         $runner | Should -Match 'inputs\.AuthorityPaths'
         (Get-CodexBehaviorInput -Path $repoRoot).AuthorityPaths | Should -Contain 'agents/AGENTS_PowerShell.md'
+        (Get-CodexBehaviorInput -Path $repoRoot).EvaluatorPaths | Should -Not -Contain 'scripts/CodexSkillBehaviorActionsEvaluation.psm1'
+        (Get-CodexBehaviorInput -Path $repoRoot).PersistenceBoundaryPaths | Should -Contain 'scripts/CodexSkillBehaviorActionsEvaluation.psm1'
+        (Get-CodexBehaviorInput -Path $repoRoot).PersistenceBoundaryPaths | Should -Contain 'schemas/codex-skill-behavior-model-output.schema.json'
         $runner | Should -Match 'Codex omitted the required structured response.'
         $runner | Should -Match '\$retrySuppressed = \$true'
         $runner | Should -Match 'OverallTimeoutSeconds'
         $runner | Should -Match 'overallDeadline'
+        $runner | Should -Match 'codex-skill-behavior-model-output\.schema\.json'
+        $runner | Should -Match 'ConvertTo-CodexBehaviorPersistedObservation'
         $runner | Should -Not -Match 'Case category:'
         $runner | Should -Not -Match 'Copy-Item -LiteralPath \(Join-Path \$root ''\.agents''\)'
         $runner | Should -Match 'foreach \(\$skillInput in \$inputs\.SkillPaths\)'
@@ -58,6 +63,64 @@ Describe 'Controlled Codex skill behavior evaluation' {
         }
         finally {
             if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_MANUAL_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_MANUAL_TEST_KEY = $prior }
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $observationRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'passes only the model schema to the manual collector and persists enriched observations' -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
+        $testRoot = Join-Path $TestDrive 'manual-model-schema-collector'
+        $observationRoot = Join-Path $repoRoot ('.tmp/manual-model-schema-collector-' + [guid]::NewGuid().ToString('N'))
+        $pythonPath = (Get-Command python -ErrorAction Stop).Source
+        $prior = $env:CODEX_BEHAVIOR_MANUAL_SCHEMA_TEST_KEY
+        New-Item -ItemType Directory -Path $testRoot | Out-Null
+        try {
+            $fakeCodex = Join-Path $testRoot 'exec'
+            @'
+import json
+import pathlib
+import sys
+
+arguments = sys.argv[1:]
+schema_path = pathlib.Path(arguments[arguments.index("--output-schema") + 1])
+last_message_path = pathlib.Path(arguments[arguments.index("--output-last-message") + 1])
+expected = {"selection", "safetyOutcome", "responseSummary", "quality", "toolEvents", "unsafeToolAccess"}
+schema = json.loads(schema_path.read_text(encoding="utf-8"))
+if schema_path.name != "codex-skill-behavior-model-output.schema.json":
+    sys.exit(91)
+if set(schema.get("properties", {})) != expected or set(schema.get("required", [])) != expected or schema.get("additionalProperties") is not False:
+    sys.exit(92)
+if {"status", "attemptCount", "failureReason"} & set(schema.get("properties", {})):
+    sys.exit(93)
+quality = schema["properties"]["quality"]
+if quality.get("additionalProperties") is not False or set(quality.get("required", [])) != {"taskFit", "safety", "clarity", "governance"}:
+    sys.exit(94)
+payload = {
+    "selection": "Selected",
+    "safetyOutcome": "Proceed",
+    "responseSummary": "Sanitized structured model output that is long enough to be retained safely.",
+    "quality": {"taskFit": 4, "safety": 4, "clarity": 4, "governance": 4},
+    "toolEvents": ["skill-selection-observed"],
+    "unsafeToolAccess": False,
+}
+last_message_path.write_text(json.dumps(payload), encoding="utf-8")
+'@ | Set-Content -LiteralPath $fakeCodex -NoNewline
+            $env:CODEX_BEHAVIOR_MANUAL_SCHEMA_TEST_KEY = 'nonproduction-test-value'
+            Push-Location $testRoot
+            try {
+                & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorModel.ps1') -Path $repoRoot -CodexPath $pythonPath -OutputDirectory $observationRoot -ApiKeyEnvironmentVariable CODEX_BEHAVIOR_MANUAL_SCHEMA_TEST_KEY 2>$null
+                $LASTEXITCODE | Should -Be 0
+            }
+            finally { Pop-Location }
+
+            $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw })
+            $observations.Count | Should -Be 27
+            @($observations | Where-Object { -not ($_ | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-observation.schema.json')) }).Count | Should -Be 0
+            $parsed = @($observations | ForEach-Object { $_ | ConvertFrom-Json })
+            @($parsed | Where-Object { $_.status -ne 'Passed' -or $_.attemptCount -ne 1 -or $null -ne $_.failureReason }).Count | Should -Be 0
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_MANUAL_SCHEMA_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_MANUAL_SCHEMA_TEST_KEY = $prior }
             Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item -LiteralPath $observationRoot -Recurse -Force -ErrorAction SilentlyContinue
         }
@@ -119,12 +182,18 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $report.aggregates.samplesExpected | Should -Be 27
         $report.aggregates.samplesCompleted | Should -Be 27
         $report.limitations -join ' ' | Should -Match 'not deterministic proof'
-        $report.schemaVersion | Should -Be '1.1.0'
+        $report.schemaVersion | Should -Be '1.2.0'
         $report.executionContext | Should -Be 'Local'
         $report.githubHostedExecution.status | Should -Be 'NotRun'
         $report.configurationHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths @('governance/codex-skill-behavior-evaluation.psd1'))
+        $persistenceBoundaryPaths = (Get-CodexBehaviorInput -Path $repoRoot).PersistenceBoundaryPaths
+        $persistenceBoundaryPaths | Should -Contain 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1'
+        $persistenceBoundaryPaths | Should -Contain 'scripts/Invoke-CodexSkillBehaviorModel.ps1'
+        $report.persistenceBoundaryHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths $persistenceBoundaryPaths)
         $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout')
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
+        $report.githubHostedExecution.status = 'Passed'
+        ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json') -ErrorAction SilentlyContinue) | Should -BeFalse
     }
 
     It 'lets the immutable trust policy govern new transient provider categories without widening the approved configuration' {
@@ -323,6 +392,21 @@ Describe 'Controlled Codex skill behavior evaluation' {
             $fabricated = Join-Path $testRoot 'fabricated.json'
             $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $fabricated -Encoding utf8
             & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/fabricated.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+
+            $evidence = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Live -RunnerVersion 'persistence-boundary-test'
+            $evidence.persistenceBoundaryHash = '0' * 64
+            $persistenceBoundaryMismatch = Join-Path $testRoot 'persistence-boundary-mismatch.json'
+            $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $persistenceBoundaryMismatch -Encoding utf8
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/persistence-boundary-mismatch.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+
+            $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
+            $evidence.schemaVersion = '1.1.0'
+            $evidence.PSObject.Properties.Remove('persistenceBoundaryHash')
+            $downgraded = Join-Path $testRoot 'downgraded.json'
+            $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $downgraded -Encoding utf8
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/downgraded.json' 2>$null
             $LASTEXITCODE | Should -Be 1
 
             $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
