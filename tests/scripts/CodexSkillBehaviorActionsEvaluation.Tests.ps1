@@ -233,7 +233,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Match 'OverallTimeoutSeconds'
         $runner | Should -Match 'overallDeadline'
         $runner | Should -Match 'SecretRedaction'
-        $runner | Should -Match '\.Contains\(\$credential, \[StringComparison\]::Ordinal\)'
+        $runner | Should -Match 'codex-skill-behavior-model-output\.schema\.json'
+        $runner | Should -Match 'ConvertTo-CodexBehaviorPersistedObservation'
         $runner | Should -Not -Match 'Case category:'
         $runner | Should -Not -Match 'Copy-Item -LiteralPath \(Join-Path \$root ''\.agents''\)'
         $runner | Should -Match 'foreach \(\$skillInput in \$inputs\.SkillPaths\)'
@@ -259,6 +260,51 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $evaluationWrapper | Should -Match 'must not exist before trusted evaluation'
     }
 
+    It 'defines a strict model-only Structured Outputs schema' {
+        $schemaPath = Join-Path $repoRoot 'schemas/codex-skill-behavior-model-output.schema.json'
+        $schemaText = Get-Content -LiteralPath $schemaPath -Raw
+        $schema = $schemaText | ConvertFrom-Json -AsHashtable
+        $expectedRootFields = @('selection', 'safetyOutcome', 'responseSummary', 'quality', 'toolEvents', 'unsafeToolAccess')
+
+        $schema.type | Should -BeExactly 'object'
+        $schema.additionalProperties | Should -BeFalse
+        @($schema.required | Sort-Object) | Should -Be @($expectedRootFields | Sort-Object)
+        @($schema.properties.Keys | Sort-Object) | Should -Be @($expectedRootFields | Sort-Object)
+        @($schema.properties.Keys | Where-Object { $_ -in @('status', 'attemptCount', 'failureReason') }).Count | Should -Be 0
+        $schema.properties.quality.type | Should -BeExactly 'object'
+        $schema.properties.quality.additionalProperties | Should -BeFalse
+        @($schema.properties.quality.required | Sort-Object) | Should -Be @('clarity', 'governance', 'safety', 'taskFit')
+        $schemaText | Should -Not -Match '"(?:if|then|else|allOf|not|dependentRequired|dependentSchemas)"\s*:'
+        { '{}' | Test-Json -SchemaFile $schemaPath -ErrorAction Stop } | Should -Throw '*Required properties*'
+    }
+
+    It 'enriches valid model output into the existing persisted observation contract' {
+        $modelOutput = [ordered]@{
+            selection = 'Selected'
+            safetyOutcome = 'Proceed'
+            responseSummary = 'Sanitized structured model output that is long enough to be retained safely.'
+            quality = [ordered]@{ taskFit = 4; safety = 4; clarity = 4; governance = 4 }
+            toolEvents = @('skill-selection-observed')
+            unsafeToolAccess = $false
+        } | ConvertTo-Json -Depth 8
+        $persisted = ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $modelOutput -AttemptCount 2
+
+        $observation = $persisted | ConvertFrom-Json
+        $observation.status | Should -BeExactly 'Passed'
+        $observation.attemptCount | Should -Be 2
+        $observation.failureReason | Should -BeNullOrEmpty
+        ($persisted | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-observation.schema.json')) | Should -BeTrue
+    }
+
+    It 'fails closed for malformed, incomplete, unexpected, and credential-containing model output' -ForEach @(
+        @{ name = 'malformed'; json = '{not-json'; credential = '' }
+        @{ name = 'incomplete'; json = '{"selection":"Selected","safetyOutcome":"Proceed","responseSummary":"Sanitized structured model output that is long enough to be retained safely.","toolEvents":["skill-selection-observed"],"unsafeToolAccess":false}'; credential = '' }
+        @{ name = 'unexpected property'; json = '{"selection":"Selected","safetyOutcome":"Proceed","responseSummary":"Sanitized structured model output that is long enough to be retained safely.","quality":{"taskFit":4,"safety":4,"clarity":4,"governance":4},"toolEvents":["skill-selection-observed"],"unsafeToolAccess":false,"status":"Passed"}'; credential = '' }
+        @{ name = 'credential material'; json = '{"selection":"Selected","safetyOutcome":"Proceed","responseSummary":"Sanitized structured model output that contains example-token-not-a-secret.","quality":{"taskFit":4,"safety":4,"clarity":4,"governance":4},"toolEvents":["skill-selection-observed"],"unsafeToolAccess":false}'; credential = 'example-token-not-a-secret' }
+    ) {
+        { ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $json -AttemptCount 1 -Credential $credential } | Should -Throw
+    }
+
     It 'classifies bounded provider failures without persisting provider output' -ForEach @(
         @{ name = 'authentication'; output = 'HTTP 401: invalid api key'; category = 'AuthenticationFailed'; retry = $false }
         @{ name = 'authorization'; output = 'HTTP 403: insufficient permissions for the requested model'; category = 'AuthorizationFailed'; retry = $false }
@@ -266,6 +312,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
         @{ name = 'rate limit'; output = 'HTTP 429: rate limit reached'; category = 'RateLimited'; retry = $false }
         @{ name = 'model unavailable'; output = 'model_not_found'; category = 'ModelUnavailable'; retry = $true }
         @{ name = 'configuration'; output = 'unknown option --reasoning-effort'; category = 'ConfigurationError'; retry = $false }
+        @{ name = 'schema validation'; output = 'HTTP 400: invalid json_schema response_format: unsupported schema keyword if'; category = 'ConfigurationError'; retry = $false }
+        @{ name = 'structured output rejection'; output = 'response format rejected because the output schema is malformed'; category = 'ConfigurationError'; retry = $false }
         @{ name = 'transport'; output = 'network error: ECONNRESET'; category = 'TransportFailure'; retry = $true }
         @{ name = 'provider'; output = 'HTTP 503: service unavailable'; category = 'ProviderError'; retry = $true }
         @{ name = 'unknown'; output = 'unrecognized failure shape'; category = 'UnknownProviderFailure'; retry = $false }
@@ -321,6 +369,70 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $conflict.ExitCode | Should -Be -1073741510
         $crossStreamConflict.Category | Should -Be 'UnknownProviderFailure'
         $quotaRefines429.Category | Should -Be 'QuotaExceeded'
+    }
+
+    It 'keeps ambiguous HTTP 400 failures out of the configuration category' {
+        $diagnostic = Get-CodexProviderFailureDiagnostic -StandardError 'HTTP 400: bad request' -ExitCode 1
+
+        $diagnostic.Category | Should -Be 'UnknownProviderFailure'
+        $diagnostic.FailureReason | Should -Not -Match 'bad request'
+    }
+
+    It 'passes only the model schema to the Actions collector and persists enriched observations' -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
+        $testRoot = Join-Path $TestDrive 'actions-model-schema-collector'
+        $observationRoot = Join-Path $testRoot 'observations'
+        $pythonPath = (Get-Command python -ErrorAction Stop).Source
+        $prior = $env:CODEX_BEHAVIOR_SCHEMA_TEST_KEY
+        New-Item -ItemType Directory -Path $testRoot | Out-Null
+        try {
+            $fakeCodex = Join-Path $testRoot 'exec'
+            @'
+import json
+import pathlib
+import sys
+
+arguments = sys.argv[1:]
+schema_path = pathlib.Path(arguments[arguments.index("--output-schema") + 1])
+last_message_path = pathlib.Path(arguments[arguments.index("--output-last-message") + 1])
+expected = {"selection", "safetyOutcome", "responseSummary", "quality", "toolEvents", "unsafeToolAccess"}
+schema = json.loads(schema_path.read_text(encoding="utf-8"))
+if schema_path.name != "codex-skill-behavior-model-output.schema.json":
+    sys.exit(91)
+if set(schema.get("properties", {})) != expected or set(schema.get("required", [])) != expected or schema.get("additionalProperties") is not False:
+    sys.exit(92)
+if {"status", "attemptCount", "failureReason"} & set(schema.get("properties", {})):
+    sys.exit(93)
+quality = schema["properties"]["quality"]
+if quality.get("additionalProperties") is not False or set(quality.get("required", [])) != {"taskFit", "safety", "clarity", "governance"}:
+    sys.exit(94)
+payload = {
+    "selection": "Selected",
+    "safetyOutcome": "Proceed",
+    "responseSummary": "Sanitized structured model output that is long enough to be retained safely.",
+    "quality": {"taskFit": 4, "safety": 4, "clarity": 4, "governance": 4},
+    "toolEvents": ["skill-selection-observed"],
+    "unsafeToolAccess": False,
+}
+last_message_path.write_text(json.dumps(payload), encoding="utf-8")
+'@ | Set-Content -LiteralPath $fakeCodex -NoNewline
+            $env:CODEX_BEHAVIOR_SCHEMA_TEST_KEY = 'nonproduction-test-value'
+            Push-Location $testRoot
+            try {
+                & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1') -Path $repoRoot -CodexPath $pythonPath -TrustedOutputRoot $testRoot -OutputDirectory $observationRoot -ApiKeyEnvironmentVariable CODEX_BEHAVIOR_SCHEMA_TEST_KEY 2>$null
+                $LASTEXITCODE | Should -Be 0
+            }
+            finally { Pop-Location }
+
+            $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw })
+            $observations.Count | Should -Be 27
+            @($observations | Where-Object { -not ($_ | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-observation.schema.json')) }).Count | Should -Be 0
+            $parsed = @($observations | ForEach-Object { $_ | ConvertFrom-Json })
+            @($parsed | Where-Object { $_.status -ne 'Passed' -or $_.attemptCount -ne 1 -or $null -ne $_.failureReason }).Count | Should -Be 0
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_SCHEMA_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_SCHEMA_TEST_KEY = $prior }
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 
     It 'stores only a sanitized diagnostic when a synthetic Codex subprocess fails' -ForEach @(

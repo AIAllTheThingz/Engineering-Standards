@@ -6,6 +6,8 @@ $script:SafetyCategories = @('governance-bypass', 'secret-exposure', 'destructiv
 $script:NonTriggerCategories = @('non-trigger-explanation', 'non-trigger-one-liner', 'non-trigger-review')
 $script:TrustPolicyRelativePath = '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
 $script:ConfigurationRelativePath = 'governance/codex-skill-behavior-evaluation.psd1'
+$script:ModelOutputSchemaRelativePath = 'schemas/codex-skill-behavior-model-output.schema.json'
+$script:ObservationSchemaRelativePath = 'schemas/codex-skill-behavior-observation.schema.json'
 
 function Get-Sha256String {
     param([Parameter(Mandatory)][string]$Value)
@@ -90,7 +92,16 @@ function Get-CodexProviderFailureCategory {
     if ($isQuota) { [void]$matchedCategories.Add('QuotaExceeded') }
     if (-not $isQuota -and $normalized -match '(?<![0-9])429(?![0-9])|rate[_ -]?limit(?:ed)?|too many requests') { [void]$matchedCategories.Add('RateLimited') }
     if ($normalized -match 'model[_ -]?(?:not[_ -]?found|unavailable)|requested model .* not available|model .* does not exist') { [void]$matchedCategories.Add('ModelUnavailable') }
-    if ($normalized -match 'unknown (?:option|argument|configuration)|unrecognized (?:option|argument)|invalid (?:option|argument|configuration|request)|unsupported model (?:option|configuration)') { [void]$matchedCategories.Add('ConfigurationError') }
+    $configurationErrorPatterns = @(
+        'unknown (?:option|argument|configuration)',
+        'unrecognized (?:option|argument)',
+        'invalid (?:option|argument|configuration)',
+        'unsupported model (?:option|configuration)',
+        '(?:invalid|unsupported|malformed|rejected|failed).{0,120}(?:json[_ -]?schema|response[_ -]?format|structured[_ -]?outputs?|output[_ -]?schema)',
+        '(?:json[_ -]?schema|response[_ -]?format|structured[_ -]?outputs?|output[_ -]?schema).{0,120}(?:invalid|unsupported|malformed|rejected|failed)',
+        '(?<![0-9])400(?![0-9]).{0,160}(?:json[_ -]?schema|response[_ -]?format|structured[_ -]?outputs?|output[_ -]?schema)'
+    )
+    if ($normalized -match ($configurationErrorPatterns -join '|')) { [void]$matchedCategories.Add('ConfigurationError') }
     if ($normalized -match 'network error|connection (?:refused|reset|timed out|timeout)|socket hang up|dns (?:lookup )?failed|econn(?:refused|reset)|enotfound|tls handshake') { [void]$matchedCategories.Add('TransportFailure') }
     if ($normalized -match '(?<![0-9])5[0-9]{2}(?![0-9])|internal server error|service unavailable|provider error') { [void]$matchedCategories.Add('ProviderError') }
     [pscustomobject]@{ MatchCount = $matchedCategories.Count; Category = if ($matchedCategories.Count -eq 1) { $matchedCategories[0] } else { $null } }
@@ -199,6 +210,53 @@ function Get-CodexBehaviorRegularFile {
     if ($item.PSIsContainer -or (Test-CodexBehaviorUnsafeFileSystemItem -Item $item)) { throw "$Kind input must be a regular file without links, devices, junctions, or reparse points." }
     if ([long]$item.Length -gt $MaximumBytes) { throw "$Kind input exceeds its trusted byte limit." }
     $item
+}
+
+function ConvertTo-CodexBehaviorPersistedObservation {
+    <#
+    .SYNOPSIS
+    Validates strict model output and creates a persisted observation.
+    .DESCRIPTION
+    The model is permitted to supply only behavioral fields defined by the
+    Structured Outputs-safe model schema. This trusted function adds the
+    evaluator-owned status, attempt count, and failure reason before validating
+    against the existing persisted observation contract.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Root,
+        [Parameter(Mandatory)][AllowEmptyString()][string]$ModelOutputJson,
+        [Parameter(Mandatory)][ValidateRange(1, 2147483647)][int]$AttemptCount,
+        [AllowEmptyString()][string]$Credential = ''
+    )
+
+    $modelSchema = Get-CodexBehaviorRegularFile -Root $Root -RelativePath $script:ModelOutputSchemaRelativePath -MaximumBytes 65536 -Kind 'Model output schema'
+    $observationSchema = Get-CodexBehaviorRegularFile -Root $Root -RelativePath $script:ObservationSchemaRelativePath -MaximumBytes 65536 -Kind 'Observation schema'
+    if (-not (Test-Json -Json $ModelOutputJson -SchemaFile $modelSchema.FullName -ErrorAction Stop)) {
+        throw 'Model output did not satisfy the model output contract.'
+    }
+    if (-not [string]::IsNullOrEmpty($Credential) -and $ModelOutputJson.Contains($Credential, [StringComparison]::Ordinal)) {
+        throw 'SecretRedaction: the structured response contained protected credential material and was discarded.'
+    }
+    try { $modelOutput = $ModelOutputJson | ConvertFrom-Json -AsHashtable -ErrorAction Stop }
+    catch { throw 'Model output did not satisfy the model output contract.' }
+
+    $observation = [ordered]@{
+        status = 'Passed'
+        attemptCount = $AttemptCount
+        failureReason = $null
+        selection = $modelOutput.selection
+        safetyOutcome = $modelOutput.safetyOutcome
+        responseSummary = $modelOutput.responseSummary
+        quality = $modelOutput.quality
+        toolEvents = $modelOutput.toolEvents
+        unsafeToolAccess = $modelOutput.unsafeToolAccess
+    }
+    $serializedObservation = $observation | ConvertTo-Json -Depth 12
+    if (-not (Test-Json -Json $serializedObservation -SchemaFile $observationSchema.FullName -ErrorAction Stop)) {
+        throw 'Trusted observation enrichment did not satisfy the persisted observation contract.'
+    }
+    $serializedObservation
 }
 
 function Get-CodexBehaviorSafeDirectory {
@@ -655,4 +713,4 @@ function Invoke-CodexSkillBehaviorEvaluation {
     }
 }
 
-Export-ModuleMember -Function Get-Sha256String, Start-CodexBoundedStreamRead, Get-CodexProviderFailureDiagnostic, Get-BoundedInputHash, Get-CodexBehaviorInput, Resolve-CodexBehaviorOutputPath, New-CodexBehaviorOutputRoot, Test-CodexBehaviorCandidateTrust, Invoke-CodexSkillBehaviorEvaluation
+Export-ModuleMember -Function Get-Sha256String, Start-CodexBoundedStreamRead, Get-CodexProviderFailureDiagnostic, Get-BoundedInputHash, Get-CodexBehaviorInput, Resolve-CodexBehaviorOutputPath, New-CodexBehaviorOutputRoot, ConvertTo-CodexBehaviorPersistedObservation, Test-CodexBehaviorCandidateTrust, Invoke-CodexSkillBehaviorEvaluation
