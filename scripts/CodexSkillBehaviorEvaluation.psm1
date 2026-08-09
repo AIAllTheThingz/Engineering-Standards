@@ -66,7 +66,10 @@ function Get-CodexBehaviorInput {
         SkillPaths = @($skillFiles | ForEach-Object { ([IO.Path]::GetRelativePath($root, $_.FullName)).Replace('\','/') })
         AuthorityPaths = $authorityPaths
         ConfigurationPath = $configurationPath
-        EvaluatorPaths = @('scripts/CodexSkillBehaviorEvaluation.psm1', 'scripts/CodexSkillBehaviorActionsEvaluation.psm1', 'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1', 'scripts/Invoke-CodexSkillBehaviorModel.ps1', 'scripts/Test-CodexSkillBehaviorEvidence.ps1', 'schemas/codex-skill-behavior-evaluation.schema.json', 'schemas/codex-skill-behavior-model-output.schema.json', 'schemas/codex-skill-behavior-observation.schema.json')
+        # This compatibility set is validated by the immutable pre-merge
+        # verifier. New persistence inputs are bound independently below.
+        EvaluatorPaths = @('scripts/CodexSkillBehaviorEvaluation.psm1', 'scripts/Invoke-CodexSkillBehaviorEvaluation.ps1', 'scripts/Invoke-CodexSkillBehaviorModel.ps1', 'scripts/Test-CodexSkillBehaviorEvidence.ps1', 'schemas/codex-skill-behavior-evaluation.schema.json', 'schemas/codex-skill-behavior-observation.schema.json')
+        PersistenceBoundaryPaths = @('scripts/CodexSkillBehaviorActionsEvaluation.psm1', 'schemas/codex-skill-behavior-model-output.schema.json')
         RetryableProviderFailureReasons = $retryableProviderFailureReasons
     }
 }
@@ -204,9 +207,10 @@ function Invoke-CodexSkillBehaviorEvaluation {
     $executionContext = 'Local'
     $githubHostedExecutionStatus = 'NotRun'
     [pscustomobject]@{
-        schemaVersion = '1.1.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
+        schemaVersion = '1.2.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
         configurationId = $config.ConfigurationId; configurationHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths @($inputs.ConfigurationPath)
         evaluatorHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.EvaluatorPaths
+        persistenceBoundaryHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.PersistenceBoundaryPaths
         corpusHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.CorpusPaths; skillInputHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.SkillPaths
         authorityHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.AuthorityPaths
         evaluatedCommitSha = $EvaluatedCommitSha; executionMode = $ExecutionMode; executionContext = $executionContext; githubHostedExecution = [pscustomobject]@{ status = $githubHostedExecutionStatus }; probabilistic = $true; deterministicStructureStatus = 'Passed'; status = $overall

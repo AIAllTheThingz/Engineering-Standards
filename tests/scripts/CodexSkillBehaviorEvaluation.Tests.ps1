@@ -17,7 +17,9 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorModel.ps1') -Raw
         $runner | Should -Match 'inputs\.AuthorityPaths'
         (Get-CodexBehaviorInput -Path $repoRoot).AuthorityPaths | Should -Contain 'agents/AGENTS_PowerShell.md'
-        (Get-CodexBehaviorInput -Path $repoRoot).EvaluatorPaths | Should -Contain 'scripts/CodexSkillBehaviorActionsEvaluation.psm1'
+        (Get-CodexBehaviorInput -Path $repoRoot).EvaluatorPaths | Should -Not -Contain 'scripts/CodexSkillBehaviorActionsEvaluation.psm1'
+        (Get-CodexBehaviorInput -Path $repoRoot).PersistenceBoundaryPaths | Should -Contain 'scripts/CodexSkillBehaviorActionsEvaluation.psm1'
+        (Get-CodexBehaviorInput -Path $repoRoot).PersistenceBoundaryPaths | Should -Contain 'schemas/codex-skill-behavior-model-output.schema.json'
         $runner | Should -Match 'Codex omitted the required structured response.'
         $runner | Should -Match '\$retrySuppressed = \$true'
         $runner | Should -Match 'OverallTimeoutSeconds'
@@ -180,10 +182,11 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
         $report.aggregates.samplesExpected | Should -Be 27
         $report.aggregates.samplesCompleted | Should -Be 27
         $report.limitations -join ' ' | Should -Match 'not deterministic proof'
-        $report.schemaVersion | Should -Be '1.1.0'
+        $report.schemaVersion | Should -Be '1.2.0'
         $report.executionContext | Should -Be 'Local'
         $report.githubHostedExecution.status | Should -Be 'NotRun'
         $report.configurationHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths @('governance/codex-skill-behavior-evaluation.psd1'))
+        $report.persistenceBoundaryHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths (Get-CodexBehaviorInput -Path $repoRoot).PersistenceBoundaryPaths)
         $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout')
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
     }
@@ -384,6 +387,13 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
             $fabricated = Join-Path $testRoot 'fabricated.json'
             $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $fabricated -Encoding utf8
             & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/fabricated.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+
+            $evidence = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Live -RunnerVersion 'persistence-boundary-test'
+            $evidence.persistenceBoundaryHash = '0' * 64
+            $persistenceBoundaryMismatch = Join-Path $testRoot 'persistence-boundary-mismatch.json'
+            $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $persistenceBoundaryMismatch -Encoding utf8
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/persistence-boundary-mismatch.json' 2>$null
             $LASTEXITCODE | Should -Be 1
 
             $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
