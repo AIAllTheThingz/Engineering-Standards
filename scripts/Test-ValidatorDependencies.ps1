@@ -153,7 +153,6 @@ try {
                 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1',
                 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1',
                 'schemas/codex-skill-behavior-evaluation.schema.json',
-                'schemas/codex-skill-behavior-model-output.schema.json',
                 'schemas/codex-skill-behavior-observation.schema.json'
             )
             $requiredLimits = @(

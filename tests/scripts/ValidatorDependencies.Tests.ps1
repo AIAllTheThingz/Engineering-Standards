@@ -89,6 +89,7 @@ Describe 'Validator dependency integrity controls' {
         $policy.EvaluatorPaths | Should -Contain 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1'
         $policy.EvaluatorPaths | Should -Contain 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1'
         $policy.EvaluatorPaths | Should -Not -Contain 'scripts/CodexSkillBehaviorEvaluation.psm1'
+        $policy.EvaluatorPaths | Should -Not -Contain 'schemas/codex-skill-behavior-model-output.schema.json'
         $policy.EvaluatorPaths | Should -Not -Contain $policy.ConfigurationPath
         $hashes | Should -Contain '26edd6a335bfcc359e32f35959cf1a5bd514125f0fd94d88b688083c782f1515'
         $hashes | Should -Contain '9a24ce3d74448b2787e3470dbb9cace027aa5ae9fddbeff507a0019ccd700de6'
