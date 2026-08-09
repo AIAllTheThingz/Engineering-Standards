@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-08-09T07:40:36.5802341Z",
+  "generatedAtUtc": "2026-08-09T08:04:17.9497800Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -11,6 +11,10 @@
   "skippedFiles": [
     {
       "path": ".tmp/codex-skills-validation.json",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/frozen-validator-codex-skills.json",
       "reason": "excluded-path"
     },
     {
