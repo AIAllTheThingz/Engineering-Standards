@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-08-09T08:04:17.9497800Z",
+  "generatedAtUtc": "2026-08-09T09:10:10.0237589Z",
   "scanner": "forbidden-pattern-scan",
   "schemaVersion": "1.0.0",
   "completeSecretScanner": false,
@@ -18,6 +18,22 @@
       "reason": "excluded-path"
     },
     {
+      "path": ".tmp/full-pester-251bc6f-final.stderr.txt",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/full-pester-251bc6f-final.stdout.txt",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/full-pester-251bc6f.stderr.txt",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/full-pester-251bc6f.stdout.txt",
+      "reason": "excluded-path"
+    },
+    {
       "path": ".tmp/full-pester-a596bc69a6c54d9ba8bc839cc8937506.stderr.log",
       "reason": "excluded-path"
     },
@@ -26,7 +42,19 @@
       "reason": "excluded-path"
     },
     {
+      "path": ".tmp/full-pester-final.stderr.txt",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/full-pester-final.stdout.txt",
+      "reason": "excluded-path"
+    },
+    {
       "path": ".tmp/pr96-body.md",
+      "reason": "excluded-path"
+    },
+    {
+      "path": ".tmp/validator-dependencies.json",
       "reason": "excluded-path"
     },
     {

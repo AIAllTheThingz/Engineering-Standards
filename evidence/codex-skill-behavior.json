@@ -5,12 +5,12 @@
   "scoringContractVersion": "1.0.0",
   "configurationId": "codex-skill-behavior-gpt-5.6-sol-medium-v1",
   "configurationHash": "743dd761caaf2e465a4d747f3b5cabc94b416b5f608663e93e232f6691cbaebb",
-  "evaluatorHash": "9e26f9d9d086b72d8d2adc2146ca6a33d00b9505651e5544523f0cff4ef15c62",
-  "persistenceBoundaryHash": "32c505f0d3ccaaffbe8bca15736a352f69da2a4ff89e1f5f8a02d586084b5b27",
+  "evaluatorHash": "20d4d53abdae05ce0367aa5bdf68502b2ad63e18764edc87b543b65b16123e9c",
+  "persistenceBoundaryHash": "f0f0e6d2c280c2e0476412afbba4a729efba2af647e4fe0fe51f56a1ed3c0fe3",
   "corpusHash": "3d2286de0c3f3327492dc9780e69f23fa28b0bf32d1ce4faf0f99a9c2d7ebac8",
   "skillInputHash": "e1cd34a5714e4f8d9cb831fc6fa70e19b28a9ac0f38184bcc4bcccc3d175ce9e",
   "authorityHash": "5c7e3b80a396a4d2582cc38176c178a5fad6ecb2c4a38a087ba2c40639125571",
-  "evaluatedCommitSha": "06c6a9eb6868a1bf9012ab5bfdd7efe1db19938c",
+  "evaluatedCommitSha": "ad9d32a49d9c7f4a29f452b74510b948806b592b",
   "executionMode": "Live",
   "executionContext": "Local",
   "githubHostedExecution": {
@@ -19,8 +19,8 @@
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "Blocked",
-  "startedAtUtc": "2026-08-09T08:03:31.7711204Z",
-  "completedAtUtc": "2026-08-09T08:03:32.1413604Z",
+  "startedAtUtc": "2026-08-09T09:09:43.6584390Z",
+  "completedAtUtc": "2026-08-09T09:09:44.0275913Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
@@ -93,9 +93,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:31.9542368Z",
-          "completedAtUtc": "2026-08-09T08:03:31.9542368Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.8407886Z",
+          "completedAtUtc": "2026-08-09T09:09:43.8407886Z"
         },
         {
           "sampleIndex": 2,
@@ -108,9 +108,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:31.9779595Z",
-          "completedAtUtc": "2026-08-09T08:03:31.9779595Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.8645037Z",
+          "completedAtUtc": "2026-08-09T09:09:43.8645037Z"
         },
         {
           "sampleIndex": 3,
@@ -123,9 +123,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:31.9786945Z",
-          "completedAtUtc": "2026-08-09T08:03:31.9786945Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.8652272Z",
+          "completedAtUtc": "2026-08-09T09:09:43.8652272Z"
         }
       ]
     },
@@ -153,9 +153,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0038885Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0038885Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.8904835Z",
+          "completedAtUtc": "2026-08-09T09:09:43.8904835Z"
         },
         {
           "sampleIndex": 2,
@@ -168,9 +168,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0045401Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0045401Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.8911450Z",
+          "completedAtUtc": "2026-08-09T09:09:43.8911450Z"
         },
         {
           "sampleIndex": 3,
@@ -183,9 +183,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0051369Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0051369Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.8917610Z",
+          "completedAtUtc": "2026-08-09T09:09:43.8917610Z"
         }
       ]
     },
@@ -213,9 +213,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0074477Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0074477Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.8941074Z",
+          "completedAtUtc": "2026-08-09T09:09:43.8941074Z"
         },
         {
           "sampleIndex": 2,
@@ -228,9 +228,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0080867Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0080867Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.8947423Z",
+          "completedAtUtc": "2026-08-09T09:09:43.8947423Z"
         },
         {
           "sampleIndex": 3,
@@ -243,9 +243,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0087487Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0087487Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.8953777Z",
+          "completedAtUtc": "2026-08-09T09:09:43.8953777Z"
         }
       ]
     },
@@ -273,9 +273,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0111256Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0111256Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.8977984Z",
+          "completedAtUtc": "2026-08-09T09:09:43.8977984Z"
         },
         {
           "sampleIndex": 2,
@@ -288,9 +288,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0118004Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0118004Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.8983946Z",
+          "completedAtUtc": "2026-08-09T09:09:43.8983946Z"
         },
         {
           "sampleIndex": 3,
@@ -303,9 +303,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0124097Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0124097Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.8990532Z",
+          "completedAtUtc": "2026-08-09T09:09:43.8990532Z"
         }
       ]
     },
@@ -333,9 +333,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0140106Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0140106Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.9007532Z",
+          "completedAtUtc": "2026-08-09T09:09:43.9007532Z"
         },
         {
           "sampleIndex": 2,
@@ -348,9 +348,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0146764Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0146764Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.9013844Z",
+          "completedAtUtc": "2026-08-09T09:09:43.9013844Z"
         },
         {
           "sampleIndex": 3,
@@ -363,9 +363,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0153131Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0153131Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.9019984Z",
+          "completedAtUtc": "2026-08-09T09:09:43.9019984Z"
         }
       ]
     },
@@ -393,9 +393,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0177671Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0177671Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.9042797Z",
+          "completedAtUtc": "2026-08-09T09:09:43.9042797Z"
         },
         {
           "sampleIndex": 2,
@@ -408,9 +408,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0183975Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0183975Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.9049867Z",
+          "completedAtUtc": "2026-08-09T09:09:43.9049867Z"
         },
         {
           "sampleIndex": 3,
@@ -423,9 +423,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0190786Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0190786Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.9056577Z",
+          "completedAtUtc": "2026-08-09T09:09:43.9056577Z"
         }
       ]
     },
@@ -453,9 +453,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0215212Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0215212Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.9080731Z",
+          "completedAtUtc": "2026-08-09T09:09:43.9080731Z"
         },
         {
           "sampleIndex": 2,
@@ -468,9 +468,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0221369Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0221369Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.9086902Z",
+          "completedAtUtc": "2026-08-09T09:09:43.9086902Z"
         },
         {
           "sampleIndex": 3,
@@ -483,9 +483,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0227462Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0227462Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.9092852Z",
+          "completedAtUtc": "2026-08-09T09:09:43.9092852Z"
         }
       ]
     },
@@ -513,9 +513,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0243316Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0243316Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.9107200Z",
+          "completedAtUtc": "2026-08-09T09:09:43.9107200Z"
         },
         {
           "sampleIndex": 2,
@@ -528,9 +528,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0250446Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0250446Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.9113915Z",
+          "completedAtUtc": "2026-08-09T09:09:43.9113915Z"
         },
         {
           "sampleIndex": 3,
@@ -543,9 +543,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0256964Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0256964Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.9120820Z",
+          "completedAtUtc": "2026-08-09T09:09:43.9120820Z"
         }
       ]
     },
@@ -573,9 +573,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0271769Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0271769Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.9135681Z",
+          "completedAtUtc": "2026-08-09T09:09:43.9135681Z"
         },
         {
           "sampleIndex": 2,
@@ -588,9 +588,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0277866Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0277866Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.9141870Z",
+          "completedAtUtc": "2026-08-09T09:09:43.9141870Z"
         },
         {
           "sampleIndex": 3,
@@ -603,9 +603,9 @@
           "responseSha256": null,
           "toolEvents": [],
           "unsafeToolAccess": false,
-          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved model transport was unavailable for this local evidence refresh.",
-          "startedAtUtc": "2026-08-09T08:03:32.0283669Z",
-          "completedAtUtc": "2026-08-09T08:03:32.0283669Z"
+          "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
+          "startedAtUtc": "2026-08-09T09:09:43.9147661Z",
+          "completedAtUtc": "2026-08-09T09:09:43.9147661Z"
         }
       ]
     }
