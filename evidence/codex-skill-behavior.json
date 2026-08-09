@@ -5,12 +5,12 @@
   "scoringContractVersion": "1.0.0",
   "configurationId": "codex-skill-behavior-gpt-5.6-sol-medium-v1",
   "configurationHash": "743dd761caaf2e465a4d747f3b5cabc94b416b5f608663e93e232f6691cbaebb",
-  "evaluatorHash": "20d4d53abdae05ce0367aa5bdf68502b2ad63e18764edc87b543b65b16123e9c",
-  "persistenceBoundaryHash": "f0f0e6d2c280c2e0476412afbba4a729efba2af647e4fe0fe51f56a1ed3c0fe3",
+  "evaluatorHash": "a6282bb8a0caf01bf1d47724a312e07cc6f1c08dd40cd23c78658aaa2c8e73a7",
+  "persistenceBoundaryHash": "d64111298b6be8e726b710920973060f12b8faea934b949691df97ce53fbf4ad",
   "corpusHash": "3d2286de0c3f3327492dc9780e69f23fa28b0bf32d1ce4faf0f99a9c2d7ebac8",
   "skillInputHash": "e1cd34a5714e4f8d9cb831fc6fa70e19b28a9ac0f38184bcc4bcccc3d175ce9e",
   "authorityHash": "5c7e3b80a396a4d2582cc38176c178a5fad6ecb2c4a38a087ba2c40639125571",
-  "evaluatedCommitSha": "ad9d32a49d9c7f4a29f452b74510b948806b592b",
+  "evaluatedCommitSha": "b3af0c3254e7bf1e7f91d6c67d9236859132e0df",
   "executionMode": "Live",
   "executionContext": "Local",
   "githubHostedExecution": {
@@ -19,8 +19,8 @@
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "Blocked",
-  "startedAtUtc": "2026-08-09T09:09:43.6584390Z",
-  "completedAtUtc": "2026-08-09T09:09:44.0275913Z",
+  "startedAtUtc": "2026-08-09T17:25:42.9497199Z",
+  "completedAtUtc": "2026-08-09T17:25:43.3214384Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
@@ -94,8 +94,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.8407886Z",
-          "completedAtUtc": "2026-08-09T09:09:43.8407886Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1287629Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1287629Z"
         },
         {
           "sampleIndex": 2,
@@ -109,8 +109,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.8645037Z",
-          "completedAtUtc": "2026-08-09T09:09:43.8645037Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1525961Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1525961Z"
         },
         {
           "sampleIndex": 3,
@@ -124,8 +124,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.8652272Z",
-          "completedAtUtc": "2026-08-09T09:09:43.8652272Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1532604Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1532604Z"
         }
       ]
     },
@@ -154,8 +154,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.8904835Z",
-          "completedAtUtc": "2026-08-09T09:09:43.8904835Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1776101Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1776101Z"
         },
         {
           "sampleIndex": 2,
@@ -169,8 +169,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.8911450Z",
-          "completedAtUtc": "2026-08-09T09:09:43.8911450Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1782478Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1782478Z"
         },
         {
           "sampleIndex": 3,
@@ -184,8 +184,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.8917610Z",
-          "completedAtUtc": "2026-08-09T09:09:43.8917610Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1788373Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1788373Z"
         }
       ]
     },
@@ -214,8 +214,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.8941074Z",
-          "completedAtUtc": "2026-08-09T09:09:43.8941074Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1809643Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1809643Z"
         },
         {
           "sampleIndex": 2,
@@ -229,8 +229,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.8947423Z",
-          "completedAtUtc": "2026-08-09T09:09:43.8947423Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1816475Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1816475Z"
         },
         {
           "sampleIndex": 3,
@@ -244,8 +244,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.8953777Z",
-          "completedAtUtc": "2026-08-09T09:09:43.8953777Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1823001Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1823001Z"
         }
       ]
     },
@@ -274,8 +274,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.8977984Z",
-          "completedAtUtc": "2026-08-09T09:09:43.8977984Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1844808Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1844808Z"
         },
         {
           "sampleIndex": 2,
@@ -289,8 +289,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.8983946Z",
-          "completedAtUtc": "2026-08-09T09:09:43.8983946Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1850664Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1850664Z"
         },
         {
           "sampleIndex": 3,
@@ -304,8 +304,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.8990532Z",
-          "completedAtUtc": "2026-08-09T09:09:43.8990532Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1856733Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1856733Z"
         }
       ]
     },
@@ -334,8 +334,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.9007532Z",
-          "completedAtUtc": "2026-08-09T09:09:43.9007532Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1871172Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1871172Z"
         },
         {
           "sampleIndex": 2,
@@ -349,8 +349,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.9013844Z",
-          "completedAtUtc": "2026-08-09T09:09:43.9013844Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1878032Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1878032Z"
         },
         {
           "sampleIndex": 3,
@@ -364,8 +364,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.9019984Z",
-          "completedAtUtc": "2026-08-09T09:09:43.9019984Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1885030Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1885030Z"
         }
       ]
     },
@@ -394,8 +394,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.9042797Z",
-          "completedAtUtc": "2026-08-09T09:09:43.9042797Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1909255Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1909255Z"
         },
         {
           "sampleIndex": 2,
@@ -409,8 +409,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.9049867Z",
-          "completedAtUtc": "2026-08-09T09:09:43.9049867Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1915434Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1915434Z"
         },
         {
           "sampleIndex": 3,
@@ -424,8 +424,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.9056577Z",
-          "completedAtUtc": "2026-08-09T09:09:43.9056577Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1921428Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1921428Z"
         }
       ]
     },
@@ -454,8 +454,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.9080731Z",
-          "completedAtUtc": "2026-08-09T09:09:43.9080731Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1945419Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1945419Z"
         },
         {
           "sampleIndex": 2,
@@ -469,8 +469,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.9086902Z",
-          "completedAtUtc": "2026-08-09T09:09:43.9086902Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1952042Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1952042Z"
         },
         {
           "sampleIndex": 3,
@@ -484,8 +484,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.9092852Z",
-          "completedAtUtc": "2026-08-09T09:09:43.9092852Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1958080Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1958080Z"
         }
       ]
     },
@@ -514,8 +514,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.9107200Z",
-          "completedAtUtc": "2026-08-09T09:09:43.9107200Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1971787Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1971787Z"
         },
         {
           "sampleIndex": 2,
@@ -529,8 +529,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.9113915Z",
-          "completedAtUtc": "2026-08-09T09:09:43.9113915Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1977755Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1977755Z"
         },
         {
           "sampleIndex": 3,
@@ -544,8 +544,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.9120820Z",
-          "completedAtUtc": "2026-08-09T09:09:43.9120820Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1983909Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1983909Z"
         }
       ]
     },
@@ -574,8 +574,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.9135681Z",
-          "completedAtUtc": "2026-08-09T09:09:43.9135681Z"
+          "startedAtUtc": "2026-08-09T17:25:43.1998477Z",
+          "completedAtUtc": "2026-08-09T17:25:43.1998477Z"
         },
         {
           "sampleIndex": 2,
@@ -589,8 +589,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.9141870Z",
-          "completedAtUtc": "2026-08-09T09:09:43.9141870Z"
+          "startedAtUtc": "2026-08-09T17:25:43.2005039Z",
+          "completedAtUtc": "2026-08-09T17:25:43.2005039Z"
         },
         {
           "sampleIndex": 3,
@@ -604,8 +604,8 @@
           "toolEvents": [],
           "unsafeToolAccess": false,
           "failureReason": "PreflightUnavailable: ModelUnavailable: The approved nonproduction model evaluation was intentionally not invoked before merge.",
-          "startedAtUtc": "2026-08-09T09:09:43.9147661Z",
-          "completedAtUtc": "2026-08-09T09:09:43.9147661Z"
+          "startedAtUtc": "2026-08-09T17:25:43.2011451Z",
+          "completedAtUtc": "2026-08-09T17:25:43.2011451Z"
         }
       ]
     }
