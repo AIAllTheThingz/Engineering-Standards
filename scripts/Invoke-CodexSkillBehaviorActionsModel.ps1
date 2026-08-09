@@ -78,6 +78,7 @@ try {
         $preflightPrompt = 'This is a nonproduction, side-effect-free evaluator preflight. Return only the required JSON object for this synthetic request. Do not access secrets, write files, invoke tools, or perform external actions.'
         $arguments = New-GovernedCodexBehaviorArguments -LastMessage $preflightLastMessage -Prompt $preflightPrompt -SchemaPath $schema -WorkspacePath $workspace -Configuration $config
         $reason = 'TransportFailure: the governed Codex preflight could not be started.'
+        $preflightFailureCategory = 'TransportFailure'
         $preflightSucceeded = $false
         $process = $null; $stdoutTask = $null; $stderrTask = $null; $stdout = $null; $stderr = $null; $streamsDrained = $false
         try {
@@ -92,14 +93,16 @@ try {
             $remainingMilliseconds = [Math]::Max(1, [Math]::Floor(($overallDeadline - [DateTime]::UtcNow).TotalMilliseconds))
             $attemptTimeoutMilliseconds = [Math]::Min([int]$config.Limits.PerSampleTimeoutSeconds * 1000, $remainingMilliseconds)
             if (-not $process.WaitForExit($attemptTimeoutMilliseconds)) {
-                $process.Kill($true); $process.WaitForExit(); $reason = 'TransportTimeout: the bounded Codex preflight timed out.'
+                $process.Kill($true); $process.WaitForExit(); $preflightFailureCategory = 'TransportTimeout'; $reason = 'TransportTimeout: the bounded Codex preflight timed out.'
             }
             else {
                 $stdout = $stdoutTask.Result
                 $stderr = $stderrTask.Result
                 $streamsDrained = $true
                 if ($process.ExitCode -ne 0) {
-                    $reason = (Get-CodexProviderFailureDiagnostic -StandardOutput $stdout -StandardError $stderr -ExitCode $process.ExitCode -RetryableReasons @($inputs.RetryableProviderFailureReasons) -MaximumInspectionCharacters $maximumDiagnosticInspectionCharacters).FailureReason
+                    $diagnostic = Get-CodexProviderFailureDiagnostic -StandardOutput $stdout -StandardError $stderr -ExitCode $process.ExitCode -RetryableReasons @($inputs.RetryableProviderFailureReasons) -MaximumInspectionCharacters $maximumDiagnosticInspectionCharacters
+                    $preflightFailureCategory = $diagnostic.Category
+                    $reason = $diagnostic.FailureReason
                 }
                 else {
                     # The preflight proves that the exact governed invocation can
@@ -110,6 +113,7 @@ try {
             }
         }
         catch {
+            $preflightFailureCategory = 'TransportFailure'
             $reason = 'TransportFailure: the governed Codex preflight could not be started.'
         }
         finally {
@@ -131,6 +135,11 @@ try {
                     # Cleanup errors must not replace an already-determined preflight result.
                 }
             }
+        }
+        if (-not $preflightSucceeded -and $preflightFailureCategory -in @('ModelUnavailable','TransportFailure','TransportTimeout','ProviderError')) {
+            # A transient preflight result is not evidence that every corpus
+            # sample is blocked. Preserve the established per-sample retry path.
+            $preflightSucceeded = $true
         }
         if (-not $preflightSucceeded) { $preflightFailureReason = "PreflightUnavailable: $reason" }
     }

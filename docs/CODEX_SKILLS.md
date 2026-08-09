@@ -214,6 +214,9 @@ conflict with Codex's reserved `openai` provider are intentionally absent. A
 permanent preflight failure is classified without retaining diagnostics and
 produces the canonical blocked observation for every required sample slot; it
 does not repeatedly invoke Codex for a failure that already prevents evaluation.
+Transient preflight categories continue into the existing per-sample bounded
+retry path, rather than being treated as global evidence that all samples are
+blocked.
 Model-output files and in-memory JSON are both limited by the approved
 `MaximumOutputBytes` before schema validation or deserialization.
 Behavior-evidence version `1.2.0` retains the immutable legacy evaluator hash

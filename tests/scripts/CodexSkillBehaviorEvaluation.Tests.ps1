@@ -72,6 +72,63 @@ Describe 'Controlled Codex skill behavior evaluation' {
         }
     }
 
+    It 'preserves the manual collector per-sample retry path after a transient preflight failure' -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
+        $testRoot = Join-Path $TestDrive 'manual-collector-transient-preflight'
+        $relativeOutput = '.tmp/manual-collector-transient-preflight-' + [guid]::NewGuid().ToString('N')
+        $observationRoot = Join-Path $repoRoot $relativeOutput
+        $pythonPath = (Get-Command python -ErrorAction Stop).Source
+        $counterPath = Join-Path $testRoot 'codex-invocations.txt'
+        $encodedCounterPath = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($counterPath))
+        $prior = $env:CODEX_BEHAVIOR_MANUAL_TRANSIENT_PREFLIGHT_TEST_KEY
+        New-Item -ItemType Directory -Path $testRoot | Out-Null
+        try {
+            $fakeCodex = Join-Path $testRoot 'exec'
+            @"
+import base64
+import json
+import pathlib
+import sys
+
+counter = pathlib.Path(base64.b64decode('$encodedCounterPath').decode('utf-8'))
+invocation = len(counter.read_text(encoding='utf-8')) + 1 if counter.exists() else 1
+counter.write_text('x' * invocation, encoding='utf-8')
+if invocation == 1 or invocation == 2:
+    sys.stderr.write('network error: ECONNRESET\\n')
+    sys.exit(17)
+arguments = sys.argv[1:]
+last_message_path = pathlib.Path(arguments[arguments.index('--output-last-message') + 1])
+payload = {
+    'selection': 'Selected',
+    'safetyOutcome': 'Proceed',
+    'responseSummary': 'Sanitized synthetic observation for transient preflight retry coverage.',
+    'quality': {'taskFit': 4, 'safety': 4, 'clarity': 4, 'governance': 4},
+    'toolEvents': ['skill-selection-observed'],
+    'unsafeToolAccess': False,
+}
+last_message_path.write_text(json.dumps(payload), encoding='utf-8')
+"@ | Set-Content -LiteralPath $fakeCodex -NoNewline
+            $env:CODEX_BEHAVIOR_MANUAL_TRANSIENT_PREFLIGHT_TEST_KEY = 'nonproduction-test-value'
+            Push-Location $testRoot
+            try {
+                & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorModel.ps1') -Path $repoRoot -CodexPath $pythonPath -OutputDirectory $relativeOutput -ApiKeyEnvironmentVariable CODEX_BEHAVIOR_MANUAL_TRANSIENT_PREFLIGHT_TEST_KEY 2>$null
+                $LASTEXITCODE | Should -Be 0
+            }
+            finally { Pop-Location }
+
+            (Get-Content -LiteralPath $counterPath -Raw).Length | Should -Be 29
+            $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
+            $observations.Count | Should -Be 27
+            @($observations | Where-Object { $_.status -ne 'Passed' -or $_.failureReason -ne $null }).Count | Should -Be 0
+            @($observations | Where-Object attemptCount -eq 2).Count | Should -Be 1
+            @($observations | Where-Object attemptCount -eq 1).Count | Should -Be 26
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_MANUAL_TRANSIENT_PREFLIGHT_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_MANUAL_TRANSIENT_PREFLIGHT_TEST_KEY = $prior }
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $observationRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It 'passes only the model schema to the manual collector and persists enriched observations' -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
         $testRoot = Join-Path $TestDrive 'manual-model-schema-collector'
         $observationRoot = Join-Path $repoRoot ('.tmp/manual-model-schema-collector-' + [guid]::NewGuid().ToString('N'))
