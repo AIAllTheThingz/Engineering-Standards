@@ -88,6 +88,7 @@ jobs:
             evaluatorPackage = '@openai/codex@0.144.0-alpha.4'
             configurationHash = $null
             evaluatorHash = $null
+            persistenceBoundaryHash = $null
             evidenceStatus = 'NotRun'
             humanAdjudication = 'Pending'
           } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $output.ArtifactRoot 'workflow-result.json') -Encoding utf8
@@ -316,6 +317,7 @@ jobs:
             }
             $workflowResult.configurationHash = [string]$trust.configurationHash
             $workflowResult.evaluatorHash = [string]$trust.evaluatorHash
+            $workflowResult.persistenceBoundaryHash = [string]$trust.persistenceBoundaryHash
           }
           $evidencePath = Join-Path $artifactRoot 'codex-skill-behavior.json'
           $evidenceStatus = 'NotRun'
@@ -327,7 +329,10 @@ jobs:
             $evidence = $rawEvidence | ConvertFrom-Json
             if ($evidence.evaluatedCommitSha -cne $env:CANDIDATE_SHA -or
                 $evidence.configurationHash -cne $trust.configurationHash -or
-                $evidence.evaluatorHash -cne $trust.evaluatorHash) {
+                $evidence.evaluatorHash -cne $trust.evaluatorHash -or
+                $evidence.schemaVersion -cne '1.2.0' -or
+                $evidence.PSObject.Properties.Name -notcontains 'persistenceBoundaryHash' -or
+                $evidence.persistenceBoundaryHash -cne $trust.persistenceBoundaryHash) {
               throw 'Behavior evidence identity or trust hashes are invalid.'
             }
             if ($evidence.humanAdjudication.decision -cne 'Pending' -or $evidence.humanAdjudication.status -cne 'NotRun') {

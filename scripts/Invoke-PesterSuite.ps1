@@ -59,6 +59,38 @@ try {
         generatedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
     } | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $evidenceFull 'pester-summary.json') -Encoding utf8
 
+    function ConvertTo-BoundedFailureText {
+        param([AllowNull()][object]$Value, [switch]$RepositoryRelative)
+        if ($null -eq $Value) { return '<unknown>' }
+        $text = ([string]$Value).Replace("`r", ' ').Replace("`n", ' ').Trim()
+        $text = [regex]::Replace($text, '(?i)(password|passwd|pwd|secret|api[_-]?key|token)\s*[:=]\s*\S+', '$1=[redacted]')
+        if ($RepositoryRelative -and [IO.Path]::IsPathRooted($text)) {
+            try {
+                $relative = [IO.Path]::GetRelativePath($standardsRoot, [IO.Path]::GetFullPath($text)).Replace('\','/')
+                $text = if ($relative -eq '..' -or $relative.StartsWith('../', [StringComparison]::Ordinal)) { '<path>' } else { $relative }
+            }
+            catch { $text = '<path>' }
+        }
+        else {
+            $text = [regex]::Replace($text, '(?i)(?:[A-Za-z]:[\\/]|/home/|/tmp/|/var/)[^\s,;]+', '<path>')
+        }
+        $text = [regex]::Replace($text, '[^\p{L}\p{N}\s._:/()\[\]{}@,+#=-]', '?')
+        if ($text.Length -gt 256) { $text = $text.Substring(0, 253) + '...' }
+        $text
+    }
+    $failedTests = @($result.Tests | Where-Object { $_.Result -eq 'Failed' } | ForEach-Object {
+        $testName = if ($_.PSObject.Properties.Name -contains 'ExpandedName' -and $_.ExpandedName) { $_.ExpandedName } else { $_.Name }
+        $testPath = if ($_.PSObject.Properties.Name -contains 'Path' -and $_.Path) { $_.Path } else { '<unknown path>' }
+        "{0}: {1}" -f (ConvertTo-BoundedFailureText $testPath -RepositoryRelative), (ConvertTo-BoundedFailureText $testName)
+    })
+    $maximumReportedFailures = 20
+    if ($failedTests.Count -gt 0) {
+        Write-Output 'Failed Pester tests:'
+        $failedTests | Select-Object -First $maximumReportedFailures | ForEach-Object { Write-Output $_ }
+        $omittedFailureCount = [Math]::Max(0, $failedTests.Count - $maximumReportedFailures)
+        if ($omittedFailureCount -gt 0) { Write-Output ("... {0} additional failed test(s) omitted." -f $omittedFailureCount) }
+    }
+
     if (-not (Test-Path -LiteralPath $xmlPath -PathType Leaf)) { throw 'Pester did not produce the required NUnit XML result.' }
     & (Join-Path $standardsRoot 'scripts/Convert-PesterResultToSanitizedJson.ps1') -InputPath $xmlPath -OutputPath (Join-Path $evidenceFull 'pester-details.json') -RepositoryPath $workspaceRoot -EvidenceRoot $evidenceFull
     if ($discovered -eq 0) { throw 'Pester discovered zero tests.' }

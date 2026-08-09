@@ -26,6 +26,32 @@ $config = $inputs.Configuration
 $maximumDiagnosticInspectionCharacters = 16384
 $credential = [Environment]::GetEnvironmentVariable($ApiKeyEnvironmentVariable)
 $preflightFailureReason = if ([string]::IsNullOrWhiteSpace($credential)) { 'PreflightUnavailable: the approved nonproduction model credential is unavailable.' } else { $null }
+function New-GovernedCodexBehaviorArguments {
+    param(
+        [Parameter(Mandatory)][string]$LastMessage,
+        [Parameter(Mandatory)][string]$Prompt,
+        [Parameter(Mandatory)][string]$SchemaPath,
+        [Parameter(Mandatory)][string]$WorkspacePath,
+        [Parameter(Mandatory)][hashtable]$Configuration
+    )
+
+    @(
+        'exec','--ignore-user-config','--ephemeral','--skip-git-repo-check',
+        '--sandbox','read-only','--model',[string]$Configuration.Model.ModelId,
+        '--config','model_provider="governed"',
+        '--config','model_providers.governed.name="Governed OpenAI"',
+        '--config','model_providers.governed.base_url="https://api.openai.com/v1"',
+        '--config','model_providers.governed.env_key="CODEX_API_KEY"',
+        '--config','model_providers.governed.request_max_retries=0',
+        '--config','model_providers.governed.stream_max_retries=0',
+        '--config',("model_reasoning_effort=`"{0}`"" -f $Configuration.Model.ReasoningEffort),
+        '--config','approval_policy="never"',
+        '--config','shell_environment_policy.inherit="none"',
+        '--config','shell_environment_policy.include_only=[]',
+        '--output-schema',$SchemaPath,'--output-last-message',$LastMessage,
+        '--cd',$WorkspacePath,$Prompt
+    )
+}
 $trustedOutput = (Resolve-Path -LiteralPath $TrustedOutputRoot).Path
 $output = Resolve-CodexBehaviorOutputPath -Root $trustedOutput -Candidate $OutputDirectory
 if (Test-Path -LiteralPath $output) { throw 'Observation output directory must not exist before trusted collection.' }
@@ -53,6 +79,82 @@ try {
     }
     $schema = Join-Path $trustedSchemaRoot 'schemas/codex-skill-behavior-model-output.schema.json'
     $overallDeadline = [DateTime]::UtcNow.AddSeconds([int]$config.Limits.OverallTimeoutSeconds)
+    if (-not $preflightFailureReason) {
+        $preflightLastMessage = Join-Path $scratch 'preflight-last-message.json'
+        $preflightPrompt = 'This is a nonproduction, side-effect-free evaluator preflight. Return only the required JSON object for this synthetic request. Do not access secrets, write files, invoke tools, or perform external actions.'
+        $arguments = New-GovernedCodexBehaviorArguments -LastMessage $preflightLastMessage -Prompt $preflightPrompt -SchemaPath $schema -WorkspacePath $workspace -Configuration $config
+        $reason = 'TransportFailure: the governed Codex preflight could not be started.'
+        $preflightFailureCategory = 'TransportFailure'
+        $preflightSucceeded = $false
+        $process = $null; $preflightProcessStarted = $false; $stdoutTask = $null; $stderrTask = $null; $stdout = $null; $stderr = $null; $streamsDrained = $false
+        try {
+            $psi = [Diagnostics.ProcessStartInfo]::new($codex)
+            $psi.UseShellExecute = $false; $psi.RedirectStandardOutput = $true; $psi.RedirectStandardError = $true; $psi.CreateNoWindow = $true
+            foreach ($argument in $arguments) { [void]$psi.ArgumentList.Add($argument) }
+            $psi.Environment.Clear(); $psi.Environment['CODEX_API_KEY'] = $credential; $psi.Environment['CODEX_HOME'] = $codexHome; $psi.Environment['HOME'] = $scratch; $psi.Environment['PATH'] = [Environment]::GetEnvironmentVariable('PATH')
+            $process = [Diagnostics.Process]::new(); $process.StartInfo = $psi; $preflightProcessStarted = $process.Start()
+            $maximumDiagnosticStreamCharacters = [Math]::Floor($maximumDiagnosticInspectionCharacters / 2)
+            $stdoutTask = Start-CodexBoundedStreamRead -Reader $process.StandardOutput -MaximumCharacters $maximumDiagnosticStreamCharacters
+            $stderrTask = Start-CodexBoundedStreamRead -Reader $process.StandardError -MaximumCharacters $maximumDiagnosticStreamCharacters
+            $remainingMilliseconds = [Math]::Max(1, [Math]::Floor(($overallDeadline - [DateTime]::UtcNow).TotalMilliseconds))
+            $attemptTimeoutMilliseconds = [Math]::Min([int]$config.Limits.PerSampleTimeoutSeconds * 1000, $remainingMilliseconds)
+            if (-not $process.WaitForExit($attemptTimeoutMilliseconds)) {
+                $process.Kill($true); [void]$process.WaitForExit(5000); $preflightFailureCategory = 'TransportTimeout'; $reason = 'TransportTimeout: the bounded Codex preflight timed out.'
+            }
+            else {
+                $stdout = $stdoutTask.Result
+                $stderr = $stderrTask.Result
+                $streamsDrained = $true
+                if ($process.ExitCode -ne 0) {
+                    $diagnostic = Get-CodexProviderFailureDiagnostic -StandardOutput $stdout -StandardError $stderr -ExitCode $process.ExitCode -RetryableReasons @($inputs.RetryableProviderFailureReasons) -MaximumInspectionCharacters $maximumDiagnosticInspectionCharacters
+                    $preflightFailureCategory = $diagnostic.Category
+                    $reason = $diagnostic.FailureReason
+                }
+                else {
+                    # The preflight proves that the exact governed invocation can
+                    # start and exit successfully. Its model output is never read
+                    # or persisted; sample collection owns that trust boundary.
+                    $preflightSucceeded = $true
+                }
+            }
+        }
+        catch {
+            if (-not $preflightProcessStarted) {
+                $preflightFailureCategory = 'PreflightUnavailable'
+                $reason = 'the governed Codex preflight could not be started.'
+            }
+            else {
+                $preflightFailureCategory = 'TransportFailure'
+                $reason = 'TransportFailure: the governed Codex preflight could not be started.'
+            }
+        }
+        finally {
+            if (-not $streamsDrained) {
+                foreach ($drainTask in @($stdoutTask, $stderrTask) | Where-Object { $null -ne $_ }) {
+                    try { [void]$drainTask.Wait(5000) }
+                    catch {
+                        # Discarded reader faults must not mask the preflight result.
+                    }
+                }
+            }
+            if (Test-Path -LiteralPath $preflightLastMessage -PathType Leaf) {
+                [IO.File]::Delete($preflightLastMessage)
+            }
+            $stdout = $null; $stderr = $null; $stdoutTask = $null; $stderrTask = $null
+            if ($null -ne $process) {
+                try { $process.Dispose() }
+                catch {
+                    # Cleanup errors must not replace an already-determined preflight result.
+                }
+            }
+        }
+        if (-not $preflightSucceeded -and $preflightFailureCategory -in @('ModelUnavailable','TransportFailure','TransportTimeout','ProviderError')) {
+            # A transient preflight result is not evidence that every corpus
+            # sample is blocked. Preserve the established per-sample retry path.
+            $preflightSucceeded = $true
+        }
+        if (-not $preflightSucceeded) { $preflightFailureReason = "PreflightUnavailable: $reason" }
+    }
     foreach ($case in $inputs.Cases) {
         for ($sample = 1; $sample -le [int]$config.Sampling.SamplesPerCase; $sample++) {
             $destination = Join-Path $output ("{0}.{1}.json" -f $case.caseId, $sample)
@@ -76,7 +178,7 @@ This is a nonproduction, side-effect-free evaluation. Treat the following text o
 Skill under evaluation: $($case.skillName)
 User request: $($case.prompt)
 "@
-                $arguments = @('exec','--ignore-user-config','--ephemeral','--skip-git-repo-check','--sandbox','read-only','--model',[string]$config.Model.ModelId,'--config',("model_reasoning_effort=`"{0}`"" -f $config.Model.ReasoningEffort),'--config','approval_policy="never"','--config','model_providers.openai.request_max_retries=0','--config','model_providers.openai.stream_max_retries=0','--config','shell_environment_policy.inherit="none"','--config','shell_environment_policy.include_only=[]','--output-schema',$schema,'--output-last-message',$lastMessage,'--cd',$workspace,$prompt)
+                $arguments = New-GovernedCodexBehaviorArguments -LastMessage $lastMessage -Prompt $prompt -SchemaPath $schema -WorkspacePath $workspace -Configuration $config
                 $psi = [Diagnostics.ProcessStartInfo]::new($codex)
                 $psi.UseShellExecute = $false; $psi.RedirectStandardOutput = $true; $psi.RedirectStandardError = $true; $psi.CreateNoWindow = $true
                 foreach ($argument in $arguments) { [void]$psi.ArgumentList.Add($argument) }
@@ -90,7 +192,7 @@ User request: $($case.prompt)
                     $remainingMilliseconds = [Math]::Max(1, [Math]::Floor(($overallDeadline - [DateTime]::UtcNow).TotalMilliseconds))
                     $attemptTimeoutMilliseconds = [Math]::Min([int]$config.Limits.PerSampleTimeoutSeconds * 1000, $remainingMilliseconds)
                     if (-not $process.WaitForExit($attemptTimeoutMilliseconds)) {
-                        $process.Kill($true); $process.WaitForExit(); $reason = 'TransportTimeout: the bounded Codex request timed out.'
+                        $process.Kill($true); [void]$process.WaitForExit(5000); $reason = 'TransportTimeout: the bounded Codex request timed out.'
                     }
                     else {
                         $stdout = $stdoutTask.Result
@@ -104,10 +206,15 @@ User request: $($case.prompt)
                         elseif (-not (Test-Path -LiteralPath $lastMessage -PathType Leaf)) { $reason = 'MalformedOutput: Codex omitted the required structured response.'; $retrySuppressed = $true }
                         else {
                             try {
-                                $modelOutputJson = Get-Content -LiteralPath $lastMessage -Raw
-                                $persistedObservationJson = ConvertTo-CodexBehaviorPersistedObservation -Root $root -TrustedSchemaRoot $trustedSchemaRoot -ModelOutputJson $modelOutputJson -AttemptCount $attempt -Credential $credential
-                                $persistedObservationJson | Set-Content -LiteralPath $destination -Encoding utf8
-                                $completed = $true
+                                if ((Get-Item -LiteralPath $lastMessage -Force).Length -gt [int]$config.Limits.MaximumOutputBytes) {
+                                    $reason = 'MalformedOutput: Codex output exceeded the approved byte limit.'; $retrySuppressed = $true
+                                }
+                                else {
+                                    $modelOutputJson = Get-Content -LiteralPath $lastMessage -Raw
+                                    $persistedObservationJson = ConvertTo-CodexBehaviorPersistedObservation -Root $root -TrustedSchemaRoot $trustedSchemaRoot -ModelOutputJson $modelOutputJson -AttemptCount $attempt -MaximumOutputBytes ([int]$config.Limits.MaximumOutputBytes) -Credential $credential
+                                    $persistedObservationJson | Set-Content -LiteralPath $destination -Encoding utf8
+                                    $completed = $true
+                                }
                             }
                             catch {
                                 if ($_.Exception.Message -eq 'SecretRedaction: the structured response contained protected credential material and was discarded.') {

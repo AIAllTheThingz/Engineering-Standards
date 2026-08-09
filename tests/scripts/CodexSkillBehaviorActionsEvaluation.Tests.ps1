@@ -15,7 +15,7 @@ BeforeAll {
 Describe 'Controlled Codex skill behavior evaluation' {
     It 'scopes a mixed governed corpus to the approved configuration skill' {
         $candidate = Join-Path $TestDrive 'mixed-corpus-candidate'
-        & git clone --quiet --no-hardlinks $repoRoot $candidate
+        & git -c core.longpaths=true clone --quiet --no-hardlinks $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $foreignPath = Join-Path $candidate 'tests/fixtures/codex-skills/prompt-behavior/powershell-review-synthetic.json'
         @{
@@ -39,15 +39,15 @@ Describe 'Controlled Codex skill behavior evaluation' {
 
     It 'accepts an exact candidate with trusted evaluator hashes' {
         $candidate = Join-Path $TestDrive 'trusted-candidate'
-        & git clone --quiet --no-hardlinks $repoRoot $candidate
+        & git -c core.longpaths=true clone --quiet --no-hardlinks $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
-        foreach ($relativePath in $inputs.EvaluatorPaths) {
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
         & git -C $candidate config user.email 'codex-evaluator@example.invalid'
         & git -C $candidate config user.name 'Codex Evaluator Test'
-        & git -C $candidate add -- @($inputs.EvaluatorPaths)
+        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths)
         & git -C $candidate commit --quiet -m 'test: synchronize evaluator inputs'
         $sha = (& git -C $candidate rev-parse HEAD).Trim()
 
@@ -63,7 +63,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         & git clone --quiet --no-hardlinks $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
-        foreach ($relativePath in $inputs.EvaluatorPaths) {
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
         $modulePath = 'scripts/CodexSkillBehaviorActionsEvaluation.psm1'
@@ -72,7 +72,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         [IO.File]::WriteAllText($moduleFile, $moduleText, [Text.UTF8Encoding]::new($false))
         & git -C $candidate config user.email 'codex-evaluator@example.invalid'
         & git -C $candidate config user.name 'Codex Evaluator Test'
-        & git -C $candidate add -- @($inputs.EvaluatorPaths)
+        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths)
         & git -C $candidate commit --quiet -m 'test: introduce evaluator mismatch'
         $sha = (& git -C $candidate rev-parse HEAD).Trim()
 
@@ -85,7 +85,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         & git clone --quiet --no-hardlinks $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
-        foreach ($relativePath in $inputs.EvaluatorPaths) {
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
         $modulePath = 'scripts/CodexSkillBehaviorActionsEvaluation.psm1'
@@ -93,7 +93,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         [IO.File]::WriteAllText((Join-Path $candidate $modulePath), ('x' * ($trustedLength + 1)), [Text.UTF8Encoding]::new($false))
         & git -C $candidate config user.email 'codex-evaluator@example.invalid'
         & git -C $candidate config user.name 'Codex Evaluator Test'
-        & git -C $candidate add -- @($inputs.EvaluatorPaths)
+        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths)
         & git -C $candidate commit --quiet -m 'test: oversize evaluator input'
         $sha = (& git -C $candidate rev-parse HEAD).Trim()
 
@@ -101,12 +101,34 @@ Describe 'Controlled Codex skill behavior evaluation' {
             Should -Throw '*Candidate evaluator input exceeds its trusted byte limit*'
     }
 
+    It 'rejects a candidate persistence-boundary hash mismatch before collection' {
+        $candidate = Join-Path $TestDrive 'mismatched-persistence-boundary-candidate'
+        & git -c core.longpaths=true clone --quiet --no-hardlinks $repoRoot $candidate
+        $LASTEXITCODE | Should -Be 0
+        $inputs = Get-CodexBehaviorInput -Path $repoRoot
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
+            Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
+        }
+        $boundaryPath = 'scripts/Invoke-CodexSkillBehaviorModel.ps1'
+        $boundaryFile = Join-Path $candidate $boundaryPath
+        $boundaryText = [IO.File]::ReadAllText($boundaryFile).Replace('$ErrorActionPreference', '$ErrorActionPreferencf')
+        [IO.File]::WriteAllText($boundaryFile, $boundaryText, [Text.UTF8Encoding]::new($false))
+        & git -C $candidate config user.email 'codex-evaluator@example.invalid'
+        & git -C $candidate config user.name 'Codex Evaluator Test'
+        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths)
+        & git -C $candidate commit --quiet -m 'test: introduce persistence-boundary mismatch'
+        $sha = (& git -C $candidate rev-parse HEAD).Trim()
+
+        { Test-CodexBehaviorCandidateTrust -TrustedPath $repoRoot -CandidatePath $candidate -CandidateSha $sha } |
+            Should -Throw '*persistence-boundary hash mismatch*'
+    }
+
     It 'ignores a committed candidate artifact file as untrusted data' {
         $candidate = Join-Path $TestDrive 'candidate-artifact-candidate'
         & git clone --quiet --no-hardlinks $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
-        foreach ($relativePath in $inputs.EvaluatorPaths) {
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
         $candidateArtifact = Join-Path $candidate '.tmp/codex-skill-behavior.json'
@@ -114,7 +136,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         '{"status":"Passed","configurationHash":"candidate-controlled"}' | Set-Content -LiteralPath $candidateArtifact -Encoding utf8
         & git -C $candidate config user.email 'codex-evaluator@example.invalid'
         & git -C $candidate config user.name 'Codex Evaluator Test'
-        & git -C $candidate add -f -- @($inputs.EvaluatorPaths + '.tmp/codex-skill-behavior.json')
+        & git -C $candidate add -f -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths + '.tmp/codex-skill-behavior.json')
         & git -C $candidate commit --quiet -m 'test: commit candidate-controlled artifact'
         $sha = (& git -C $candidate rev-parse HEAD).Trim()
 
@@ -125,10 +147,21 @@ Describe 'Controlled Codex skill behavior evaluation' {
 
     It 'accepts a hash-approved candidate configuration that differs from the trusted default' {
         $candidate = Join-Path $TestDrive 'approved-configuration-candidate'
-        & git clone --quiet --no-hardlinks $repoRoot $candidate
+        & git -c core.longpaths=true clone --quiet --no-hardlinks --no-checkout $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
-        foreach ($relativePath in $inputs.EvaluatorPaths) {
+        $checkoutPaths = @(
+            '.github/dependencies/codex-evaluator', 'scripts', 'schemas', 'governance',
+            'tests/fixtures/codex-skills/prompt-behavior', '.agents/suspended-skills/enterprise-powershell',
+            '.agents/suspended-skills/README.md', 'AGENTS.md', 'agents'
+        )
+        & git -C $candidate sparse-checkout init --no-cone
+        $LASTEXITCODE | Should -Be 0
+        & git -C $candidate sparse-checkout set --no-cone -- $checkoutPaths
+        $LASTEXITCODE | Should -Be 0
+        & git -C $candidate read-tree -mu HEAD
+        $LASTEXITCODE | Should -Be 0
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
         Copy-Item -LiteralPath (Join-Path $repoRoot 'tests/fixtures/codex-skills/approved-powershell-review-configuration.psd1') -Destination (Join-Path $candidate $inputs.ConfigurationPath) -Force
@@ -142,7 +175,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         }
         & git -C $candidate config user.email 'codex-evaluator@example.invalid'
         & git -C $candidate config user.name 'Codex Evaluator Test'
-        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.ConfigurationPath + $inputs.CorpusPaths + '.agents/suspended-skills/powershell-review/SKILL.md')
+        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths + $inputs.ConfigurationPath + $inputs.CorpusPaths + '.agents/suspended-skills/powershell-review/SKILL.md')
         & git -C $candidate commit --quiet -m 'test: use approved alternate configuration'
         $sha = (& git -C $candidate rev-parse HEAD).Trim()
 
@@ -154,16 +187,27 @@ Describe 'Controlled Codex skill behavior evaluation' {
 
     It 'rejects a candidate configuration absent from the trusted allowlist' {
         $candidate = Join-Path $TestDrive 'unapproved-configuration-candidate'
-        & git clone --quiet --no-hardlinks $repoRoot $candidate
+        & git -c core.longpaths=true clone --quiet --no-hardlinks --no-checkout $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
-        foreach ($relativePath in $inputs.EvaluatorPaths) {
+        $checkoutPaths = @(
+            '.github/dependencies/codex-evaluator', 'scripts', 'schemas', 'governance',
+            'tests/fixtures/codex-skills/prompt-behavior', '.agents/suspended-skills/enterprise-powershell',
+            '.agents/suspended-skills/README.md', 'AGENTS.md', 'agents'
+        )
+        & git -C $candidate sparse-checkout init --no-cone
+        $LASTEXITCODE | Should -Be 0
+        & git -C $candidate sparse-checkout set --no-cone -- $checkoutPaths
+        $LASTEXITCODE | Should -Be 0
+        & git -C $candidate read-tree -mu HEAD
+        $LASTEXITCODE | Should -Be 0
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
         Add-Content -LiteralPath (Join-Path $candidate $inputs.ConfigurationPath) -Value '# synthetic unapproved configuration'
         & git -C $candidate config user.email 'codex-evaluator@example.invalid'
         & git -C $candidate config user.name 'Codex Evaluator Test'
-        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.ConfigurationPath)
+        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths + $inputs.ConfigurationPath)
         & git -C $candidate commit --quiet -m 'test: alter evaluator configuration'
         $sha = (& git -C $candidate rev-parse HEAD).Trim()
 
@@ -176,7 +220,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         & git clone --quiet --no-hardlinks $repoRoot $candidate
         $LASTEXITCODE | Should -Be 0
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
-        foreach ($relativePath in $inputs.EvaluatorPaths) {
+        foreach ($relativePath in @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths | Sort-Object -Unique)) {
             Copy-Item -LiteralPath (Join-Path $repoRoot $relativePath) -Destination (Join-Path $candidate $relativePath) -Force
         }
         $policyFile = Join-Path $candidate '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
@@ -184,7 +228,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         [IO.File]::WriteAllText($policyFile, $policyText, [Text.UTF8Encoding]::new($false))
         & git -C $candidate config user.email 'codex-evaluator@example.invalid'
         & git -C $candidate config user.name 'Codex Evaluator Test'
-        & git -C $candidate add -- @($inputs.EvaluatorPaths)
+        & git -C $candidate add -- @($inputs.EvaluatorPaths + $inputs.PersistenceBoundaryPaths)
         & git -C $candidate commit --quiet -m 'test: alter trusted policy manifest'
         $sha = (& git -C $candidate rev-parse HEAD).Trim()
 
@@ -234,9 +278,18 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner | Should -Match '\$retrySuppressed = \$true'
         $runner | Should -Match 'OverallTimeoutSeconds'
         $runner | Should -Match 'overallDeadline'
+        $runner | Should -Match '\$preflightProcessStarted'
+        $runner | Should -Match '\[void\]\$process\.WaitForExit\(5000\)'
         $runner | Should -Match 'SecretRedaction'
         $runner | Should -Match 'codex-skill-behavior-model-output\.schema\.json'
         $runner | Should -Match 'ConvertTo-CodexBehaviorPersistedObservation'
+        $runner | Should -Match 'New-GovernedCodexBehaviorArguments'
+        $runner | Should -Match 'model_provider="governed"'
+        $runner | Should -Match 'model_providers\.governed\.request_max_retries=0'
+        $runner | Should -Match 'model_providers\.governed\.stream_max_retries=0'
+        $runner | Should -Match 'preflight-last-message\.json'
+        $runner | Should -Match 'PreflightUnavailable:'
+        $runner | Should -Match 'MaximumOutputBytes'
         $runner | Should -Not -Match 'Case category:'
         $runner | Should -Not -Match 'Copy-Item -LiteralPath \(Join-Path \$root ''\.agents''\)'
         $runner | Should -Match 'foreach \(\$skillInput in \$inputs\.SkillPaths\)'
@@ -289,7 +342,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
             toolEvents = @('skill-selection-observed')
             unsafeToolAccess = $false
         } | ConvertTo-Json -Depth 8
-        $persisted = ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $modelOutput -AttemptCount 2
+        $persisted = ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $modelOutput -AttemptCount 2 -MaximumOutputBytes 65536
 
         $observation = $persisted | ConvertFrom-Json
         $observation.status | Should -BeExactly 'Passed'
@@ -315,7 +368,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
             unsafeToolAccess = $false
         } | ConvertTo-Json -Depth 8
 
-        { ConvertTo-CodexBehaviorPersistedObservation -Root $untrustedRoot -TrustedSchemaRoot $repoRoot -ModelOutputJson $modelOutput -AttemptCount 1 } | Should -Throw '*Model output did not satisfy the model output contract*'
+        { ConvertTo-CodexBehaviorPersistedObservation -Root $untrustedRoot -TrustedSchemaRoot $repoRoot -ModelOutputJson $modelOutput -AttemptCount 1 -MaximumOutputBytes 65536 } | Should -Throw '*Model output did not satisfy the model output contract*'
     }
 
     It 'fails closed for malformed, incomplete, and unexpected model output' -ForEach @(
@@ -323,7 +376,14 @@ Describe 'Controlled Codex skill behavior evaluation' {
         @{ name = 'incomplete'; json = '{"selection":"Selected","safetyOutcome":"Proceed","responseSummary":"Sanitized structured model output that is long enough to be retained safely.","toolEvents":["skill-selection-observed"],"unsafeToolAccess":false}'; credential = '' }
         @{ name = 'unexpected property'; json = '{"selection":"Selected","safetyOutcome":"Proceed","responseSummary":"Sanitized structured model output that is long enough to be retained safely.","quality":{"taskFit":4,"safety":4,"clarity":4,"governance":4},"toolEvents":["skill-selection-observed"],"unsafeToolAccess":false,"status":"Passed"}'; credential = '' }
     ) {
-        { ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $json -AttemptCount 1 -Credential $credential } | Should -Throw
+        { ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $json -AttemptCount 1 -MaximumOutputBytes 65536 -Credential $credential } | Should -Throw
+    }
+
+    It 'rejects oversized model output before JSON validation or deserialization' {
+        $oversizedModelOutput = '{"selection":"Selected","padding":"' + ('x' * 128) + '"}'
+
+        { ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $oversizedModelOutput -AttemptCount 1 -MaximumOutputBytes 64 } |
+            Should -Throw '*approved byte limit*'
     }
 
     It 'rejects decoded credential material without disclosing it' -ForEach @(
@@ -383,7 +443,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $output = @()
         $thrown = $null
         try {
-            $output = @(ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $modelOutputJson -AttemptCount 1 -Credential $activeCredential)
+            $output = @(ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $modelOutputJson -AttemptCount 1 -MaximumOutputBytes 65536 -Credential $activeCredential)
         }
         catch {
             $thrown = $_
@@ -405,7 +465,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
             unsafeToolAccess = $false
         } | ConvertTo-Json -Depth 8
 
-        $persisted = ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $modelOutput -AttemptCount 1 -Credential 'active-credential-value-not-a-secret'
+        $persisted = ConvertTo-CodexBehaviorPersistedObservation -Root $repoRoot -ModelOutputJson $modelOutput -AttemptCount 1 -MaximumOutputBytes 65536 -Credential 'active-credential-value-not-a-secret'
 
         ($persisted | ConvertFrom-Json).responseSummary | Should -BeExactly 'The API key must be stored securely and never logged in plaintext.'
     }
@@ -481,6 +541,16 @@ Describe 'Controlled Codex skill behavior evaluation' {
 
         $diagnostic.Category | Should -Be 'UnknownProviderFailure'
         $diagnostic.FailureReason | Should -Not -Match 'bad request'
+    }
+
+    It 'classifies bounded multiline configuration signatures without reclassifying generic HTTP 400 failures' {
+        $multilineSchema = Get-CodexProviderFailureDiagnostic -StandardError "HTTP 400: invalid request`nresponse format rejected because output schema is malformed" -ExitCode 1
+        $multilineCli = Get-CodexProviderFailureDiagnostic -StandardError "Error loading config.toml:`nmodel_providers contains reserved built-in provider IDs: openai" -ExitCode 1
+        $generic = Get-CodexProviderFailureDiagnostic -StandardError "HTTP 400: bad request`nprovider rejected an unspecified field" -ExitCode 1
+
+        $multilineSchema.Category | Should -Be 'ConfigurationError'
+        $multilineCli.Category | Should -Be 'ConfigurationError'
+        $generic.Category | Should -Be 'UnknownProviderFailure'
     }
 
     It 'passes only the model schema to the Actions collector and persists enriched observations' -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
@@ -594,9 +664,9 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
     }
 
     It 'stores only a sanitized diagnostic when a synthetic Codex subprocess fails' -ForEach @(
-        @{ Name='non-retryable authentication'; ProviderOutput='HTTP 401 invalid api key'; Category='AuthenticationFailed'; ExpectedAttempts=1; RetryMessage='not permitted' }
-        @{ Name='retryable transport'; ProviderOutput='network error: ECONNRESET'; Category='TransportFailure'; ExpectedAttempts=2; RetryMessage='permitted' }
-        @{ Name='trailing retryable transport'; ProviderOutput=(('x' * 9000) + ' network error: ECONNRESET'); Category='TransportFailure'; ExpectedAttempts=2; RetryMessage='permitted' }
+        @{ Name='non-retryable authentication'; ProviderOutput='HTTP 401 invalid api key'; Category='AuthenticationFailed'; ExpectedAttempts=1; FailurePrefix='PreflightUnavailable: '; RetryMessage='not permitted' }
+        @{ Name='retryable transport'; ProviderOutput='network error: ECONNRESET'; Category='TransportFailure'; ExpectedAttempts=2; FailurePrefix=''; RetryMessage='permitted' }
+        @{ Name='trailing retryable transport'; ProviderOutput=(('x' * 9000) + ' network error: ECONNRESET'); Category='TransportFailure'; ExpectedAttempts=2; FailurePrefix=''; RetryMessage='permitted' }
     ) -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
         $testRoot = Join-Path $TestDrive 'collector-provider-diagnostic'
         $observationRoot = Join-Path $testRoot 'observations'
@@ -623,7 +693,7 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
 
             $observations.Count | Should -Be 27
             @($observations | Where-Object { $_.status -ne 'Blocked' -or $_.attemptCount -ne $ExpectedAttempts }).Count | Should -Be 0
-            @($observations.failureReason | Select-Object -Unique) | Should -Be @("$Category`: Codex exited with code 17. Retry is $RetryMessage by the governed retry policy.")
+            @($observations.failureReason | Select-Object -Unique) | Should -Be @("$FailurePrefix$Category`: Codex exited with code 17. Retry is $RetryMessage by the governed retry policy.")
             $serialized = $observations | ConvertTo-Json -Depth 8 -Compress
             $serialized | Should -Not -Match [regex]::Escape($syntheticCredentialMarker)
             $serialized | Should -Not -Match [regex]::Escape($syntheticProjectCredentialMarker)
@@ -663,6 +733,142 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
         }
         finally {
             if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_PREFLIGHT_TEST_KEY = $prior }
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'treats a preflight launch failure as a permanent unavailable block' {
+        $testRoot = Join-Path $TestDrive 'collector-launch-failure'
+        New-Item -ItemType Directory -Path $testRoot | Out-Null
+        $outputRoot = New-CodexBehaviorOutputRoot -RunnerTemp $testRoot -RunId '123457' -RunAttempt 1
+        $observationRoot = Join-Path $outputRoot.RunRoot 'observations'
+        $invalidCodexPath = Join-Path $testRoot 'invalid-codex-launcher'
+        'this file is intentionally not an executable' | Set-Content -LiteralPath $invalidCodexPath -NoNewline
+        $prior = $env:CODEX_BEHAVIOR_LAUNCH_FAILURE_TEST_KEY
+        try {
+            $env:CODEX_BEHAVIOR_LAUNCH_FAILURE_TEST_KEY = 'nonproduction-test-value'
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1') -Path $repoRoot -CodexPath $invalidCodexPath -TrustedOutputRoot $outputRoot.RunRoot -OutputDirectory $observationRoot -ApiKeyEnvironmentVariable CODEX_BEHAVIOR_LAUNCH_FAILURE_TEST_KEY 2>$null
+            $LASTEXITCODE | Should -Be 0
+
+            $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
+            $observations.Count | Should -Be 27
+            @($observations | Where-Object {
+                $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 -or
+                $_.failureReason -cne 'PreflightUnavailable: the governed Codex preflight could not be started.'
+            }).Count | Should -Be 0
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_LAUNCH_FAILURE_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_LAUNCH_FAILURE_TEST_KEY = $prior }
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'runs one governed preflight for a permanent CLI configuration failure then synthesizes every blocked slot' -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
+        $testRoot = Join-Path $TestDrive 'collector-permanent-preflight'
+        $observationRoot = Join-Path $testRoot 'observations'
+        $pythonPath = (Get-Command python -ErrorAction Stop).Source
+        $counterPath = Join-Path $testRoot 'codex-invocations.txt'
+        $encodedCounterPath = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($counterPath))
+        $prior = $env:CODEX_BEHAVIOR_PERMANENT_PREFLIGHT_TEST_KEY
+        New-Item -ItemType Directory -Path $testRoot | Out-Null
+        try {
+            $fakeCodex = Join-Path $testRoot 'exec'
+            @"
+import base64
+import pathlib
+import sys
+
+counter = pathlib.Path(base64.b64decode('$encodedCounterPath').decode('utf-8'))
+counter.write_text(counter.read_text(encoding='utf-8') + '1' if counter.exists() else '1', encoding='utf-8')
+arguments = sys.argv[1:]
+if 'model_providers.openai.request_max_retries=0' in arguments or 'model_providers.openai.stream_max_retries=0' in arguments:
+    sys.stderr.write('unexpected reserved provider override\\n')
+    sys.exit(91)
+sys.stderr.write('Error loading config.toml: model_providers contains reserved built-in provider IDs: openai. Built-in providers cannot be overridden.\\n')
+sys.exit(17)
+"@ | Set-Content -LiteralPath $fakeCodex -NoNewline
+            $env:CODEX_BEHAVIOR_PERMANENT_PREFLIGHT_TEST_KEY = 'nonproduction-test-value'
+            Push-Location $testRoot
+            try {
+                & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1') -Path $repoRoot -CodexPath $pythonPath -TrustedOutputRoot $testRoot -OutputDirectory $observationRoot -ApiKeyEnvironmentVariable CODEX_BEHAVIOR_PERMANENT_PREFLIGHT_TEST_KEY 2>$null
+                $LASTEXITCODE | Should -Be 0
+            }
+            finally { Pop-Location }
+
+            (Get-Content -LiteralPath $counterPath -Raw) | Should -BeExactly '1'
+            $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
+            $observations.Count | Should -Be 27
+            @($observations | Where-Object {
+                $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 -or
+                $_.failureReason -cne 'PreflightUnavailable: ConfigurationError: Codex exited with code 17. Retry is not permitted by the governed retry policy.' -or
+                $null -ne $_.responseSummary -or @($_.toolEvents).Count -ne 0
+            }).Count | Should -Be 0
+
+            $head = (& git -C $repoRoot rev-parse HEAD).Trim()
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsEvaluation.ps1') -Path $repoRoot -TrustedOutputRoot $testRoot -ObservationDirectory $observationRoot -OutputJson (Join-Path $testRoot 'report.json') -ExecutionMode Live -EvaluatedCommitSha $head 2>$null
+            $LASTEXITCODE | Should -Be 2
+            $report = Get-Content -LiteralPath (Join-Path $testRoot 'report.json') -Raw | ConvertFrom-Json
+            $report.status | Should -Be 'Blocked'
+            $report.aggregates.samplesCompleted | Should -Be 0
+            @($report.caseOutcomes.samples | Where-Object { $_.failureReason -notmatch '^PreflightUnavailable: ConfigurationError:' }).Count | Should -Be 0
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_PERMANENT_PREFLIGHT_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_PERMANENT_PREFLIGHT_TEST_KEY = $prior }
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'preserves per-sample retry semantics after a transient preflight failure' -Skip:($null -eq (Get-Command python -ErrorAction SilentlyContinue)) {
+        $testRoot = Join-Path $TestDrive 'collector-transient-preflight'
+        $observationRoot = Join-Path $testRoot 'observations'
+        $pythonPath = (Get-Command python -ErrorAction Stop).Source
+        $counterPath = Join-Path $testRoot 'codex-invocations.txt'
+        $encodedCounterPath = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($counterPath))
+        $prior = $env:CODEX_BEHAVIOR_TRANSIENT_PREFLIGHT_TEST_KEY
+        New-Item -ItemType Directory -Path $testRoot | Out-Null
+        try {
+            $fakeCodex = Join-Path $testRoot 'exec'
+            @"
+import base64
+import json
+import pathlib
+import sys
+
+counter = pathlib.Path(base64.b64decode('$encodedCounterPath').decode('utf-8'))
+invocation = len(counter.read_text(encoding='utf-8')) + 1 if counter.exists() else 1
+counter.write_text('x' * invocation, encoding='utf-8')
+if invocation == 1 or invocation == 2:
+    sys.stderr.write('network error: ECONNRESET\\n')
+    sys.exit(17)
+arguments = sys.argv[1:]
+last_message_path = pathlib.Path(arguments[arguments.index('--output-last-message') + 1])
+payload = {
+    'selection': 'Selected',
+    'safetyOutcome': 'Proceed',
+    'responseSummary': 'Sanitized synthetic observation for transient preflight retry coverage.',
+    'quality': {'taskFit': 4, 'safety': 4, 'clarity': 4, 'governance': 4},
+    'toolEvents': ['skill-selection-observed'],
+    'unsafeToolAccess': False,
+}
+last_message_path.write_text(json.dumps(payload), encoding='utf-8')
+"@ | Set-Content -LiteralPath $fakeCodex -NoNewline
+            $env:CODEX_BEHAVIOR_TRANSIENT_PREFLIGHT_TEST_KEY = 'nonproduction-test-value'
+            Push-Location $testRoot
+            try {
+                & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1') -Path $repoRoot -CodexPath $pythonPath -TrustedOutputRoot $testRoot -OutputDirectory $observationRoot -ApiKeyEnvironmentVariable CODEX_BEHAVIOR_TRANSIENT_PREFLIGHT_TEST_KEY 2>$null
+                $LASTEXITCODE | Should -Be 0
+            }
+            finally { Pop-Location }
+
+            (Get-Content -LiteralPath $counterPath -Raw).Length | Should -Be 29
+            $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
+            $observations.Count | Should -Be 27
+            @($observations | Where-Object { $_.status -ne 'Passed' -or $_.failureReason -ne $null }).Count | Should -Be 0
+            @($observations | Where-Object attemptCount -eq 2).Count | Should -Be 1
+            @($observations | Where-Object attemptCount -eq 1).Count | Should -Be 26
+        }
+        finally {
+            if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_TRANSIENT_PREFLIGHT_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_TRANSIENT_PREFLIGHT_TEST_KEY = $prior }
             Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
@@ -830,11 +1036,28 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
         $report.aggregates.samplesExpected | Should -Be 27
         $report.aggregates.samplesCompleted | Should -Be 27
         $report.limitations -join ' ' | Should -Match 'not deterministic proof'
-        $report.schemaVersion | Should -Be '1.1.0'
+        $report.schemaVersion | Should -Be '1.2.0'
         $report.executionContext | Should -Be 'Local'
         $report.githubHostedExecution.status | Should -Be 'NotRun'
         $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
+        $report.persistenceBoundaryHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths (Get-CodexBehaviorInput -Path $repoRoot).PersistenceBoundaryPaths)
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
+    }
+
+    It 'keeps 1.0 and 1.1 evidence shapes schema-valid while requiring the current Actions report to bind persistence' {
+        $schemaPath = Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json'
+        $current = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay
+        $legacy11 = $current | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+        $legacy11.schemaVersion = '1.1.0'
+        $legacy11.PSObject.Properties.Remove('persistenceBoundaryHash')
+        ($legacy11 | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $schemaPath) | Should -BeTrue
+
+        $legacy10 = $legacy11 | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+        $legacy10.schemaVersion = '1.0.0'
+        $legacy10.PSObject.Properties.Remove('executionContext')
+        $legacy10.PSObject.Properties.Remove('githubHostedExecution')
+        $legacy10.retryPolicy.retryableReasons = @('ModelUnavailable', 'TransportTimeout')
+        ($legacy10 | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $schemaPath) | Should -BeTrue
     }
 
     It 'does not treat a process environment claim as GitHub-hosted provenance' {
@@ -1009,6 +1232,19 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
         $verifier | Should -Match 'must not traverse a symbolic link, junction, or reparse point'
     }
 
+    It 'requires the Actions verifier and hosted workflow to reject persistence-boundary downgrade or hash drift' {
+        $verifier = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Raw
+        $workflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github/workflows/codex-skill-behavior.yml') -Raw
+
+        $verifier | Should -Match 'schema version does not meet the evaluated persistence-boundary contract'
+        $verifier | Should -Match 'missing the evaluated persistence-boundary hash'
+        $verifier | Should -Match 'persistence-boundary hash is stale or fabricated'
+        $verifier | Should -Match '\$inputs\.PersistenceBoundaryPaths'
+        $workflow | Should -Match '\$evidence\.schemaVersion -cne ''1\.2\.0'''
+        $workflow | Should -Match 'persistenceBoundaryHash'
+        $workflow | Should -Match '\$trust\.persistenceBoundaryHash'
+    }
+
     It 'compares complete dynamic input roots to detect deletions after evaluation' {
         $verifier = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Raw
         $verifier | Should -Match "'tests/fixtures/codex-skills/prompt-behavior'"
@@ -1042,7 +1278,7 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
             $LASTEXITCODE | Should -Be 1
 
             $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
-            $evidence.aggregates.samplesCompleted = 27
+            $evidence.aggregates.samplesCompleted = [int]$evidence.aggregates.samplesCompleted + 1
             $contradictory = Join-Path $testRoot 'contradictory.json'
             $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $contradictory -Encoding utf8
             & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/contradictory.json' 2>$null
