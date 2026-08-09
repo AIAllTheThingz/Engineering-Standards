@@ -54,11 +54,11 @@
     }
     ApprovedConfigurations = @(
         @{
-            Sha256 = '26edd6a335bfcc359e32f35959cf1a5bd514125f0fd94d88b688083c782f1515'
+            Sha256 = 'da2db970050f37d89ffc86164ca58b05bbf162dca6863af37a786f8dd4552390'
             SchemaVersion = '1.0.0'
-            ConfigurationId = 'codex-skill-behavior-gpt-5.6-sol-medium-v1'
+            ConfigurationId = 'codex-skill-behavior-gpt-5.6-sol-medium-v2'
             EvaluatorVersion = '1.0.0'
-            ScoringContractVersion = '1.0.0'
+            ScoringContractVersion = '1.1.0'
             Approval = @{ Status = 'Approved'; ApprovedBy = 'AIAllTheThingz'; ApprovedAtUtc = '2026-07-15T19:10:02Z'; Scope = 'Issue #42 nonproduction controlled Codex skill behavior evaluation' }
             Skill = @{ Name = 'enterprise-powershell'; Status = 'Active'; ActiveInstructionPath = '.agents/skills/enterprise-powershell/SKILL.md'; SuspendedInstructionPath = '.agents/suspended-skills/enterprise-powershell/SKILL.md' }
             Model = @{ Provider = 'OpenAI'; Surface = 'CodexExec'; ModelId = 'gpt-5.6-sol'; ReasoningEffort = 'medium' }

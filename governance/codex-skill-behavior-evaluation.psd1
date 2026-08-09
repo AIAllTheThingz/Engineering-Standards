@@ -1,8 +1,8 @@
 @{
     SchemaVersion = '1.0.0'
-    ConfigurationId = 'codex-skill-behavior-gpt-5.6-sol-medium-v1'
+    ConfigurationId = 'codex-skill-behavior-gpt-5.6-sol-medium-v2'
     EvaluatorVersion = '1.0.0'
-    ScoringContractVersion = '1.0.0'
+    ScoringContractVersion = '1.1.0'
 
     Approval = @{
         Status = 'Approved'
