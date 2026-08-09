@@ -487,7 +487,7 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
             $LASTEXITCODE | Should -Be 1
 
             $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
-            $evidence.aggregates.samplesCompleted = 27
+            $evidence.aggregates.samplesCompleted = [int]$evidence.aggregates.samplesCompleted + 1
             $contradictory = Join-Path $testRoot 'contradictory.json'
             $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $contradictory -Encoding utf8
             & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/contradictory.json' 2>$null
