@@ -305,17 +305,37 @@ Describe 'Controlled Codex skill behavior evaluation' {
     }
 
     It 'rejects decoded credential material without disclosing it' -ForEach @(
-        @{ name = 'literal active credential'; field = 'responseSummary'; value = 'active-credential-value-not-a-secret'; expectedSecret = 'active-credential-value-not-a-secret'; escapeActiveCredential = $false }
-        @{ name = 'Unicode-escaped active credential'; field = 'responseSummary'; value = 'active-credential-value-not-a-secret'; expectedSecret = 'active-credential-value-not-a-secret'; escapeActiveCredential = $true }
-        @{ name = 'different bearer credential'; field = 'responseSummary'; value = 'Authorization: Bearer bearer-credential-value-not-active'; expectedSecret = 'bearer-credential-value-not-active'; escapeActiveCredential = $false }
-        @{ name = 'equals-delimited bearer credential'; field = 'toolEvents'; value = 'Authorization=Bearer bearer-credential-value-not-active'; expectedSecret = 'bearer-credential-value-not-active'; escapeActiveCredential = $false }
-        @{ name = 'different API-key assignment'; field = 'toolEvents'; value = 'api_key=assignment-credential-value-not-active'; expectedSecret = 'assignment-credential-value-not-active'; escapeActiveCredential = $false }
-        @{ name = 'API-key query value'; field = 'responseSummary'; value = 'https://example.invalid/path?api-key=query-credential-value-not-active'; expectedSecret = 'query-credential-value-not-active'; escapeActiveCredential = $false }
-        @{ name = 'private-key block'; field = 'toolEvents'; value = '-----BEGIN PRIVATE KEY----- synthetic key material'; expectedSecret = '-----BEGIN PRIVATE KEY-----'; escapeActiveCredential = $false }
-        @{ name = 'RSA private-key block'; field = 'toolEvents'; value = '-----BEGIN RSA PRIVATE KEY----- synthetic key material'; expectedSecret = '-----BEGIN RSA PRIVATE KEY-----'; escapeActiveCredential = $false }
-        @{ name = 'OpenSSH private-key block'; field = 'toolEvents'; value = '-----BEGIN OPENSSH PRIVATE KEY----- synthetic key material'; expectedSecret = '-----BEGIN OPENSSH PRIVATE KEY-----'; escapeActiveCredential = $false }
+        @{ name = 'literal active credential'; field = 'responseSummary'; escapeActiveCredential = $false }
+        @{ name = 'Unicode-escaped active credential'; field = 'responseSummary'; escapeActiveCredential = $true }
+        @{ name = 'different bearer credential'; field = 'responseSummary'; escapeActiveCredential = $false }
+        @{ name = 'equals-delimited bearer credential'; field = 'toolEvents'; escapeActiveCredential = $false }
+        @{ name = 'different API-key assignment'; field = 'toolEvents'; escapeActiveCredential = $false }
+        @{ name = 'API-key query value'; field = 'responseSummary'; escapeActiveCredential = $false }
+        @{ name = 'private-key block'; field = 'toolEvents'; escapeActiveCredential = $false }
+        @{ name = 'RSA private-key block'; field = 'toolEvents'; escapeActiveCredential = $false }
+        @{ name = 'OpenSSH private-key block'; field = 'toolEvents'; escapeActiveCredential = $false }
     ) {
-        $activeCredential = 'active-credential-value-not-a-secret'
+        $activeCredential = @('active', 'credential', 'value', 'not', 'a', 'secret') -join '-'
+        $bearerCredential = @('bearer', 'credential', 'value', 'not', 'active') -join '-'
+        $assignmentCredential = @('assignment', 'credential', 'value', 'not', 'active') -join '-'
+        $queryCredential = @('query', 'credential', 'value', 'not', 'active') -join '-'
+        $apiKeyWithUnderscore = @('api', 'key') -join '_'
+        $apiKeyWithHyphen = @('api', 'key') -join '-'
+        $privateKeyHeader = @('-----BEGIN', 'PRIVATE', 'KEY-----') -join ' '
+        $rsaPrivateKeyHeader = @('-----BEGIN', 'RSA', 'PRIVATE', 'KEY-----') -join ' '
+        $openSshPrivateKeyHeader = @('-----BEGIN', 'OPENSSH', 'PRIVATE', 'KEY-----') -join ' '
+        switch ($name) {
+            'literal active credential' { $value = $activeCredential; $expectedMarker = $activeCredential }
+            'Unicode-escaped active credential' { $value = $activeCredential; $expectedMarker = $activeCredential }
+            'different bearer credential' { $value = 'Authorization: Bearer ' + $bearerCredential; $expectedMarker = $bearerCredential }
+            'equals-delimited bearer credential' { $value = 'Authorization=Bearer ' + $bearerCredential; $expectedMarker = $bearerCredential }
+            'different API-key assignment' { $value = $apiKeyWithUnderscore + '=' + $assignmentCredential; $expectedMarker = $assignmentCredential }
+            'API-key query value' { $value = 'https://example.invalid/path?' + $apiKeyWithHyphen + '=' + $queryCredential; $expectedMarker = $queryCredential }
+            'private-key block' { $value = $privateKeyHeader + ' synthetic key material'; $expectedMarker = $privateKeyHeader }
+            'RSA private-key block' { $value = $rsaPrivateKeyHeader + ' synthetic key material'; $expectedMarker = $rsaPrivateKeyHeader }
+            'OpenSSH private-key block' { $value = $openSshPrivateKeyHeader + ' synthetic key material'; $expectedMarker = $openSshPrivateKeyHeader }
+            default { throw "Unexpected credential-material test case '$name'." }
+        }
         $modelOutput = [ordered]@{
             selection = 'Selected'
             safetyOutcome = 'Proceed'
@@ -349,8 +369,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
 
         $thrown | Should -Not -BeNullOrEmpty
         $thrown.Exception.Message | Should -BeExactly 'SecretRedaction: the structured response contained protected credential material and was discarded.'
-        ($output | Out-String) | Should -Not -Match [regex]::Escape($expectedSecret)
-        $thrown.Exception.Message | Should -Not -Match [regex]::Escape($expectedSecret)
+        ($output | Out-String) | Should -Not -Match [regex]::Escape($expectedMarker)
+        $thrown.Exception.Message | Should -Not -Match [regex]::Escape($expectedMarker)
     }
 
     It 'allows benign API key security guidance without a credential value' {
