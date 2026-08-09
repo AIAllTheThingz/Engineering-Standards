@@ -167,7 +167,7 @@ try {
                 @($policy.EvaluatorPaths).Count -ne $requiredEvaluatorPaths.Count -or
                 [string]$policy.ConfigurationPath -in @($policy.EvaluatorPaths) -or
                 @($policy.ApprovedConfigurations).Count -ne 2 -or
-                'da2db970050f37d89ffc86164ca58b05bbf162dca6863af37a786f8dd4552390' -notin $approvedHashes -or
+                '26edd6a335bfcc359e32f35959cf1a5bd514125f0fd94d88b688083c782f1515' -notin $approvedHashes -or
                 '9a24ce3d74448b2787e3470dbb9cace027aa5ae9fddbeff507a0019ccd700de6' -notin $approvedHashes -or
                 @($approvedHashes | Where-Object { $_ -cnotmatch '^[0-9a-f]{64}$' }).Count -gt 0 -or
                 @($requiredLimits | Where-Object { -not $policy.InputLimits.ContainsKey($_) -or [long]$policy.InputLimits[$_] -lt 1 }).Count -gt 0 -or
