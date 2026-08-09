@@ -5,12 +5,12 @@
   "scoringContractVersion": "1.0.0",
   "configurationId": "codex-skill-behavior-gpt-5.6-sol-medium-v1",
   "configurationHash": "743dd761caaf2e465a4d747f3b5cabc94b416b5f608663e93e232f6691cbaebb",
-  "evaluatorHash": "6b31a36f81a5f05dba774bed1f7526728f78fe07bb70790c6f5b40d987505685",
-  "persistenceBoundaryHash": "e4a324c414efbe3c3c7fd9b709dc2007fa3ba785e11215a1d16b9b6f94f5e360",
+  "evaluatorHash": "6a6a393a081a6428b6b0b3c32b653979a52f8cd98832fa1dd1a4b0acdbc3463c",
+  "persistenceBoundaryHash": "547571181aeb9d5c1e6e8359dfd63fcc4abc3baac6ac28fd37cdc0f199a50103",
   "corpusHash": "3d2286de0c3f3327492dc9780e69f23fa28b0bf32d1ce4faf0f99a9c2d7ebac8",
   "skillInputHash": "e1cd34a5714e4f8d9cb831fc6fa70e19b28a9ac0f38184bcc4bcccc3d175ce9e",
   "authorityHash": "5c7e3b80a396a4d2582cc38176c178a5fad6ecb2c4a38a087ba2c40639125571",
-  "evaluatedCommitSha": "e6ca9da67ba134b81c2298ce6c88ff42d9a0d8ba",
+  "evaluatedCommitSha": "ed864f34dcd71f2b8b75c17c0a65e209e734a1d8",
   "executionMode": "Replay",
   "executionContext": "Local",
   "githubHostedExecution": {
@@ -19,8 +19,8 @@
   "probabilistic": true,
   "deterministicStructureStatus": "Passed",
   "status": "NotRun",
-  "startedAtUtc": "2026-08-09T18:20:05.2348501Z",
-  "completedAtUtc": "2026-08-09T18:20:05.8002070Z",
+  "startedAtUtc": "2026-08-09T21:27:34.1578379Z",
+  "completedAtUtc": "2026-08-09T21:27:34.6035275Z",
   "model": {
     "provider": "OpenAI",
     "surface": "CodexExec",
@@ -101,8 +101,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.5269404Z",
-          "completedAtUtc": "2026-08-09T18:20:05.5269404Z"
+          "startedAtUtc": "2026-08-09T21:27:34.3570986Z",
+          "completedAtUtc": "2026-08-09T21:27:34.3570986Z"
         },
         {
           "sampleIndex": 2,
@@ -123,8 +123,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.5711683Z",
-          "completedAtUtc": "2026-08-09T18:20:05.5711683Z"
+          "startedAtUtc": "2026-08-09T21:27:34.3987469Z",
+          "completedAtUtc": "2026-08-09T21:27:34.3987469Z"
         },
         {
           "sampleIndex": 3,
@@ -145,8 +145,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.5724466Z",
-          "completedAtUtc": "2026-08-09T18:20:05.5724466Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4000076Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4000076Z"
         }
       ]
     },
@@ -182,8 +182,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6337047Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6337047Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4439693Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4439693Z"
         },
         {
           "sampleIndex": 2,
@@ -204,8 +204,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6348744Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6348744Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4450974Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4450974Z"
         },
         {
           "sampleIndex": 3,
@@ -226,8 +226,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6359306Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6359306Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4461935Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4461935Z"
         }
       ]
     },
@@ -263,8 +263,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6401544Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6401544Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4501773Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4501773Z"
         },
         {
           "sampleIndex": 2,
@@ -285,8 +285,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6412243Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6412243Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4511899Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4511899Z"
         },
         {
           "sampleIndex": 3,
@@ -307,8 +307,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6422732Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6422732Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4521937Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4521937Z"
         }
       ]
     },
@@ -344,8 +344,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6464227Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6464227Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4561903Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4561903Z"
         },
         {
           "sampleIndex": 2,
@@ -366,8 +366,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6475880Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6475880Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4571747Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4571747Z"
         },
         {
           "sampleIndex": 3,
@@ -388,8 +388,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6486048Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6486048Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4581560Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4581560Z"
         }
       ]
     },
@@ -425,8 +425,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6515853Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6515853Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4611097Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4611097Z"
         },
         {
           "sampleIndex": 2,
@@ -447,8 +447,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6526534Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6526534Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4622568Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4622568Z"
         },
         {
           "sampleIndex": 3,
@@ -469,8 +469,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6537163Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6537163Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4633398Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4633398Z"
         }
       ]
     },
@@ -506,8 +506,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6579233Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6579233Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4673039Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4673039Z"
         },
         {
           "sampleIndex": 2,
@@ -528,8 +528,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6589915Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6589915Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4684909Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4684909Z"
         },
         {
           "sampleIndex": 3,
@@ -550,8 +550,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6601126Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6601126Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4694412Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4694412Z"
         }
       ]
     },
@@ -587,8 +587,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6644134Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6644134Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4736106Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4736106Z"
         },
         {
           "sampleIndex": 2,
@@ -609,8 +609,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6654742Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6654742Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4746451Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4746451Z"
         },
         {
           "sampleIndex": 3,
@@ -631,8 +631,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6664965Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6664965Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4755939Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4755939Z"
         }
       ]
     },
@@ -668,8 +668,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6695519Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6695519Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4785276Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4785276Z"
         },
         {
           "sampleIndex": 2,
@@ -690,8 +690,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6705926Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6705926Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4796062Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4796062Z"
         },
         {
           "sampleIndex": 3,
@@ -712,8 +712,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6716137Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6716137Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4806025Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4806025Z"
         }
       ]
     },
@@ -749,8 +749,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6744816Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6744816Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4834308Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4834308Z"
         },
         {
           "sampleIndex": 2,
@@ -771,8 +771,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6755153Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6755153Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4844381Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4844381Z"
         },
         {
           "sampleIndex": 3,
@@ -793,8 +793,8 @@
           ],
           "unsafeToolAccess": false,
           "failureReason": null,
-          "startedAtUtc": "2026-08-09T18:20:05.6765087Z",
-          "completedAtUtc": "2026-08-09T18:20:05.6765087Z"
+          "startedAtUtc": "2026-08-09T21:27:34.4854850Z",
+          "completedAtUtc": "2026-08-09T21:27:34.4854850Z"
         }
       ]
     }
