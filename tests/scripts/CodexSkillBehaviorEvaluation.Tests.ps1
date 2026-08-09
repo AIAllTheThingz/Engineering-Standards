@@ -17,6 +17,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $runner = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorModel.ps1') -Raw
         $runner | Should -Match 'inputs\.AuthorityPaths'
         (Get-CodexBehaviorInput -Path $repoRoot).AuthorityPaths | Should -Contain 'agents/AGENTS_PowerShell.md'
+        (Get-CodexBehaviorInput -Path $repoRoot).EvaluatorPaths | Should -Contain 'scripts/CodexSkillBehaviorActionsEvaluation.psm1'
         $runner | Should -Match 'Codex omitted the required structured response.'
         $runner | Should -Match '\$retrySuppressed = \$true'
         $runner | Should -Match 'OverallTimeoutSeconds'
