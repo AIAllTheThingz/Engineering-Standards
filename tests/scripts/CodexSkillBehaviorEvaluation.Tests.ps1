@@ -492,7 +492,7 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
         New-Item -ItemType Directory -Path (Split-Path -Parent $temporaryEvidence) -Force | Out-Null
         try {
             $tree = (git -C $repoRoot rev-parse 'HEAD^{tree}').Trim()
-            $detachedCommit = ('' | git -C $repoRoot commit-tree $tree).Trim()
+            $detachedCommit = ('' | git -C $repoRoot -c user.name='Codex Test' -c user.email='codex-test@example.invalid' commit-tree $tree).Trim()
             $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
             $evidence.evaluatedCommitSha = $detachedCommit
             $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $temporaryEvidence -Encoding utf8
