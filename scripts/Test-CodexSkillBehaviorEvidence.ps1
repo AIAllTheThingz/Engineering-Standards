@@ -58,6 +58,9 @@ try {
     if ($evidence.schemaVersion -eq '1.2.0' -and $evidence.evaluatedInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $boundInputPaths)) { throw 'Evidence evaluated input hash is stale or fabricated.' }
     & git -C $root cat-file -e ("{0}^{{commit}}" -f $evidence.evaluatedCommitSha) 2>$null
     $evaluatedCommitObjectAvailable = $LASTEXITCODE -eq 0
+    # A squash merge can discard the replay commit object. For NotRun replay
+    # evidence, evaluatedInputHash is the surviving bounded-content proof; the
+    # evaluated SHA remains descriptive when that object is no longer reachable.
     if (-not $evaluatedCommitObjectAvailable -and ($evidence.executionMode -ne 'Replay' -or $evidence.status -ne 'NotRun')) { throw 'Evidence evaluated commit object is unavailable for live or non-replay evidence.' }
     & git -C $root merge-base --is-ancestor $evidence.evaluatedCommitSha HEAD 2>$null
     $evaluatedCommitIsAncestor = $evaluatedCommitObjectAvailable -and $LASTEXITCODE -eq 0
@@ -76,7 +79,12 @@ try {
     # squash merge discards that commit, the complete evaluatedInputHash above
     # proves the bounded source set against the current checkout instead.
     if ($evaluatedCommitIsAncestor) {
-        & git -C $root diff --quiet $evidence.evaluatedCommitSha -- @boundInputPaths 2>$null
+        $ancestryInputPaths = @($inputs.ConfigurationPath) + @($inputs.EvaluatorPaths) + @($inputs.PersistenceBoundaryPaths) + @($inputs.AuthorityPaths) + @(
+            'tests/fixtures/codex-skills/prompt-behavior',
+            '.agents/skills',
+            '.agents/suspended-skills'
+        ) | Sort-Object -Unique
+        & git -C $root diff --quiet $evidence.evaluatedCommitSha -- @ancestryInputPaths 2>$null
         if ($LASTEXITCODE -ne 0) { throw 'Hash-bound evaluator inputs differ from the evaluated commit.' }
     }
     if (@($evidence.caseOutcomes).Count -ne @($inputs.Cases).Count) { throw 'Evidence is a partial run with a mismatched case count.' }

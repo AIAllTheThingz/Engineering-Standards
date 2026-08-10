@@ -479,6 +479,8 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
         $verifier | Should -Match 'evaluated input hash'
         (Get-CodexBehaviorInput -Path $repoRoot).TrustPolicyPath | Should -Be '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
         (Get-CodexBehaviorBoundInputPaths -Inputs (Get-CodexBehaviorInput -Path $repoRoot)) | Should -Contain '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
+        $verifier | Should -Match "'tests/fixtures/codex-skills/prompt-behavior'"
+        $verifier | Should -Match "'\.agents/skills'"
     }
 
     It 'requires the evaluated input hash for schema 1.2 evidence and rejects unknown live commits' {
