@@ -140,6 +140,6 @@ Any change to the candidate after exact-target validation requires the affected 
 
 ## Consumer Guidance
 
-No immediate migration is required for supported `v1.1.0` consumers while `1.2.0` remains prepared and unpublished. Production consumers should continue to use immutable published or explicitly documented authorities. Moving branches are not compatibility records.
+No immediate migration is required for supported `v1.1.0` consumers while `1.2.0` remains prepared and unpublished. Production consumers should continue to use immutable published authorities or explicitly documented immutable authorities. Moving branches are not compatibility records.
 
 The authoritative prepared release notes are [1.2.0.md](1.2.0.md), and current publication state is maintained in [Release Status](../RELEASE_STATUS.md).
