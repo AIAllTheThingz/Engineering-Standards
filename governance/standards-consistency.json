@@ -55,14 +55,8 @@
       "status": "Active",
       "lastReviewed": "2026-06-19",
       "ownerRole": "Engineering Governance",
-      "parentDocuments": [
-        "governance/ORGANIZATION_CONTRACT.md"
-      ],
-      "childOrHandoffStandards": [
-        "schemas/completion-result.schema.json",
-        "schemas/test-evidence.schema.json",
-        "schemas/artifact-record.schema.json"
-      ],
+      "parentDocuments": ["governance/ORGANIZATION_CONTRACT.md"],
+      "childOrHandoffStandards": ["schemas/completion-result.schema.json","schemas/test-evidence.schema.json","schemas/artifact-record.schema.json"],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -83,12 +77,8 @@
       "status": "Active",
       "lastReviewed": "2026-06-19",
       "ownerRole": "Engineering Governance",
-      "parentDocuments": [
-        "governance/ORGANIZATION_CONTRACT.md"
-      ],
-      "childOrHandoffStandards": [
-        "agents/AGENTS_Base.md"
-      ],
+      "parentDocuments": ["governance/ORGANIZATION_CONTRACT.md"],
+      "childOrHandoffStandards": ["agents/AGENTS_Base.md"],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -109,12 +99,8 @@
       "status": "Active",
       "lastReviewed": "2026-06-19",
       "ownerRole": "Engineering Governance",
-      "parentDocuments": [
-        "governance/ORGANIZATION_CONTRACT.md"
-      ],
-      "childOrHandoffStandards": [
-        "agents/AGENTS_Base.md"
-      ],
+      "parentDocuments": ["governance/ORGANIZATION_CONTRACT.md"],
+      "childOrHandoffStandards": ["agents/AGENTS_Base.md"],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -135,12 +121,8 @@
       "status": "Active",
       "lastReviewed": "2026-06-19",
       "ownerRole": "Engineering Governance",
-      "parentDocuments": [
-        "governance/ORGANIZATION_CONTRACT.md"
-      ],
-      "childOrHandoffStandards": [
-        "agents/AGENTS_Base.md"
-      ],
+      "parentDocuments": ["governance/ORGANIZATION_CONTRACT.md"],
+      "childOrHandoffStandards": ["agents/AGENTS_Base.md"],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -161,21 +143,8 @@
       "status": "Active",
       "lastReviewed": "2026-06-21",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [
-        "agents/AGENTS_Base.md",
-        "governance/ORGANIZATION_CONTRACT.md"
-      ],
-      "childOrHandoffStandards": [
-        "agents/AGENTS_PowerShell.md",
-        "agents/AGENTS_DotNet.md",
-        "agents/AGENTS_Database.md",
-        "agents/AGENTS_WorkerService.md",
-        "agents/AGENTS_Integration.md",
-        "agents/AGENTS_Infrastructure.md",
-        "agents/AGENTS_WebFrontend.md",
-        "agents/AGENTS_Python.md",
-        "agents/AGENTS_Bash.md"
-      ],
+      "parentDocuments": ["agents/AGENTS_Base.md","governance/ORGANIZATION_CONTRACT.md"],
+      "childOrHandoffStandards": ["agents/AGENTS_PowerShell.md","agents/AGENTS_DotNet.md","agents/AGENTS_Database.md","agents/AGENTS_WorkerService.md","agents/AGENTS_Integration.md","agents/AGENTS_Infrastructure.md","agents/AGENTS_WebFrontend.md","agents/AGENTS_Python.md","agents/AGENTS_Bash.md"],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -196,20 +165,8 @@
       "status": "Active",
       "lastReviewed": "2026-07-19",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [
-        "governance/ORGANIZATION_CONTRACT.md"
-      ],
-      "childOrHandoffStandards": [
-        "agents/AGENTS_PowerShell.md",
-        "agents/AGENTS_DotNet.md",
-        "agents/AGENTS_Database.md",
-        "agents/AGENTS_WorkerService.md",
-        "agents/AGENTS_Integration.md",
-        "agents/AGENTS_Infrastructure.md",
-        "agents/AGENTS_WebFrontend.md",
-        "agents/AGENTS_Python.md",
-        "agents/AGENTS_Bash.md"
-      ],
+      "parentDocuments": ["governance/ORGANIZATION_CONTRACT.md"],
+      "childOrHandoffStandards": ["agents/AGENTS_PowerShell.md","agents/AGENTS_DotNet.md","agents/AGENTS_Database.md","agents/AGENTS_WorkerService.md","agents/AGENTS_Integration.md","agents/AGENTS_Infrastructure.md","agents/AGENTS_WebFrontend.md","agents/AGENTS_Python.md","agents/AGENTS_Bash.md"],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -230,16 +187,8 @@
       "status": "Active",
       "lastReviewed": "2026-06-20",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [
-        "agents/AGENTS_Base.md"
-      ],
-      "childOrHandoffStandards": [
-        "agents/AGENTS_DotNet.md",
-        "agents/AGENTS_Database.md",
-        "agents/AGENTS_Infrastructure.md",
-        "agents/AGENTS_Python.md",
-        "agents/AGENTS_Bash.md"
-      ],
+      "parentDocuments": ["agents/AGENTS_Base.md"],
+      "childOrHandoffStandards": ["agents/AGENTS_DotNet.md","agents/AGENTS_Database.md","agents/AGENTS_Infrastructure.md","agents/AGENTS_Python.md","agents/AGENTS_Bash.md"],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -260,17 +209,8 @@
       "status": "Active",
       "lastReviewed": "2026-06-20",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [
-        "agents/AGENTS_Base.md"
-      ],
-      "childOrHandoffStandards": [
-        "agents/AGENTS_Python.md",
-        "agents/AGENTS_Bash.md",
-        "agents/AGENTS_Database.md",
-        "agents/AGENTS_WorkerService.md",
-        "agents/AGENTS_Integration.md",
-        "agents/AGENTS_WebFrontend.md"
-      ],
+      "parentDocuments": ["agents/AGENTS_Base.md"],
+      "childOrHandoffStandards": ["agents/AGENTS_Python.md","agents/AGENTS_Bash.md","agents/AGENTS_Database.md","agents/AGENTS_WorkerService.md","agents/AGENTS_Integration.md","agents/AGENTS_WebFrontend.md"],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -291,18 +231,8 @@
       "status": "Active",
       "lastReviewed": "2026-06-20",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [
-        "agents/AGENTS_Base.md"
-      ],
-      "childOrHandoffStandards": [
-        "agents/AGENTS_DotNet.md",
-        "agents/AGENTS_PowerShell.md",
-        "agents/AGENTS_WorkerService.md",
-        "agents/AGENTS_Integration.md",
-        "agents/AGENTS_Infrastructure.md",
-        "agents/AGENTS_Python.md",
-        "agents/AGENTS_Bash.md"
-      ],
+      "parentDocuments": ["agents/AGENTS_Base.md"],
+      "childOrHandoffStandards": ["agents/AGENTS_DotNet.md","agents/AGENTS_PowerShell.md","agents/AGENTS_WorkerService.md","agents/AGENTS_Integration.md","agents/AGENTS_Infrastructure.md","agents/AGENTS_Python.md","agents/AGENTS_Bash.md"],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -323,18 +253,8 @@
       "status": "Active",
       "lastReviewed": "2026-06-20",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [
-        "agents/AGENTS_Base.md"
-      ],
-      "childOrHandoffStandards": [
-        "agents/AGENTS_DotNet.md",
-        "agents/AGENTS_Database.md",
-        "agents/AGENTS_PowerShell.md",
-        "agents/AGENTS_Integration.md",
-        "agents/AGENTS_Infrastructure.md",
-        "agents/AGENTS_Python.md",
-        "agents/AGENTS_Bash.md"
-      ],
+      "parentDocuments": ["agents/AGENTS_Base.md"],
+      "childOrHandoffStandards": ["agents/AGENTS_DotNet.md","agents/AGENTS_Database.md","agents/AGENTS_PowerShell.md","agents/AGENTS_Integration.md","agents/AGENTS_Infrastructure.md","agents/AGENTS_Python.md","agents/AGENTS_Bash.md"],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -355,24 +275,8 @@
       "status": "Active",
       "lastReviewed": "2026-06-21",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [
-        "agents/AGENTS_Base.md",
-        "governance/ORGANIZATION_CONTRACT.md",
-        "governance/COMPLETION_EVIDENCE.md",
-        "governance/RISK_CLASSIFICATION.md",
-        "governance/EXCEPTION_PROCESS.md",
-        "governance/AI_GENERATED_CODE_POLICY.md"
-      ],
-      "childOrHandoffStandards": [
-        "agents/AGENTS_DotNet.md",
-        "agents/AGENTS_PowerShell.md",
-        "agents/AGENTS_Database.md",
-        "agents/AGENTS_WorkerService.md",
-        "agents/AGENTS_Infrastructure.md",
-        "agents/AGENTS_WebFrontend.md",
-        "agents/AGENTS_Python.md",
-        "agents/AGENTS_Bash.md"
-      ],
+      "parentDocuments": ["agents/AGENTS_Base.md","governance/ORGANIZATION_CONTRACT.md","governance/COMPLETION_EVIDENCE.md","governance/RISK_CLASSIFICATION.md","governance/EXCEPTION_PROCESS.md","governance/AI_GENERATED_CODE_POLICY.md"],
+      "childOrHandoffStandards": ["agents/AGENTS_DotNet.md","agents/AGENTS_PowerShell.md","agents/AGENTS_Database.md","agents/AGENTS_WorkerService.md","agents/AGENTS_Infrastructure.md","agents/AGENTS_WebFrontend.md","agents/AGENTS_Python.md","agents/AGENTS_Bash.md"],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -393,19 +297,8 @@
       "status": "Active",
       "lastReviewed": "2026-06-21",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [
-        "agents/AGENTS_Base.md"
-      ],
-      "childOrHandoffStandards": [
-        "agents/AGENTS_PowerShell.md",
-        "agents/AGENTS_DotNet.md",
-        "agents/AGENTS_Database.md",
-        "agents/AGENTS_WorkerService.md",
-        "agents/AGENTS_Integration.md",
-        "agents/AGENTS_WebFrontend.md",
-        "agents/AGENTS_Python.md",
-        "agents/AGENTS_Bash.md"
-      ],
+      "parentDocuments": ["agents/AGENTS_Base.md"],
+      "childOrHandoffStandards": ["agents/AGENTS_PowerShell.md","agents/AGENTS_DotNet.md","agents/AGENTS_Database.md","agents/AGENTS_WorkerService.md","agents/AGENTS_Integration.md","agents/AGENTS_WebFrontend.md","agents/AGENTS_Python.md","agents/AGENTS_Bash.md"],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -426,19 +319,8 @@
       "status": "Active",
       "lastReviewed": "2026-06-21",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [
-        "agents/AGENTS_Base.md"
-      ],
-      "childOrHandoffStandards": [
-        "agents/AGENTS_DotNet.md",
-        "agents/AGENTS_Integration.md",
-        "agents/AGENTS_Infrastructure.md",
-        "agents/AGENTS_WorkerService.md",
-        "agents/AGENTS_Database.md",
-        "agents/AGENTS_PowerShell.md",
-        "agents/AGENTS_Python.md",
-        "agents/AGENTS_Bash.md"
-      ],
+      "parentDocuments": ["agents/AGENTS_Base.md"],
+      "childOrHandoffStandards": ["agents/AGENTS_DotNet.md","agents/AGENTS_Integration.md","agents/AGENTS_Infrastructure.md","agents/AGENTS_WorkerService.md","agents/AGENTS_Database.md","agents/AGENTS_PowerShell.md","agents/AGENTS_Python.md","agents/AGENTS_Bash.md"],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -459,18 +341,8 @@
       "status": "Active",
       "lastReviewed": "2026-07-19",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [
-        "agents/AGENTS_Base.md"
-      ],
-      "childOrHandoffStandards": [
-        "agents/AGENTS_WebFrontend.md",
-        "agents/AGENTS_Database.md",
-        "agents/AGENTS_WorkerService.md",
-        "agents/AGENTS_Integration.md",
-        "agents/AGENTS_Infrastructure.md",
-        "agents/AGENTS_PowerShell.md",
-        "agents/AGENTS_DotNet.md"
-      ],
+      "parentDocuments": ["agents/AGENTS_Base.md"],
+      "childOrHandoffStandards": ["agents/AGENTS_WebFrontend.md","agents/AGENTS_Database.md","agents/AGENTS_WorkerService.md","agents/AGENTS_Integration.md","agents/AGENTS_Infrastructure.md","agents/AGENTS_PowerShell.md","agents/AGENTS_DotNet.md"],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -491,19 +363,8 @@
       "status": "Active",
       "lastReviewed": "2026-07-21",
       "ownerRole": "Engineering Standards Maintainers",
-      "parentDocuments": [
-        "agents/AGENTS_Base.md"
-      ],
-      "childOrHandoffStandards": [
-        "agents/AGENTS_Infrastructure.md",
-        "agents/AGENTS_Integration.md",
-        "agents/AGENTS_WorkerService.md",
-        "agents/AGENTS_Database.md",
-        "agents/AGENTS_PowerShell.md",
-        "agents/AGENTS_WebFrontend.md",
-        "agents/AGENTS_DotNet.md",
-        "agents/AGENTS_Python.md"
-      ],
+      "parentDocuments": ["agents/AGENTS_Base.md"],
+      "childOrHandoffStandards": ["agents/AGENTS_Infrastructure.md","agents/AGENTS_Integration.md","agents/AGENTS_WorkerService.md","agents/AGENTS_Database.md","agents/AGENTS_PowerShell.md","agents/AGENTS_WebFrontend.md","agents/AGENTS_DotNet.md","agents/AGENTS_Python.md"],
       "notRunDefined": true,
       "blockedDefined": true,
       "fabricatedEvidenceProhibited": true,
@@ -559,10 +420,10 @@
   },
   "nextReleaseReadiness": {
     "status": "NotRun",
-    "proposedVersion": "1.2.0",
-    "proposedTag": "v1.2.0",
+    "proposedVersion": null,
+    "proposedTag": null,
     "targetCommitSha": null,
-    "reason": "Semantic version 1.2.0 is selected and preparation is in progress, but the unchanged release-candidate SHA cannot be selected until the preparation change set is merged. Exact-candidate Governance success and controlled-failure evidence, the five-scenario downstream canary set, independent artifact verification, attributable approvals, tag authorization, and publication authorization remain NotRun."
+    "reason": "Version 1.2.0 is selected in the prepared repository metadata, but this readiness record remains NotRun until the preparation change set is merged and one unchanged release-candidate SHA can be selected. Exact-candidate Governance success and controlled-failure evidence, downstream canaries, artifact verification, approvals, tag authorization, and publication authorization remain outstanding."
   },
   "releaseReadiness": {
     "status": "NotApplicable",
