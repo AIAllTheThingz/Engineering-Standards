@@ -11,6 +11,10 @@ param([string]$Path = '.', [string]$EvidencePath = 'evidence/codex-skill-behavio
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'CodexSkillBehaviorActionsEvaluation.psm1') -Force
+# The checked Replay record is produced by the manual evaluator. Import it with
+# a command prefix so this verifier can validate that distinct, fully-bound
+# input profile without replacing the Actions candidate-trust implementation.
+Import-Module (Join-Path $PSScriptRoot 'CodexSkillBehaviorEvaluation.psm1') -Force -Prefix Manual
 $root = (Resolve-Path -LiteralPath $Path).Path
 function Resolve-BehaviorEvidencePath {
     param([Parameter(Mandatory)][string]$Candidate, [switch]$MustExist, [Parameter(Mandatory)][string]$Name)
@@ -37,8 +41,17 @@ try {
     $schemaPath = Join-Path $root 'schemas/codex-skill-behavior-evaluation.schema.json'
     if (-not ($raw | Test-Json -SchemaFile $schemaPath -ErrorAction Stop)) { throw 'Evidence does not satisfy the behavior evidence JSON schema.' }
     $evidence = $raw | ConvertFrom-Json
-    $inputs = Get-CodexBehaviorInput -Path $root
-    $config = $inputs.Configuration
+    $actionsInputs = Get-CodexBehaviorInput -Path $root
+    $manualInputs = Get-ManualCodexBehaviorInput -Path $root
+    $manualEvaluatorHash = Get-BoundedInputHash -Root $root -RelativePaths $manualInputs.EvaluatorPaths
+    $isManualEvaluationProfile = $evidence.evaluatorHash -eq $manualEvaluatorHash
+    $inputs = if ($isManualEvaluationProfile) { $manualInputs } else { $actionsInputs }
+    $config = if ($isManualEvaluationProfile) {
+        Import-PowerShellDataFile -LiteralPath (Join-Path $root $manualInputs.ConfigurationPath)
+    } else {
+        $actionsInputs.Configuration
+    }
+    $expectedConfigurationHash = Get-BoundedInputHash -Root $root -RelativePaths @($inputs.ConfigurationPath)
     foreach ($property in @('schemaVersion','evidenceKind','evaluatorVersion','scoringContractVersion','configurationId','configurationHash','evaluatorHash','corpusHash','skillInputHash','authorityHash','evaluatedCommitSha','executionMode','probabilistic','deterministicStructureStatus','status','caseOutcomes','aggregates','humanAdjudication','decision','notRunReason','blockedReason','limitations')) {
         if ($evidence.PSObject.Properties.Name -notcontains $property) { throw "Evidence is missing required property '$property'." }
     }
@@ -49,7 +62,7 @@ try {
     if ($usesExecutionProvenance -and ($evidence.executionContext -ne 'Local' -or $evidence.githubHostedExecution.status -ne 'NotRun')) { throw 'Behavior evidence cannot claim GitHub-hosted execution without a separately verified workflow artifact.' }
     if (-not $evidence.probabilistic -or ($evidence.limitations -join ' ') -notmatch 'not deterministic proof') { throw 'Evidence must explicitly identify probabilistic limitations.' }
     if ($evidence.configurationId -ne $config.ConfigurationId -or $evidence.evaluatorVersion -ne $config.EvaluatorVersion -or $evidence.scoringContractVersion -ne $config.ScoringContractVersion) { throw 'Evidence version or approved configuration identity is stale.' }
-    if ($evidence.configurationHash -ne $inputs.ConfigurationHash) { throw 'Evidence configuration hash is stale or fabricated.' }
+    if ($evidence.configurationHash -ne $expectedConfigurationHash) { throw 'Evidence configuration hash is stale or fabricated.' }
     if ($evidence.evaluatorHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.EvaluatorPaths)) { throw 'Evidence evaluator hash is stale or fabricated.' }
     if ($evidence.corpusHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.CorpusPaths)) { throw 'Evidence corpus hash is stale or fabricated.' }
     if ($evidence.skillInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.SkillPaths)) { throw 'Evidence skill input hash is stale or fabricated.' }
@@ -67,10 +80,11 @@ try {
         & git -C $root merge-base --is-ancestor $evidence.evaluatedCommitSha HEAD 2>$null
         if ($LASTEXITCODE -ne 0 -and -not $isCurrentReplaySnapshot) { throw 'Evidence commit is not an ancestor of the validated revision.' }
     }
+    $evaluatedEvaluatorPath = if ($isManualEvaluationProfile) { 'scripts/CodexSkillBehaviorEvaluation.psm1' } else { 'scripts/CodexSkillBehaviorActionsEvaluation.psm1' }
     $evaluatedEvaluatorSource = if ($hasEvaluatedCommitSha) {
-        (& git -C $root show "$($evidence.evaluatedCommitSha):scripts/CodexSkillBehaviorActionsEvaluation.psm1" 2>$null) -join "`n"
+        (& git -C $root show "$($evidence.evaluatedCommitSha):$evaluatedEvaluatorPath" 2>$null) -join "`n"
     } else {
-        Get-Content -LiteralPath (Join-Path $root 'scripts/CodexSkillBehaviorActionsEvaluation.psm1') -Raw
+        Get-Content -LiteralPath (Join-Path $root $evaluatedEvaluatorPath) -Raw
     }
     if ([string]::IsNullOrWhiteSpace($evaluatedEvaluatorSource)) { throw 'The evaluated Actions evaluator source is unavailable.' }
     $requiresPersistenceBoundary = $evaluatedEvaluatorSource -match '\bPersistenceBoundaryPaths\b'
@@ -110,7 +124,11 @@ try {
         if ($storedSample.Count -ne 1) { return [pscustomobject]@{ status='Blocked'; failureReason='The stored sample identity is missing or duplicated.' } }
         $storedSample[0]
     }.GetNewClosure()
-    $recomputed = Invoke-CodexSkillBehaviorEvaluation -Path $root -ObservationProvider $scoringProvider -ExecutionMode $evidence.executionMode -RunnerVersion $evidence.model.runnerVersion -EvaluatedCommitSha $evidence.evaluatedCommitSha
+    $recomputed = if ($isManualEvaluationProfile) {
+        Invoke-ManualCodexSkillBehaviorEvaluation -Path $root -ObservationProvider $scoringProvider -ExecutionMode $evidence.executionMode -RunnerVersion $evidence.model.runnerVersion -EvaluatedCommitSha $evidence.evaluatedCommitSha
+    } else {
+        Invoke-CodexSkillBehaviorEvaluation -Path $root -ObservationProvider $scoringProvider -ExecutionMode $evidence.executionMode -RunnerVersion $evidence.model.runnerVersion -EvaluatedCommitSha $evidence.evaluatedCommitSha
+    }
     foreach ($section in @('model','sampling','retryPolicy','isolation','thresholds','caseOutcomes','aggregates','varianceObservations','decision')) {
         $actualValue = $evidence.$section | ConvertTo-Json -Depth 32 | ConvertFrom-Json
         $expectedValue = $recomputed.$section | ConvertTo-Json -Depth 32 | ConvertFrom-Json

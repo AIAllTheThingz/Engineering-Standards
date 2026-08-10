@@ -89,6 +89,13 @@ and authority inputs. A Replay/NotRun snapshot may use a real, reachable commit
 SHA or `null`; `null` explicitly proves only current bounded-input consistency,
 not historical hosted execution. Any provided SHA is verified as a real commit
 object, so a fabricated or unavailable SHA cannot become squash-safe provenance.
+The manual and Actions verifiers consume the same evidence contract:
+`configurationHash` is the path-bound configuration input hash, while the raw
+configuration SHA used for trusted candidate allowlisting remains a separate
+trust-policy approval value. The Actions verifier identifies a checked manual
+Replay record only by its exact current manual evaluator hash, then recomputes
+the manual bounded-input profile; Actions-origin evidence remains bound to the
+separate Actions evaluator profile.
 Legacy schema `1.2.0` replay evidence remains accepted with its
 persistence-boundary hash and required real commit identity. Live hosted
 evidence remains bound to the exact candidate SHA.

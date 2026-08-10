@@ -495,7 +495,11 @@ function Get-CodexBehaviorInput {
         EvaluatorPaths = @($policy.EvaluatorPaths)
         PersistenceBoundaryPaths = @($policy.PersistenceBoundaryPaths)
         Configuration = $config
-        ConfigurationHash = $approved.ConfigurationHash
+        # Evidence hashes bind both the configuration bytes and its governed
+        # repository path. Keep the raw allowlist identity separate so candidate
+        # approval remains an immutable trust-policy decision.
+        ConfigurationHash = Get-BoundedInputHash -Root $root -RelativePaths @([string]$policy.ConfigurationPath)
+        ApprovedConfigurationHash = $approved.ConfigurationHash
         ApprovedConfiguration = $approved.ApprovedEntry
         RetryableProviderFailureReasons = $retryableProviderFailureReasons
         TrustPolicy = $policy

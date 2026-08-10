@@ -217,7 +217,8 @@ The isolated hosted evaluator uses the trusted
 hash-approves exact candidate configurations separately from immutable evaluator
 code and declares prompt, skill, authority, identifier, and field bounds. Files
 are size- and type-checked before candidate content is parsed or supplied to the
-model.
+model. Its raw allowlist SHA is distinct from the path-bound
+`configurationHash` stored in shared manual/Actions behavior evidence.
 It pins model identity, evaluator/scoring versions, three independent samples,
 one bounded retry for governed transient model, transport, or provider failures,
 timeouts, isolation, and thresholds. The governed

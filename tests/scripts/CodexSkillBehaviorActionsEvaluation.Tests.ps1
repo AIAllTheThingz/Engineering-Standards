@@ -1042,6 +1042,7 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         $report.executionContext | Should -Be 'Local'
         $report.githubHostedExecution.status | Should -Be 'NotRun'
         $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
+        $report.configurationHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths @((Get-CodexBehaviorInput -Path $repoRoot).ConfigurationPath))
         $report.persistenceBoundaryHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths (Get-CodexBehaviorInput -Path $repoRoot).PersistenceBoundaryPaths)
         $report.evaluatedInputHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs (Get-CodexBehaviorInput -Path $repoRoot)))
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
@@ -1280,6 +1281,9 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         $testRoot = Join-Path $repoRoot ('.tmp/actions-evidence-provenance-' + [guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
         try {
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath 'evidence/codex-skill-behavior.json' 2>$null
+            $LASTEXITCODE | Should -Be 0
+
             $snapshot = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay
             $snapshot.evaluatedCommitSha | Should -BeNullOrEmpty
             $snapshotPath = Join-Path $testRoot 'snapshot.json'
