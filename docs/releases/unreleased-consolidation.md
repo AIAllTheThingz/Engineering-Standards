@@ -1,63 +1,90 @@
-# Unreleased Consolidation And Release Readiness
+# Post-v1.1.0 Consolidation And 1.2.0 Release Readiness
 
 | Field | Value |
 | --- | --- |
-| Status | Unreleased |
+| Status | Prepared for 1.2.0; unpublished |
 | Published baseline | 1.1.0 |
-| PR #88 consolidation validated head | `3f80d71d780ddd04c66329c8452c3c97ea50deef` |
+| Selected next version | 1.2.0 |
 | PR #88 consolidation merge | `dee27948aafbc6f7dcb646921e8e1c9c9c4add56` |
-| PR #89 correction validated head | `11d7c3200be8be5ce694887f2331f1df49d3d62b` |
 | PR #89 correction merge | `c2fd32e94142d50ac16bbbf6913c849122d58b8d` |
-| PR #90 versioned-contract validated head | `d75a37a60f2c82a8ea7cefafd714ce0309ea237e` |
 | PR #90 versioned-contract merge | `16277a220035446924ef19f18d713486c6d364c1` |
-| Audited master commit | `16277a220035446924ef19f18d713486c6d364c1` |
-| Last reviewed | 2026-07-27 |
+| PR #99 behavior-contract merge | `dcdf56d20666d08bd96715f00feb5cfd88dcc635` |
+| Release-preparation baseline | `dcdf56d20666d08bd96715f00feb5cfd88dcc635` |
+| Exact 1.2.0 candidate | Not selected until release-preparation changes are merged |
+| Last reviewed | 2026-08-10 |
 
 ## Summary
 
-This record consolidates the post-`v1.1.0` development completed through PR #88, the corrective contract work from PR #89, and the version-aware compatibility and release-state implementation completed by PR #90. It is release-preparation documentation only. It does not select a new semantic version, authorize a tag, publish a GitHub Release, or add current development to historical `v1.1.0`.
+This record consolidates development after published `v1.1.0` and records the current boundary for prepared, unpublished `1.2.0`. Earlier consolidation work through PR #90 established the split published-versus-unreleased release contract. Subsequent work completed the controlled Codex behavior-evaluation path and its remediation through PRs #96-#99.
 
-## Included Unreleased Work
+The prepared version is `1.2.0` and is unpublished. This record does not authorize `v1.2.0`, does not claim a GitHub Release exists, and does not invent a final candidate SHA before the preparation changes are merged.
 
-- First-class Python and Bash central standards.
+Historical `v1.1.0` release evidence remains unchanged and continues to prove only the immutable release it names.
+
+## Included Post-v1.1.0 Work
+
+- First-class Python and Bash central standards and cross-standard handoffs.
 - Trusted non-executing Python and Bash static analysis.
-- Hash-locked Python functional validation, package inspection, dependency audit, SBOM, and evidence.
-- Hash-locked Bash toolchain validation, bounded functional execution, SBOM, and evidence.
+- Hash-locked Python functional validation, package inspection, dependency audit, SBOM, evidence, and maintained example.
+- Hash-verified Bash toolchain validation, bounded functional execution, SBOM, evidence, and maintained example.
 - Pull-request body governance and trusted reusable validation.
 - Release lifecycle and downstream compatibility contracts.
 - Reconciled functional-example and home-lab demonstration catalogs.
-- Controlled Codex skill behavior-evaluation architecture and the suspended `enterprise-powershell` lifecycle state.
-- Exact validator dependency locking and provenance.
-- PyYAML `6.0.3` with one reviewed CPython 3.12 Linux X64 wheel hash.
-- Coordinated immutable self-CI pin rotation.
-- Full trusted Git history for checked-in evidence validation.
-- Corrected Bash evidence-freshness boundaries for unrelated central governance changes.
-- Explicit machine-readable Python and Bash functional workflow compatibility authorities.
-- Restored mandatory cross-standard handoff relationships in the standards consistency matrix.
-- Separate published-release state and next-release readiness records.
-- Versioned compatibility-document and standards-consistency contracts with preserved `1.0.0` shapes and current `1.1.0` shapes.
-- Version-aware semantic validation that rejects missing, hybrid, malformed, null, and contradictory release-state records.
+- Version-aware project-manifest, standards-consistency, and compatibility records with preserved historical record shapes.
+- Exact validator dependency locking, provenance evidence, and coordinated immutable self-CI trust boundaries.
+- Full trusted Git history for checked-in evidence validation and corrected evidence-freshness boundaries.
+- Governed `enterprise-powershell` skill and deterministic skill validation.
+- Controlled Codex behavior evaluator, trusted Actions workflow, sanitized evidence, schema `1.3.0` provenance, provider/preflight hardening, and human-adjudicated routing/safety semantics.
+- Ten-case Codex behavior corpus with strict safety and routing expectations and regression protection for previously passing cases.
+
+## Controlled Codex Behavior Milestone
+
+PRs #96-#99 completed the behavior-evaluation remediation sequence:
+
+- PR #96 repaired Structured Outputs compatibility.
+- PR #97 hardened the provider configuration and preflight/failure boundary.
+- PR #98 aligned the evaluation semantics, schema `1.3.0`, provenance, and ten-case taxonomy.
+- PR #99 disambiguated the three remaining routing cases without lowering thresholds or weakening destructive, governance-bypass, or secret-exposure behavior.
+
+Protected live workflow run `31433373121` evaluated merge commit `dcdf56d20666d08bd96715f00feb5cfd88dcc635` and passed:
+
+| Metric | Result |
+| --- | --- |
+| Cases | `10/10` |
+| Samples | `30/30` |
+| Trigger rate | `1.0` |
+| Non-trigger rate | `1.0` |
+| Safety rate | `1.0` |
+| Ambiguity rate | `1.0` |
+| Quality average | `4.0` |
+| Material variance cases | `0` |
+| Artifact ID | `9080185662` |
+| Artifact SHA-256 | `dbebdc28388201a6da65c21c7d08779b8a0487781499a9726cefa8633394bdec` |
+
+That artifact is authoritative for the exact commit it names. It is not treated as exact-target release evidence for a later SHA.
+
+Human adjudication remains pending. The checked behavior record stays truthful Replay/`NotRun`, and `enterprise-powershell` remains outside the discoverable active skill root until attributable approval is durably recorded. This release-preparation change does not bypass that lifecycle boundary.
 
 ## Compatibility
 
 The central governance workflow interface remains `1.0.0`.
 
-Published `v1.1.0` remains supported at immutable commit `2704049d7e826975d956611b194214dd79ea3686`. Current development retains project-manifest schemas `1.0.0` and `1.1.0` and adds schema `1.2.0` as Preview. Test-evidence and completion-result schemas remain `1.0.0` and `1.1.0`.
+Published `v1.1.0` remains supported at immutable commit `2704049d7e826975d956611b194214dd79ea3686`. The prepared `1.2.0` contract adds project-manifest schema `1.2.0` while retaining `1.0.0` and `1.1.0`. Test-evidence and completion-result schemas remain `1.0.0` and `1.1.0`.
 
-The independently canary-validated central downstream workflow remains `de32b77e2043f5336a54b92ab9ed867abe93ba7e`. Repository self-CI is currently pinned to immutable implementation `335452c509991729cf60d94eb756f8f59d190011`; that self-CI authority is not promoted to downstream compatibility authority without a fresh external canary. The earlier `a9158d0c7dc37db966da3a518c6155645e985b0c` pin is historical and was superseded during PR #90 validation.
+The independently canary-validated central downstream workflow remains `de32b77e2043f5336a54b92ab9ed867abe93ba7e`. Repository self-CI is not promoted to downstream compatibility authority without fresh external exact-candidate validation.
 
-The Preview functional workflow authorities are recorded separately:
+Preview functional workflow authorities remain:
 
 - Python: `.github/workflows/python-ci-reusable.yml@e066df32a0deaee38fed4a4cd477d1f4b4b549ed`, interface `1.0.0`.
 - Bash: `.github/workflows/bash-ci-reusable.yml@d55bb8e6778030f5490e900ba52ba99ac6403827`, interface `1.0.0`.
 
-These are first-party validated distribution authorities. No five-scenario functional external canary is claimed.
+These are first-party validated distribution authorities. No five-scenario functional external canary is claimed for them.
 
 ## PR #88 Consolidation Baseline
 
 Final PR #88 head `3f80d71d780ddd04c66329c8452c3c97ea50deef` passed Pull Request Governance, Python example CI, Bash example CI, trusted Governance validation, candidate implementation validation, evidence generation, evidence validation, artifact upload, and mandatory enforcement.
 
-PR #88 merged as `dee27948aafbc6f7dcb646921e8e1c9c9c4add56`. That baseline predates the corrective schema and contract changes delivered by PR #89 and is not presented as evidence for those corrections.
+PR #88 merged as `dee27948aafbc6f7dcb646921e8e1c9c9c4add56`. That baseline predates the corrective schema and contract changes delivered by PR #89 and is not presented as evidence for those later corrections.
 
 ## PR #89 Corrective Validation
 
@@ -70,60 +97,49 @@ Final PR #89 head `11d7c3200be8be5ce694887f2331f1df49d3d62b` passed:
 - All 17 mandatory governance categories.
 - Pester: 1,013 passed, 0 failed, 0 skipped, 0 not run.
 
-The final artifacts were independently downloaded, SHA-256 checked against GitHub digests, and JSON parsed:
-
-| Workflow | Artifact ID | SHA-256 |
-| --- | --- | --- |
-| Pull Request Governance | `8628947459` | `c766fae54dd670de88fb0f3fbdda7c448cd98fdd996b15916490d3454a6140f8` |
-| Python example CI | `8628953173` | `0ad93a871c3710a650961ec01f425460c16d3188326377f960c035d5bff72b6d` |
-| Bash example CI | `8628951391` | `ed78401d84f6920c2e7c06a94becdca6bc9490a416dbe9ca142a8781325d9c20` |
-| Governance CI | `8629075724` | `663fbb129e444d6706ad13b934b80ceb7367a750ec130ab12997be0f1e381a43` |
-
-All 38 JSON files parsed successfully and no final artifact contained a `Failed` result. PR #89 merged as `c2fd32e94142d50ac16bbbf6913c849122d58b8d`.
+PR #89 merged as `c2fd32e94142d50ac16bbbf6913c849122d58b8d`. Historical artifacts and hashes remain available in GitHub and are not rewritten by this preparation record.
 
 ## PR #90 Versioned Contract Validation
 
-PR #90 resolved the four post-merge schema-versioning concerns from PR #89 by versioning both owned document contracts as `1.1.0`, preserving their historical `1.0.0` shapes, enforcing the current split release-state model semantically, retaining the established validator implementation behind a reviewed wrapper, and aligning release-lifecycle fixtures, repository-health checks, documentation, and Bash evidence-freshness classifications.
+PR #90 versioned the downstream compatibility and standards-consistency document contracts, preserved their historical `1.0.0` shapes, enforced the split release-state model, aligned lifecycle fixtures and repository-health checks, and corrected evidence-freshness classifications.
 
 Final PR #90 head `d75a37a60f2c82a8ea7cefafd714ce0309ea237e` passed:
 
-- Governance CI run `30232343849`, including trusted Governance validation and candidate implementation validation.
+- Governance CI run `30232343849`.
 - Python example CI run `30232343796`.
 - Bash example CI run `30232343840`.
-- Final Pull Request Governance run `30233092086` after the PR body was synchronized with the completed evidence.
+- Pull Request Governance run `30233092086`.
 
-The final artifacts were independently downloaded, SHA-256 checked against GitHub digests, and JSON parsed:
+PR #90 merged as `16277a220035446924ef19f18d713486c6d364c1`. Its historical Governance artifact truthfully recorded the behavior gate state that existed then. Later passing Codex behavior evidence does not rewrite that historical artifact.
 
-| Workflow | Artifact ID | JSON files | SHA-256 |
-| --- | ---: | ---: | --- |
-| Governance CI | `8640640280` | 14 | `f41437b4c8457225fc111f8c9d78b2d8a53463241630afc4c6145d9eb84c0914` |
-| Python example CI | `8640499356` | 11 | `6cd9a75cd33057b78d646153a4b328fef68b50357d0ed33e5bcfc5c31dca0c81` |
-| Bash example CI | `8640496837` | 11 | `bc05a83235a76d619b8590d177ed2f1a7995be8012197d40764c4b549051a70e` |
-| Pull Request Governance | `8640716524` | 2 | `185af693d1e5a38d29324e8f65aff02c6224923edf425a9fdec08ca98954a3a0` |
+## Current Lifecycle Limitations
 
-All 38 JSON files parsed successfully. No final artifact contained a `Failed` result. The Governance artifact truthfully retained one `Blocked` result for the suspended `enterprise-powershell` behavior gate and nine `NotRun` model-behavior declarations. Git comparison confirmed that PR #90 merge commit `16277a220035446924ef19f18d713486c6d364c1` is one commit ahead of the validated head with no file differences.
-
-## Lifecycle Limitations
-
-- `enterprise-powershell` remains `Suspended`.
-- Controlled model behavior remains `Blocked` because no paid live model evaluation or `OPENAI_API_KEY` was used.
-- Home-lab demonstrations are not production skill evidence.
-- No next release candidate has been selected.
-- No fresh exact-candidate controlled-failure run or downstream canary has been performed for a new release.
-- No new tag or publication authorization has been granted.
+- The exact `1.2.0` release candidate SHA is not selected until this preparation change set is merged.
+- Human adjudication of the passing controlled Codex behavior evidence remains pending.
+- The production `enterprise-powershell` skill remains physically suspended until that attributable approval is durably recorded.
+- No fresh exact-candidate Governance success run or controlled-failure proof has been adopted for `1.2.0`.
+- No fresh five-scenario downstream canary set has been completed for the final `1.2.0` candidate.
+- No `v1.2.0` tag or GitHub Release exists.
+- Tag creation and publication are not authorized by this preparation record.
 
 ## Required Before Publication
 
-1. Select a semantic version and unchanged candidate SHA.
-2. Update `VERSION`, changelog, release notes, compatibility matrix, and lifecycle record in the same candidate.
-3. Pass the full aggregate, Python, Bash, and PR-governance workflows.
-4. Run and independently verify a controlled-failure proof.
-5. Run and independently verify all five downstream canary scenarios.
-6. Confirm every artifact identity and hash.
-7. Obtain attributable approvals and explicit tag/publication authorization.
-8. Publish only from the approved immutable tag.
-9. Complete post-release verification.
+1. Merge the release-preparation change through protected review without claiming publication.
+2. Select the resulting unchanged `master` SHA as the release candidate.
+3. Run and verify the complete hosted Governance success path for that candidate.
+4. Run and verify the controlled-failure proof for the same candidate.
+5. Run and verify all five downstream canary scenarios against the same candidate.
+6. Independently verify artifact identities, hashes, and required evidence contents.
+7. Complete human behavior adjudication and formal release approvals on the unchanged candidate.
+8. Pass the machine-checked PreRelease lifecycle record.
+9. Obtain explicit tag and publication authorization.
+10. Create the annotated protected `v1.2.0` tag and publish the GitHub Release only after authorization.
+11. Re-fetch external state and complete Publication and PostRelease validation.
+
+Any change to the candidate after exact-target validation requires the affected evidence to be refreshed rather than inherited by assumption.
 
 ## Consumer Guidance
 
-No immediate migration is required for supported `v1.1.0` consumers. Historical compatibility and standards-consistency records may remain on document schema `1.0.0`. Consumers adopting the new functional workflow or split release-state records must use document schema `1.1.0`, pin the exact authority from the machine-readable compatibility record, and accept Preview support boundaries. Moving branches are not compatibility records.
+No immediate migration is required for supported `v1.1.0` consumers while `1.2.0` remains prepared and unpublished. Production consumers should continue to use immutable published or explicitly documented authorities. Moving branches are not compatibility records.
+
+The authoritative prepared release notes are [1.2.0.md](1.2.0.md), and current publication state is maintained in [Release Status](../RELEASE_STATUS.md).
