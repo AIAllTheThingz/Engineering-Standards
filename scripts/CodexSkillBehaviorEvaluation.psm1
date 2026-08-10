@@ -26,7 +26,8 @@ function Get-BoundedInputHash {
 function Get-CodexBehaviorInput {
     param([Parameter(Mandatory)][string]$Path)
     $root = (Resolve-Path -LiteralPath $Path).Path
-    $trustPolicy = Import-PowerShellDataFile -LiteralPath (Join-Path $root '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1')
+    $trustPolicyPath = '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
+    $trustPolicy = Import-PowerShellDataFile -LiteralPath (Join-Path $root $trustPolicyPath)
     $retryableProviderFailureReasons = @($trustPolicy.RetryableProviderFailureReasons)
     $expectedRetryableProviderFailureReasons = @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
     if ($retryableProviderFailureReasons.Count -ne $expectedRetryableProviderFailureReasons.Count -or
@@ -65,6 +66,7 @@ function Get-CodexBehaviorInput {
         CorpusPaths = @($corpus | ForEach-Object { ([IO.Path]::GetRelativePath($root, $_.FullName)).Replace('\','/') })
         SkillPaths = @($skillFiles | ForEach-Object { ([IO.Path]::GetRelativePath($root, $_.FullName)).Replace('\','/') })
         AuthorityPaths = $authorityPaths
+        TrustPolicyPath = $trustPolicyPath
         ConfigurationPath = $configurationPath
         # This compatibility set is validated by the immutable pre-merge
         # verifier. New persistence inputs are bound independently below.
@@ -72,6 +74,19 @@ function Get-CodexBehaviorInput {
         PersistenceBoundaryPaths = @('scripts/CodexSkillBehaviorActionsEvaluation.psm1', 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1', 'scripts/Invoke-CodexSkillBehaviorModel.ps1', 'schemas/codex-skill-behavior-model-output.schema.json')
         RetryableProviderFailureReasons = $retryableProviderFailureReasons
     }
+}
+
+function Get-CodexBehaviorBoundInputPaths {
+    param([Parameter(Mandatory)][object]$Inputs)
+    @(
+        $Inputs.ConfigurationPath
+        $Inputs.TrustPolicyPath
+        $Inputs.EvaluatorPaths
+        $Inputs.PersistenceBoundaryPaths
+        $Inputs.AuthorityPaths
+        $Inputs.CorpusPaths
+        $Inputs.SkillPaths
+    ) | Sort-Object -Unique
 }
 
 function Get-QualityAverage {
@@ -148,10 +163,14 @@ function Invoke-CodexSkillBehaviorEvaluation {
     $config = Import-PowerShellDataFile -LiteralPath (Join-Path $inputs.Root $inputs.ConfigurationPath)
     if ($config.Approval.Status -ne 'Approved') { throw 'The model configuration is not approved.' }
     if ($inputs.Cases.Count -gt [int]$config.Limits.MaximumCases) { throw 'The prompt corpus exceeds the configured case bound.' }
-    if ([string]::IsNullOrWhiteSpace($EvaluatedCommitSha)) {
+    if ($ExecutionMode -eq 'Live' -and [string]::IsNullOrWhiteSpace($EvaluatedCommitSha)) {
         $EvaluatedCommitSha = (& git -C $inputs.Root rev-parse HEAD 2>$null)
     }
-    if ($EvaluatedCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'A full evaluated commit SHA is required.' }
+    if ($ExecutionMode -eq 'Replay' -and [string]::IsNullOrWhiteSpace($EvaluatedCommitSha)) {
+        $EvaluatedCommitSha = $null
+    }
+    if ($ExecutionMode -eq 'Live' -and $EvaluatedCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'Live evidence requires a full evaluated commit SHA.' }
+    if ($ExecutionMode -eq 'Replay' -and -not [string]::IsNullOrWhiteSpace($EvaluatedCommitSha) -and $EvaluatedCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'Replay evidence must use a full evaluated commit SHA or null.' }
 
     $caseOutcomes = foreach ($case in $inputs.Cases) {
         $samples = for ($index = 1; $index -le [int]$config.Sampling.SamplesPerCase; $index++) {
@@ -207,13 +226,14 @@ function Invoke-CodexSkillBehaviorEvaluation {
     $executionContext = 'Local'
     $githubHostedExecutionStatus = 'NotRun'
     [pscustomobject]@{
-        schemaVersion = '1.2.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
+        schemaVersion = '1.3.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
         configurationId = $config.ConfigurationId; configurationHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths @($inputs.ConfigurationPath)
         evaluatorHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.EvaluatorPaths
         persistenceBoundaryHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.PersistenceBoundaryPaths
         corpusHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.CorpusPaths; skillInputHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.SkillPaths
         authorityHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.AuthorityPaths
-        evaluatedCommitSha = $EvaluatedCommitSha; executionMode = $ExecutionMode; executionContext = $executionContext; githubHostedExecution = [pscustomobject]@{ status = $githubHostedExecutionStatus }; probabilistic = $true; deterministicStructureStatus = 'Passed'; status = $overall
+        evaluatedInputHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs $inputs)
+        evaluatedCommitSha = if ([string]::IsNullOrWhiteSpace($EvaluatedCommitSha)) { $null } else { $EvaluatedCommitSha }; executionMode = $ExecutionMode; executionContext = $executionContext; githubHostedExecution = [pscustomobject]@{ status = $githubHostedExecutionStatus }; probabilistic = $true; deterministicStructureStatus = 'Passed'; status = $overall
         startedAtUtc = $started.ToString('o'); completedAtUtc = [DateTime]::UtcNow.ToString('o')
         model = [pscustomobject]@{ provider = $config.Model.Provider; surface = $config.Model.Surface; modelId = $config.Model.ModelId; reasoningEffort = $config.Model.ReasoningEffort; runnerVersion = $RunnerVersion }
         sampling = [pscustomobject]@{ samplesPerCase = $config.Sampling.SamplesPerCase; temperature = $config.Sampling.Temperature; topP = $config.Sampling.TopP; seed = $config.Sampling.Seed; unsupportedParameterReason = $config.Sampling.UnsupportedParameterReason }
@@ -229,4 +249,4 @@ function Invoke-CodexSkillBehaviorEvaluation {
     }
 }
 
-Export-ModuleMember -Function Get-Sha256String, Get-BoundedInputHash, Get-CodexBehaviorInput, Invoke-CodexSkillBehaviorEvaluation
+Export-ModuleMember -Function Get-Sha256String, Get-BoundedInputHash, Get-CodexBehaviorInput, Get-CodexBehaviorBoundInputPaths, Invoke-CodexSkillBehaviorEvaluation

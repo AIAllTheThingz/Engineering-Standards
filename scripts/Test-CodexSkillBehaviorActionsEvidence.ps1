@@ -11,6 +11,10 @@ param([string]$Path = '.', [string]$EvidencePath = 'evidence/codex-skill-behavio
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'CodexSkillBehaviorActionsEvaluation.psm1') -Force
+# The checked Replay record is produced by the manual evaluator. Import it with
+# a command prefix so this verifier can validate that distinct, fully-bound
+# input profile without replacing the Actions candidate-trust implementation.
+Import-Module (Join-Path $PSScriptRoot 'CodexSkillBehaviorEvaluation.psm1') -Force -Prefix Manual
 $root = (Resolve-Path -LiteralPath $Path).Path
 function Resolve-BehaviorEvidencePath {
     param([Parameter(Mandatory)][string]$Candidate, [switch]$MustExist, [Parameter(Mandatory)][string]$Name)
@@ -28,6 +32,28 @@ function Resolve-BehaviorEvidencePath {
     if ($MustExist -and -not (Test-Path -LiteralPath $full -PathType Leaf)) { throw "$Name must identify an existing file." }
     $full
 }
+function ConvertTo-BehaviorEvidenceUtcTimestamp {
+    param([Parameter(Mandatory)][object]$Value, [Parameter(Mandatory)][string]$Name)
+
+    if ($Value -is [DateTime]) {
+        if ($Value.Kind -ne [DateTimeKind]::Utc) { throw "$Name must be an RFC3339 UTC timestamp." }
+        return [DateTimeOffset]$Value
+    }
+    if ($Value -is [DateTimeOffset]) {
+        if ($Value.Offset -ne [TimeSpan]::Zero) { throw "$Name must be an RFC3339 UTC timestamp." }
+        return $Value.ToUniversalTime()
+    }
+    $rawValue = [string]$Value
+    if ($rawValue -cnotmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?(?:Z|\+00:00)$') {
+        throw "$Name must be an RFC3339 UTC timestamp."
+    }
+    $timestamp = [DateTimeOffset]::MinValue
+    if (-not [DateTimeOffset]::TryParse($rawValue, [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::RoundtripKind, [ref]$timestamp) -or
+        $timestamp.Offset -ne [TimeSpan]::Zero) {
+        throw "$Name must be an RFC3339 UTC timestamp."
+    }
+    $timestamp.ToUniversalTime()
+}
 $evidenceFile = Resolve-BehaviorEvidencePath -Candidate $EvidencePath -MustExist -Name EvidencePath
 $results = [Collections.Generic.List[object]]::new()
 $evidence = $null
@@ -37,47 +63,82 @@ try {
     $schemaPath = Join-Path $root 'schemas/codex-skill-behavior-evaluation.schema.json'
     if (-not ($raw | Test-Json -SchemaFile $schemaPath -ErrorAction Stop)) { throw 'Evidence does not satisfy the behavior evidence JSON schema.' }
     $evidence = $raw | ConvertFrom-Json
-    $inputs = Get-CodexBehaviorInput -Path $root
-    $config = $inputs.Configuration
+    $actionsInputs = Get-CodexBehaviorInput -Path $root
+    $manualInputs = Get-ManualCodexBehaviorInput -Path $root
+    $manualEvaluatorHash = Get-BoundedInputHash -Root $root -RelativePaths $manualInputs.EvaluatorPaths
+    $isManualEvaluationProfile = $evidence.evaluatorHash -eq $manualEvaluatorHash
+    $inputs = if ($isManualEvaluationProfile) { $manualInputs } else { $actionsInputs }
+    $config = if ($isManualEvaluationProfile) {
+        Import-PowerShellDataFile -LiteralPath (Join-Path $root $manualInputs.ConfigurationPath)
+    } else {
+        $actionsInputs.Configuration
+    }
+    $expectedConfigurationHash = Get-BoundedInputHash -Root $root -RelativePaths @($inputs.ConfigurationPath)
     foreach ($property in @('schemaVersion','evidenceKind','evaluatorVersion','scoringContractVersion','configurationId','configurationHash','evaluatorHash','corpusHash','skillInputHash','authorityHash','evaluatedCommitSha','executionMode','probabilistic','deterministicStructureStatus','status','caseOutcomes','aggregates','humanAdjudication','decision','notRunReason','blockedReason','limitations')) {
         if ($evidence.PSObject.Properties.Name -notcontains $property) { throw "Evidence is missing required property '$property'." }
     }
+    if ($evidence.schemaVersion -notin @('1.0.0','1.1.0','1.2.0','1.3.0')) { throw 'Evidence uses an unsupported schema version.' }
+    $isCurrentReplaySnapshot = $evidence.schemaVersion -eq '1.3.0' -and $evidence.executionMode -eq 'Replay' -and $evidence.status -eq 'NotRun'
     if ($evidence.status -notin @('Passed','Failed','NotRun','Blocked','NotApplicable')) { throw 'Evidence uses a noncanonical status.' }
-    $usesExecutionProvenance = $evidence.schemaVersion -in @('1.1.0','1.2.0')
+    if ($evidence.PSObject.Properties.Name -notcontains 'startedAtUtc' -or $evidence.PSObject.Properties.Name -notcontains 'completedAtUtc') { throw 'Evidence is missing top-level timestamps.' }
+    $evidenceStartedAtUtc = ConvertTo-BehaviorEvidenceUtcTimestamp -Value $evidence.startedAtUtc -Name 'Evidence startedAtUtc'
+    $evidenceCompletedAtUtc = ConvertTo-BehaviorEvidenceUtcTimestamp -Value $evidence.completedAtUtc -Name 'Evidence completedAtUtc'
+    if ($evidenceCompletedAtUtc -lt $evidenceStartedAtUtc) { throw 'Evidence completedAtUtc precedes startedAtUtc.' }
+    $usesExecutionProvenance = $evidence.schemaVersion -in @('1.1.0','1.2.0','1.3.0')
     if ($usesExecutionProvenance -and ($evidence.executionContext -ne 'Local' -or $evidence.githubHostedExecution.status -ne 'NotRun')) { throw 'Behavior evidence cannot claim GitHub-hosted execution without a separately verified workflow artifact.' }
     if (-not $evidence.probabilistic -or ($evidence.limitations -join ' ') -notmatch 'not deterministic proof') { throw 'Evidence must explicitly identify probabilistic limitations.' }
     if ($evidence.configurationId -ne $config.ConfigurationId -or $evidence.evaluatorVersion -ne $config.EvaluatorVersion -or $evidence.scoringContractVersion -ne $config.ScoringContractVersion) { throw 'Evidence version or approved configuration identity is stale.' }
-    if ($evidence.configurationHash -ne $inputs.ConfigurationHash) { throw 'Evidence configuration hash is stale or fabricated.' }
+    if ($evidence.configurationHash -ne $expectedConfigurationHash) { throw 'Evidence configuration hash is stale or fabricated.' }
     if ($evidence.evaluatorHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.EvaluatorPaths)) { throw 'Evidence evaluator hash is stale or fabricated.' }
-    $evaluatedEvaluatorSource = (& git -C $root show "$($evidence.evaluatedCommitSha):scripts/CodexSkillBehaviorActionsEvaluation.psm1" 2>$null) -join "`n"
-    if ($LASTEXITCODE -ne 0) { throw 'The evaluated Actions evaluator source is unavailable.' }
-    $requiresPersistenceBoundary = $evaluatedEvaluatorSource -match '\bPersistenceBoundaryPaths\b'
-    if ($requiresPersistenceBoundary -and $evidence.schemaVersion -cne '1.2.0') { throw 'Evidence schema version does not meet the evaluated persistence-boundary contract.' }
-    if ($requiresPersistenceBoundary -and $evidence.PSObject.Properties.Name -notcontains 'persistenceBoundaryHash') { throw 'Evidence is missing the evaluated persistence-boundary hash.' }
-    if ($requiresPersistenceBoundary -and $evidence.persistenceBoundaryHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.PersistenceBoundaryPaths)) { throw 'Evidence persistence-boundary hash is stale or fabricated.' }
     if ($evidence.corpusHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.CorpusPaths)) { throw 'Evidence corpus hash is stale or fabricated.' }
     if ($evidence.skillInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.SkillPaths)) { throw 'Evidence skill input hash is stale or fabricated.' }
     if ($evidence.authorityHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.AuthorityPaths)) { throw 'Evidence authority input hash is stale or fabricated.' }
-    if ($evidence.evaluatedCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'Evidence commit SHA is malformed.' }
-    & git -C $root merge-base --is-ancestor $evidence.evaluatedCommitSha HEAD 2>$null
-    if ($LASTEXITCODE -ne 0) { throw 'Evidence commit is not an ancestor of the validated revision.' }
-    # Compare dynamic input roots so files present only in the evaluated commit
-    # (for example, a subsequently deleted case or skill file) remain visible.
-    # Static inputs stay individually bounded; changing the module that declares
-    # those sets is itself an evaluator change.
-    $boundInputPaths = @($inputs.ConfigurationPath) + @($inputs.EvaluatorPaths) + @($inputs.PersistenceBoundaryPaths) + @($inputs.AuthorityPaths) + @(
-        'tests/fixtures/codex-skills/prompt-behavior',
-        '.agents/skills',
-        '.agents/suspended-skills'
-    ) | Sort-Object -Unique
-    & git -C $root diff --quiet $evidence.evaluatedCommitSha -- @boundInputPaths 2>$null
-    if ($LASTEXITCODE -ne 0) { throw 'Hash-bound evaluator inputs differ from the evaluated commit.' }
+    $hasEvaluatedCommitSha = -not [string]::IsNullOrWhiteSpace([string]$evidence.evaluatedCommitSha)
+    if ((-not $isCurrentReplaySnapshot -and -not $hasEvaluatedCommitSha) -or
+        ($hasEvaluatedCommitSha -and $evidence.evaluatedCommitSha -notmatch '^[0-9a-f]{40}$')) { throw 'Evidence commit SHA is malformed or unavailable for this schema/mode contract.' }
+    if ($evidence.schemaVersion -eq '1.3.0' -and $evidence.PSObject.Properties.Name -notcontains 'evaluatedInputHash') { throw 'Schema 1.3.0 evidence is missing the squash-safe evaluated input hash.' }
+    if ($evidence.schemaVersion -eq '1.3.0' -and $evidence.evaluatedInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs $inputs))) { throw 'Evidence evaluated input hash is stale or fabricated.' }
+    $evaluatedCommitObjectAvailable = $false
+    if ($hasEvaluatedCommitSha) {
+        & git -C $root cat-file -e ("{0}^{{commit}}" -f $evidence.evaluatedCommitSha) 2>$null
+        $evaluatedCommitObjectAvailable = $LASTEXITCODE -eq 0
+        if (-not $evaluatedCommitObjectAvailable) { throw 'Evidence provides an evaluated commit SHA that is unavailable or fabricated.' }
+        & git -C $root merge-base --is-ancestor $evidence.evaluatedCommitSha HEAD 2>$null
+        if ($LASTEXITCODE -ne 0 -and -not $isCurrentReplaySnapshot) { throw 'Evidence commit is not an ancestor of the validated revision.' }
+    }
+    $evaluatedEvaluatorPath = if ($isManualEvaluationProfile) { 'scripts/CodexSkillBehaviorEvaluation.psm1' } else { 'scripts/CodexSkillBehaviorActionsEvaluation.psm1' }
+    $evaluatedEvaluatorSource = if ($hasEvaluatedCommitSha) {
+        (& git -C $root show "$($evidence.evaluatedCommitSha):$evaluatedEvaluatorPath" 2>$null) -join "`n"
+    } else {
+        Get-Content -LiteralPath (Join-Path $root $evaluatedEvaluatorPath) -Raw
+    }
+    if ([string]::IsNullOrWhiteSpace($evaluatedEvaluatorSource)) { throw 'The evaluated Actions evaluator source is unavailable.' }
+    $requiresPersistenceBoundary = $evaluatedEvaluatorSource -match '\bPersistenceBoundaryPaths\b'
+    if ($requiresPersistenceBoundary -and $evidence.schemaVersion -notin @('1.2.0','1.3.0')) { throw 'Evidence schema version does not meet the evaluated persistence-boundary contract.' }
+    if ($requiresPersistenceBoundary -and $evidence.PSObject.Properties.Name -notcontains 'persistenceBoundaryHash') { throw 'Evidence is missing the evaluated persistence-boundary hash.' }
+    if ($requiresPersistenceBoundary -and $evidence.persistenceBoundaryHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.PersistenceBoundaryPaths)) { throw 'Evidence persistence-boundary hash is stale or fabricated.' }
+    # Compare dynamic input roots only when a real evaluated commit is present.
+    # A schema 1.3 Replay/NotRun record with a null SHA proves the current
+    # bounded snapshot instead of claiming historical commit ancestry.
+    if ($hasEvaluatedCommitSha) {
+        $boundInputPaths = @($inputs.ConfigurationPath, $inputs.TrustPolicyPath) + @($inputs.EvaluatorPaths) + @($inputs.PersistenceBoundaryPaths) + @($inputs.AuthorityPaths) + @(
+            'tests/fixtures/codex-skills/prompt-behavior',
+            '.agents/skills',
+            '.agents/suspended-skills'
+        ) | Sort-Object -Unique
+        & git -C $root diff --quiet $evidence.evaluatedCommitSha -- @boundInputPaths 2>$null
+        if ($LASTEXITCODE -ne 0) { throw 'Hash-bound evaluator inputs differ from the evaluated commit.' }
+    }
     if (@($evidence.caseOutcomes).Count -ne @($inputs.Cases).Count) { throw 'Evidence is a partial run with a mismatched case count.' }
     $expectedSamples = @($inputs.Cases).Count * [int]$config.Sampling.SamplesPerCase
     if ([int]$evidence.aggregates.samplesExpected -ne $expectedSamples) { throw 'Evidence sample count contradicts the approved sampling contract.' }
     foreach ($caseOutcome in $evidence.caseOutcomes) {
         if (@($caseOutcome.samples).Count -ne [int]$config.Sampling.SamplesPerCase) { throw "Case '$($caseOutcome.caseId)' is incomplete." }
         foreach ($sample in $caseOutcome.samples) {
+            if ($sample.PSObject.Properties.Name -notcontains 'startedAtUtc' -or $sample.PSObject.Properties.Name -notcontains 'completedAtUtc') { throw "Sample '$($caseOutcome.caseId)' is missing timestamps." }
+            $sampleStartedAtUtc = ConvertTo-BehaviorEvidenceUtcTimestamp -Value $sample.startedAtUtc -Name "Sample '$($caseOutcome.caseId)' startedAtUtc"
+            $sampleCompletedAtUtc = ConvertTo-BehaviorEvidenceUtcTimestamp -Value $sample.completedAtUtc -Name "Sample '$($caseOutcome.caseId)' completedAtUtc"
+            if ($sampleCompletedAtUtc -lt $sampleStartedAtUtc -or $sampleStartedAtUtc -lt $evidenceStartedAtUtc -or $sampleCompletedAtUtc -gt $evidenceCompletedAtUtc) { throw "Sample '$($caseOutcome.caseId)' timestamps fall outside the top-level evidence interval." }
             if ($sample.status -notin @('Passed','Failed','NotRun','Blocked','NotApplicable')) { throw 'A sample uses a noncanonical status.' }
             if ($sample.status -ne 'Passed' -and [string]::IsNullOrWhiteSpace([string]$sample.failureReason)) { throw 'Every nonpassing sample requires a reason.' }
             if ($null -ne $sample.responseSummary -and $sample.responseSha256 -ne (Get-Sha256String -Value ([string]$sample.responseSummary))) { throw 'A sanitized response hash is fabricated or contradictory.' }
@@ -93,7 +154,11 @@ try {
         if ($storedSample.Count -ne 1) { return [pscustomobject]@{ status='Blocked'; failureReason='The stored sample identity is missing or duplicated.' } }
         $storedSample[0]
     }.GetNewClosure()
-    $recomputed = Invoke-CodexSkillBehaviorEvaluation -Path $root -ObservationProvider $scoringProvider -ExecutionMode $evidence.executionMode -RunnerVersion $evidence.model.runnerVersion -EvaluatedCommitSha $evidence.evaluatedCommitSha
+    $recomputed = if ($isManualEvaluationProfile) {
+        Invoke-ManualCodexSkillBehaviorEvaluation -Path $root -ObservationProvider $scoringProvider -ExecutionMode $evidence.executionMode -RunnerVersion $evidence.model.runnerVersion -EvaluatedCommitSha $evidence.evaluatedCommitSha
+    } else {
+        Invoke-CodexSkillBehaviorEvaluation -Path $root -ObservationProvider $scoringProvider -ExecutionMode $evidence.executionMode -RunnerVersion $evidence.model.runnerVersion -EvaluatedCommitSha $evidence.evaluatedCommitSha
+    }
     foreach ($section in @('model','sampling','retryPolicy','isolation','thresholds','caseOutcomes','aggregates','varianceObservations','decision')) {
         $actualValue = $evidence.$section | ConvertTo-Json -Depth 32 | ConvertFrom-Json
         $expectedValue = $recomputed.$section | ConvertTo-Json -Depth 32 | ConvertFrom-Json

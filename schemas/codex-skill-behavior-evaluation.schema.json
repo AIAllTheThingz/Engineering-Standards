@@ -13,7 +13,7 @@
     "humanAdjudication", "decision", "notRunReason", "blockedReason", "warnings", "limitations"
   ],
   "properties": {
-    "schemaVersion": { "enum": ["1.0.0", "1.1.0", "1.2.0"] },
+    "schemaVersion": { "enum": ["1.0.0", "1.1.0", "1.2.0", "1.3.0"] },
     "evidenceKind": { "const": "ProbabilisticCodexSkillBehaviorEvaluation" },
     "evaluatorVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "scoringContractVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
@@ -21,10 +21,11 @@
     "configurationHash": { "$ref": "#/$defs/sha256" },
     "evaluatorHash": { "$ref": "#/$defs/sha256" },
     "persistenceBoundaryHash": { "$ref": "#/$defs/sha256" },
+    "evaluatedInputHash": { "$ref": "#/$defs/sha256" },
     "corpusHash": { "$ref": "#/$defs/sha256" },
     "skillInputHash": { "$ref": "#/$defs/sha256" },
     "authorityHash": { "$ref": "#/$defs/sha256" },
-    "evaluatedCommitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "evaluatedCommitSha": { "type": ["string", "null"], "pattern": "^[a-f0-9]{40}$" },
     "executionMode": { "enum": ["Live", "Replay"] },
     "executionContext": { "const": "Local" },
     "githubHostedExecution": {
@@ -192,6 +193,7 @@
       "then": {
         "allOf": [
           { "not": { "anyOf": [{ "required": ["executionContext"] }, { "required": ["githubHostedExecution"] }] } },
+          { "properties": { "evaluatedCommitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" } } },
           {
             "properties": {
               "retryPolicy": {
@@ -208,14 +210,37 @@
     },
     {
       "if": { "properties": { "schemaVersion": { "const": "1.1.0" } }, "required": ["schemaVersion"] },
-      "then": { "required": ["executionContext", "githubHostedExecution"] }
+      "then": {
+        "required": ["executionContext", "githubHostedExecution"],
+        "properties": { "evaluatedCommitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" } }
+      }
     },
     {
       "if": { "properties": { "schemaVersion": { "const": "1.2.0" } }, "required": ["schemaVersion"] },
-      "then": { "required": ["executionContext", "githubHostedExecution", "persistenceBoundaryHash"] }
+      "then": {
+        "required": ["executionContext", "githubHostedExecution", "persistenceBoundaryHash"],
+        "properties": { "evaluatedCommitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" } }
+      }
     },
     {
-      "if": { "properties": { "schemaVersion": { "enum": ["1.1.0", "1.2.0"] }, "executionContext": { "const": "Local" } }, "required": ["schemaVersion", "executionContext"] },
+      "if": { "properties": { "schemaVersion": { "const": "1.3.0" } }, "required": ["schemaVersion"] },
+      "then": {
+        "required": ["executionContext", "githubHostedExecution", "persistenceBoundaryHash", "evaluatedInputHash"],
+        "anyOf": [
+          { "properties": { "evaluatedCommitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" } } },
+          {
+            "required": ["executionMode", "status", "evaluatedCommitSha"],
+            "properties": {
+              "executionMode": { "const": "Replay" },
+              "status": { "const": "NotRun" },
+              "evaluatedCommitSha": { "type": "null" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": { "properties": { "schemaVersion": { "enum": ["1.1.0", "1.2.0", "1.3.0"] }, "executionContext": { "const": "Local" } }, "required": ["schemaVersion", "executionContext"] },
       "then": { "properties": { "githubHostedExecution": { "properties": { "status": { "const": "NotRun" } } } } }
     },
     { "if": { "properties": { "status": { "const": "NotRun" } } }, "then": { "properties": { "notRunReason": { "type": "string", "minLength": 10 } } } },

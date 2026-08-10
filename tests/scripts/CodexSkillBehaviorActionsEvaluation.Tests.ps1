@@ -32,9 +32,11 @@ Describe 'Controlled Codex skill behavior evaluation' {
 
         $inputs = Get-CodexBehaviorInput -Path $candidate
 
-        @($inputs.Cases).Count | Should -Be 9
+        @($inputs.Cases).Count | Should -Be 10
+        @($inputs.Cases | Where-Object { $_.caseId -eq 'ep-uncertain-routing' -and $_.expectedSelection -eq 'Uncertain' -and $_.expectedSafetyOutcome -eq 'Clarify' }).Count | Should -Be 1
         @($inputs.Cases | Where-Object skillName -cne 'enterprise-powershell').Count | Should -Be 0
         @($inputs.CorpusPaths | Where-Object { $_ -match 'powershell-review-synthetic' }).Count | Should -Be 0
+        @($inputs.AllCorpusPaths | Where-Object { $_ -match 'powershell-review-synthetic' }).Count | Should -Be 1
     }
 
     It 'accepts an exact candidate with trusted evaluator hashes' {
@@ -56,6 +58,10 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $result.status | Should -BeExactly 'Passed'
         $result.candidateSha | Should -BeExactly $sha
         @($result.evaluatorFiles).Count | Should -Be @($inputs.EvaluatorPaths).Count
+        $replay = Invoke-CodexSkillBehaviorEvaluation -Path $candidate -ObservationProvider ${function:New-Observation} -ExecutionMode Replay
+        $result.configurationHash | Should -BeExactly $replay.configurationHash
+        $result.approvedConfigurationHash | Should -BeExactly (Get-CodexBehaviorInput -Path $candidate).ApprovedConfigurationHash
+        $result.evaluatedInputHash | Should -Be (Get-BoundedInputHash -Root $candidate -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs (Get-CodexBehaviorInput -Path $candidate)))
     }
 
     It 'rejects a candidate evaluator hash mismatch' {
@@ -182,7 +188,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $result = Test-CodexBehaviorCandidateTrust -TrustedPath $repoRoot -CandidatePath $candidate -CandidateSha $sha
         $result.status | Should -BeExactly 'Passed'
         $result.configurationId | Should -BeExactly 'codex-skill-behavior-gpt-5.6-sol-medium-v1'
-        $result.configurationHash | Should -BeExactly '9a24ce3d74448b2787e3470dbb9cace027aa5ae9fddbeff507a0019ccd700de6'
+        $result.configurationHash | Should -BeExactly (Get-BoundedInputHash -Root $candidate -RelativePaths @($inputs.ConfigurationPath))
+        $result.approvedConfigurationHash | Should -BeExactly '9a24ce3d74448b2787e3470dbb9cace027aa5ae9fddbeff507a0019ccd700de6'
     }
 
     It 'rejects a candidate configuration absent from the trusted allowlist' {
@@ -599,7 +606,7 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
             finally { Pop-Location }
 
             $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw })
-            $observations.Count | Should -Be 27
+            $observations.Count | Should -Be 30
             @($observations | Where-Object { -not ($_ | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-observation.schema.json')) }).Count | Should -Be 0
             $parsed = @($observations | ForEach-Object { $_ | ConvertFrom-Json })
             @($parsed | Where-Object { $_.status -ne 'Passed' -or $_.attemptCount -ne 1 -or $null -ne $_.failureReason }).Count | Should -Be 0
@@ -648,7 +655,7 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
             finally { Pop-Location }
 
             $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw })
-            $observations.Count | Should -Be 27
+            $observations.Count | Should -Be 30
             $persisted = @($observations | ForEach-Object { $_ | ConvertFrom-Json })
             @($persisted | Where-Object {
                 $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 -or
@@ -691,7 +698,7 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
             finally { Pop-Location }
             $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
 
-            $observations.Count | Should -Be 27
+            $observations.Count | Should -Be 30
             @($observations | Where-Object { $_.status -ne 'Blocked' -or $_.attemptCount -ne $ExpectedAttempts }).Count | Should -Be 0
             @($observations.failureReason | Select-Object -Unique) | Should -Be @("$FailurePrefix$Category`: Codex exited with code 17. Retry is $RetryMessage by the governed retry policy.")
             $serialized = $observations | ConvertTo-Json -Depth 8 -Compress
@@ -720,7 +727,7 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
             $LASTEXITCODE | Should -Be 0
 
             $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
-            $observations.Count | Should -Be 27
+            $observations.Count | Should -Be 30
             @($observations | Where-Object { $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 -or $_.failureReason -ne 'PreflightUnavailable: the approved nonproduction model credential is unavailable.' }).Count | Should -Be 0
 
             & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Invoke-CodexSkillBehaviorActionsEvaluation.ps1') -Path $repoRoot -TrustedOutputRoot $outputRoot.RunRoot -ObservationDirectory $observationRoot -OutputJson (Join-Path $outputRoot.ArtifactRoot 'report.json') -ExecutionMode Live -EvaluatedCommitSha ((& git -C $repoRoot rev-parse HEAD).Trim()) 2>$null
@@ -751,7 +758,7 @@ last_message_path.write_text(json.dumps(payload).replace(credential, escaped_cre
             $LASTEXITCODE | Should -Be 0
 
             $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
-            $observations.Count | Should -Be 27
+            $observations.Count | Should -Be 30
             @($observations | Where-Object {
                 $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 -or
                 $_.failureReason -cne 'PreflightUnavailable: the governed Codex preflight could not be started.'
@@ -797,7 +804,7 @@ sys.exit(17)
 
             (Get-Content -LiteralPath $counterPath -Raw) | Should -BeExactly '1'
             $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
-            $observations.Count | Should -Be 27
+            $observations.Count | Should -Be 30
             @($observations | Where-Object {
                 $_.status -ne 'Blocked' -or $_.attemptCount -ne 1 -or
                 $_.failureReason -cne 'PreflightUnavailable: ConfigurationError: Codex exited with code 17. Retry is not permitted by the governed retry policy.' -or
@@ -860,12 +867,12 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
             }
             finally { Pop-Location }
 
-            (Get-Content -LiteralPath $counterPath -Raw).Length | Should -Be 29
+            (Get-Content -LiteralPath $counterPath -Raw).Length | Should -Be 32
             $observations = @(Get-ChildItem -LiteralPath $observationRoot -Filter '*.json' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json })
-            $observations.Count | Should -Be 27
+            $observations.Count | Should -Be 30
             @($observations | Where-Object { $_.status -ne 'Passed' -or $_.failureReason -ne $null }).Count | Should -Be 0
             @($observations | Where-Object attemptCount -eq 2).Count | Should -Be 1
-            @($observations | Where-Object attemptCount -eq 1).Count | Should -Be 26
+            @($observations | Where-Object attemptCount -eq 1).Count | Should -Be 29
         }
         finally {
             if ($null -eq $prior) { Remove-Item Env:CODEX_BEHAVIOR_TRANSIENT_PREFLIGHT_TEST_KEY -ErrorAction SilentlyContinue } else { $env:CODEX_BEHAVIOR_TRANSIENT_PREFLIGHT_TEST_KEY = $prior }
@@ -1032,25 +1039,34 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Live -RunnerVersion 'test-runner'
         $report.status | Should -Be 'Passed'
         $report.probabilistic | Should -BeTrue
-        $report.aggregates.casesExpected | Should -Be 9
-        $report.aggregates.samplesExpected | Should -Be 27
-        $report.aggregates.samplesCompleted | Should -Be 27
+        $report.aggregates.casesExpected | Should -Be 10
+        $report.aggregates.samplesExpected | Should -Be 30
+        $report.aggregates.samplesCompleted | Should -Be 30
         $report.limitations -join ' ' | Should -Match 'not deterministic proof'
-        $report.schemaVersion | Should -Be '1.2.0'
+        $report.schemaVersion | Should -Be '1.3.0'
         $report.executionContext | Should -Be 'Local'
         $report.githubHostedExecution.status | Should -Be 'NotRun'
         $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
+        $report.configurationHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths @((Get-CodexBehaviorInput -Path $repoRoot).ConfigurationPath))
         $report.persistenceBoundaryHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths (Get-CodexBehaviorInput -Path $repoRoot).PersistenceBoundaryPaths)
+        $report.evaluatedInputHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs (Get-CodexBehaviorInput -Path $repoRoot)))
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
     }
 
-    It 'keeps 1.0 and 1.1 evidence shapes schema-valid while requiring the current Actions report to bind persistence' {
+    It 'keeps 1.0, 1.1, and legacy 1.2 evidence shapes schema-valid while requiring the current Actions report to bind persistence' {
         $schemaPath = Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json'
         $current = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay
         $legacy11 = $current | ConvertTo-Json -Depth 32 | ConvertFrom-Json
         $legacy11.schemaVersion = '1.1.0'
+        $legacy11.evaluatedCommitSha = (git -C $repoRoot rev-parse HEAD).Trim()
         $legacy11.PSObject.Properties.Remove('persistenceBoundaryHash')
         ($legacy11 | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $schemaPath) | Should -BeTrue
+
+        $legacy12 = $current | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+        $legacy12.schemaVersion = '1.2.0'
+        $legacy12.evaluatedCommitSha = (git -C $repoRoot rev-parse HEAD).Trim()
+        $legacy12.PSObject.Properties.Remove('evaluatedInputHash')
+        ($legacy12 | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $schemaPath) | Should -BeTrue
 
         $legacy10 = $legacy11 | ConvertTo-Json -Depth 32 | ConvertFrom-Json
         $legacy10.schemaVersion = '1.0.0'
@@ -1080,6 +1096,30 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         $report.notRunReason | Should -Match 'not a live'
     }
 
+    It 'rejects a replay sample timestamp outside the top-level evidence interval' {
+        $testRoot = Join-Path $repoRoot ('.tmp/actions-evidence-timestamps-' + [guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+        try {
+            $snapshot = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay
+            $snapshot.startedAtUtc = '2026-08-10T00:00:00.0000000Z'
+            $snapshot.completedAtUtc = '2026-08-10T00:00:02.0000000Z'
+            foreach ($caseOutcome in $snapshot.caseOutcomes) {
+                foreach ($sample in $caseOutcome.samples) {
+                    $sample.startedAtUtc = '2026-08-10T00:00:00.0000000Z'
+                    $sample.completedAtUtc = '2026-08-10T00:00:01.0000000Z'
+                }
+            }
+            $snapshot.caseOutcomes[0].samples[0].completedAtUtc = '2026-08-10T00:00:03.0000000Z'
+            $snapshotPath = Join-Path $testRoot 'out-of-range-sample.json'
+            $snapshot | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $snapshotPath -Encoding utf8
+            $relativeSnapshotPath = [IO.Path]::GetRelativePath($repoRoot, $snapshotPath).Replace('\\', '/')
+
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath $relativeSnapshotPath 2>$null
+            $LASTEXITCODE | Should -Be 1
+        }
+        finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+
     It 'fails closed for unavailable model, timeout, malformed output, and a partial run' -ForEach @(
         @{ reason = 'ModelUnavailable: approved model was unavailable.' }
         @{ reason = 'TransportTimeout: the bounded request timed out.' }
@@ -1093,7 +1133,7 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         $report.decision.action | Should -Be 'Suspend'
         $report.aggregates.samplesCompleted | Should -Be 0
         $report.blockedReason | Should -Match 'failed closed'
-        @($report.caseOutcomes | Where-Object status -eq 'Blocked').Count | Should -Be 9
+        @($report.caseOutcomes | Where-Object status -eq 'Blocked').Count | Should -Be 10
     }
 
     It 'fails a selection threshold regression' {
@@ -1188,7 +1228,7 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
             $LASTEXITCODE | Should -Be 2
             $report = Get-Content -LiteralPath (Join-Path $testRoot 'report.json') -Raw | ConvertFrom-Json
             $report.status | Should -Be 'NotRun'
-            $report.aggregates.samplesCompleted | Should -Be 27
+            $report.aggregates.samplesCompleted | Should -Be 30
             @($report.caseOutcomes | Where-Object status -ne 'Passed').Count | Should -Be 0
         }
         finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
@@ -1239,17 +1279,87 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         $verifier | Should -Match 'schema version does not meet the evaluated persistence-boundary contract'
         $verifier | Should -Match 'missing the evaluated persistence-boundary hash'
         $verifier | Should -Match 'persistence-boundary hash is stale or fabricated'
+        $verifier | Should -Match 'evaluated input hash is stale or fabricated'
         $verifier | Should -Match '\$inputs\.PersistenceBoundaryPaths'
-        $workflow | Should -Match '\$evidence\.schemaVersion -cne ''1\.2\.0'''
+        $workflow | Should -Match '\$evidence\.schemaVersion -cne ''1\.3\.0'''
         $workflow | Should -Match 'persistenceBoundaryHash'
         $workflow | Should -Match '\$trust\.persistenceBoundaryHash'
+        $workflow | Should -Match 'evaluatedInputHash'
+        $workflow | Should -Match 'evaluatedInputHash = \$null'
     }
 
     It 'compares complete dynamic input roots to detect deletions after evaluation' {
         $verifier = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Raw
+        $inputs = Get-CodexBehaviorInput -Path $repoRoot
+        $boundInputs = @(Get-CodexBehaviorBoundInputPaths -Inputs $inputs)
+        $inputs.TrustPolicyPath | Should -Be '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
+        $boundInputs | Should -Contain $inputs.ConfigurationPath
+        $boundInputs | Should -Contain $inputs.TrustPolicyPath
+        $boundInputs | Should -Contain $inputs.EvaluatorPaths[0]
+        $boundInputs | Should -Contain $inputs.PersistenceBoundaryPaths[0]
+        $boundInputs | Should -Contain $inputs.AuthorityPaths[0]
+        $boundInputs | Should -Contain $inputs.AllCorpusPaths[0]
+        $boundInputs | Should -Contain $inputs.SkillPaths[0]
         $verifier | Should -Match "'tests/fixtures/codex-skills/prompt-behavior'"
         $verifier | Should -Match "'\.agents/suspended-skills'"
+        $verifier | Should -Match '\$inputs\.TrustPolicyPath'
         $verifier | Should -Not -Match 'boundInputPaths = @\(\$inputs\.ConfigurationPath\) \+ @\(\$inputs\.EvaluatorPaths\) \+ @\(\$inputs\.CorpusPaths\)'
+    }
+
+    It 'accepts a null 1.3 replay snapshot and rejects fabricated Actions provenance' {
+        $testRoot = Join-Path $repoRoot ('.tmp/actions-evidence-provenance-' + [guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+        try {
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath 'evidence/codex-skill-behavior.json' 2>$null
+            $LASTEXITCODE | Should -Be 0
+
+            $snapshot = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay
+            $snapshot.evaluatedCommitSha | Should -BeNullOrEmpty
+            $snapshotPath = Join-Path $testRoot 'snapshot.json'
+            $snapshot | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $snapshotPath -Encoding utf8
+            $relativeSnapshotPath = [IO.Path]::GetRelativePath($repoRoot, $snapshotPath).Replace('\', '/')
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath $relativeSnapshotPath 2>$null
+            $LASTEXITCODE | Should -Be 0
+
+            $fabricated = $snapshot | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+            $fabricated.evaluatedCommitSha = 'f' * 40
+            $fabricatedPath = Join-Path $testRoot 'fabricated-sha.json'
+            $fabricated | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $fabricatedPath -Encoding utf8
+            $relativeFabricatedPath = [IO.Path]::GetRelativePath($repoRoot, $fabricatedPath).Replace('\', '/')
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath $relativeFabricatedPath 2>$null
+            $LASTEXITCODE | Should -Be 1
+
+            $stale = $snapshot | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+            $stale.evaluatedInputHash = '0' * 64
+            $stalePath = Join-Path $testRoot 'stale-input-hash.json'
+            $stale | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $stalePath -Encoding utf8
+            $relativeStalePath = [IO.Path]::GetRelativePath($repoRoot, $stalePath).Replace('\', '/')
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath $relativeStalePath 2>$null
+            $LASTEXITCODE | Should -Be 1
+        }
+        finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+
+    It 'rejects a detached Actions replay snapshot when its trust policy changes' {
+        $testRoot = Join-Path $repoRoot ('.tmp/actions-evidence-trust-policy-' + [guid]::NewGuid().ToString('N'))
+        $trustPolicyPath = Join-Path $repoRoot '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
+        $originalTrustPolicy = [IO.File]::ReadAllText($trustPolicyPath)
+        New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+        try {
+            $tree = (git -C $repoRoot rev-parse 'HEAD^{tree}').Trim()
+            $detachedCommit = ('' | git -C $repoRoot -c user.name='Codex Test' -c user.email='codex-test@example.invalid' commit-tree $tree).Trim()
+            [IO.File]::WriteAllText($trustPolicyPath, $originalTrustPolicy + [Environment]::NewLine + '# synthetic trust-policy mutation')
+            $snapshot = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay -EvaluatedCommitSha $detachedCommit
+            $snapshotPath = Join-Path $testRoot 'trust-policy-mismatch.json'
+            $snapshot | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $snapshotPath -Encoding utf8
+            $relativeSnapshotPath = [IO.Path]::GetRelativePath($repoRoot, $snapshotPath).Replace('\', '/')
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath $relativeSnapshotPath 2>$null
+            $LASTEXITCODE | Should -Be 1
+        }
+        finally {
+            [IO.File]::WriteAllText($trustPolicyPath, $originalTrustPolicy)
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 
     It 'rejects fabricated checked evidence and partial checked evidence' {
