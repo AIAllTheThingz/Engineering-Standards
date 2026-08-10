@@ -109,6 +109,8 @@ flowchart TD
 
 ## Example Workflow
 
+**Preview-only:** the following example demonstrates the prepared, unpublished `1.2.0` contract. It is not production authority until `1.2.0` is published. Production consumers should continue using immutable published `v1.1.0` or another explicitly documented immutable authority.
+
 ```yaml
 name: Governance
 on:
@@ -147,6 +149,8 @@ Local rules may add stricter validation and repository-specific commands. Local 
 ```
 
 ## Example Project Manifest
+
+**Preview-only:** the manifest below demonstrates prepared schema/governance contract `1.2.0`. Do not copy its `1.2.0` version values into production until an immutable `1.2.0` authority is published or explicitly documented.
 
 ```json
 {
