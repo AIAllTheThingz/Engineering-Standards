@@ -145,8 +145,9 @@ Describe 'Consolidation contract regression coverage' {
         $messages | Should -Contain "Standards-consistency schema 1.1.0 is missing required member 'nextReleaseReadiness'."
     }
 
-    It 'separates the published release from unselected next-release readiness' {
+    It 'separates the published release from prepared but not yet candidate-bound next-release readiness' {
         $matrix = Get-Content -LiteralPath $script:standardsPath -Raw | ConvertFrom-Json
+        $matrix.repositoryVersion | Should -BeExactly '1.2.0'
         $matrix.publishedRelease.status | Should -BeExactly 'Passed'
         $matrix.publishedRelease.version | Should -BeExactly '1.1.0'
         $matrix.publishedRelease.tag | Should -BeExactly 'v1.1.0'
@@ -157,7 +158,7 @@ Describe 'Consolidation contract regression coverage' {
         $matrix.nextReleaseReadiness.proposedVersion | Should -BeNullOrEmpty
         $matrix.nextReleaseReadiness.proposedTag | Should -BeNullOrEmpty
         $matrix.nextReleaseReadiness.targetCommitSha | Should -BeNullOrEmpty
-        $matrix.nextReleaseReadiness.reason | Should -Match 'no next semantic version'
+        $matrix.nextReleaseReadiness.reason | Should -Match 'Version 1\.2\.0 is selected.*readiness record remains NotRun'
 
         $matrix.releaseReadiness.status | Should -BeExactly 'NotApplicable'
         @($matrix.releaseReadiness.PSObject.Properties.Name) | Should -Be @('status','reason')
