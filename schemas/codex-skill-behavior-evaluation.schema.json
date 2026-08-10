@@ -213,7 +213,7 @@
     },
     {
       "if": { "properties": { "schemaVersion": { "const": "1.2.0" } }, "required": ["schemaVersion"] },
-      "then": { "required": ["executionContext", "githubHostedExecution", "persistenceBoundaryHash"] }
+      "then": { "required": ["executionContext", "githubHostedExecution", "persistenceBoundaryHash", "evaluatedInputHash"] }
     },
     {
       "if": { "properties": { "schemaVersion": { "enum": ["1.1.0", "1.2.0"] }, "executionContext": { "const": "Local" } }, "required": ["schemaVersion", "executionContext"] },

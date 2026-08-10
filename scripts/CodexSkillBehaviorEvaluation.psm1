@@ -26,7 +26,8 @@ function Get-BoundedInputHash {
 function Get-CodexBehaviorInput {
     param([Parameter(Mandatory)][string]$Path)
     $root = (Resolve-Path -LiteralPath $Path).Path
-    $trustPolicy = Import-PowerShellDataFile -LiteralPath (Join-Path $root '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1')
+    $trustPolicyPath = '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
+    $trustPolicy = Import-PowerShellDataFile -LiteralPath (Join-Path $root $trustPolicyPath)
     $retryableProviderFailureReasons = @($trustPolicy.RetryableProviderFailureReasons)
     $expectedRetryableProviderFailureReasons = @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
     if ($retryableProviderFailureReasons.Count -ne $expectedRetryableProviderFailureReasons.Count -or
@@ -65,6 +66,7 @@ function Get-CodexBehaviorInput {
         CorpusPaths = @($corpus | ForEach-Object { ([IO.Path]::GetRelativePath($root, $_.FullName)).Replace('\','/') })
         SkillPaths = @($skillFiles | ForEach-Object { ([IO.Path]::GetRelativePath($root, $_.FullName)).Replace('\','/') })
         AuthorityPaths = $authorityPaths
+        TrustPolicyPath = $trustPolicyPath
         ConfigurationPath = $configurationPath
         # This compatibility set is validated by the immutable pre-merge
         # verifier. New persistence inputs are bound independently below.
@@ -78,6 +80,7 @@ function Get-CodexBehaviorBoundInputPaths {
     param([Parameter(Mandatory)][object]$Inputs)
     @(
         $Inputs.ConfigurationPath
+        $Inputs.TrustPolicyPath
         $Inputs.EvaluatorPaths
         $Inputs.PersistenceBoundaryPaths
         $Inputs.AuthorityPaths

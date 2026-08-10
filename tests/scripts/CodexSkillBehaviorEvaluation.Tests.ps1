@@ -477,6 +477,28 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
         $verifier = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Raw
         $verifier | Should -Match 'Get-CodexBehaviorBoundInputPaths'
         $verifier | Should -Match 'evaluated input hash'
+        (Get-CodexBehaviorInput -Path $repoRoot).TrustPolicyPath | Should -Be '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
+        (Get-CodexBehaviorBoundInputPaths -Inputs (Get-CodexBehaviorInput -Path $repoRoot)) | Should -Contain '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
+    }
+
+    It 'requires the evaluated input hash for schema 1.2 evidence and rejects unknown commits' {
+        $schemaPath = Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json'
+        $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay
+        $missingHash = $report | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+        $missingHash.PSObject.Properties.Remove('evaluatedInputHash')
+        ($missingHash | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $schemaPath -ErrorAction SilentlyContinue) | Should -BeFalse
+
+        $testRoot = Join-Path $repoRoot '.tmp/behavior-evidence-test'
+        New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+        try {
+            $unknownCommit = $report | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+            $unknownCommit.evaluatedCommitSha = 'f' * 40
+            $unknownPath = Join-Path $testRoot 'unknown-commit.json'
+            $unknownCommit | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $unknownPath -Encoding utf8
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/unknown-commit.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+        }
+        finally { Remove-Item -LiteralPath (Join-Path $testRoot 'unknown-commit.json') -Force -ErrorAction SilentlyContinue }
     }
 
     It 'keeps replay evidence valid across squash ancestry loss without relaxing live provenance' {
@@ -495,6 +517,9 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
             $detachedCommit = ('' | git -C $repoRoot -c user.name='Codex Test' -c user.email='codex-test@example.invalid' commit-tree $tree).Trim()
             $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
             $evidence.evaluatedCommitSha = $detachedCommit
+            $evidence.evaluatorHash = Get-BoundedInputHash -Root $repoRoot -RelativePaths (Get-CodexBehaviorInput -Path $repoRoot).EvaluatorPaths
+            $evidence.persistenceBoundaryHash = Get-BoundedInputHash -Root $repoRoot -RelativePaths (Get-CodexBehaviorInput -Path $repoRoot).PersistenceBoundaryPaths
+            $evidence.evaluatedInputHash = Get-BoundedInputHash -Root $repoRoot -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs (Get-CodexBehaviorInput -Path $repoRoot))
             $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $temporaryEvidence -Encoding utf8
             & (Join-Path $PSHOME 'pwsh') -NoProfile -File $verifierPath -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/squash.json' 2>$null
             $LASTEXITCODE | Should -Be 0

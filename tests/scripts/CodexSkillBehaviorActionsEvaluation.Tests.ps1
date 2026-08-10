@@ -56,6 +56,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $result.status | Should -BeExactly 'Passed'
         $result.candidateSha | Should -BeExactly $sha
         @($result.evaluatorFiles).Count | Should -Be @($inputs.EvaluatorPaths).Count
+        $result.evaluatedInputHash | Should -Be (Get-BoundedInputHash -Root $candidate -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs (Get-CodexBehaviorInput -Path $candidate)))
     }
 
     It 'rejects a candidate evaluator hash mismatch' {
@@ -1041,6 +1042,7 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         $report.githubHostedExecution.status | Should -Be 'NotRun'
         $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
         $report.persistenceBoundaryHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths (Get-CodexBehaviorInput -Path $repoRoot).PersistenceBoundaryPaths)
+        $report.evaluatedInputHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs (Get-CodexBehaviorInput -Path $repoRoot)))
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
     }
 
@@ -1239,10 +1241,12 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         $verifier | Should -Match 'schema version does not meet the evaluated persistence-boundary contract'
         $verifier | Should -Match 'missing the evaluated persistence-boundary hash'
         $verifier | Should -Match 'persistence-boundary hash is stale or fabricated'
+        $verifier | Should -Match 'evaluated input hash is stale or fabricated'
         $verifier | Should -Match '\$inputs\.PersistenceBoundaryPaths'
         $workflow | Should -Match '\$evidence\.schemaVersion -cne ''1\.2\.0'''
         $workflow | Should -Match 'persistenceBoundaryHash'
         $workflow | Should -Match '\$trust\.persistenceBoundaryHash'
+        $workflow | Should -Match 'evaluatedInputHash'
     }
 
     It 'compares complete dynamic input roots to detect deletions after evaluation' {

@@ -56,6 +56,8 @@ try {
     if ($evidence.evaluatedCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'Evidence commit SHA is malformed.' }
     $boundInputPaths = @(Get-CodexBehaviorBoundInputPaths -Inputs $inputs)
     if ($evidence.schemaVersion -eq '1.2.0' -and $evidence.evaluatedInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $boundInputPaths)) { throw 'Evidence evaluated input hash is stale or fabricated.' }
+    & git -C $root cat-file -e ("{0}^{{commit}}" -f $evidence.evaluatedCommitSha) 2>$null
+    if ($LASTEXITCODE -ne 0) { throw 'Evidence evaluated commit object is unavailable.' }
     & git -C $root merge-base --is-ancestor $evidence.evaluatedCommitSha HEAD 2>$null
     $evaluatedCommitIsAncestor = $LASTEXITCODE -eq 0
     if (-not $evaluatedCommitIsAncestor -and ($evidence.executionMode -ne 'Replay' -or $evidence.status -ne 'NotRun')) { throw 'Non-ancestor evidence is allowed only for NotRun replay evidence with a current evaluated input hash.' }

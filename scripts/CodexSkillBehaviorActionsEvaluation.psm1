@@ -175,6 +175,18 @@ function Get-BoundedInputHash {
     Get-Sha256String -Value ($parts -join "`n--FILE--`n")
 }
 
+function Get-CodexBehaviorBoundInputPaths {
+    param([Parameter(Mandatory)][object]$Inputs)
+    @(
+        $Inputs.ConfigurationPath
+        $Inputs.EvaluatorPaths
+        $Inputs.PersistenceBoundaryPaths
+        $Inputs.AuthorityPaths
+        $Inputs.CorpusPaths
+        $Inputs.SkillPaths
+    ) | Sort-Object -Unique
+}
+
 function Test-CodexBehaviorUnsafeFileSystemItem {
     param([Parameter(Mandatory)][IO.FileSystemInfo]$Item)
     return [bool]($Item.LinkType -or
@@ -627,6 +639,7 @@ function Test-CodexBehaviorCandidateTrust {
         configurationHash = $approved.ConfigurationHash
         evaluatorHash = Get-BoundedInputHash -Root $trustedRoot -RelativePaths @($policy.EvaluatorPaths)
         persistenceBoundaryHash = Get-BoundedInputHash -Root $trustedRoot -RelativePaths @($policy.PersistenceBoundaryPaths)
+        evaluatedInputHash = Get-BoundedInputHash -Root $candidateRoot -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs $inputs)
         promptFileCount = @($inputs.CorpusPaths).Count
         skillFileCount = @($inputs.SkillPaths).Count
         evaluatorFiles = @($hashes)
@@ -772,6 +785,7 @@ function Invoke-CodexSkillBehaviorEvaluation {
         persistenceBoundaryHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.PersistenceBoundaryPaths
         corpusHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.CorpusPaths; skillInputHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.SkillPaths
         authorityHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.AuthorityPaths
+        evaluatedInputHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs $inputs)
         evaluatedCommitSha = $EvaluatedCommitSha; executionMode = $ExecutionMode; executionContext = $executionContext; githubHostedExecution = [pscustomobject]@{ status = $githubHostedExecutionStatus }; probabilistic = $true; deterministicStructureStatus = 'Passed'; status = $overall
         startedAtUtc = $started.ToString('o'); completedAtUtc = [DateTime]::UtcNow.ToString('o')
         model = [pscustomobject]@{ provider = $config.Model.Provider; surface = $config.Model.Surface; modelId = $config.Model.ModelId; reasoningEffort = $config.Model.ReasoningEffort; runnerVersion = $RunnerVersion }
@@ -788,4 +802,4 @@ function Invoke-CodexSkillBehaviorEvaluation {
     }
 }
 
-Export-ModuleMember -Function Get-Sha256String, Start-CodexBoundedStreamRead, Get-CodexProviderFailureDiagnostic, Get-BoundedInputHash, Get-CodexBehaviorInput, Resolve-CodexBehaviorOutputPath, New-CodexBehaviorOutputRoot, ConvertTo-CodexBehaviorPersistedObservation, Test-CodexBehaviorCandidateTrust, Invoke-CodexSkillBehaviorEvaluation
+Export-ModuleMember -Function Get-Sha256String, Start-CodexBoundedStreamRead, Get-CodexProviderFailureDiagnostic, Get-BoundedInputHash, Get-CodexBehaviorBoundInputPaths, Get-CodexBehaviorInput, Resolve-CodexBehaviorOutputPath, New-CodexBehaviorOutputRoot, ConvertTo-CodexBehaviorPersistedObservation, Test-CodexBehaviorCandidateTrust, Invoke-CodexSkillBehaviorEvaluation

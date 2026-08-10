@@ -318,6 +318,7 @@ jobs:
             $workflowResult.configurationHash = [string]$trust.configurationHash
             $workflowResult.evaluatorHash = [string]$trust.evaluatorHash
             $workflowResult.persistenceBoundaryHash = [string]$trust.persistenceBoundaryHash
+            $workflowResult.evaluatedInputHash = [string]$trust.evaluatedInputHash
           }
           $evidencePath = Join-Path $artifactRoot 'codex-skill-behavior.json'
           $evidenceStatus = 'NotRun'
@@ -330,6 +331,7 @@ jobs:
             if ($evidence.evaluatedCommitSha -cne $env:CANDIDATE_SHA -or
                 $evidence.configurationHash -cne $trust.configurationHash -or
                 $evidence.evaluatorHash -cne $trust.evaluatorHash -or
+                $evidence.evaluatedInputHash -cne $trust.evaluatedInputHash -or
                 $evidence.schemaVersion -cne '1.2.0' -or
                 $evidence.PSObject.Properties.Name -notcontains 'persistenceBoundaryHash' -or
                 $evidence.persistenceBoundaryHash -cne $trust.persistenceBoundaryHash) {
