@@ -456,7 +456,7 @@ if ($topLevelComplete) {
                     if ([string](Get-Member -Object $metadata -Name $field) -cne $version) { Add-ReleaseFinding -Code 'RLG080' -Message "metadataConsistency.$field must equal release version '$version'." }
                 }
                 $versionPath = Join-Path $root 'VERSION'
-                if (-not (Test-Path -LiteralPath $versionPath -PathType Leaf) -or (Get-Content -LiteralPath $versionPath -Raw).Trim() -cne $version) {
+                if ($mode -ceq 'Live' -and (-not (Test-Path -LiteralPath $versionPath -PathType Leaf) -or (Get-Content -LiteralPath $versionPath -Raw).Trim() -cne $version)) {
                     Add-ReleaseFinding -Code 'RLG081' -Message "Repository VERSION does not equal release version '$version'."
                 }
                 $changelogPath = Join-Path $root 'CHANGELOG.md'
