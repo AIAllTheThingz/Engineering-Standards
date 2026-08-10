@@ -109,8 +109,24 @@ try {
     catch {
         $legacyExpandedReasonsAreRejected = $true
     }
-    if ($legacyIsAccepted -and $legacyProvenanceIsRejected -and $legacyExpandedReasonsAreRejected) {
-        $results.Add((New-ValidationResult -Status Passed -Message 'Behavior evidence schema preserves 1.0.0 provenance and retry-reason compatibility while limiting expanded transient reasons to 1.1.0.' -Path $behaviorSchemaPath -Severity info))
+
+    $legacy12 = $behaviorFixtureRaw | ConvertFrom-Json
+    $legacy12.schemaVersion = '1.2.0'
+    $legacy12 | Add-Member -NotePropertyName persistenceBoundaryHash -NotePropertyValue ('0' * 64)
+    $legacy12.PSObject.Properties.Remove('evaluatedInputHash')
+    $legacy12IsAccepted = $legacy12 | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $behaviorSchemaPath -ErrorAction Stop
+
+    $missing13Hash = $behaviorFixtureRaw | ConvertFrom-Json
+    $missing13Hash.schemaVersion = '1.3.0'
+    $missing13Hash.PSObject.Properties.Remove('evaluatedInputHash')
+    try {
+        $missing13HashIsRejected = -not ($missing13Hash | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $behaviorSchemaPath -ErrorAction Stop)
+    }
+    catch {
+        $missing13HashIsRejected = $true
+    }
+    if ($legacyIsAccepted -and $legacyProvenanceIsRejected -and $legacyExpandedReasonsAreRejected -and $legacy12IsAccepted -and $missing13HashIsRejected) {
+        $results.Add((New-ValidationResult -Status Passed -Message 'Behavior evidence schema preserves 1.0.0, 1.1.0, and legacy 1.2.0 compatibility while requiring the squash-safe hash only for 1.3.0.' -Path $behaviorSchemaPath -Severity info))
     }
     else {
         $results.Add((New-ValidationResult -Status Failed -Message 'Behavior evidence schema does not correctly separate 1.0.0 and 1.1.0 provenance or retry-reason contracts.' -Path $behaviorSchemaPath))

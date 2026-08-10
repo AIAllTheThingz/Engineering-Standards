@@ -43,7 +43,7 @@ try {
         if ($evidence.PSObject.Properties.Name -notcontains $property) { throw "Evidence is missing required property '$property'." }
     }
     if ($evidence.status -notin @('Passed','Failed','NotRun','Blocked','NotApplicable')) { throw 'Evidence uses a noncanonical status.' }
-    $usesExecutionProvenance = $evidence.schemaVersion -in @('1.1.0','1.2.0')
+    $usesExecutionProvenance = $evidence.schemaVersion -in @('1.1.0','1.2.0','1.3.0')
     if ($usesExecutionProvenance -and ($evidence.executionContext -ne 'Local' -or $evidence.githubHostedExecution.status -ne 'NotRun')) { throw 'Behavior evidence cannot claim GitHub-hosted execution without a separately verified workflow artifact.' }
     if (-not $evidence.probabilistic -or ($evidence.limitations -join ' ') -notmatch 'not deterministic proof') { throw 'Evidence must explicitly identify probabilistic limitations.' }
     if ($evidence.configurationId -ne $config.ConfigurationId -or $evidence.evaluatorVersion -ne $config.EvaluatorVersion -or $evidence.scoringContractVersion -ne $config.ScoringContractVersion) { throw 'Evidence version or approved configuration identity is stale.' }
@@ -52,15 +52,15 @@ try {
     $evaluatedEvaluatorSource = (& git -C $root show "$($evidence.evaluatedCommitSha):scripts/CodexSkillBehaviorActionsEvaluation.psm1" 2>$null) -join "`n"
     if ($LASTEXITCODE -ne 0) { throw 'The evaluated Actions evaluator source is unavailable.' }
     $requiresPersistenceBoundary = $evaluatedEvaluatorSource -match '\bPersistenceBoundaryPaths\b'
-    if ($requiresPersistenceBoundary -and $evidence.schemaVersion -cne '1.2.0') { throw 'Evidence schema version does not meet the evaluated persistence-boundary contract.' }
+    if ($requiresPersistenceBoundary -and $evidence.schemaVersion -notin @('1.2.0','1.3.0')) { throw 'Evidence schema version does not meet the evaluated persistence-boundary contract.' }
     if ($requiresPersistenceBoundary -and $evidence.PSObject.Properties.Name -notcontains 'persistenceBoundaryHash') { throw 'Evidence is missing the evaluated persistence-boundary hash.' }
     if ($requiresPersistenceBoundary -and $evidence.persistenceBoundaryHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.PersistenceBoundaryPaths)) { throw 'Evidence persistence-boundary hash is stale or fabricated.' }
     if ($evidence.corpusHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.CorpusPaths)) { throw 'Evidence corpus hash is stale or fabricated.' }
     if ($evidence.skillInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.SkillPaths)) { throw 'Evidence skill input hash is stale or fabricated.' }
     if ($evidence.authorityHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.AuthorityPaths)) { throw 'Evidence authority input hash is stale or fabricated.' }
     if ($evidence.evaluatedCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'Evidence commit SHA is malformed.' }
-    if ($evidence.schemaVersion -eq '1.2.0' -and $evidence.PSObject.Properties.Name -notcontains 'evaluatedInputHash') { throw 'Schema 1.2.0 evidence is missing the squash-safe evaluated input hash.' }
-    if ($evidence.schemaVersion -eq '1.2.0' -and $evidence.evaluatedInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs $inputs))) { throw 'Evidence evaluated input hash is stale or fabricated.' }
+    if ($evidence.schemaVersion -eq '1.3.0' -and $evidence.PSObject.Properties.Name -notcontains 'evaluatedInputHash') { throw 'Schema 1.3.0 evidence is missing the squash-safe evaluated input hash.' }
+    if ($evidence.schemaVersion -eq '1.3.0' -and $evidence.evaluatedInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs $inputs))) { throw 'Evidence evaluated input hash is stale or fabricated.' }
     & git -C $root merge-base --is-ancestor $evidence.evaluatedCommitSha HEAD 2>$null
     if ($LASTEXITCODE -ne 0) { throw 'Evidence commit is not an ancestor of the validated revision.' }
     # Compare dynamic input roots so files present only in the evaluated commit

@@ -83,9 +83,10 @@ requested method or default must be materially redesigned; `Refuse` is for
 the prohibited objective itself. Selection never authorizes an unsafe action.
 Human review remains required after complete live evidence.
 
-Local replay evidence records both the evaluated source commit and an
-`evaluatedInputHash` over all bounded evaluator, policy, corpus, skill, and
-authority inputs. The verifier accepts an ancestor commit directly; after a
+Local replay evidence at schema `1.3.0` records both the evaluated source commit
+and an `evaluatedInputHash` over all bounded evaluator, policy, corpus, skill,
+and authority inputs. Legacy schema `1.2.0` replay evidence remains accepted
+with its persistence-boundary hash. The verifier accepts an ancestor commit directly; after a
 GitHub squash merge, it accepts a detached replay commit only when the replay
 is `NotRun` and the complete bounded-input hash matches the current checkout.
 Live hosted evidence remains bound to the exact candidate SHA.

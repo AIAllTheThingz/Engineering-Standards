@@ -278,7 +278,7 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
         $report.aggregates.samplesExpected | Should -Be 27
         $report.aggregates.samplesCompleted | Should -Be 27
         $report.limitations -join ' ' | Should -Match 'not deterministic proof'
-        $report.schemaVersion | Should -Be '1.2.0'
+        $report.schemaVersion | Should -Be '1.3.0'
         $report.executionContext | Should -Be 'Local'
         $report.githubHostedExecution.status | Should -Be 'NotRun'
         $report.configurationHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths @('governance/codex-skill-behavior-evaluation.psd1'))
@@ -483,12 +483,17 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
         $verifier | Should -Match "'\.agents/skills'"
     }
 
-    It 'requires the evaluated input hash for schema 1.2 evidence and rejects unknown live commits' {
+    It 'requires the evaluated input hash for schema 1.3 evidence and rejects unknown live commits' {
         $schemaPath = Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json'
         $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay
         $missingHash = $report | ConvertTo-Json -Depth 32 | ConvertFrom-Json
         $missingHash.PSObject.Properties.Remove('evaluatedInputHash')
         ($missingHash | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $schemaPath -ErrorAction SilentlyContinue) | Should -BeFalse
+
+        $legacy12 = $report | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+        $legacy12.schemaVersion = '1.2.0'
+        $legacy12.PSObject.Properties.Remove('evaluatedInputHash')
+        ($legacy12 | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $schemaPath) | Should -BeTrue
 
         $testRoot = Join-Path $repoRoot '.tmp/behavior-evidence-test'
         New-Item -ItemType Directory -Path $testRoot -Force | Out-Null

@@ -1038,7 +1038,7 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         $report.aggregates.samplesExpected | Should -Be 27
         $report.aggregates.samplesCompleted | Should -Be 27
         $report.limitations -join ' ' | Should -Match 'not deterministic proof'
-        $report.schemaVersion | Should -Be '1.2.0'
+        $report.schemaVersion | Should -Be '1.3.0'
         $report.executionContext | Should -Be 'Local'
         $report.githubHostedExecution.status | Should -Be 'NotRun'
         $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout', 'TransportFailure', 'ProviderError')
@@ -1047,13 +1047,18 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
     }
 
-    It 'keeps 1.0 and 1.1 evidence shapes schema-valid while requiring the current Actions report to bind persistence' {
+    It 'keeps 1.0, 1.1, and legacy 1.2 evidence shapes schema-valid while requiring the current Actions report to bind persistence' {
         $schemaPath = Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json'
         $current = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay
         $legacy11 = $current | ConvertTo-Json -Depth 32 | ConvertFrom-Json
         $legacy11.schemaVersion = '1.1.0'
         $legacy11.PSObject.Properties.Remove('persistenceBoundaryHash')
         ($legacy11 | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $schemaPath) | Should -BeTrue
+
+        $legacy12 = $current | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+        $legacy12.schemaVersion = '1.2.0'
+        $legacy12.PSObject.Properties.Remove('evaluatedInputHash')
+        ($legacy12 | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $schemaPath) | Should -BeTrue
 
         $legacy10 = $legacy11 | ConvertTo-Json -Depth 32 | ConvertFrom-Json
         $legacy10.schemaVersion = '1.0.0'
@@ -1244,7 +1249,7 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         $verifier | Should -Match 'persistence-boundary hash is stale or fabricated'
         $verifier | Should -Match 'evaluated input hash is stale or fabricated'
         $verifier | Should -Match '\$inputs\.PersistenceBoundaryPaths'
-        $workflow | Should -Match '\$evidence\.schemaVersion -cne ''1\.2\.0'''
+        $workflow | Should -Match '\$evidence\.schemaVersion -cne ''1\.3\.0'''
         $workflow | Should -Match 'persistenceBoundaryHash'
         $workflow | Should -Match '\$trust\.persistenceBoundaryHash'
         $workflow | Should -Match 'evaluatedInputHash'

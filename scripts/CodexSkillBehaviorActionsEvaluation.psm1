@@ -781,7 +781,7 @@ function Invoke-CodexSkillBehaviorEvaluation {
     $executionContext = 'Local'
     $githubHostedExecutionStatus = 'NotRun'
     [pscustomobject]@{
-        schemaVersion = '1.2.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
+        schemaVersion = '1.3.0'; evidenceKind = 'ProbabilisticCodexSkillBehaviorEvaluation'; evaluatorVersion = $config.EvaluatorVersion; scoringContractVersion = $config.ScoringContractVersion
         configurationId = $config.ConfigurationId; configurationHash = $inputs.ConfigurationHash
         evaluatorHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.EvaluatorPaths
         persistenceBoundaryHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.PersistenceBoundaryPaths
