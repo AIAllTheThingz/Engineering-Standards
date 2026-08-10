@@ -21,6 +21,7 @@
     "configurationHash": { "$ref": "#/$defs/sha256" },
     "evaluatorHash": { "$ref": "#/$defs/sha256" },
     "persistenceBoundaryHash": { "$ref": "#/$defs/sha256" },
+    "evaluatedInputHash": { "$ref": "#/$defs/sha256" },
     "corpusHash": { "$ref": "#/$defs/sha256" },
     "skillInputHash": { "$ref": "#/$defs/sha256" },
     "authorityHash": { "$ref": "#/$defs/sha256" },

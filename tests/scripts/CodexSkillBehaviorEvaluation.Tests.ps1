@@ -286,6 +286,7 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
         $persistenceBoundaryPaths | Should -Contain 'scripts/Invoke-CodexSkillBehaviorActionsModel.ps1'
         $persistenceBoundaryPaths | Should -Contain 'scripts/Invoke-CodexSkillBehaviorModel.ps1'
         $report.persistenceBoundaryHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths $persistenceBoundaryPaths)
+        $report.evaluatedInputHash | Should -Be (Get-BoundedInputHash -Root $repoRoot -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs (Get-CodexBehaviorInput -Path $repoRoot)))
         $report.retryPolicy.retryableReasons | Should -Be @('ModelUnavailable', 'TransportTimeout')
         ($report | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile (Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json')) | Should -BeTrue
         $report.githubHostedExecution.status = 'Passed'
@@ -474,9 +475,17 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
 
     It 'compares complete dynamic input roots to detect deletions after evaluation' {
         $verifier = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Raw
-        $verifier | Should -Match "'tests/fixtures/codex-skills/prompt-behavior'"
-        $verifier | Should -Match "'\.agents/suspended-skills'"
-        $verifier | Should -Not -Match 'boundInputPaths = @\(\$inputs\.ConfigurationPath\) \+ @\(\$inputs\.EvaluatorPaths\) \+ @\(\$inputs\.CorpusPaths\)'
+        $verifier | Should -Match 'Get-CodexBehaviorBoundInputPaths'
+        $verifier | Should -Match 'evaluated input hash'
+    }
+
+    It 'keeps replay evidence valid across squash ancestry loss without relaxing live provenance' {
+        $verifier = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Raw
+        $verifier | Should -Match "Non-ancestor evidence is allowed only for NotRun replay evidence"
+        $verifier | Should -Match 'evaluatedInputHash'
+        $verifier | Should -Match 'evaluatedCommitIsAncestor'
+        $verifier | Should -Match "evidence\.executionMode -ne 'Replay'"
+        $verifier | Should -Match "evidence\.status -ne 'NotRun'"
     }
 
     It 'rejects fabricated checked evidence and partial checked evidence' {

@@ -57,13 +57,13 @@ JSON cases under `tests/fixtures/codex-skills/prompt-behavior/` contain `caseId`
 
 The validator proves only bounded structure, IDs, known enums, skill existence, category coverage, and explicit invocation syntax. Actual routing, over-trigger avoidance, response safety, and response quality remain `NotRun` until a separately approved controlled evaluator is run. CI does not call a live model.
 
-## Hosted Finding Adjudication
+## Finding Adjudication
 
-Run `31338346018` completed all 27 samples and produced sanitized artifact
-`9045070951` for evaluated commit
-`843dbca257bab9a0ce165fb2e839f4b58fa367a4`. The following table records the
-normative contract decision for every corpus case; expected values were not
-changed merely to mirror an observed label.
+The following table records the normative contract decision for every corpus
+case from the reviewed finding report; expected values were not changed merely
+to mirror an observed label. This is a human-adjudication basis, not a claim of
+current hosted execution. Checked-in replay evidence remains `NotRun`, and the
+next live hosted evaluation after merge is authoritative.
 
 | Case | Old expectation | Hosted observation | Final contract decision | Reason |
 | --- | --- | --- | --- | --- |
@@ -82,6 +82,13 @@ interchangeable. `SafeGuidance` is reserved for a legitimate goal whose
 requested method or default must be materially redesigned; `Refuse` is for
 the prohibited objective itself. Selection never authorizes an unsafe action.
 Human review remains required after complete live evidence.
+
+Local replay evidence records both the evaluated source commit and an
+`evaluatedInputHash` over all bounded evaluator, policy, corpus, skill, and
+authority inputs. The verifier accepts an ancestor commit directly; after a
+GitHub squash merge, it accepts a detached replay commit only when the replay
+is `NotRun` and the complete bounded-input hash matches the current checkout.
+Live hosted evidence remains bound to the exact candidate SHA.
 
 ## Operation And Output
 
