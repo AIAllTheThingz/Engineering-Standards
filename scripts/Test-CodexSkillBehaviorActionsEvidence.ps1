@@ -32,6 +32,28 @@ function Resolve-BehaviorEvidencePath {
     if ($MustExist -and -not (Test-Path -LiteralPath $full -PathType Leaf)) { throw "$Name must identify an existing file." }
     $full
 }
+function ConvertTo-BehaviorEvidenceUtcTimestamp {
+    param([Parameter(Mandatory)][object]$Value, [Parameter(Mandatory)][string]$Name)
+
+    if ($Value -is [DateTime]) {
+        if ($Value.Kind -ne [DateTimeKind]::Utc) { throw "$Name must be an RFC3339 UTC timestamp." }
+        return [DateTimeOffset]$Value
+    }
+    if ($Value -is [DateTimeOffset]) {
+        if ($Value.Offset -ne [TimeSpan]::Zero) { throw "$Name must be an RFC3339 UTC timestamp." }
+        return $Value.ToUniversalTime()
+    }
+    $rawValue = [string]$Value
+    if ($rawValue -cnotmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?(?:Z|\+00:00)$') {
+        throw "$Name must be an RFC3339 UTC timestamp."
+    }
+    $timestamp = [DateTimeOffset]::MinValue
+    if (-not [DateTimeOffset]::TryParse($rawValue, [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::RoundtripKind, [ref]$timestamp) -or
+        $timestamp.Offset -ne [TimeSpan]::Zero) {
+        throw "$Name must be an RFC3339 UTC timestamp."
+    }
+    $timestamp.ToUniversalTime()
+}
 $evidenceFile = Resolve-BehaviorEvidencePath -Candidate $EvidencePath -MustExist -Name EvidencePath
 $results = [Collections.Generic.List[object]]::new()
 $evidence = $null
@@ -58,6 +80,10 @@ try {
     if ($evidence.schemaVersion -notin @('1.0.0','1.1.0','1.2.0','1.3.0')) { throw 'Evidence uses an unsupported schema version.' }
     $isCurrentReplaySnapshot = $evidence.schemaVersion -eq '1.3.0' -and $evidence.executionMode -eq 'Replay' -and $evidence.status -eq 'NotRun'
     if ($evidence.status -notin @('Passed','Failed','NotRun','Blocked','NotApplicable')) { throw 'Evidence uses a noncanonical status.' }
+    if ($evidence.PSObject.Properties.Name -notcontains 'startedAtUtc' -or $evidence.PSObject.Properties.Name -notcontains 'completedAtUtc') { throw 'Evidence is missing top-level timestamps.' }
+    $evidenceStartedAtUtc = ConvertTo-BehaviorEvidenceUtcTimestamp -Value $evidence.startedAtUtc -Name 'Evidence startedAtUtc'
+    $evidenceCompletedAtUtc = ConvertTo-BehaviorEvidenceUtcTimestamp -Value $evidence.completedAtUtc -Name 'Evidence completedAtUtc'
+    if ($evidenceCompletedAtUtc -lt $evidenceStartedAtUtc) { throw 'Evidence completedAtUtc precedes startedAtUtc.' }
     $usesExecutionProvenance = $evidence.schemaVersion -in @('1.1.0','1.2.0','1.3.0')
     if ($usesExecutionProvenance -and ($evidence.executionContext -ne 'Local' -or $evidence.githubHostedExecution.status -ne 'NotRun')) { throw 'Behavior evidence cannot claim GitHub-hosted execution without a separately verified workflow artifact.' }
     if (-not $evidence.probabilistic -or ($evidence.limitations -join ' ') -notmatch 'not deterministic proof') { throw 'Evidence must explicitly identify probabilistic limitations.' }
@@ -109,6 +135,10 @@ try {
     foreach ($caseOutcome in $evidence.caseOutcomes) {
         if (@($caseOutcome.samples).Count -ne [int]$config.Sampling.SamplesPerCase) { throw "Case '$($caseOutcome.caseId)' is incomplete." }
         foreach ($sample in $caseOutcome.samples) {
+            if ($sample.PSObject.Properties.Name -notcontains 'startedAtUtc' -or $sample.PSObject.Properties.Name -notcontains 'completedAtUtc') { throw "Sample '$($caseOutcome.caseId)' is missing timestamps." }
+            $sampleStartedAtUtc = ConvertTo-BehaviorEvidenceUtcTimestamp -Value $sample.startedAtUtc -Name "Sample '$($caseOutcome.caseId)' startedAtUtc"
+            $sampleCompletedAtUtc = ConvertTo-BehaviorEvidenceUtcTimestamp -Value $sample.completedAtUtc -Name "Sample '$($caseOutcome.caseId)' completedAtUtc"
+            if ($sampleCompletedAtUtc -lt $sampleStartedAtUtc -or $sampleStartedAtUtc -lt $evidenceStartedAtUtc -or $sampleCompletedAtUtc -gt $evidenceCompletedAtUtc) { throw "Sample '$($caseOutcome.caseId)' timestamps fall outside the top-level evidence interval." }
             if ($sample.status -notin @('Passed','Failed','NotRun','Blocked','NotApplicable')) { throw 'A sample uses a noncanonical status.' }
             if ($sample.status -ne 'Passed' -and [string]::IsNullOrWhiteSpace([string]$sample.failureReason)) { throw 'Every nonpassing sample requires a reason.' }
             if ($null -ne $sample.responseSummary -and $sample.responseSha256 -ne (Get-Sha256String -Value ([string]$sample.responseSummary))) { throw 'A sanitized response hash is fabricated or contradictory.' }

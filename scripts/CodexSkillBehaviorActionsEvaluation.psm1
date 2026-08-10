@@ -644,7 +644,11 @@ function Test-CodexBehaviorCandidateTrust {
         symlinkEntries = 0
         prohibitedGitModes = 0
         configurationId = [string]$approved.Configuration.ConfigurationId
-        configurationHash = $approved.ConfigurationHash
+        # Match the path-bound configuration identity emitted in behavior
+        # evidence. The raw allowlist approval hash remains distinct so
+        # candidate trust cannot be conflated with evidence provenance.
+        configurationHash = $inputs.ConfigurationHash
+        approvedConfigurationHash = $approved.ConfigurationHash
         evaluatorHash = Get-BoundedInputHash -Root $trustedRoot -RelativePaths @($policy.EvaluatorPaths)
         persistenceBoundaryHash = Get-BoundedInputHash -Root $trustedRoot -RelativePaths @($policy.PersistenceBoundaryPaths)
         evaluatedInputHash = Get-BoundedInputHash -Root $candidateRoot -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs $inputs)
