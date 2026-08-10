@@ -1052,11 +1052,13 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         $current = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay
         $legacy11 = $current | ConvertTo-Json -Depth 32 | ConvertFrom-Json
         $legacy11.schemaVersion = '1.1.0'
+        $legacy11.evaluatedCommitSha = (git -C $repoRoot rev-parse HEAD).Trim()
         $legacy11.PSObject.Properties.Remove('persistenceBoundaryHash')
         ($legacy11 | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $schemaPath) | Should -BeTrue
 
         $legacy12 = $current | ConvertTo-Json -Depth 32 | ConvertFrom-Json
         $legacy12.schemaVersion = '1.2.0'
+        $legacy12.evaluatedCommitSha = (git -C $repoRoot rev-parse HEAD).Trim()
         $legacy12.PSObject.Properties.Remove('evaluatedInputHash')
         ($legacy12 | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $schemaPath) | Should -BeTrue
 
@@ -1258,9 +1260,76 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
 
     It 'compares complete dynamic input roots to detect deletions after evaluation' {
         $verifier = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Raw
+        $inputs = Get-CodexBehaviorInput -Path $repoRoot
+        $boundInputs = @(Get-CodexBehaviorBoundInputPaths -Inputs $inputs)
+        $inputs.TrustPolicyPath | Should -Be '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
+        $boundInputs | Should -Contain $inputs.ConfigurationPath
+        $boundInputs | Should -Contain $inputs.TrustPolicyPath
+        $boundInputs | Should -Contain $inputs.EvaluatorPaths[0]
+        $boundInputs | Should -Contain $inputs.PersistenceBoundaryPaths[0]
+        $boundInputs | Should -Contain $inputs.AuthorityPaths[0]
+        $boundInputs | Should -Contain $inputs.AllCorpusPaths[0]
+        $boundInputs | Should -Contain $inputs.SkillPaths[0]
+        $nonSelectedCorpusPath = @($inputs.AllCorpusPaths | Where-Object { $_ -match 'powershell-review-synthetic' })
+        $nonSelectedCorpusPath.Count | Should -Be 1
+        $boundInputs | Should -Contain $nonSelectedCorpusPath[0]
         $verifier | Should -Match "'tests/fixtures/codex-skills/prompt-behavior'"
         $verifier | Should -Match "'\.agents/suspended-skills'"
+        $verifier | Should -Match '\$inputs\.TrustPolicyPath'
         $verifier | Should -Not -Match 'boundInputPaths = @\(\$inputs\.ConfigurationPath\) \+ @\(\$inputs\.EvaluatorPaths\) \+ @\(\$inputs\.CorpusPaths\)'
+    }
+
+    It 'accepts a null 1.3 replay snapshot and rejects fabricated Actions provenance' {
+        $testRoot = Join-Path $repoRoot ('.tmp/actions-evidence-provenance-' + [guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+        try {
+            $snapshot = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay
+            $snapshot.evaluatedCommitSha | Should -BeNullOrEmpty
+            $snapshotPath = Join-Path $testRoot 'snapshot.json'
+            $snapshot | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $snapshotPath -Encoding utf8
+            $relativeSnapshotPath = [IO.Path]::GetRelativePath($repoRoot, $snapshotPath).Replace('\', '/')
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath $relativeSnapshotPath 2>$null
+            $LASTEXITCODE | Should -Be 0
+
+            $fabricated = $snapshot | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+            $fabricated.evaluatedCommitSha = 'f' * 40
+            $fabricatedPath = Join-Path $testRoot 'fabricated-sha.json'
+            $fabricated | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $fabricatedPath -Encoding utf8
+            $relativeFabricatedPath = [IO.Path]::GetRelativePath($repoRoot, $fabricatedPath).Replace('\', '/')
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath $relativeFabricatedPath 2>$null
+            $LASTEXITCODE | Should -Be 1
+
+            $stale = $snapshot | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+            $stale.evaluatedInputHash = '0' * 64
+            $stalePath = Join-Path $testRoot 'stale-input-hash.json'
+            $stale | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $stalePath -Encoding utf8
+            $relativeStalePath = [IO.Path]::GetRelativePath($repoRoot, $stalePath).Replace('\', '/')
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath $relativeStalePath 2>$null
+            $LASTEXITCODE | Should -Be 1
+        }
+        finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+
+    It 'rejects a detached Actions replay snapshot when its trust policy changes' {
+        $testRoot = Join-Path $repoRoot ('.tmp/actions-evidence-trust-policy-' + [guid]::NewGuid().ToString('N'))
+        $trustPolicyPath = Join-Path $repoRoot '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
+        $originalTrustPolicy = [IO.File]::ReadAllText($trustPolicyPath)
+        New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+        try {
+            $tree = (git -C $repoRoot rev-parse 'HEAD^{tree}').Trim()
+            $detachedCommit = ('' | git -C $repoRoot -c user.name='Codex Test' -c user.email='codex-test@example.invalid' commit-tree $tree).Trim()
+            [IO.File]::WriteAllText($trustPolicyPath, $originalTrustPolicy + [Environment]::NewLine + '# synthetic trust-policy mutation')
+            $snapshot = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay -EvaluatedCommitSha $detachedCommit
+            $snapshotPath = Join-Path $testRoot 'trust-policy-mismatch.json'
+            $snapshot | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $snapshotPath -Encoding utf8
+            $relativeSnapshotPath = [IO.Path]::GetRelativePath($repoRoot, $snapshotPath).Replace('\', '/')
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorActionsEvidence.ps1') -Path $repoRoot -EvidencePath $relativeSnapshotPath 2>$null
+            $LASTEXITCODE | Should -Be 1
+        }
+        finally {
+            [IO.File]::WriteAllText($trustPolicyPath, $originalTrustPolicy)
+            Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 
     It 'rejects fabricated checked evidence and partial checked evidence' {
