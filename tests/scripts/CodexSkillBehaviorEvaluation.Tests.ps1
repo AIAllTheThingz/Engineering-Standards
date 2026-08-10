@@ -480,12 +480,26 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
     }
 
     It 'keeps replay evidence valid across squash ancestry loss without relaxing live provenance' {
-        $verifier = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Raw
+        $verifierPath = Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1'
+        $verifier = Get-Content -LiteralPath $verifierPath -Raw
         $verifier | Should -Match "Non-ancestor evidence is allowed only for NotRun replay evidence"
         $verifier | Should -Match 'evaluatedInputHash'
         $verifier | Should -Match 'evaluatedCommitIsAncestor'
         $verifier | Should -Match "evidence\.executionMode -ne 'Replay'"
         $verifier | Should -Match "evidence\.status -ne 'NotRun'"
+
+        $temporaryEvidence = Join-Path $repoRoot '.tmp/behavior-evidence-test/squash.json'
+        New-Item -ItemType Directory -Path (Split-Path -Parent $temporaryEvidence) -Force | Out-Null
+        try {
+            $tree = (git -C $repoRoot rev-parse 'HEAD^{tree}').Trim()
+            $detachedCommit = ('' | git -C $repoRoot commit-tree $tree).Trim()
+            $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
+            $evidence.evaluatedCommitSha = $detachedCommit
+            $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $temporaryEvidence -Encoding utf8
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File $verifierPath -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/squash.json' 2>$null
+            $LASTEXITCODE | Should -Be 0
+        }
+        finally { Remove-Item -LiteralPath $temporaryEvidence -Force -ErrorAction SilentlyContinue }
     }
 
     It 'rejects fabricated checked evidence and partial checked evidence' {
