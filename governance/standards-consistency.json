@@ -157,9 +157,9 @@
     {
       "path": "AGENTS.md",
       "kind": "root",
-      "declaredVersion": "1.2.0",
+      "declaredVersion": "1.1.0",
       "status": "Active",
-      "lastReviewed": "2026-08-10",
+      "lastReviewed": "2026-06-21",
       "ownerRole": "Engineering Standards Maintainers",
       "parentDocuments": [
         "agents/AGENTS_Base.md",
@@ -187,7 +187,7 @@
       "negativeWeakeningCoverage": "Present",
       "pesterMutationCoverage": "Present",
       "identifiedDiscrepancies": [],
-      "resolution": "Root instruction hierarchy and repository validation commands are synchronized with the prepared 1.2.0 governance contract."
+      "resolution": "Root instruction hierarchy and repository validation commands are synchronized with the complete standards catalog."
     },
     {
       "path": "agents/AGENTS_Base.md",
