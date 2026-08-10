@@ -42,6 +42,8 @@ try {
     foreach ($property in @('schemaVersion','evidenceKind','evaluatorVersion','scoringContractVersion','configurationId','configurationHash','evaluatorHash','corpusHash','skillInputHash','authorityHash','evaluatedCommitSha','executionMode','probabilistic','deterministicStructureStatus','status','caseOutcomes','aggregates','humanAdjudication','decision','notRunReason','blockedReason','limitations')) {
         if ($evidence.PSObject.Properties.Name -notcontains $property) { throw "Evidence is missing required property '$property'." }
     }
+    if ($evidence.schemaVersion -notin @('1.0.0','1.1.0','1.2.0','1.3.0')) { throw 'Evidence uses an unsupported schema version.' }
+    $isCurrentReplaySnapshot = $evidence.schemaVersion -eq '1.3.0' -and $evidence.executionMode -eq 'Replay' -and $evidence.status -eq 'NotRun'
     if ($evidence.schemaVersion -eq '1.3.0' -and $evidence.PSObject.Properties.Name -notcontains 'evaluatedInputHash') { throw 'Schema 1.3.0 evidence is missing the squash-safe evaluated input hash.' }
     if ($evidence.status -notin @('Passed','Failed','NotRun','Blocked','NotApplicable')) { throw 'Evidence uses a noncanonical status.' }
     $usesExecutionProvenance = $evidence.schemaVersion -in @('1.1.0','1.2.0','1.3.0')
@@ -53,20 +55,22 @@ try {
     if ($evidence.corpusHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.CorpusPaths)) { throw 'Evidence corpus hash is stale or fabricated.' }
     if ($evidence.skillInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.SkillPaths)) { throw 'Evidence skill input hash is stale or fabricated.' }
     if ($evidence.authorityHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.AuthorityPaths)) { throw 'Evidence authority input hash is stale or fabricated.' }
-    if ($evidence.evaluatedCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'Evidence commit SHA is malformed.' }
+    $hasEvaluatedCommitSha = -not [string]::IsNullOrWhiteSpace([string]$evidence.evaluatedCommitSha)
+    if ((-not $isCurrentReplaySnapshot -and -not $hasEvaluatedCommitSha) -or
+        ($hasEvaluatedCommitSha -and $evidence.evaluatedCommitSha -notmatch '^[0-9a-f]{40}$')) { throw 'Evidence commit SHA is malformed or unavailable for this schema/mode contract.' }
     $boundInputPaths = @(Get-CodexBehaviorBoundInputPaths -Inputs $inputs)
     if ($evidence.schemaVersion -eq '1.3.0' -and $evidence.evaluatedInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $boundInputPaths)) { throw 'Evidence evaluated input hash is stale or fabricated.' }
-    & git -C $root cat-file -e ("{0}^{{commit}}" -f $evidence.evaluatedCommitSha) 2>$null
-    $evaluatedCommitObjectAvailable = $LASTEXITCODE -eq 0
-    # A squash merge can discard the replay commit object. Only schema 1.3.0
-    # replay evidence carries the complete bounded-content proof that makes
-    # this object-unavailable fallback safe; legacy 1.2.0 evidence retains the
-    # normal ancestry requirement.
-    if (-not $evaluatedCommitObjectAvailable -and ($evidence.schemaVersion -ne '1.3.0' -or $evidence.executionMode -ne 'Replay' -or $evidence.status -ne 'NotRun')) { throw 'Evidence evaluated commit object is unavailable for live, legacy, or non-replay evidence.' }
-    & git -C $root merge-base --is-ancestor $evidence.evaluatedCommitSha HEAD 2>$null
-    $evaluatedCommitIsAncestor = $evaluatedCommitObjectAvailable -and $LASTEXITCODE -eq 0
-    if (-not $evaluatedCommitIsAncestor -and ($evidence.executionMode -ne 'Replay' -or $evidence.status -ne 'NotRun')) { throw 'Non-ancestor evidence is allowed only for NotRun replay evidence with a current evaluated input hash.' }
-    $evaluatedEvaluatorSource = if ($evaluatedCommitObjectAvailable) {
+    $evaluatedCommitObjectAvailable = $false
+    $evaluatedCommitIsAncestor = $false
+    if ($hasEvaluatedCommitSha) {
+        & git -C $root cat-file -e ("{0}^{{commit}}" -f $evidence.evaluatedCommitSha) 2>$null
+        $evaluatedCommitObjectAvailable = $LASTEXITCODE -eq 0
+        if (-not $evaluatedCommitObjectAvailable) { throw 'Evidence provides an evaluated commit SHA that is unavailable or fabricated.' }
+        & git -C $root merge-base --is-ancestor $evidence.evaluatedCommitSha HEAD 2>$null
+        $evaluatedCommitIsAncestor = $LASTEXITCODE -eq 0
+        if (-not $evaluatedCommitIsAncestor -and -not $isCurrentReplaySnapshot) { throw 'Non-ancestor evidence is allowed only for NotRun replay evidence with a current evaluated input hash.' }
+    }
+    $evaluatedEvaluatorSource = if ($hasEvaluatedCommitSha) {
         @(& git -C $root show ("{0}:scripts/CodexSkillBehaviorEvaluation.psm1" -f $evidence.evaluatedCommitSha) 2>$null) -join "`n"
     } else {
         Get-Content -LiteralPath (Join-Path $root 'scripts/CodexSkillBehaviorEvaluation.psm1') -Raw
@@ -76,11 +80,11 @@ try {
     if ($requiresPersistenceBoundary -and $evidence.schemaVersion -notin @('1.2.0','1.3.0')) { throw 'Evidence schema version does not meet the evaluated persistence-boundary contract.' }
     if ($requiresPersistenceBoundary -and $evidence.PSObject.Properties.Name -notcontains 'persistenceBoundaryHash') { throw 'Evidence is missing the evaluated persistence-boundary hash.' }
     if ($requiresPersistenceBoundary -and $evidence.persistenceBoundaryHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.PersistenceBoundaryPaths)) { throw 'Evidence persistence-boundary hash is stale or fabricated.' }
-    # Compare dynamic input roots whenever the evaluated commit is available,
-    # including detached commits. If a squash merge discards that commit, the
-    # complete evaluatedInputHash above proves the bounded source set against
-    # the current checkout instead.
-    if ($evaluatedCommitObjectAvailable) {
+    # Compare dynamic input roots whenever a real evaluated commit is present,
+    # including detached commits. A schema 1.3 Replay/NotRun record with null
+    # commit identity is explicitly a current bounded-input snapshot, not
+    # historical ancestry proof.
+    if ($hasEvaluatedCommitSha) {
         $ancestryInputPaths = @($inputs.ConfigurationPath, $inputs.TrustPolicyPath) + @($inputs.EvaluatorPaths) + @($inputs.PersistenceBoundaryPaths) + @($inputs.AuthorityPaths) + @(
             'tests/fixtures/codex-skills/prompt-behavior',
             '.agents/skills',

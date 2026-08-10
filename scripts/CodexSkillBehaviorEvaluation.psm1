@@ -163,10 +163,11 @@ function Invoke-CodexSkillBehaviorEvaluation {
     $config = Import-PowerShellDataFile -LiteralPath (Join-Path $inputs.Root $inputs.ConfigurationPath)
     if ($config.Approval.Status -ne 'Approved') { throw 'The model configuration is not approved.' }
     if ($inputs.Cases.Count -gt [int]$config.Limits.MaximumCases) { throw 'The prompt corpus exceeds the configured case bound.' }
-    if ([string]::IsNullOrWhiteSpace($EvaluatedCommitSha)) {
+    if ($ExecutionMode -eq 'Live' -and [string]::IsNullOrWhiteSpace($EvaluatedCommitSha)) {
         $EvaluatedCommitSha = (& git -C $inputs.Root rev-parse HEAD 2>$null)
     }
-    if ($EvaluatedCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'A full evaluated commit SHA is required.' }
+    if ($ExecutionMode -eq 'Live' -and $EvaluatedCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'Live evidence requires a full evaluated commit SHA.' }
+    if ($ExecutionMode -eq 'Replay' -and -not [string]::IsNullOrWhiteSpace($EvaluatedCommitSha) -and $EvaluatedCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'Replay evidence must use a full evaluated commit SHA or null.' }
 
     $caseOutcomes = foreach ($case in $inputs.Cases) {
         $samples = for ($index = 1; $index -le [int]$config.Sampling.SamplesPerCase; $index++) {
