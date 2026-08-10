@@ -493,6 +493,7 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
 
         $legacy12 = $report | ConvertTo-Json -Depth 32 | ConvertFrom-Json
         $legacy12.schemaVersion = '1.2.0'
+        $legacy12.evaluatedCommitSha = (git -C $repoRoot rev-parse HEAD).Trim()
         $legacy12.PSObject.Properties.Remove('evaluatedInputHash')
         ($legacy12 | ConvertTo-Json -Depth 32 | Test-Json -SchemaFile $schemaPath) | Should -BeTrue
 
@@ -525,8 +526,7 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
         $verifier | Should -Match "Non-ancestor evidence is allowed only for NotRun replay evidence"
         $verifier | Should -Match 'evaluatedInputHash'
         $verifier | Should -Match 'evaluatedCommitIsAncestor'
-        $verifier | Should -Match "evidence\.executionMode -ne 'Replay'"
-        $verifier | Should -Match "evidence\.status -ne 'NotRun'"
+        $verifier | Should -Match 'isCurrentReplaySnapshot'
 
         $temporaryEvidence = Join-Path $repoRoot '.tmp/behavior-evidence-test/squash.json'
         New-Item -ItemType Directory -Path (Split-Path -Parent $temporaryEvidence) -Force | Out-Null
