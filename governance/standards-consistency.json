@@ -1,11 +1,11 @@
 {
   "schemaVersion": "1.1.0",
   "repository": "AIAllTheThingz/Engineering-Standards",
-  "repositoryVersion": "1.1.0",
+  "repositoryVersion": "1.2.0",
   "defaultBranch": "master",
   "riskClassification": "High",
-  "generatedFromCommit": "c2fd32e94142d50ac16bbbf6913c849122d58b8d",
-  "generatedAtUtc": "2026-07-26T13:58:00Z",
+  "generatedFromCommit": "dcdf56d20666d08bd96715f00feb5cfd88dcc635",
+  "generatedAtUtc": "2026-08-10T21:46:00Z",
   "canonicalStatusValues": [
     "Passed",
     "Failed",
@@ -543,11 +543,11 @@
   },
   "githubEvidence": {
     "status": "Passed",
-    "reason": "Final PR #89 head 11d7c3200be8be5ce694887f2331f1df49d3d62b passed Pull Request Governance run 30192204385, Python example CI run 30192204377, Bash example CI run 30192204396, trusted Governance validation, and candidate implementation validation in Governance CI run 30192204388 before merge commit c2fd32e94142d50ac16bbbf6913c849122d58b8d."
+    "reason": "PR #99 final head a42a5c578ed773430ff662230bc1b6bb1c351539 passed Pull Request Governance, Governance CI with trusted governance and candidate implementation validation, Python example CI, Bash example CI, and CodeRabbit before merge commit dcdf56d20666d08bd96715f00feb5cfd88dcc635. Protected Codex Skill Behavior Evaluation run 31433373121 then evaluated that merge commit and passed 10/10 cases, 30/30 samples, with zero material variance. These observations establish the preparation baseline only and are not exact-candidate 1.2.0 release evidence."
   },
   "branchProtection": {
     "status": "Passed",
-    "reason": "The previously recorded GitHub API inspection verified classic protection on master with pull-request enforcement, strict required governance validation, conversation resolution, force-push and deletion blocks, and administrator enforcement. This versioning correction does not claim a new live branch-protection inspection."
+    "reason": "The previously recorded GitHub API inspection verified classic protection on master with pull-request enforcement, strict required governance validation, conversation resolution, force-push and deletion blocks, and administrator enforcement. This preparation record does not claim a new live branch-protection inspection."
   },
   "publishedRelease": {
     "status": "Passed",
@@ -559,10 +559,10 @@
   },
   "nextReleaseReadiness": {
     "status": "NotRun",
-    "proposedVersion": null,
-    "proposedTag": null,
+    "proposedVersion": "1.2.0",
+    "proposedTag": "v1.2.0",
     "targetCommitSha": null,
-    "reason": "Current master contains unreleased development, but no next semantic version, unchanged release candidate, exact-candidate lifecycle evidence, downstream canary set, tag authorization, or publication authorization has been selected or performed."
+    "reason": "Semantic version 1.2.0 is selected and preparation is in progress, but the unchanged release-candidate SHA cannot be selected until the preparation change set is merged. Exact-candidate Governance success and controlled-failure evidence, the five-scenario downstream canary set, independent artifact verification, attributable approvals, tag authorization, and publication authorization remain NotRun."
   },
   "releaseReadiness": {
     "status": "NotApplicable",
