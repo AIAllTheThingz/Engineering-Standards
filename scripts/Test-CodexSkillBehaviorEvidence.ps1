@@ -58,14 +58,15 @@ try {
     if ($evidence.schemaVersion -eq '1.3.0' -and $evidence.evaluatedInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $boundInputPaths)) { throw 'Evidence evaluated input hash is stale or fabricated.' }
     & git -C $root cat-file -e ("{0}^{{commit}}" -f $evidence.evaluatedCommitSha) 2>$null
     $evaluatedCommitObjectAvailable = $LASTEXITCODE -eq 0
-    # A squash merge can discard the replay commit object. For NotRun replay
-    # evidence, evaluatedInputHash is the surviving bounded-content proof; the
-    # evaluated SHA remains descriptive when that object is no longer reachable.
-    if (-not $evaluatedCommitObjectAvailable -and ($evidence.executionMode -ne 'Replay' -or $evidence.status -ne 'NotRun')) { throw 'Evidence evaluated commit object is unavailable for live or non-replay evidence.' }
+    # A squash merge can discard the replay commit object. Only schema 1.3.0
+    # replay evidence carries the complete bounded-content proof that makes
+    # this object-unavailable fallback safe; legacy 1.2.0 evidence retains the
+    # normal ancestry requirement.
+    if (-not $evaluatedCommitObjectAvailable -and ($evidence.schemaVersion -ne '1.3.0' -or $evidence.executionMode -ne 'Replay' -or $evidence.status -ne 'NotRun')) { throw 'Evidence evaluated commit object is unavailable for live, legacy, or non-replay evidence.' }
     & git -C $root merge-base --is-ancestor $evidence.evaluatedCommitSha HEAD 2>$null
     $evaluatedCommitIsAncestor = $evaluatedCommitObjectAvailable -and $LASTEXITCODE -eq 0
     if (-not $evaluatedCommitIsAncestor -and ($evidence.executionMode -ne 'Replay' -or $evidence.status -ne 'NotRun')) { throw 'Non-ancestor evidence is allowed only for NotRun replay evidence with a current evaluated input hash.' }
-    $evaluatedEvaluatorSource = if ($evaluatedCommitIsAncestor) {
+    $evaluatedEvaluatorSource = if ($evaluatedCommitObjectAvailable) {
         @(& git -C $root show ("{0}:scripts/CodexSkillBehaviorEvaluation.psm1" -f $evidence.evaluatedCommitSha) 2>$null) -join "`n"
     } else {
         Get-Content -LiteralPath (Join-Path $root 'scripts/CodexSkillBehaviorEvaluation.psm1') -Raw
@@ -75,10 +76,11 @@ try {
     if ($requiresPersistenceBoundary -and $evidence.schemaVersion -notin @('1.2.0','1.3.0')) { throw 'Evidence schema version does not meet the evaluated persistence-boundary contract.' }
     if ($requiresPersistenceBoundary -and $evidence.PSObject.Properties.Name -notcontains 'persistenceBoundaryHash') { throw 'Evidence is missing the evaluated persistence-boundary hash.' }
     if ($requiresPersistenceBoundary -and $evidence.persistenceBoundaryHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.PersistenceBoundaryPaths)) { throw 'Evidence persistence-boundary hash is stale or fabricated.' }
-    # Compare dynamic input roots when the evaluated commit is available. If a
-    # squash merge discards that commit, the complete evaluatedInputHash above
-    # proves the bounded source set against the current checkout instead.
-    if ($evaluatedCommitIsAncestor) {
+    # Compare dynamic input roots whenever the evaluated commit is available,
+    # including detached commits. If a squash merge discards that commit, the
+    # complete evaluatedInputHash above proves the bounded source set against
+    # the current checkout instead.
+    if ($evaluatedCommitObjectAvailable) {
         $ancestryInputPaths = @($inputs.ConfigurationPath) + @($inputs.EvaluatorPaths) + @($inputs.PersistenceBoundaryPaths) + @($inputs.AuthorityPaths) + @(
             'tests/fixtures/codex-skills/prompt-behavior',
             '.agents/skills',

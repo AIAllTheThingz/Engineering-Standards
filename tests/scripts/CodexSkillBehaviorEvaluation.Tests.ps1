@@ -498,6 +498,13 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
         $testRoot = Join-Path $repoRoot '.tmp/behavior-evidence-test'
         New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
         try {
+            $legacyUnknown = $legacy12 | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+            $legacyUnknown.evaluatedCommitSha = 'f' * 40
+            $legacyUnknownPath = Join-Path $testRoot 'legacy-unknown-commit.json'
+            $legacyUnknown | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $legacyUnknownPath -Encoding utf8
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/legacy-unknown-commit.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+
             $unknownCommit = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Live | ConvertTo-Json -Depth 32 | ConvertFrom-Json
             $unknownCommit.evaluatedCommitSha = 'f' * 40
             $unknownPath = Join-Path $testRoot 'unknown-commit.json'
@@ -505,7 +512,10 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
             & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/unknown-commit.json' 2>$null
             $LASTEXITCODE | Should -Be 1
         }
-        finally { Remove-Item -LiteralPath (Join-Path $testRoot 'unknown-commit.json') -Force -ErrorAction SilentlyContinue }
+        finally {
+            Remove-Item -LiteralPath (Join-Path $testRoot 'legacy-unknown-commit.json') -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath (Join-Path $testRoot 'unknown-commit.json') -Force -ErrorAction SilentlyContinue
+        }
     }
 
     It 'keeps replay evidence valid across squash ancestry loss without relaxing live provenance' {
@@ -590,5 +600,35 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
             $LASTEXITCODE | Should -Be 1
         }
         finally { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+
+    It 'rejects detached replay evidence whose available commit differs from current bounded inputs' {
+        $testRoot = Join-Path $repoRoot '.tmp/behavior-evidence-test'
+        New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+        $temporaryEvidence = Join-Path $testRoot 'detached-mismatch.json'
+        $targetPath = Join-Path $repoRoot 'tests/fixtures/codex-skills/prompt-behavior/ambiguous.json'
+        $original = [IO.File]::ReadAllText($targetPath)
+        try {
+            $tree = (git -C $repoRoot rev-parse 'HEAD^{tree}').Trim()
+            $detachedCommit = ('' | git -C $repoRoot -c user.name='Codex Test' -c user.email='codex-test@example.invalid' commit-tree $tree).Trim()
+            [IO.File]::WriteAllText($targetPath, $original.Replace('Help improve our automation.', 'Help improve our automation safely.'))
+            $evidence = Get-Content -LiteralPath (Join-Path $repoRoot 'evidence/codex-skill-behavior.json') -Raw | ConvertFrom-Json
+            $evidence.evaluatedCommitSha = $detachedCommit
+            $inputs = Get-CodexBehaviorInput -Path $repoRoot
+            $evidence.configurationHash = Get-BoundedInputHash -Root $repoRoot -RelativePaths @($inputs.ConfigurationPath)
+            $evidence.evaluatorHash = Get-BoundedInputHash -Root $repoRoot -RelativePaths $inputs.EvaluatorPaths
+            $evidence.persistenceBoundaryHash = Get-BoundedInputHash -Root $repoRoot -RelativePaths $inputs.PersistenceBoundaryPaths
+            $evidence.corpusHash = Get-BoundedInputHash -Root $repoRoot -RelativePaths $inputs.CorpusPaths
+            $evidence.skillInputHash = Get-BoundedInputHash -Root $repoRoot -RelativePaths $inputs.SkillPaths
+            $evidence.authorityHash = Get-BoundedInputHash -Root $repoRoot -RelativePaths $inputs.AuthorityPaths
+            $evidence.evaluatedInputHash = Get-BoundedInputHash -Root $repoRoot -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs $inputs)
+            $evidence | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $temporaryEvidence -Encoding utf8
+            & (Join-Path $PSHOME 'pwsh') -NoProfile -File (Join-Path $repoRoot 'scripts/Test-CodexSkillBehaviorEvidence.ps1') -Path $repoRoot -EvidencePath '.tmp/behavior-evidence-test/detached-mismatch.json' 2>$null
+            $LASTEXITCODE | Should -Be 1
+        }
+        finally {
+            [IO.File]::WriteAllText($targetPath, $original)
+            Remove-Item -LiteralPath $temporaryEvidence -Force -ErrorAction SilentlyContinue
+        }
     }
 }
