@@ -11,7 +11,7 @@
   "skillInputHash": "e1cd34a5714e4f8d9cb831fc6fa70e19b28a9ac0f38184bcc4bcccc3d175ce9e",
   "authorityHash": "5c7e3b80a396a4d2582cc38176c178a5fad6ecb2c4a38a087ba2c40639125571",
   "evaluatedInputHash": "95362d0ae6a48148a97fe3cef56f5f66e990c0679f8386f4243246548bcc4316",
-  "evaluatedCommitSha": "5b20eecae1288f0ee9e620ea806e9932f614d6e9",
+  "evaluatedCommitSha": null,
   "executionMode": "Replay",
   "executionContext": "Local",
   "githubHostedExecution": {
