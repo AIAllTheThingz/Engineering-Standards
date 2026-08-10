@@ -122,7 +122,7 @@ jobs:
     uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<commit-sha>
     with:
       project-path: .
-      governance-version: 1.1.0
+      governance-version: 1.2.0
       artifact-retention-days: 30
 ```
 
@@ -130,21 +130,9 @@ The local event workflow is `.github/workflows/governance-ci.yml`. It triggers o
 
 Reusable-workflow releases also require the external proof described in [Downstream Governance Canary](docs/DOWNSTREAM_CANARY.md). Self-CI and the public canary test different trust boundaries; maintainers must run and independently verify all five canary scenarios against the exact candidate SHA before release approval or an authoritative pin rotation.
 
-Governed Python projects pair the non-executing static workflow with
-`.github/workflows/python-ci-reusable.yml`, pinned to the same immutable SHA.
-The functional job uses CPython 3.12.11 and a fully hashed project-owned lock
-to run pytest, strict mypy, pip-audit, package build and inspection, isolated
-wheel installation, an import smoke test, SBOM generation, and evidence upload.
+Governed Python projects pair the non-executing static workflow with `.github/workflows/python-ci-reusable.yml`, pinned to the same immutable SHA. The functional job uses CPython 3.12.11 and a fully hashed project-owned lock to run pytest, strict mypy, pip-audit, package build and inspection, isolated wheel installation, an import smoke test, SBOM generation, and evidence upload.
 
-Governed Bash projects pair the non-executing static workflow with
-`.github/workflows/bash-ci-reusable.yml`, also pinned to a full immutable SHA.
-The functional job uses GNU Bash 5.2 on Ubuntu 24.04 and exact hash-verified
-ShellCheck 0.11.0, shfmt 3.13.1, and Bats 1.13.0. Caller code is copied into a
-bounded read-only workspace and only its declared Bats entry point executes,
-after syntax, analysis, formatting, toolchain, path, and filesystem gates pass.
-Caller execution is constrained with Linux Landlock, no-new-privileges, and
-subreaper process cleanup; hosted runs also require Landlock ABI 4 or newer to
-deny TCP connect and bind operations.
+Governed Bash projects pair the non-executing static workflow with `.github/workflows/bash-ci-reusable.yml`, also pinned to a full immutable SHA. The functional job uses GNU Bash 5.2 on Ubuntu 24.04 and exact hash-verified ShellCheck 0.11.0, shfmt 3.13.1, and Bats 1.13.0. Caller code is copied into a bounded read-only workspace and only its declared Bats entry point executes, after syntax, analysis, formatting, toolchain, path, and filesystem gates pass. Caller execution is constrained with Linux Landlock, no-new-privileges, and subreaper process cleanup; hosted runs also require Landlock ABI 4 or newer to deny TCP connect and bind operations.
 
 ## Example Local AGENTS.md
 
@@ -168,7 +156,7 @@ Local rules may add stricter validation and repository-specific commands. Local 
   "description": "Example service used to demonstrate governance adoption.",
   "projectType": "dotnet",
   "technologies": ["dotnet", "github-actions"],
-  "governanceVersion": "1.1.0",
+  "governanceVersion": "1.2.0",
   "governanceCommitSha": "<full-40-character-workflow-commit-sha>",
   "workflowInterfaceVersion": "1.0.0",
   "repositoryOwnerType": "Organization",
@@ -213,19 +201,13 @@ Local rules may add stricter validation and repository-specific commands. Local 
 }
 ```
 
-Schema versions `1.0.0` and `1.1.0` remain supported. Version `1.2.0` separates
-the semantic governance release from its immutable commit, makes workflow
-interface compatibility explicit, and uses structured ownership, standards
-consumption, evidence, and exception records. See the [Issue #21 compatibility
-proposal](docs/migrations/ISSUE_21_CONTRACT_COMPATIBILITY_PROPOSAL.md).
+Schema versions `1.0.0` and `1.1.0` remain supported. Version `1.2.0` separates the semantic governance release from its immutable commit, makes workflow interface compatibility explicit, and uses structured ownership, standards consumption, evidence, and exception records. See the [Issue #21 compatibility proposal](docs/migrations/ISSUE_21_CONTRACT_COMPATIBILITY_PROPOSAL.md).
+
+The example above reflects the prepared `1.2.0` contract. Production consumers should continue to use immutable published `v1.1.0` or another explicitly documented immutable authority until `1.2.0` is published.
 
 ## Local Validation
 
-The aggregate validator is the authoritative final check. Its default
-`standards-maintainer` profile runs every mandatory category in registry order;
-an explicit `-Category` list cannot remove mandatory checks. Missing tools and
-conditional non-applicability remain visible in the JSON report instead of
-being treated as success.
+The aggregate validator is the authoritative final check. Its default `standards-maintainer` profile runs every mandatory category in registry order; an explicit `-Category` list cannot remove mandatory checks. Missing tools and conditional non-applicability remain visible in the JSON report instead of being treated as success.
 
 ```powershell
 pwsh -NoProfile -File scripts/Invoke-GovernanceValidation.ps1 -Path . -RepositoryOwnerType User
@@ -244,8 +226,7 @@ pwsh -NoProfile -File scripts/Test-ValidatorDependencies.ps1 -Path . -OutputJson
 pwsh -NoProfile -File scripts/Test-ReleaseLifecycle.ps1 -Path . -EvidencePath <release-lifecycle-record.json> -Stage PreRelease
 ```
 
-See the [Issue #22 coverage matrix](docs/migrations/ISSUE_22_VALIDATION_COVERAGE_MATRIX.md)
-for profile, migration, trust-boundary, and status details.
+See the [Issue #22 coverage matrix](docs/migrations/ISSUE_22_VALIDATION_COVERAGE_MATRIX.md) for profile, migration, trust-boundary, and status details.
 
 ## Functional Examples
 
@@ -255,9 +236,7 @@ The PowerShell example at `examples/powershell-project` is functional and includ
 pwsh -NoProfile -File examples/powershell-project/tools/Test-Example.ps1
 ```
 
-The Bash example at `examples/bash-project` is a safe maintained project with
-positive, negative, quoting, traversal, symlink, cleanup, and child-failure
-coverage. Run it from Ubuntu 24.04 with PowerShell 7 and Python 3.12:
+The Bash example at `examples/bash-project` is a safe maintained project with positive, negative, quoting, traversal, symlink, cleanup, and child-failure coverage. Run it from Ubuntu 24.04 with PowerShell 7 and Python 3.12:
 
 ```powershell
 pwsh -NoProfile -File examples/bash-project/tools/Test-Example.ps1
@@ -265,12 +244,7 @@ pwsh -NoProfile -File examples/bash-project/tools/Test-Example.ps1
 
 The repository now separates example types explicitly:
 
-Python and Bash have first-class central standards, mandatory trusted static
-validation, isolated functional workflows, and maintained examples. Static
-Python and Bash controls remain non-executing. Functional Bash execution is a
-separate no-secret, read-only workflow whose fixed trusted driver rejects
-caller configuration, startup hooks, links, special files, root overlap, and
-unbounded content before it runs only the declared test entry point.
+Python and Bash have first-class central standards, mandatory trusted static validation, isolated functional workflows, and maintained examples. Static Python and Bash controls remain non-executing. Functional Bash execution is a separate no-secret, read-only workflow whose fixed trusted driver rejects caller configuration, startup hooks, links, special files, root overlap, and unbounded content before it runs only the declared test entry point.
 
 - `examples/powershell-project`: functional PowerShell example.
 - `examples/python-project`: hash-locked functional Python package example.
@@ -283,13 +257,11 @@ unbounded content before it runs only the declared test entry point.
 - `examples/infrastructure-project`: synthetic non-mutating plan validation example with generated plan evidence.
 - `examples/combined-script-runner-project`: executable synthetic vertical slice demonstrating approved script catalog validation, queue state, idempotency, claim/lease, and atomic report publication.
 
-See the complete [Examples Catalog](examples/README.md) for validation commands
-and boundaries for every governed example.
+See the complete [Examples Catalog](examples/README.md) for validation commands and boundaries for every governed example.
 
 ## Home-Lab Skill Demonstrations
 
-Fifteen isolated, portfolio-grade home labs demonstrate skills without
-production discovery, secrets, external writes, or an `OPENAI_API_KEY`:
+Fifteen isolated, portfolio-grade home labs demonstrate skills without production discovery, secrets, external writes, or an `OPENAI_API_KEY`:
 
 - [`powershell-review`](examples/powershell-review-home-lab/README.md)
 - [`python-review`](examples/python-review-home-lab/README.md)
@@ -307,9 +279,7 @@ production discovery, secrets, external writes, or an `OPENAI_API_KEY`:
 - [`virtualization`](examples/virtualization-home-lab/README.md)
 - [`frameworks`](examples/frameworks-home-lab/README.md)
 
-Open one home-lab directory as its own workspace to make only that example's
-skill discoverable. Deterministic checks validate the package and synthetic
-contracts; live model behavior and production certification remain `NotRun`.
+Open one home-lab directory as its own workspace to make only that example's skill discoverable. Deterministic checks validate the package and synthetic contracts; live model behavior and production certification remain `NotRun` unless separately governed evidence states otherwise.
 
 The `python-review` and `bash-review` home labs remain isolated demonstrations and are not production-certified skills. Their deterministic checks require no `OPENAI_API_KEY` or paid model evaluation.
 
@@ -317,16 +287,13 @@ The `python-review` and `bash-review` home labs remain isolated demonstrations a
 
 The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Downstream CI SHOULD pin commit SHAs for maximum supply-chain integrity. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md), and release procedure is defined in [Release Process](docs/RELEASE_PROCESS.md).
 
-Current published version: `1.1.0`. Annotated tag `v1.1.0` resolves to immutable commit `2704049d7e826975d956611b194214dd79ea3686`. Current `master` contains [unreleased changes](CHANGELOG.md#unreleased) beyond that release.
+The prepared version is `1.2.0` and is unpublished. The latest published version remains `1.1.0`; annotated tag `v1.1.0` resolves to immutable commit `2704049d7e826975d956611b194214dd79ea3686`. The exact `1.2.0` release candidate will be selected only after the preparation change set is merged and then validated as one unchanged SHA through the release lifecycle.
 
-Release candidates use the read-only lifecycle gate in
-`scripts/Test-ReleaseLifecycle.ps1`. Its PreRelease, Publication, and
-PostRelease stages bind validation, canary runs, human approvals, tag/release
-state, and compatibility updates to one immutable SHA. See [Downstream
-Compatibility](docs/DOWNSTREAM_COMPATIBILITY.md) for the supported release,
-schema, and workflow-interface matrix.
+Protected Codex Skill Behavior Evaluation run `31433373121` passed against preparation baseline `dcdf56d20666d08bd96715f00feb5cfd88dcc635` with `10/10` cases, `30/30` samples, and zero material variance. That result is evidence for the commit it names; human adjudication and exact-candidate release validation remain separate gates.
 
-Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `de32b77e2043f5336a54b92ab9ed867abe93ba7e`; the repair is not part of `v1.1.0`. See [Release Status](docs/RELEASE_STATUS.md).
+Release candidates use the read-only lifecycle gate in `scripts/Test-ReleaseLifecycle.ps1`. Its PreRelease, Publication, and PostRelease stages bind validation, canary runs, human approvals, tag/release state, and compatibility updates to one immutable SHA. See [Downstream Compatibility](docs/DOWNSTREAM_COMPATIBILITY.md) for the supported release, schema, and workflow-interface matrix.
+
+Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `de32b77e2043f5336a54b92ab9ed867abe93ba7e` while `1.2.0` is prepared. See [Release Status](docs/RELEASE_STATUS.md).
 
 ## Security Reporting And Contributions
 
