@@ -15,6 +15,8 @@ Downstream repositories SHOULD pin to immutable commit SHAs for workflow executi
 
 The repository uses semantic versioning: `MAJOR.MINOR.PATCH`. The `VERSION` file records the canonical repository release version for the current release state. Release tags SHOULD use `vMAJOR.MINOR.PATCH`.
 
+Individual standards and instruction documents MAY carry their own document or control version. Those versions identify the revision of that specific contract and do not automatically advance when the repository release version changes. For example, a prepared repository `VERSION` of `1.2.0` does not require an unchanged `AGENTS.md` contract to be relabeled `1.2.0`; its existing document version remains valid until that document's governed semantics change.
+
 Pre-release identifiers MAY be used for release candidates, such as `v1.2.0-rc.1`, but downstream production repositories SHOULD NOT pin to release candidates unless an approved exception exists.
 
 ## Major Versions
