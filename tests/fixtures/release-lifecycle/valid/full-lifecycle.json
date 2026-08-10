@@ -4,14 +4,14 @@
   "mode": "DryRun",
   "synthetic": true,
   "repository": "AIAllTheThingz/Engineering-Standards",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "candidateSha": "1111111111111111111111111111111111111111",
   "finalHeadSha": "1111111111111111111111111111111111111111",
   "createdAtUtc": "2026-07-15T12:00:00Z",
   "createdBy": "Synthetic release lifecycle test fixture",
   "releaseNotes": {
-    "path": "docs/releases/1.1.0.md",
-    "reviewedSha256": "460ba851b0611e4032e46242fc294a2dd819bb35e97abb069b54987fe1faf803"
+    "path": "docs/releases/1.2.0.md",
+    "reviewedSha256": "1b09b8439791a927f0a792c5816baf48d9572294a02d8e46608afd7f57b639cf"
   },
   "compatibilityMatrix": {
     "path": "governance/downstream-compatibility.json",
@@ -215,9 +215,9 @@
     "metadataConsistency": {
       "status": "Passed",
       "reason": null,
-      "versionFile": "1.1.0",
-      "changelogVersion": "1.1.0",
-      "releaseNotesVersion": "1.1.0",
+      "versionFile": "1.2.0",
+      "changelogVersion": "1.2.0",
+      "releaseNotesVersion": "1.2.0",
       "workflowInterfaceVersion": "1.0.0",
       "supportedProjectManifestSchemaVersions": ["1.0.0", "1.1.0", "1.2.0"],
       "migrationGuidance": "docs/migrations/ISSUE_21_CONTRACT_COMPATIBILITY_PROPOSAL.md"
@@ -253,7 +253,7 @@
     "tag": {
       "status": "Passed",
       "reason": null,
-      "name": "v1.1.0",
+      "name": "v1.2.0",
       "kind": "annotated",
       "objectSha": "3333333333333333333333333333333333333333",
       "targetSha": "1111111111111111111111111111111111111111",
@@ -264,11 +264,11 @@
     "githubRelease": {
       "status": "Passed",
       "reason": null,
-      "url": "https://github.com/AIAllTheThingz/Engineering-Standards/releases/tag/v1.1.0",
+      "url": "https://github.com/AIAllTheThingz/Engineering-Standards/releases/tag/v1.2.0",
       "targetSha": "1111111111111111111111111111111111111111",
       "draft": false,
       "prerelease": false,
-      "notesSha256": "460ba851b0611e4032e46242fc294a2dd819bb35e97abb069b54987fe1faf803",
+      "notesSha256": "1b09b8439791a927f0a792c5816baf48d9572294a02d8e46608afd7f57b639cf",
       "publishedAtUtc": "2026-07-15T13:05:00Z"
     },
     "artifacts": [
@@ -302,7 +302,7 @@
       "repository": "AIAllTheThingz/Engineering-Standards-Canary",
       "canaryCommitSha": "2222222222222222222222222222222222222222",
       "standardsSha": "1111111111111111111111111111111111111111",
-      "publishedRef": "v1.1.0",
+      "publishedRef": "v1.2.0",
       "scenarios": [
         {
           "name": "success",
@@ -378,7 +378,7 @@
     },
     "regressions": [],
     "followUpIssues": [],
-    "recordPath": "evidence/releases/1.1.0-post-release-verification.json",
+    "recordPath": "tests/fixtures/release-lifecycle/valid/full-lifecycle.json",
     "compatibilityMatrixUpdated": true
   },
   "exceptions": []
