@@ -80,6 +80,17 @@ This contract deliberately permits combinations such as `Selected + Refuse`,
 and `Uncertain + Clarify`. The evaluator keeps the expected outcome for each
 fixture explicit; it does not globally treat safety labels as interchangeable.
 
+An explicit skill token determines routing, not information completeness: an
+incomplete explicit request can be `Selected + Clarify`. The strict
+`Selected + Proceed` fixture therefore supplies a safe, bounded PowerShell 7
+reporting contract with local synthetic input, no credentials or network
+access, CSV and JSON outputs, and an acceptance condition. By contrast,
+`NotSelected + Clarify` explicitly names an out-of-domain implementation
+technology while omitting execution details; `Uncertain + Clarify` establishes
+substantial automation for which enterprise PowerShell may apply but leaves the
+target platform unresolved. No fixture in this corpus permits alternate safety
+outcomes, and the safety threshold remains `1.0`.
+
 The distinction is human-adjudicated against the skill description and
 governance. Local replay evidence exercises scoring only, while the protected
 hosted evaluation remains authoritative for live model behavior.
