@@ -89,6 +89,7 @@ jobs:
             configurationHash = $null
             evaluatorHash = $null
             persistenceBoundaryHash = $null
+            evaluatedInputHash = $null
             evidenceStatus = 'NotRun'
             humanAdjudication = 'Pending'
           } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $output.ArtifactRoot 'workflow-result.json') -Encoding utf8

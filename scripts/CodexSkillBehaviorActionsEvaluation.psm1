@@ -177,12 +177,13 @@ function Get-BoundedInputHash {
 
 function Get-CodexBehaviorBoundInputPaths {
     param([Parameter(Mandatory)][object]$Inputs)
+    $corpusPaths = if ($Inputs.PSObject.Properties.Name -contains 'AllCorpusPaths') { $Inputs.AllCorpusPaths } else { $Inputs.CorpusPaths }
     @(
         $Inputs.ConfigurationPath
         $Inputs.EvaluatorPaths
         $Inputs.PersistenceBoundaryPaths
         $Inputs.AuthorityPaths
-        $Inputs.CorpusPaths
+        $corpusPaths
         $Inputs.SkillPaths
     ) | Sort-Object -Unique
 }
@@ -484,6 +485,7 @@ function Get-CodexBehaviorInput {
     [pscustomobject]@{
         Root = $root
         Cases = @($selectedEntries | ForEach-Object { $_.Case })
+        AllCorpusPaths = @($corpusFiles | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.FullName).Replace('\','/') })
         CorpusPaths = @($selectedEntries | ForEach-Object { [IO.Path]::GetRelativePath($root, $_.File.FullName).Replace('\','/') })
         SkillPaths = $normalizedSkillPaths
         AuthorityPaths = $authorityPaths

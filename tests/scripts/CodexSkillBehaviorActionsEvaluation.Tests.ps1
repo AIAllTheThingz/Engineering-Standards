@@ -35,6 +35,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         @($inputs.Cases).Count | Should -Be 9
         @($inputs.Cases | Where-Object skillName -cne 'enterprise-powershell').Count | Should -Be 0
         @($inputs.CorpusPaths | Where-Object { $_ -match 'powershell-review-synthetic' }).Count | Should -Be 0
+        @($inputs.AllCorpusPaths | Where-Object { $_ -match 'powershell-review-synthetic' }).Count | Should -Be 1
     }
 
     It 'accepts an exact candidate with trusted evaluator hashes' {
@@ -1247,6 +1248,7 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         $workflow | Should -Match 'persistenceBoundaryHash'
         $workflow | Should -Match '\$trust\.persistenceBoundaryHash'
         $workflow | Should -Match 'evaluatedInputHash'
+        $workflow | Should -Match 'evaluatedInputHash = \$null'
     }
 
     It 'compares complete dynamic input roots to detect deletions after evaluation' {

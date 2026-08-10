@@ -57,9 +57,10 @@ try {
     $boundInputPaths = @(Get-CodexBehaviorBoundInputPaths -Inputs $inputs)
     if ($evidence.schemaVersion -eq '1.2.0' -and $evidence.evaluatedInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $boundInputPaths)) { throw 'Evidence evaluated input hash is stale or fabricated.' }
     & git -C $root cat-file -e ("{0}^{{commit}}" -f $evidence.evaluatedCommitSha) 2>$null
-    if ($LASTEXITCODE -ne 0) { throw 'Evidence evaluated commit object is unavailable.' }
+    $evaluatedCommitObjectAvailable = $LASTEXITCODE -eq 0
+    if (-not $evaluatedCommitObjectAvailable -and ($evidence.executionMode -ne 'Replay' -or $evidence.status -ne 'NotRun')) { throw 'Evidence evaluated commit object is unavailable for live or non-replay evidence.' }
     & git -C $root merge-base --is-ancestor $evidence.evaluatedCommitSha HEAD 2>$null
-    $evaluatedCommitIsAncestor = $LASTEXITCODE -eq 0
+    $evaluatedCommitIsAncestor = $evaluatedCommitObjectAvailable -and $LASTEXITCODE -eq 0
     if (-not $evaluatedCommitIsAncestor -and ($evidence.executionMode -ne 'Replay' -or $evidence.status -ne 'NotRun')) { throw 'Non-ancestor evidence is allowed only for NotRun replay evidence with a current evaluated input hash.' }
     $evaluatedEvaluatorSource = if ($evaluatedCommitIsAncestor) {
         @(& git -C $root show ("{0}:scripts/CodexSkillBehaviorEvaluation.psm1" -f $evidence.evaluatedCommitSha) 2>$null) -join "`n"

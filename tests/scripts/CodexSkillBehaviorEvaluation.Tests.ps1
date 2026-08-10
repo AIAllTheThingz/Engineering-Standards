@@ -481,7 +481,7 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
         (Get-CodexBehaviorBoundInputPaths -Inputs (Get-CodexBehaviorInput -Path $repoRoot)) | Should -Contain '.github/dependencies/codex-evaluator/behavior-trust-policy.psd1'
     }
 
-    It 'requires the evaluated input hash for schema 1.2 evidence and rejects unknown commits' {
+    It 'requires the evaluated input hash for schema 1.2 evidence and rejects unknown live commits' {
         $schemaPath = Join-Path $repoRoot 'schemas/codex-skill-behavior-evaluation.schema.json'
         $report = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Replay
         $missingHash = $report | ConvertTo-Json -Depth 32 | ConvertFrom-Json
@@ -491,7 +491,7 @@ last_message_path.write_text(json.dumps(payload), encoding="utf-8")
         $testRoot = Join-Path $repoRoot '.tmp/behavior-evidence-test'
         New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
         try {
-            $unknownCommit = $report | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+            $unknownCommit = Invoke-CodexSkillBehaviorEvaluation -Path $repoRoot -ObservationProvider ${function:New-Observation} -ExecutionMode Live | ConvertTo-Json -Depth 32 | ConvertFrom-Json
             $unknownCommit.evaluatedCommitSha = 'f' * 40
             $unknownPath = Join-Path $testRoot 'unknown-commit.json'
             $unknownCommit | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $unknownPath -Encoding utf8
