@@ -147,7 +147,9 @@ Describe 'Consolidation contract regression coverage' {
 
     It 'separates the published release from prepared but not yet candidate-bound next-release readiness' {
         $matrix = Get-Content -LiteralPath $script:standardsPath -Raw | ConvertFrom-Json
-        $matrix.repositoryVersion | Should -BeExactly '1.2.0'
+        $repositoryVersion = (Get-Content -LiteralPath (Join-Path $script:root 'VERSION') -Raw).Trim()
+        $matrix.repositoryVersion | Should -BeExactly $repositoryVersion
+        $repositoryVersion | Should -BeExactly '1.2.0'
         $matrix.publishedRelease.status | Should -BeExactly 'Passed'
         $matrix.publishedRelease.version | Should -BeExactly '1.1.0'
         $matrix.publishedRelease.tag | Should -BeExactly 'v1.1.0'
