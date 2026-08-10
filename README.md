@@ -285,7 +285,7 @@ The `python-review` and `bash-review` home labs remain isolated demonstrations a
 
 ## Release And Versioning
 
-The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Downstream CI SHOULD pin commit SHAs for maximum supply-chain integrity. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md), and release procedure is defined in [Release Process](docs/RELEASE_PROCESS.md).
+The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Downstream CI SHOULD pin commit SHAs for maximum supply-chain integrity. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md), future changes remain under [Unreleased](CHANGELOG.md#unreleased), and release procedure is defined in [Release Process](docs/RELEASE_PROCESS.md).
 
 The prepared version is `1.2.0` and is unpublished. The latest published version remains `1.1.0`; annotated tag `v1.1.0` resolves to immutable commit `2704049d7e826975d956611b194214dd79ea3686`. The exact `1.2.0` release candidate will be selected only after the preparation change set is merged and then validated as one unchanged SHA through the release lifecycle.
 
