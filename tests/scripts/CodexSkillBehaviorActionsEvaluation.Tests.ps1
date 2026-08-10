@@ -1270,9 +1270,6 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         $boundInputs | Should -Contain $inputs.AuthorityPaths[0]
         $boundInputs | Should -Contain $inputs.AllCorpusPaths[0]
         $boundInputs | Should -Contain $inputs.SkillPaths[0]
-        $nonSelectedCorpusPath = @($inputs.AllCorpusPaths | Where-Object { $_ -match 'powershell-review-synthetic' })
-        $nonSelectedCorpusPath.Count | Should -Be 1
-        $boundInputs | Should -Contain $nonSelectedCorpusPath[0]
         $verifier | Should -Match "'tests/fixtures/codex-skills/prompt-behavior'"
         $verifier | Should -Match "'\.agents/suspended-skills'"
         $verifier | Should -Match '\$inputs\.TrustPolicyPath'

@@ -166,6 +166,9 @@ function Invoke-CodexSkillBehaviorEvaluation {
     if ($ExecutionMode -eq 'Live' -and [string]::IsNullOrWhiteSpace($EvaluatedCommitSha)) {
         $EvaluatedCommitSha = (& git -C $inputs.Root rev-parse HEAD 2>$null)
     }
+    if ($ExecutionMode -eq 'Replay' -and [string]::IsNullOrWhiteSpace($EvaluatedCommitSha)) {
+        $EvaluatedCommitSha = $null
+    }
     if ($ExecutionMode -eq 'Live' -and $EvaluatedCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'Live evidence requires a full evaluated commit SHA.' }
     if ($ExecutionMode -eq 'Replay' -and -not [string]::IsNullOrWhiteSpace($EvaluatedCommitSha) -and $EvaluatedCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'Replay evidence must use a full evaluated commit SHA or null.' }
 
@@ -230,7 +233,7 @@ function Invoke-CodexSkillBehaviorEvaluation {
         corpusHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.CorpusPaths; skillInputHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.SkillPaths
         authorityHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths $inputs.AuthorityPaths
         evaluatedInputHash = Get-BoundedInputHash -Root $inputs.Root -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs $inputs)
-        evaluatedCommitSha = $EvaluatedCommitSha; executionMode = $ExecutionMode; executionContext = $executionContext; githubHostedExecution = [pscustomobject]@{ status = $githubHostedExecutionStatus }; probabilistic = $true; deterministicStructureStatus = 'Passed'; status = $overall
+        evaluatedCommitSha = if ([string]::IsNullOrWhiteSpace($EvaluatedCommitSha)) { $null } else { $EvaluatedCommitSha }; executionMode = $ExecutionMode; executionContext = $executionContext; githubHostedExecution = [pscustomobject]@{ status = $githubHostedExecutionStatus }; probabilistic = $true; deterministicStructureStatus = 'Passed'; status = $overall
         startedAtUtc = $started.ToString('o'); completedAtUtc = [DateTime]::UtcNow.ToString('o')
         model = [pscustomobject]@{ provider = $config.Model.Provider; surface = $config.Model.Surface; modelId = $config.Model.ModelId; reasoningEffort = $config.Model.ReasoningEffort; runnerVersion = $RunnerVersion }
         sampling = [pscustomobject]@{ samplesPerCase = $config.Sampling.SamplesPerCase; temperature = $config.Sampling.Temperature; topP = $config.Sampling.TopP; seed = $config.Sampling.Seed; unsupportedParameterReason = $config.Sampling.UnsupportedParameterReason }
