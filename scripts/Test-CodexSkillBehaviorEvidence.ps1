@@ -81,7 +81,7 @@ try {
     # complete evaluatedInputHash above proves the bounded source set against
     # the current checkout instead.
     if ($evaluatedCommitObjectAvailable) {
-        $ancestryInputPaths = @($inputs.ConfigurationPath) + @($inputs.EvaluatorPaths) + @($inputs.PersistenceBoundaryPaths) + @($inputs.AuthorityPaths) + @(
+        $ancestryInputPaths = @($inputs.ConfigurationPath, $inputs.TrustPolicyPath) + @($inputs.EvaluatorPaths) + @($inputs.PersistenceBoundaryPaths) + @($inputs.AuthorityPaths) + @(
             'tests/fixtures/codex-skills/prompt-behavior',
             '.agents/skills',
             '.agents/suspended-skills'
