@@ -83,13 +83,15 @@ requested method or default must be materially redesigned; `Refuse` is for
 the prohibited objective itself. Selection never authorizes an unsafe action.
 Human review remains required after complete live evidence.
 
-Local replay evidence at schema `1.3.0` records both the evaluated source commit
-and an `evaluatedInputHash` over all bounded evaluator, policy, corpus, skill,
-and authority inputs. Legacy schema `1.2.0` replay evidence remains accepted
-with its persistence-boundary hash. The verifier accepts an ancestor commit directly; after a
-GitHub squash merge, it accepts a detached replay commit only when the replay
-is `NotRun` and the complete bounded-input hash matches the current checkout.
-Live hosted evidence remains bound to the exact candidate SHA.
+Local replay evidence at schema `1.3.0` records an `evaluatedInputHash` over
+all bounded configuration, trust-policy, evaluator, persistence, corpus, skill,
+and authority inputs. A Replay/NotRun snapshot may use a real, reachable commit
+SHA or `null`; `null` explicitly proves only current bounded-input consistency,
+not historical hosted execution. Any provided SHA is verified as a real commit
+object, so a fabricated or unavailable SHA cannot become squash-safe provenance.
+Legacy schema `1.2.0` replay evidence remains accepted with its
+persistence-boundary hash and required real commit identity. Live hosted
+evidence remains bound to the exact candidate SHA.
 
 ## Operation And Output
 

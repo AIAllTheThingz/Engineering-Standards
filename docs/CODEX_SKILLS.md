@@ -251,9 +251,11 @@ Behavior-evidence version `1.2.0` retains the immutable legacy evaluator hash
 for pre-merge compatibility and adds `persistenceBoundaryHash`, which binds the
 shared persistence module, both observation-producing runners, and the
 model-only schema before evidence is accepted. Version `1.3.0` adds the
-squash-safe `evaluatedInputHash` over the complete bounded evaluator, policy,
-corpus, skill, and authority input set; legacy `1.2.0` evidence remains
-schema-valid without that field.
+squash-safe `evaluatedInputHash` over the complete bounded configuration,
+trust-policy, evaluator, persistence, corpus, skill, and authority input set;
+legacy `1.2.0` evidence remains schema-valid without that field. A `1.3.0`
+Replay/NotRun snapshot may set `evaluatedCommitSha` to `null`; every other
+mode/status combination requires a real, available lowercase commit SHA.
 
 The trusted hosted path is the manual
 [`Codex Skill Behavior Evaluation`](../.github/workflows/codex-skill-behavior.yml)

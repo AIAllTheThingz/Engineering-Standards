@@ -42,6 +42,8 @@ try {
     foreach ($property in @('schemaVersion','evidenceKind','evaluatorVersion','scoringContractVersion','configurationId','configurationHash','evaluatorHash','corpusHash','skillInputHash','authorityHash','evaluatedCommitSha','executionMode','probabilistic','deterministicStructureStatus','status','caseOutcomes','aggregates','humanAdjudication','decision','notRunReason','blockedReason','limitations')) {
         if ($evidence.PSObject.Properties.Name -notcontains $property) { throw "Evidence is missing required property '$property'." }
     }
+    if ($evidence.schemaVersion -notin @('1.0.0','1.1.0','1.2.0','1.3.0')) { throw 'Evidence uses an unsupported schema version.' }
+    $isCurrentReplaySnapshot = $evidence.schemaVersion -eq '1.3.0' -and $evidence.executionMode -eq 'Replay' -and $evidence.status -eq 'NotRun'
     if ($evidence.status -notin @('Passed','Failed','NotRun','Blocked','NotApplicable')) { throw 'Evidence uses a noncanonical status.' }
     $usesExecutionProvenance = $evidence.schemaVersion -in @('1.1.0','1.2.0','1.3.0')
     if ($usesExecutionProvenance -and ($evidence.executionContext -ne 'Local' -or $evidence.githubHostedExecution.status -ne 'NotRun')) { throw 'Behavior evidence cannot claim GitHub-hosted execution without a separately verified workflow artifact.' }
@@ -49,31 +51,44 @@ try {
     if ($evidence.configurationId -ne $config.ConfigurationId -or $evidence.evaluatorVersion -ne $config.EvaluatorVersion -or $evidence.scoringContractVersion -ne $config.ScoringContractVersion) { throw 'Evidence version or approved configuration identity is stale.' }
     if ($evidence.configurationHash -ne $inputs.ConfigurationHash) { throw 'Evidence configuration hash is stale or fabricated.' }
     if ($evidence.evaluatorHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.EvaluatorPaths)) { throw 'Evidence evaluator hash is stale or fabricated.' }
-    $evaluatedEvaluatorSource = (& git -C $root show "$($evidence.evaluatedCommitSha):scripts/CodexSkillBehaviorActionsEvaluation.psm1" 2>$null) -join "`n"
-    if ($LASTEXITCODE -ne 0) { throw 'The evaluated Actions evaluator source is unavailable.' }
+    if ($evidence.corpusHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.CorpusPaths)) { throw 'Evidence corpus hash is stale or fabricated.' }
+    if ($evidence.skillInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.SkillPaths)) { throw 'Evidence skill input hash is stale or fabricated.' }
+    if ($evidence.authorityHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.AuthorityPaths)) { throw 'Evidence authority input hash is stale or fabricated.' }
+    $hasEvaluatedCommitSha = -not [string]::IsNullOrWhiteSpace([string]$evidence.evaluatedCommitSha)
+    if ((-not $isCurrentReplaySnapshot -and -not $hasEvaluatedCommitSha) -or
+        ($hasEvaluatedCommitSha -and $evidence.evaluatedCommitSha -notmatch '^[0-9a-f]{40}$')) { throw 'Evidence commit SHA is malformed or unavailable for this schema/mode contract.' }
+    if ($evidence.schemaVersion -eq '1.3.0' -and $evidence.PSObject.Properties.Name -notcontains 'evaluatedInputHash') { throw 'Schema 1.3.0 evidence is missing the squash-safe evaluated input hash.' }
+    if ($evidence.schemaVersion -eq '1.3.0' -and $evidence.evaluatedInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs $inputs))) { throw 'Evidence evaluated input hash is stale or fabricated.' }
+    $evaluatedCommitObjectAvailable = $false
+    if ($hasEvaluatedCommitSha) {
+        & git -C $root cat-file -e ("{0}^{{commit}}" -f $evidence.evaluatedCommitSha) 2>$null
+        $evaluatedCommitObjectAvailable = $LASTEXITCODE -eq 0
+        if (-not $evaluatedCommitObjectAvailable) { throw 'Evidence provides an evaluated commit SHA that is unavailable or fabricated.' }
+        & git -C $root merge-base --is-ancestor $evidence.evaluatedCommitSha HEAD 2>$null
+        if ($LASTEXITCODE -ne 0 -and -not $isCurrentReplaySnapshot) { throw 'Evidence commit is not an ancestor of the validated revision.' }
+    }
+    $evaluatedEvaluatorSource = if ($hasEvaluatedCommitSha) {
+        (& git -C $root show "$($evidence.evaluatedCommitSha):scripts/CodexSkillBehaviorActionsEvaluation.psm1" 2>$null) -join "`n"
+    } else {
+        Get-Content -LiteralPath (Join-Path $root 'scripts/CodexSkillBehaviorActionsEvaluation.psm1') -Raw
+    }
+    if ([string]::IsNullOrWhiteSpace($evaluatedEvaluatorSource)) { throw 'The evaluated Actions evaluator source is unavailable.' }
     $requiresPersistenceBoundary = $evaluatedEvaluatorSource -match '\bPersistenceBoundaryPaths\b'
     if ($requiresPersistenceBoundary -and $evidence.schemaVersion -notin @('1.2.0','1.3.0')) { throw 'Evidence schema version does not meet the evaluated persistence-boundary contract.' }
     if ($requiresPersistenceBoundary -and $evidence.PSObject.Properties.Name -notcontains 'persistenceBoundaryHash') { throw 'Evidence is missing the evaluated persistence-boundary hash.' }
     if ($requiresPersistenceBoundary -and $evidence.persistenceBoundaryHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.PersistenceBoundaryPaths)) { throw 'Evidence persistence-boundary hash is stale or fabricated.' }
-    if ($evidence.corpusHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.CorpusPaths)) { throw 'Evidence corpus hash is stale or fabricated.' }
-    if ($evidence.skillInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.SkillPaths)) { throw 'Evidence skill input hash is stale or fabricated.' }
-    if ($evidence.authorityHash -ne (Get-BoundedInputHash -Root $root -RelativePaths $inputs.AuthorityPaths)) { throw 'Evidence authority input hash is stale or fabricated.' }
-    if ($evidence.evaluatedCommitSha -notmatch '^[0-9a-f]{40}$') { throw 'Evidence commit SHA is malformed.' }
-    if ($evidence.schemaVersion -eq '1.3.0' -and $evidence.PSObject.Properties.Name -notcontains 'evaluatedInputHash') { throw 'Schema 1.3.0 evidence is missing the squash-safe evaluated input hash.' }
-    if ($evidence.schemaVersion -eq '1.3.0' -and $evidence.evaluatedInputHash -ne (Get-BoundedInputHash -Root $root -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs $inputs))) { throw 'Evidence evaluated input hash is stale or fabricated.' }
-    & git -C $root merge-base --is-ancestor $evidence.evaluatedCommitSha HEAD 2>$null
-    if ($LASTEXITCODE -ne 0) { throw 'Evidence commit is not an ancestor of the validated revision.' }
-    # Compare dynamic input roots so files present only in the evaluated commit
-    # (for example, a subsequently deleted case or skill file) remain visible.
-    # Static inputs stay individually bounded; changing the module that declares
-    # those sets is itself an evaluator change.
-    $boundInputPaths = @($inputs.ConfigurationPath) + @($inputs.EvaluatorPaths) + @($inputs.PersistenceBoundaryPaths) + @($inputs.AuthorityPaths) + @(
-        'tests/fixtures/codex-skills/prompt-behavior',
-        '.agents/skills',
-        '.agents/suspended-skills'
-    ) | Sort-Object -Unique
-    & git -C $root diff --quiet $evidence.evaluatedCommitSha -- @boundInputPaths 2>$null
-    if ($LASTEXITCODE -ne 0) { throw 'Hash-bound evaluator inputs differ from the evaluated commit.' }
+    # Compare dynamic input roots only when a real evaluated commit is present.
+    # A schema 1.3 Replay/NotRun record with a null SHA proves the current
+    # bounded snapshot instead of claiming historical commit ancestry.
+    if ($hasEvaluatedCommitSha) {
+        $boundInputPaths = @($inputs.ConfigurationPath, $inputs.TrustPolicyPath) + @($inputs.EvaluatorPaths) + @($inputs.PersistenceBoundaryPaths) + @($inputs.AuthorityPaths) + @(
+            'tests/fixtures/codex-skills/prompt-behavior',
+            '.agents/skills',
+            '.agents/suspended-skills'
+        ) | Sort-Object -Unique
+        & git -C $root diff --quiet $evidence.evaluatedCommitSha -- @boundInputPaths 2>$null
+        if ($LASTEXITCODE -ne 0) { throw 'Hash-bound evaluator inputs differ from the evaluated commit.' }
+    }
     if (@($evidence.caseOutcomes).Count -ne @($inputs.Cases).Count) { throw 'Evidence is a partial run with a mismatched case count.' }
     $expectedSamples = @($inputs.Cases).Count * [int]$config.Sampling.SamplesPerCase
     if ([int]$evidence.aggregates.samplesExpected -ne $expectedSamples) { throw 'Evidence sample count contradicts the approved sampling contract.' }
