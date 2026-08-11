@@ -127,16 +127,17 @@ PR #90 merged as `16277a220035446924ef19f18d713486c6d364c1`. Its historical Gove
 
 ## Required Before Publication
 
-1. Merge PR #101 status synchronization through protected review and freeze the resulting unchanged `master` SHA as the release candidate.
-2. Run and verify the complete hosted Governance success path for that candidate.
-3. Run and verify the controlled-failure proof for the same candidate.
-4. Run and verify all five downstream canary scenarios against the same candidate.
-5. Independently verify artifact identities, hashes, and required evidence contents.
-6. Complete human behavior adjudication and formal release approvals on the unchanged candidate.
-7. Pass the machine-checked PreRelease lifecycle record.
-8. Obtain explicit tag and publication authorization.
-9. Create the annotated protected `v1.2.0` tag and publish the GitHub Release only after authorization.
-10. Re-fetch external state and complete Publication and PostRelease validation.
+1. Run and verify the final protected Codex behavior evaluation against the stabilized PR #101 behavior-bound input set, then refresh the checked Replay/`NotRun` evidence to those exact inputs without manufacturing human approval.
+2. Merge PR #101 status synchronization through protected review using the required merge-commit method and freeze the resulting unchanged `master` SHA as the release candidate.
+3. Run and verify the complete hosted Governance success path for that candidate.
+4. Run and verify the controlled-failure proof for the same candidate.
+5. Run and verify all five downstream canary scenarios against the same candidate.
+6. Independently verify artifact identities, hashes, and required evidence contents.
+7. Complete human behavior adjudication and formal release approvals on the unchanged candidate.
+8. Pass the machine-checked PreRelease lifecycle record.
+9. Obtain explicit tag and publication authorization.
+10. Create the annotated protected `v1.2.0` tag and publish the GitHub Release only after authorization.
+11. Re-fetch external state and complete Publication and PostRelease validation.
 
 Any change to the candidate after exact-target validation requires the affected evidence to be refreshed rather than inherited by assumption.
 
