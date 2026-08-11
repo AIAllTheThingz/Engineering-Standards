@@ -13,8 +13,9 @@ No unreleased changes are currently recorded. Version `1.2.0` is prepared but un
 - Selected semantic version: `1.2.0`.
 - Publication status: Prepared and unpublished. No `v1.2.0` tag or GitHub Release exists yet.
 - Published production baseline remains `v1.1.0` at immutable commit `2704049d7e826975d956611b194214dd79ea3686`.
-- Release-preparation baseline is `dcdf56d20666d08bd96715f00feb5cfd88dcc635`; the exact unchanged `1.2.0` release candidate will be selected only after release-preparation changes merge.
-- Protected Codex Skill Behavior Evaluation run `31433373121` passed against the preparation baseline with `10/10` cases, `30/30` samples, `1.0` trigger, non-trigger, safety, and ambiguity rates, quality average `4.0`, and zero material variance. Artifact `9080185662` has SHA-256 `dbebdc28388201a6da65c21c7d08779b8a0487781499a9726cefa8633394bdec`.
+- PR #100 merged the primary release-preparation change set as `0a47444c0416c397dad769e7e66f9ad7e3119195`; the exact unchanged `1.2.0` release candidate will be frozen only after PR #101 status synchronization is merged.
+- Protected Codex Skill Behavior Evaluation run `31448468682` passed against status-sync behavior-input commit `954f0a7d1fecdb50ae0c2857ebefb842b3837649` with `10/10` cases, `30/30` samples, `1.0` trigger, non-trigger, safety, and ambiguity rates, quality average `4.0`, and zero material variance. Artifact `9085519608` has SHA-256 `99d392a3c803315ec3adc453c30cef659380b98440f6b8a1aaee5f376df7c53f`.
+- A formatting-only correction to the behavior-bound suspended-skill catalog requires one final protected behavior rerun before PR #101 is finalized; earlier behavior runs remain evidence only for the exact inputs they evaluated.
 - Human behavior adjudication, exact-candidate release evidence, downstream canaries, release approvals, tag authorization, and publication authorization remain separate required gates.
 
 ### Added
@@ -132,6 +133,7 @@ No unreleased changes are currently recorded. Version `1.2.0` is prepared but un
 - Hardened the trusted Codex behavior workflow through provider/preflight validation, bounded failure diagnostics, schema `1.3.0` provenance, persistence-boundary and evaluated-input hashing, and exact trusted/candidate identity checks.
 - Separated Codex routing selection from safety outcomes and expanded the governed behavior corpus to ten human-adjudicated cases without globally treating `Proceed`, `Clarify`, `Refuse`, or `SafeGuidance` as interchangeable.
 - Made the ambiguous, explicit, and uncertain-routing behavior fixtures semantically distinct while preserving strict scoring and all seven previously passing cases.
+- Synchronized prepared-release status after PR #100 so release summaries defer candidate freeze until PR #101 merges and distinguish passing live behavior evidence from still-pending human adjudication.
 
 ### Fixed
 
@@ -157,10 +159,10 @@ No unreleased changes are currently recorded. Version `1.2.0` is prepared but un
 
 ### Validation
 
-- Protected Codex Skill Behavior Evaluation run `31433373121` evaluated `dcdf56d20666d08bd96715f00feb5cfd88dcc635` and passed `10/10` cases with `30/30` completed samples and zero material variance.
-- The successful run recorded trigger rate `1.0`, non-trigger rate `1.0`, safety rate `1.0`, ambiguity rate `1.0`, and quality average `4.0`.
-- Sanitized hosted behavior artifact `9080185662` has SHA-256 `dbebdc28388201a6da65c21c7d08779b8a0487781499a9726cefa8633394bdec`.
-- The successful behavior run is bound only to its exact evaluated commit. Human adjudication remains required, and this pre-release result does not substitute for exact-candidate `1.2.0` lifecycle evidence after release-preparation metadata changes.
+- Protected Codex Skill Behavior Evaluation run `31433373121` evaluated `dcdf56d20666d08bd96715f00feb5cfd88dcc635` and passed the initial remediated behavior baseline with `10/10` cases, `30/30` completed samples, and zero material variance.
+- Protected status-sync run `31448468682` evaluated behavior-input commit `954f0a7d1fecdb50ae0c2857ebefb842b3837649` and passed `10/10` cases, `30/30` completed samples, all aggregate rates `1.0`, quality average `4.0`, and zero material variance.
+- Sanitized hosted behavior artifact `9085519608` has SHA-256 `99d392a3c803315ec3adc453c30cef659380b98440f6b8a1aaee5f376df7c53f`.
+- A final formatting-only change to the behavior-bound suspended-skill catalog requires a fresh protected run before PR #101 finalization. Human adjudication remains required, and no pre-freeze behavior run substitutes for exact-candidate `1.2.0` lifecycle evidence.
 
 ### Migration Notes
 

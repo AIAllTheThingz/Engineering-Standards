@@ -4,8 +4,8 @@
   "repositoryVersion": "1.2.0",
   "defaultBranch": "master",
   "riskClassification": "High",
-  "generatedFromCommit": "dcdf56d20666d08bd96715f00feb5cfd88dcc635",
-  "generatedAtUtc": "2026-08-10T21:46:00Z",
+  "generatedFromCommit": "0a47444c0416c397dad769e7e66f9ad7e3119195",
+  "generatedAtUtc": "2026-08-11T13:27:00Z",
   "canonicalStatusValues": [
     "Passed",
     "Failed",
@@ -543,7 +543,7 @@
   },
   "githubEvidence": {
     "status": "Passed",
-    "reason": "PR #99 final head a42a5c578ed773430ff662230bc1b6bb1c351539 passed Pull Request Governance, Governance CI with trusted governance and candidate implementation validation, Python example CI, Bash example CI, and CodeRabbit before merge commit dcdf56d20666d08bd96715f00feb5cfd88dcc635. Protected Codex Skill Behavior Evaluation run 31433373121 then evaluated that merge commit and passed 10/10 cases, 30/30 samples, with zero material variance. These observations establish the preparation baseline only and are not exact-candidate 1.2.0 release evidence."
+    "reason": "PR #100 final head 4fba1d372994961288488641a3d29657eef81195 passed Pull Request Governance, Governance CI with trusted governance and candidate implementation validation, Python example CI, Bash example CI, and CodeRabbit before merge commit 0a47444c0416c397dad769e7e66f9ad7e3119195. These observations establish the merged 1.2.0 preparation baseline only; PR #101 status synchronization and final protected behavior evidence remain separate pre-freeze work."
   },
   "branchProtection": {
     "status": "Passed",
@@ -562,7 +562,7 @@
     "proposedVersion": null,
     "proposedTag": null,
     "targetCommitSha": null,
-    "reason": "Version 1.2.0 is selected in the prepared repository metadata, but this readiness record remains NotRun until the preparation change set is merged and one unchanged release-candidate SHA can be selected. Exact-candidate Governance success and controlled-failure evidence, downstream canaries, artifact verification, approvals, tag authorization, and publication authorization remain outstanding."
+    "reason": "Version 1.2.0 is selected and PR #100 release preparation is merged at 0a47444c0416c397dad769e7e66f9ad7e3119195, but next-release readiness remains NotRun until PR #101 status synchronization completes, the final protected Codex behavior rerun and checked Replay/Local/NotRun evidence refresh are complete, and one unchanged master release-candidate SHA is selected. Exact-candidate Governance success and controlled-failure evidence, downstream canaries, artifact verification, approvals, tag authorization, and publication authorization remain outstanding."
   },
   "releaseReadiness": {
     "status": "NotApplicable",
