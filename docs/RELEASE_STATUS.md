@@ -6,7 +6,7 @@
 | Prepared version | 1.2.0 |
 | Latest published version | 1.1.0 |
 | Owner role | Release Maintainers |
-| Last verified | 2026-08-10 |
+| Last verified | 2026-08-11 |
 
 ## Current Release State
 
@@ -14,19 +14,19 @@ The prepared version is `1.2.0` and is unpublished. No `v1.2.0` tag has been cre
 
 The latest published version remains `1.1.0`. Annotated tag `v1.1.0` has tag-object SHA `d60ed3f1385678364976dfde73b4bb5e3580d702` and resolves to immutable commit `2704049d7e826975d956611b194214dd79ea3686`. GitHub Release ID `352430221` was published at `2026-07-11T05:05:47Z` and remains the current production release.
 
-Version `1.2.0` is a backward-compatible minor release preparation. PR #100 merged the primary release-preparation change set into protected `master` as `0a47444c0416c397dad769e7e66f9ad7e3119195`. Exact release-candidate selection is deliberately deferred until all remaining release-preparation status synchronization is merged and the repository tree is frozen. Pre-freeze SHAs are preparation history, not exact-candidate release evidence. The selected candidate is recorded in release lifecycle evidence rather than by a post-selection metadata commit that would move the candidate again.
+Version `1.2.0` is a backward-compatible minor release preparation. PR #100 merged the primary release-preparation change set into protected `master` as `0a47444c0416c397dad769e7e66f9ad7e3119195`. Exact release-candidate selection is deliberately deferred until the remaining status-synchronization PR is merged and the repository tree is frozen. Pre-freeze SHAs are preparation history, not exact-candidate release evidence. The selected candidate is recorded in release lifecycle evidence rather than by a post-selection metadata commit that would move the candidate again.
 
 ## Codex Skill Behavior Evidence
 
-The latest protected live behavior evaluation completed successfully before release preparation:
+The final protected live behavior evaluation for the status-synchronized bounded input set completed successfully:
 
 | Field | Value |
 | --- | --- |
 | Workflow | Codex Skill Behavior Evaluation |
-| Run | `31433373121` |
-| Evaluated commit | `dcdf56d20666d08bd96715f00feb5cfd88dcc635` |
-| Artifact | `9080185662` |
-| Artifact SHA-256 | `dbebdc28388201a6da65c21c7d08779b8a0487781499a9726cefa8633394bdec` |
+| Run | `31448468682` |
+| Evaluated behavior-input commit | `954f0a7d1fecdb50ae0c2857ebefb842b3837649` |
+| Artifact | `9085519608` |
+| Artifact SHA-256 | `99d392a3c803315ec3adc453c30cef659380b98440f6b8a1aaee5f376df7c53f` |
 | Cases | `10/10` Passed |
 | Samples | `30/30` completed |
 | Material variance | `0` |
@@ -35,10 +35,11 @@ The latest protected live behavior evaluation completed successfully before rele
 | Safety rate | `1.0` |
 | Ambiguity rate | `1.0` |
 | Quality average | `4.0` |
+| Human adjudication | `Pending` |
 
-This run proves the governed behavior contract for the exact commit it names. It is not silently promoted into evidence for a later release-candidate SHA.
+The run evaluated the bounded behavior-input set containing the status-agnostic suspended-skill catalog. Subsequent status-sync commits update release metadata, checked Replay evidence, and temporary diagnostic files only; those files are outside the evaluator's bounded behavior-input set. The checked repository behavior evidence remains truthful schema `1.3.0` Replay/`NotRun`, with current `skillInputHash` `dbe31eea6ebe3469870024c759c872489dd3c7bf84c2d1ff7fd9f890b3e07d80` and manual `evaluatedInputHash` `84a6c6fad9274b2fdaf323f5a4162b1d40f02c84a4d08464a8a16c4bbc43e7c8`.
 
-The final status-synchronization work removes transient `Blocked`/`Passed` wording from the suspended-skill catalog so the hashed skill input states only the durable activation rule. Because that catalog is within the evaluator's bounded skill-input set, the final frozen `1.2.0` input set requires a fresh protected live evaluation before attributable human adjudication. The checked repository evidence remains truthful Replay/`NotRun`, and `enterprise-powershell` remains physically outside the discoverable active-skills root until the required unchanged-input live evaluation and attributable human approval are complete. Automation does not manufacture human approval.
+`enterprise-powershell` remains physically outside the discoverable active-skills root. The passing automated evaluation satisfies the live behavior observation requirement for the unchanged bounded input set, but automation does not manufacture human approval. Attributable human adjudication is still required before any lifecycle continuation or promotion that depends on that approval.
 
 ## Prepared 1.2.0 Scope
 
@@ -58,7 +59,7 @@ Historical `1.1.0` release records remain unchanged and continue to describe onl
 
 `1.2.0` is not approved for tagging or publication yet. The following remain required against one unchanged final candidate SHA:
 
-1. Merge all remaining release-preparation status synchronization and freeze the exact candidate SHA.
+1. Merge the remaining release-preparation status synchronization and freeze the exact candidate SHA.
 2. Pass the complete hosted Governance CI success path for that candidate.
 3. Run and independently verify the controlled-failure proof for that candidate.
 4. Run and independently verify all five downstream governance canary scenarios.
@@ -81,7 +82,7 @@ Production consumers should remain on an immutable published or explicitly docum
 
 ## Verification Boundaries
 
-Historical runs and artifacts prove only the commits they identify. Local deterministic validation cannot claim GitHub-hosted execution. A successful workflow can coexist with truthful `NotRun`, `Blocked`, or `NotApplicable` lifecycle records where those states are expected and accurately disclosed.
+Historical runs and artifacts prove only the commits or bounded input sets they identify. Local deterministic validation cannot claim GitHub-hosted execution. A successful workflow can coexist with truthful `NotRun`, `Blocked`, or `NotApplicable` lifecycle records where those states are expected and accurately disclosed.
 
 Moving or recreating a tag, editing a published GitHub Release, rotating downstream workflow authority, or changing protection settings requires separate authorization.
 
