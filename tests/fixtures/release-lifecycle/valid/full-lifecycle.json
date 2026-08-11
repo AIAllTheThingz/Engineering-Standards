@@ -219,8 +219,8 @@
       "changelogVersion": "1.1.0",
       "releaseNotesVersion": "1.1.0",
       "workflowInterfaceVersion": "1.0.0",
-      "supportedProjectManifestSchemaVersions": ["1.0.0", "1.1.0", "1.2.0"],
-      "migrationGuidance": "docs/migrations/ISSUE_21_CONTRACT_COMPATIBILITY_PROPOSAL.md"
+      "supportedProjectManifestSchemaVersions": ["1.0.0", "1.1.0"],
+      "migrationGuidance": "docs/ADOPTION_GUIDE.md"
     },
     "approvals": [
       {
