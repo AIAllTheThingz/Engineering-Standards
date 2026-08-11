@@ -54,6 +54,12 @@ Describe 'Release lifecycle gates' {
         $result.Output | Should -Match 'RLG081'
     }
 
+    It 'allows synthetic DryRun evidence to model a historical published version' {
+        $result = Invoke-ReleaseFixture -Name 'dryrun-version-mismatch' -Stage PreRelease
+        $result.ExitCode | Should -Be 0
+        $result.Output | Should -Not -Match 'RLG081'
+    }
+
     It 'rejects the checked-in missing-canary fixture for the intended diagnostic' {
         $relativeFixture = [System.IO.Path]::GetRelativePath($script:root, $script:missingCanaryFixture).Replace('\', '/')
         $output = @(& pwsh -NoProfile -File $script:validator -Path $script:root -EvidencePath $relativeFixture -Stage All 2>&1)
