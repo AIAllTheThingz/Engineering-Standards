@@ -15,9 +15,7 @@ Describe 'Codex behavior manual hash diagnostic' {
             authorityHash = Get-BoundedInputHash -Root $script:root -RelativePaths $inputs.AuthorityPaths
             evaluatedInputHash = Get-BoundedInputHash -Root $script:root -RelativePaths (Get-CodexBehaviorBoundInputPaths -Inputs $inputs)
         }
-        Write-Host ('CODEX_MANUAL_HASH_DIAGNOSTIC=' + ($hashes | ConvertTo-Json -Compress))
-        foreach ($value in $hashes.Values) {
-            $value | Should -Match '^[0-9a-f]{64}$'
-        }
+        $diagnostic = 'CODEX_MANUAL_HASH_DIAGNOSTIC=' + ($hashes | ConvertTo-Json -Compress)
+        throw $diagnostic
     }
 }
