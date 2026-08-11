@@ -66,7 +66,7 @@ After PR #100, the suspended-skill catalog was made status-agnostic so it no lon
 
 That artifact is authoritative for the exact bounded behavior-input set it names. A later formatting-only change to the behavior-bound suspended-skill catalog requires one final protected behavior rerun before PR #101 is finalized; no earlier run is silently relabeled as evidence for changed behavior inputs.
 
-Human adjudication remains pending. The checked behavior record stays truthful Replay/`NotRun`, and `enterprise-powershell` remains outside the discoverable active skill root until attributable approval is durably recorded. Status synchronization does not bypass that lifecycle boundary.
+Human adjudication remains pending. The checked behavior record stays truthful Replay/`Local`/`NotRun`, and `enterprise-powershell` remains outside the discoverable active skill root until attributable approval is durably recorded. Status synchronization does not bypass that lifecycle boundary.
 
 ## Compatibility
 
@@ -127,7 +127,7 @@ PR #90 merged as `16277a220035446924ef19f18d713486c6d364c1`. Its historical Gove
 
 ## Required Before Publication
 
-1. Run and verify the final protected Codex behavior evaluation against the stabilized PR #101 behavior-bound input set, then refresh the checked Replay/`NotRun` evidence to those exact inputs without manufacturing human approval.
+1. Run and verify the final protected Codex behavior evaluation against the stabilized PR #101 behavior-bound input set, then refresh the checked Replay/`Local`/`NotRun` evidence to those exact inputs without manufacturing human approval.
 2. Merge PR #101 status synchronization through protected review using the required merge-commit method and freeze the resulting unchanged `master` SHA as the release candidate.
 3. Run and verify the complete hosted Governance success path for that candidate.
 4. Run and verify the controlled-failure proof for the same candidate.
