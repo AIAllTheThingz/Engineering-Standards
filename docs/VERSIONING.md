@@ -1,9 +1,9 @@
 # Versioning
 
 | Status | Active |
-| Version | 1.1.0 |
+| Version | 1.2.0 |
 | Owner role | Release Maintainers |
-| Last reviewed | 2026-07-11 |
+| Last reviewed | 2026-08-10 |
 
 ## Purpose
 
@@ -13,7 +13,9 @@ Downstream repositories SHOULD pin to immutable commit SHAs for workflow executi
 
 ## Version Format
 
-The repository uses semantic versioning: `MAJOR.MINOR.PATCH`. The `VERSION` file records the current repository version. Release tags SHOULD use `vMAJOR.MINOR.PATCH`.
+The repository uses semantic versioning: `MAJOR.MINOR.PATCH`. The `VERSION` file records the canonical repository release version for the current release state. Release tags SHOULD use `vMAJOR.MINOR.PATCH`.
+
+Individual standards and instruction documents MAY carry their own document or control version. Those versions identify the revision of that specific contract and do not automatically advance when the repository release version changes. For example, a prepared repository `VERSION` of `1.2.0` does not require an unchanged `AGENTS.md` contract to be relabeled `1.2.0`; its existing document version remains valid until that document's governed semantics change.
 
 Pre-release identifiers MAY be used for release candidates, such as `v1.2.0-rc.1`, but downstream production repositories SHOULD NOT pin to release candidates unless an approved exception exists.
 
@@ -114,9 +116,11 @@ same candidate SHA; a tag or release cannot repair inconsistent version data.
 
 ## Version File
 
-The root `VERSION` file contains the latest published version without a leading `v`. Development after that release remains under `CHANGELOG.md` `[Unreleased]`; post-release commits do not by themselves change `VERSION`. Release tags SHOULD add the `v` prefix. For example, `VERSION` contains `1.1.0` and the release tag is `v1.1.0`.
+The root `VERSION` file contains the canonical semantic version without a leading `v`. Outside an active release-preparation cycle, it identifies the latest published release. During an explicit release-preparation cycle, it MAY advance to the selected next version before publication only when `docs/RELEASE_STATUS.md` and `README.md` both identify that version as prepared and unpublished, `CHANGELOG.md` contains the corresponding prepared release section, the compatibility matrix keeps that version in the unreleased/Preview contract, and the release tag does not yet exist. A prepared `VERSION` value does not imply publication.
 
-Changing `VERSION` requires a changelog update, release evidence refresh, and release maintainer review.
+Development after a published release remains under `CHANGELOG.md` `[Unreleased]` until maintainers deliberately cut that scope into a prepared release. Post-release commits do not by themselves change `VERSION`. After authorized publication, the prepared value becomes the latest published version without another version-file change. Release tags SHOULD add the `v` prefix.
+
+Changing `VERSION` requires a changelog update, release evidence refresh, release-status synchronization, and release maintainer review.
 
 ## Validation
 

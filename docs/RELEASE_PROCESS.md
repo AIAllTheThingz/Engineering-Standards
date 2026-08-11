@@ -1,9 +1,9 @@
 # Release Process
 
 | Status | Active |
-| Version | 1.1.0 |
+| Version | 1.2.0 |
 | Owner role | Release Maintainers |
-| Last reviewed | 2026-07-15 |
+| Last reviewed | 2026-08-10 |
 
 ## Purpose
 
@@ -29,7 +29,7 @@ Define the release scope before updating `VERSION`. Identify changed controls, a
 
 Do not mix unrelated breaking changes into an emergency release. Ship the minimum repair, then follow with a normal release.
 
-The root `VERSION` identifies the latest published release. Work merged after its immutable tag target MUST remain accurately summarized under `CHANGELOG.md` `[Unreleased]` until a later release is approved and published. A historical hosted run validates only its recorded commit, not a later `master` head.
+The root `VERSION` identifies the canonical release state. Outside an active preparation cycle it equals the latest published release. Once maintainers deliberately cut a release, `VERSION` MAY advance to the selected next version before publication only when the release status, README, changelog, and compatibility Preview contract all identify that version as prepared and unpublished and no matching release tag exists. Work merged after the prior immutable tag target MUST remain under `CHANGELOG.md` `[Unreleased]` until it is deliberately included in that prepared release scope. A historical hosted run validates only its recorded commit, not a later `master` head.
 
 ## Pre-Release Checklist
 

@@ -4,6 +4,19 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ## [Unreleased]
 
+No unreleased changes are currently recorded. Version `1.2.0` is prepared but unpublished; new work after the final `1.2.0` release candidate is selected must be recorded here rather than silently added to that candidate.
+
+## [1.2.0] - Prepared 2026-08-10 (unpublished)
+
+### Release Status
+
+- Selected semantic version: `1.2.0`.
+- Publication status: Prepared and unpublished. No `v1.2.0` tag or GitHub Release exists yet.
+- Published production baseline remains `v1.1.0` at immutable commit `2704049d7e826975d956611b194214dd79ea3686`.
+- Release-preparation baseline is `dcdf56d20666d08bd96715f00feb5cfd88dcc635`; the exact unchanged `1.2.0` release candidate will be selected only after release-preparation changes merge.
+- Protected Codex Skill Behavior Evaluation run `31433373121` passed against the preparation baseline with `10/10` cases, `30/30` samples, `1.0` trigger, non-trigger, safety, and ambiguity rates, quality average `4.0`, and zero material variance. Artifact `9080185662` has SHA-256 `dbebdc28388201a6da65c21c7d08779b8a0487781499a9726cefa8633394bdec`.
+- Human behavior adjudication, exact-candidate release evidence, downstream canaries, release approvals, tag authorization, and publication authorization remain separate required gates.
+
 ### Added
 
 - Added first-class functional Bash support with GNU Bash 5.2 on Ubuntu 24.04,
@@ -21,7 +34,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
   ShellCheck `0.11.0`, with bounded source inspection, isolated configuration,
   provenance evidence, CycloneDX coverage, and offline/tamper controls.
 
-- Added first-class Python and Bash central standards, hierarchy and cross-standard handoffs, backward-compatible project-manifest types and fixtures, standards-consistency records, deterministic semantic validation, and twenty mutation regression cases. Runtime toolchains, language workflows, functional examples, production skills, and paid model evaluation remain out of scope for this standards-foundation change.
+- Added first-class Python and Bash central standards, hierarchy and cross-standard handoffs, backward-compatible project-manifest types and fixtures, standards-consistency records, deterministic semantic validation, and twenty mutation regression cases. Runtime toolchains, language workflows, functional examples, production skills, and paid model evaluation remained out of scope for that standards-foundation change and were added through later governed work.
 
 - Added isolated `python-review`, `bash-review`, and `terraform-review`
   portfolio home labs with inert unsafe samples, matching added-file diffs,
@@ -116,6 +129,9 @@ All notable changes to the Engineering Standards repository are recorded here. T
 - Repaired reusable-workflow trust boundaries so downstream repositories execute immutable central tooling while treating caller content as untrusted data.
 - Rotated the trusted self-CI workflow pin to immutable commit `091841c94fba6039443a40b7c4a28e5b9a3af2d2` after the cross-repository repair.
 - Updated downstream workflow adoption, security, troubleshooting, and release guidance.
+- Hardened the trusted Codex behavior workflow through provider/preflight validation, bounded failure diagnostics, schema `1.3.0` provenance, persistence-boundary and evaluated-input hashing, and exact trusted/candidate identity checks.
+- Separated Codex routing selection from safety outcomes and expanded the governed behavior corpus to ten human-adjudicated cases without globally treating `Proceed`, `Clarify`, `Refuse`, or `SafeGuidance` as interchangeable.
+- Made the ambiguous, explicit, and uncertain-routing behavior fixtures semantically distinct while preserving strict scoring and all seven previously passing cases.
 
 ### Fixed
 
@@ -134,6 +150,17 @@ All notable changes to the Engineering Standards repository are recorded here. T
   version is validated through `unreleasedContract` and cannot be represented
   as an already published governance release.
 - Preserved specific, sanitized bootstrap failure evidence for version mismatches, missing files, and mandatory-control disablement attempts.
+- Repaired Structured Outputs compatibility in the controlled Codex evaluation path.
+- Repaired provider/bootstrap behavior so complete hosted model observations could execute under the governed OpenAI provider boundary rather than fail as an unknown provider.
+- Corrected Codex behavior-contract semantics for destructive, governance-bypass, explanation, one-liner, review, secret-exposure, ambiguous, and uncertain-routing cases based on human adjudication instead of chasing observed labels.
+- Eliminated the final three ambiguous routing mismatches without lowering the `1.0` safety and non-trigger thresholds, changing the model, reducing sample count, or permitting broad alternate outcomes.
+
+### Validation
+
+- Protected Codex Skill Behavior Evaluation run `31433373121` evaluated `dcdf56d20666d08bd96715f00feb5cfd88dcc635` and passed `10/10` cases with `30/30` completed samples and zero material variance.
+- The successful run recorded trigger rate `1.0`, non-trigger rate `1.0`, safety rate `1.0`, ambiguity rate `1.0`, and quality average `4.0`.
+- Sanitized hosted behavior artifact `9080185662` has SHA-256 `dbebdc28388201a6da65c21c7d08779b8a0487781499a9726cefa8633394bdec`.
+- The successful behavior run is bound only to its exact evaluated commit. Human adjudication remains required, and this pre-release result does not substitute for exact-candidate `1.2.0` lifecycle evidence after release-preparation metadata changes.
 
 ### Migration Notes
 
@@ -143,9 +170,10 @@ All notable changes to the Engineering Standards repository are recorded here. T
   independently verified. Existing `v1.1.0` historical evidence is retained in
   its original schema.
 - Existing aggregate commands with `-Category` remain accepted, but the option now filters optional profile categories only. Maintainers should remove hand-maintained category lists and use the complete default command documented in the Issue #22 coverage matrix.
-- `v1.1.0` remains the latest published release and does not contain these changes. Consumers needing that control set may use tag `v1.1.0` at `2704049d7e826975d956611b194214dd79ea3686`.
+- `v1.1.0` remains the latest published release while `1.2.0` is prepared and unpublished. Consumers needing the published control set may use tag `v1.1.0` at `2704049d7e826975d956611b194214dd79ea3686`.
 - Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `de32b77e2043f5336a54b92ab9ed867abe93ba7e`.
-- See [Release Status](docs/RELEASE_STATUS.md) for the authoritative published-versus-unreleased boundary.
+- Production consumers should not treat `1.2.0`, `master`, or the release-preparation branch as a published compatibility promise until the authorized tag and GitHub Release are created and independently verified.
+- See [Release Status](docs/RELEASE_STATUS.md) for the authoritative published-versus-prepared boundary and [1.2.0 Release Preparation](docs/releases/1.2.0.md) for remaining release gates.
 
 ## [1.1.0] - 2026-06-30
 
@@ -227,4 +255,4 @@ Initial production-quality governance baseline prepared for review. Downstream r
 
 - Downstream repositories should start with [Adoption Guide](docs/ADOPTION_GUIDE.md).
 - Production downstream workflow callers should replace example branch references with immutable commit SHAs.
-- Existing copied standards should be replaced with central references or documented as controlled local copies.
+- Existing copied standards should be replaced with central references or documented as controlled local copies and update path.

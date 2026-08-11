@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.1.0",
   "repository": "AIAllTheThingz/Engineering-Standards",
-  "updatedAtUtc": "2026-07-26T13:58:00Z",
+  "updatedAtUtc": "2026-08-10T21:46:00Z",
   "ownerRole": "Release Maintainers",
   "supportPolicy": {
     "currentMajor": 1,
@@ -41,7 +41,7 @@
     }
   ],
   "unreleasedContract": {
-    "governanceVersion": "1.1.0",
+    "governanceVersion": "1.2.0",
     "supportStatus": "Preview",
     "workflowInterfaceVersions": [
       "1.0.0"
@@ -59,7 +59,7 @@
       "1.0.0",
       "1.1.0"
     ],
-    "migrationGuide": "docs/migrations/ISSUE_21_CONTRACT_COMPATIBILITY_PROPOSAL.md",
+    "migrationGuide": "docs/releases/1.2.0.md",
     "canaryValidatedWorkflowSha": "de32b77e2043f5336a54b92ab9ed867abe93ba7e",
     "functionalWorkflows": [
       {

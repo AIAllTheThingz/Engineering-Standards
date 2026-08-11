@@ -2,14 +2,16 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Active |
+| Status | Historical snapshot |
 | Version | 1.1.0 |
 | Owner role | Engineering Standards Maintainers |
-| Last reviewed | 2026-07-27 |
+| Last reviewed | 2026-08-10 |
 
 ## Purpose
 
-This audit records the consolidated state of `AIAllTheThingz/Engineering-Standards` after the Python, Bash, governed example, dependency, workflow-pin, release-contract, and compatibility work completed through PR #90. It separates the published `v1.1.0` release from later unreleased development and identifies the exact evidence and remaining gates for a future release.
+This audit records the consolidated state of `AIAllTheThingz/Engineering-Standards` after the Python, Bash, governed example, dependency, workflow-pin, release-contract, and compatibility work completed through PR #90. It separates the published `v1.1.0` release from later unreleased development and identifies the exact evidence and remaining gates that existed at that audit boundary.
+
+This document is a historical PR #90 snapshot. Version and readiness statements below describe that audited state and do not override the current prepared-release state in [Release Status](RELEASE_STATUS.md).
 
 The machine-readable companion is [`governance/standards-consistency.json`](../governance/standards-consistency.json), validated against [`schemas/standards-consistency.schema.json`](../schemas/standards-consistency.schema.json).
 
@@ -29,7 +31,7 @@ The machine-readable companion is [`governance/standards-consistency.json`](../g
 
 Git comparison found no file differences between final validated PR #90 head `d75a37a60f2c82a8ea7cefafd714ce0309ea237e` and merge commit `16277a220035446924ef19f18d713486c6d364c1`. The merge commit is therefore a metadata-only descendant with an identical repository tree.
 
-`VERSION` remains `1.1.0` because it identifies the latest published release. Current `master` is unreleased development and must not be represented as content of `v1.1.0`.
+At this audited snapshot, `VERSION` remained `1.1.0` because no later release had yet been prepared. The then-current `master` was unreleased development and was not represented as content of `v1.1.0`.
 
 ## Catalog Reconciliation
 
@@ -129,9 +131,9 @@ No temporary bootstrap or diagnostic code requires removal from the audited tree
 
 ## Release Readiness
 
-Repository consolidation is `Passed`. A future release is `NotRun` because no new semantic version, immutable release candidate, exact-candidate downstream canary, publication authorization, tag, or GitHub Release has been selected for the post-`v1.1.0` development set.
+Repository consolidation is `Passed`. At this audited snapshot, a future release was `NotRun` because no new semantic version, immutable release candidate, exact-candidate downstream canary, publication authorization, tag, or GitHub Release had been selected for the post-`v1.1.0` development set.
 
-Before the next release, maintainers must:
+Before the next release, maintainers were required to:
 
 1. Select the release version and unchanged candidate SHA.
 2. Populate and validate a release-lifecycle record in `PreRelease` mode.
@@ -141,7 +143,7 @@ Before the next release, maintainers must:
 6. Create the annotated tag and GitHub Release only after the release gate passes.
 7. Perform and record post-release verification.
 
-No new release, tag, publication, or compatibility promise is created by this consolidation audit.
+No new release, tag, publication, or compatibility promise was created by this consolidation audit.
 
 ## Related Documents
 

@@ -44,6 +44,22 @@ Describe 'Release lifecycle gates' {
         $result.ExitCode | Should -Be 0
     }
 
+    It 'keeps repository VERSION binding mandatory for live evidence' {
+        $result = Invoke-ReleaseFixture -Name 'live-version-mismatch' -Stage PreRelease -Mutate {
+            param($fixture)
+            $fixture.mode = 'Live'
+            $fixture.synthetic = $false
+        }
+        $result.ExitCode | Should -Be 1
+        $result.Output | Should -Match 'RLG081'
+    }
+
+    It 'allows synthetic DryRun evidence to model a historical published version' {
+        $result = Invoke-ReleaseFixture -Name 'dryrun-version-mismatch' -Stage PreRelease
+        $result.ExitCode | Should -Be 0
+        $result.Output | Should -Not -Match 'RLG081'
+    }
+
     It 'rejects the checked-in missing-canary fixture for the intended diagnostic' {
         $relativeFixture = [System.IO.Path]::GetRelativePath($script:root, $script:missingCanaryFixture).Replace('\', '/')
         $output = @(& pwsh -NoProfile -File $script:validator -Path $script:root -EvidencePath $relativeFixture -Stage All 2>&1)
