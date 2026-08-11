@@ -150,6 +150,7 @@ Describe 'Consolidation contract regression coverage' {
         $repositoryVersion = (Get-Content -LiteralPath (Join-Path $script:root 'VERSION') -Raw).Trim()
         $matrix.repositoryVersion | Should -BeExactly $repositoryVersion
         $repositoryVersion | Should -BeExactly '1.2.0'
+        $matrix.generatedFromCommit | Should -BeExactly '0a47444c0416c397dad769e7e66f9ad7e3119195'
         $matrix.publishedRelease.status | Should -BeExactly 'Passed'
         $matrix.publishedRelease.version | Should -BeExactly '1.1.0'
         $matrix.publishedRelease.tag | Should -BeExactly 'v1.1.0'
@@ -160,7 +161,9 @@ Describe 'Consolidation contract regression coverage' {
         $matrix.nextReleaseReadiness.proposedVersion | Should -BeNullOrEmpty
         $matrix.nextReleaseReadiness.proposedTag | Should -BeNullOrEmpty
         $matrix.nextReleaseReadiness.targetCommitSha | Should -BeNullOrEmpty
-        $matrix.nextReleaseReadiness.reason | Should -Match 'Version 1\.2\.0 is selected.*readiness record remains NotRun'
+        $matrix.nextReleaseReadiness.reason | Should -Match 'PR #100 release preparation is merged.*PR #101 status synchronization completes'
+        $matrix.nextReleaseReadiness.reason | Should -Match 'Replay/Local/NotRun evidence refresh'
+        $matrix.nextReleaseReadiness.reason | Should -Not -Match 'until the preparation change set is merged'
 
         $matrix.releaseReadiness.status | Should -BeExactly 'NotApplicable'
         @($matrix.releaseReadiness.PSObject.Properties.Name) | Should -Be @('status','reason')
