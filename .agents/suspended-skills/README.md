@@ -47,7 +47,7 @@ Explicit invocation example:
 $enterprise-powershell Create a certificate-expiration reporting solution.
 ```
 
-Implicit invocation may occur when a task matches the skill description. Descriptions therefore must state both when a skill should trigger and when it should not.
+Implicit invocation may occur when a task matches the skill description. Descriptions therefore must state both when the skill should trigger and when it should not.
 
 ## Repository Scope And Distribution
 
