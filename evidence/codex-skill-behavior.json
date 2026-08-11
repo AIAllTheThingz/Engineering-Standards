@@ -40,9 +40,7 @@
     "maximumTransportRetries": 1,
     "retryableReasons": [
       "ModelUnavailable",
-      "TransportTimeout",
-      "TransportFailure",
-      "ProviderError"
+      "TransportTimeout"
     ],
     "retryDelaySeconds": 2,
     "preserveEveryAttempt": false,
