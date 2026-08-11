@@ -14,11 +14,11 @@ The prepared version is `1.2.0` and is unpublished. No `v1.2.0` tag has been cre
 
 The latest published version remains `1.1.0`. Annotated tag `v1.1.0` has tag-object SHA `d60ed3f1385678364976dfde73b4bb5e3580d702` and resolves to immutable commit `2704049d7e826975d956611b194214dd79ea3686`. GitHub Release ID `352430221` was published at `2026-07-11T05:05:47Z` and remains the current production release.
 
-Version `1.2.0` is a backward-compatible minor release preparation. PR #100 merged the primary release-preparation change set into protected `master` as `0a47444c0416c397dad769e7e66f9ad7e3119195`. Exact release-candidate selection is deliberately deferred until the remaining status-synchronization PR is merged and the repository tree is frozen. Pre-freeze SHAs are preparation history, not exact-candidate release evidence. The selected candidate is recorded in release lifecycle evidence rather than by a post-selection metadata commit that would move the candidate again.
+Version `1.2.0` is a backward-compatible minor release preparation. PR #100 merged the primary release-preparation change set into protected `master` as `0a47444c0416c397dad769e7e66f9ad7e3119195`. Exact release-candidate selection is deliberately deferred until PR #101 finishes status synchronization, is merged, and the repository tree is frozen. Pre-freeze SHAs are preparation history, not exact-candidate release evidence. The selected candidate is recorded in release lifecycle evidence rather than by a post-selection metadata commit that would move the candidate again.
 
 ## Codex Skill Behavior Evidence
 
-The final protected live behavior evaluation for the status-synchronized bounded input set completed successfully:
+Protected live behavior run `31448468682` is historical evidence for the exact bounded input set at commit `954f0a7d1fecdb50ae0c2857ebefb842b3837649`:
 
 | Field | Value |
 | --- | --- |
@@ -37,9 +37,9 @@ The final protected live behavior evaluation for the status-synchronized bounded
 | Quality average | `4.0` |
 | Human adjudication | `Pending` |
 
-The run evaluated the bounded behavior-input set containing the status-agnostic suspended-skill catalog. Subsequent status-sync commits update release metadata, checked Replay evidence, and temporary diagnostic files only; those files are outside the evaluator's bounded behavior-input set. The checked repository behavior evidence remains truthful schema `1.3.0` Replay/`NotRun`, with current `skillInputHash` `dbe31eea6ebe3469870024c759c872489dd3c7bf84c2d1ff7fd9f890b3e07d80` and manual `evaluatedInputHash` `84a6c6fad9274b2fdaf323f5a4162b1d40f02c84a4d08464a8a16c4bbc43e7c8`.
+Review subsequently required a final newline in `.agents/suspended-skills/README.md`. That file is part of the evaluator's bounded skill-input set, so the formatting-only correction changed the behavior hash. Run `31448468682` therefore must not be treated as the final unchanged-input evaluation for PR #101.
 
-`enterprise-powershell` remains physically outside the discoverable active-skills root. The passing automated evaluation satisfies the live behavior observation requirement for the unchanged bounded input set, but automation does not manufacture human approval. Attributable human adjudication is still required before any lifecycle continuation or promotion that depends on that approval.
+The final protected behavior rerun remains pending until the PR #101 behavior-bound input set is stable. The checked schema `1.3.0` Replay evidence must also be regenerated against that same stabilized input set and remains Replay/`NotRun`; it cannot be relabeled as live or passing evidence. `enterprise-powershell` remains physically outside the discoverable active-skills root, and attributable human adjudication remains pending. Automation does not manufacture human approval.
 
 ## Prepared 1.2.0 Scope
 
@@ -57,18 +57,19 @@ Historical `1.1.0` release records remain unchanged and continue to describe onl
 
 ## Remaining Release Gates
 
-`1.2.0` is not approved for tagging or publication yet. The following remain required against one unchanged final candidate SHA:
+`1.2.0` is not approved for tagging or publication yet. The following remain required:
 
-1. Merge the remaining release-preparation status synchronization and freeze the exact candidate SHA.
-2. Pass the complete hosted Governance CI success path for that candidate.
-3. Run and independently verify the controlled-failure proof for that candidate.
-4. Run and independently verify all five downstream governance canary scenarios.
-5. Verify required artifacts, hashes, runtime/dependency provenance, and evidence contents.
-6. Complete the release-lifecycle PreRelease record without relabeling `NotRun` or `Blocked` results.
-7. Obtain attributable formal release approvals and human behavior adjudication where required.
-8. Obtain explicit tag and publication authorization.
-9. Create an annotated protected `v1.2.0` tag only after authorization.
-10. Publish and independently verify the GitHub Release, then pass Publication and PostRelease gates.
+1. Complete the final protected Codex behavior rerun for PR #101's stabilized behavior-bound input set and refresh the checked Replay/`NotRun` evidence truthfully.
+2. Merge the remaining release-preparation status synchronization and freeze the exact candidate SHA.
+3. Pass the complete hosted Governance CI success path for that candidate.
+4. Run and independently verify the controlled-failure proof for that candidate.
+5. Run and independently verify all five downstream governance canary scenarios.
+6. Verify required artifacts, hashes, runtime/dependency provenance, and evidence contents.
+7. Complete the release-lifecycle PreRelease record without relabeling `NotRun` or `Blocked` results.
+8. Obtain attributable formal release approvals and human behavior adjudication where required.
+9. Obtain explicit tag and publication authorization.
+10. Create an annotated protected `v1.2.0` tag only after authorization.
+11. Publish and independently verify the GitHub Release, then pass Publication and PostRelease gates.
 
 No new tag or GitHub Release should be created before these gates are complete.
 
