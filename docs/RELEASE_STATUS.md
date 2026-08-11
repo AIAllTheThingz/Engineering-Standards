@@ -14,7 +14,7 @@ The prepared version is `1.2.0` and is unpublished. No `v1.2.0` tag has been cre
 
 The latest published version remains `1.1.0`. Annotated tag `v1.1.0` has tag-object SHA `d60ed3f1385678364976dfde73b4bb5e3580d702` and resolves to immutable commit `2704049d7e826975d956611b194214dd79ea3686`. GitHub Release ID `352430221` was published at `2026-07-11T05:05:47Z` and remains the current production release.
 
-Version `1.2.0` is a backward-compatible minor release preparation. The preparation branch started from protected `master` commit `dcdf56d20666d08bd96715f00feb5cfd88dcc635`, but that commit is not declared as the final `1.2.0` release candidate because release-preparation metadata changes the repository tree. The exact unchanged candidate SHA will be selected only after the preparation change set is merged.
+Version `1.2.0` is a backward-compatible minor release preparation. PR #100 merged the primary release-preparation change set into protected `master` as `0a47444c0416c397dad769e7e66f9ad7e3119195`. Exact release-candidate selection is deliberately deferred until all remaining release-preparation status synchronization is merged and the repository tree is frozen. Pre-freeze SHAs are preparation history, not exact-candidate release evidence. The selected candidate is recorded in release lifecycle evidence rather than by a post-selection metadata commit that would move the candidate again.
 
 ## Codex Skill Behavior Evidence
 
@@ -38,7 +38,7 @@ The latest protected live behavior evaluation completed successfully before rele
 
 This run proves the governed behavior contract for the exact commit it names. It is not silently promoted into evidence for a later release-candidate SHA.
 
-Human adjudication is still required. The checked repository evidence remains truthful Replay/`NotRun`, and `enterprise-powershell` remains physically outside the discoverable active-skills root until an attributable human approval is durably recorded. A successful automated run does not manufacture human approval.
+The final status-synchronization work removes transient `Blocked`/`Passed` wording from the suspended-skill catalog so the hashed skill input states only the durable activation rule. Because that catalog is within the evaluator's bounded skill-input set, the final frozen `1.2.0` input set requires a fresh protected live evaluation before attributable human adjudication. The checked repository evidence remains truthful Replay/`NotRun`, and `enterprise-powershell` remains physically outside the discoverable active-skills root until the required unchanged-input live evaluation and attributable human approval are complete. Automation does not manufacture human approval.
 
 ## Prepared 1.2.0 Scope
 
@@ -58,7 +58,7 @@ Historical `1.1.0` release records remain unchanged and continue to describe onl
 
 `1.2.0` is not approved for tagging or publication yet. The following remain required against one unchanged final candidate SHA:
 
-1. Select the exact candidate after release-preparation metadata is merged.
+1. Merge all remaining release-preparation status synchronization and freeze the exact candidate SHA.
 2. Pass the complete hosted Governance CI success path for that candidate.
 3. Run and independently verify the controlled-failure proof for that candidate.
 4. Run and independently verify all five downstream governance canary scenarios.
