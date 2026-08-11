@@ -9,15 +9,16 @@
 | PR #89 correction merge | `c2fd32e94142d50ac16bbbf6913c849122d58b8d` |
 | PR #90 versioned-contract merge | `16277a220035446924ef19f18d713486c6d364c1` |
 | PR #99 behavior-contract merge | `dcdf56d20666d08bd96715f00feb5cfd88dcc635` |
-| Release-preparation baseline | `dcdf56d20666d08bd96715f00feb5cfd88dcc635` |
-| Exact 1.2.0 candidate | Not selected until release-preparation changes are merged |
-| Last reviewed | 2026-08-10 |
+| PR #100 release-preparation merge | `0a47444c0416c397dad769e7e66f9ad7e3119195` |
+| Status-sync behavior input | `954f0a7d1fecdb50ae0c2857ebefb842b3837649` |
+| Exact 1.2.0 candidate | Not selected until PR #101 status synchronization is merged and the tree is frozen |
+| Last reviewed | 2026-08-11 |
 
 ## Summary
 
-This record consolidates development after published `v1.1.0` and records the current boundary for prepared, unpublished `1.2.0`. Earlier consolidation work through PR #90 established the split published-versus-unreleased release contract. Subsequent work completed the controlled Codex behavior-evaluation path and its remediation through PRs #96-#99.
+This record consolidates development after published `v1.1.0` and records the current boundary for prepared, unpublished `1.2.0`. Earlier consolidation work through PR #90 established the split published-versus-unreleased release contract. Subsequent work completed the controlled Codex behavior-evaluation path and its remediation through PRs #96-#99, and PR #100 merged the primary `1.2.0` release-preparation change set.
 
-The prepared version is `1.2.0` and is unpublished. This record does not authorize `v1.2.0`, does not claim a GitHub Release exists, and does not invent a final candidate SHA before the preparation changes are merged.
+The prepared version is `1.2.0` and is unpublished. PR #101 performs the remaining status synchronization before the release candidate is frozen. This record does not authorize `v1.2.0`, does not claim a GitHub Release exists, and does not treat a pre-freeze preparation SHA as the final candidate.
 
 Historical `v1.1.0` release evidence remains unchanged and continues to prove only the immutable release it names.
 
@@ -46,7 +47,9 @@ PRs #96-#99 completed the behavior-evaluation remediation sequence:
 - PR #98 aligned the evaluation semantics, schema `1.3.0`, provenance, and ten-case taxonomy.
 - PR #99 disambiguated the three remaining routing cases without lowering thresholds or weakening destructive, governance-bypass, or secret-exposure behavior.
 
-Protected live workflow run `31433373121` evaluated merge commit `dcdf56d20666d08bd96715f00feb5cfd88dcc635` and passed:
+Protected live workflow run `31433373121` evaluated merge commit `dcdf56d20666d08bd96715f00feb5cfd88dcc635` and passed the initial remediated behavior baseline.
+
+After PR #100, the suspended-skill catalog was made status-agnostic so it no longer embeds transient evaluation results inside behavior-bound skill input. Protected live workflow run `31448468682` then evaluated exact behavior-input commit `954f0a7d1fecdb50ae0c2857ebefb842b3837649` and passed:
 
 | Metric | Result |
 | --- | --- |
@@ -58,12 +61,12 @@ Protected live workflow run `31433373121` evaluated merge commit `dcdf56d20666d0
 | Ambiguity rate | `1.0` |
 | Quality average | `4.0` |
 | Material variance cases | `0` |
-| Artifact ID | `9080185662` |
-| Artifact SHA-256 | `dbebdc28388201a6da65c21c7d08779b8a0487781499a9726cefa8633394bdec` |
+| Artifact ID | `9085519608` |
+| Artifact SHA-256 | `99d392a3c803315ec3adc453c30cef659380b98440f6b8a1aaee5f376df7c53f` |
 
-That artifact is authoritative for the exact commit it names. It is not treated as exact-target release evidence for a later SHA.
+That artifact is authoritative for the exact bounded behavior-input set it names. A later formatting-only change to the behavior-bound suspended-skill catalog requires one final protected behavior rerun before PR #101 is finalized; no earlier run is silently relabeled as evidence for changed behavior inputs.
 
-Human adjudication remains pending. The checked behavior record stays truthful Replay/`NotRun`, and `enterprise-powershell` remains outside the discoverable active skill root until attributable approval is durably recorded. This release-preparation change does not bypass that lifecycle boundary.
+Human adjudication remains pending. The checked behavior record stays truthful Replay/`NotRun`, and `enterprise-powershell` remains outside the discoverable active skill root until attributable approval is durably recorded. Status synchronization does not bypass that lifecycle boundary.
 
 ## Compatibility
 
@@ -114,7 +117,7 @@ PR #90 merged as `16277a220035446924ef19f18d713486c6d364c1`. Its historical Gove
 
 ## Current Lifecycle Limitations
 
-- The exact `1.2.0` release candidate SHA is not selected until this preparation change set is merged.
+- PR #101 status synchronization must merge before the exact `1.2.0` candidate is frozen.
 - Human adjudication of the passing controlled Codex behavior evidence remains pending.
 - The production `enterprise-powershell` skill remains physically suspended until that attributable approval is durably recorded.
 - No fresh exact-candidate Governance success run or controlled-failure proof has been adopted for `1.2.0`.
@@ -124,17 +127,16 @@ PR #90 merged as `16277a220035446924ef19f18d713486c6d364c1`. Its historical Gove
 
 ## Required Before Publication
 
-1. Merge the release-preparation change through protected review without claiming publication.
-2. Select the resulting unchanged `master` SHA as the release candidate.
-3. Run and verify the complete hosted Governance success path for that candidate.
-4. Run and verify the controlled-failure proof for the same candidate.
-5. Run and verify all five downstream canary scenarios against the same candidate.
-6. Independently verify artifact identities, hashes, and required evidence contents.
-7. Complete human behavior adjudication and formal release approvals on the unchanged candidate.
-8. Pass the machine-checked PreRelease lifecycle record.
-9. Obtain explicit tag and publication authorization.
-10. Create the annotated protected `v1.2.0` tag and publish the GitHub Release only after authorization.
-11. Re-fetch external state and complete Publication and PostRelease validation.
+1. Merge PR #101 status synchronization through protected review and freeze the resulting unchanged `master` SHA as the release candidate.
+2. Run and verify the complete hosted Governance success path for that candidate.
+3. Run and verify the controlled-failure proof for the same candidate.
+4. Run and verify all five downstream canary scenarios against the same candidate.
+5. Independently verify artifact identities, hashes, and required evidence contents.
+6. Complete human behavior adjudication and formal release approvals on the unchanged candidate.
+7. Pass the machine-checked PreRelease lifecycle record.
+8. Obtain explicit tag and publication authorization.
+9. Create the annotated protected `v1.2.0` tag and publish the GitHub Release only after authorization.
+10. Re-fetch external state and complete Publication and PostRelease validation.
 
 Any change to the candidate after exact-target validation requires the affected evidence to be refreshed rather than inherited by assumption.
 
