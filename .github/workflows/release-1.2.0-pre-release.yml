@@ -1,0 +1,119 @@
+name: v1.2.0 PreRelease Lifecycle Validation
+
+on:
+  push:
+    branches:
+      - release/1.2.0-lifecycle-validation
+
+permissions:
+  contents: read
+
+jobs:
+  prerelease:
+    name: Exact-candidate PreRelease lifecycle
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout validation control branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          path: control
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Checkout frozen release candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: AIAllTheThingz/Engineering-Standards
+          ref: 6c0050de328ac083e69fbac8971a317689c2c1d6
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Prepare exact-candidate Live lifecycle record
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $candidateSha = '6c0050de328ac083e69fbac8971a317689c2c1d6'
+          $head = (& git -C candidate rev-parse HEAD).Trim()
+          if ($head -ne $candidateSha) { throw "Candidate checkout mismatch: $head" }
+          $dirty = @(& git -C candidate status --porcelain=v1)
+          if ($dirty.Count -gt 0) { throw 'Candidate checkout is not clean before lifecycle preparation.' }
+
+          New-Item -ItemType Directory -Path candidate/.tmp/releases -Force | Out-Null
+          $template = Get-Content -LiteralPath control/release-lifecycle/1.2.0-pre-release.template.json -Raw
+          $notesHash = (Get-FileHash -LiteralPath candidate/docs/releases/1.2.0.md -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($template -notmatch '__RELEASE_NOTES_SHA256__') { throw 'Release-notes hash placeholder is missing.' }
+          $record = $template.Replace('__RELEASE_NOTES_SHA256__', $notesHash)
+          $record | Set-Content -LiteralPath candidate/.tmp/releases/1.2.0-lifecycle.json -Encoding utf8NoBOM
+
+          $dirtyAfter = @(& git -C candidate status --porcelain=v1)
+          if ($dirtyAfter.Count -gt 0) { throw 'Lifecycle preparation changed tracked candidate state.' }
+
+      - name: Validate PreRelease lifecycle on frozen candidate
+        id: validate
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File candidate/scripts/Test-ReleaseLifecycle.ps1 `
+            -Path candidate `
+            -EvidencePath .tmp/releases/1.2.0-lifecycle.json `
+            -Stage PreRelease `
+            -OutputJson candidate/.tmp/releases/1.2.0-pre-release-result.json
+
+      - name: Create validation identity manifest
+        if: always()
+        shell: pwsh
+        env:
+          VALIDATION_OUTCOME: ${{ steps.validate.outcome }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          CONTROL_SHA: ${{ github.sha }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $recordPath = 'candidate/.tmp/releases/1.2.0-lifecycle.json'
+          $resultPath = 'candidate/.tmp/releases/1.2.0-pre-release-result.json'
+          $notesPath = 'candidate/docs/releases/1.2.0.md'
+          [ordered]@{
+            schemaVersion = '1.0.0'
+            repository = 'AIAllTheThingz/Engineering-Standards'
+            candidateSha = '6c0050de328ac083e69fbac8971a317689c2c1d6'
+            candidateHead = (& git -C candidate rev-parse HEAD).Trim()
+            controlBranch = 'release/1.2.0-lifecycle-validation'
+            controlSha = $env:CONTROL_SHA
+            runId = [int64]$env:RUN_ID
+            runAttempt = [int]$env:RUN_ATTEMPT
+            validationOutcome = $env:VALIDATION_OUTCOME
+            releaseNotesSha256 = (Get-FileHash -LiteralPath $notesPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            lifecycleRecordSha256 = $(if (Test-Path -LiteralPath $recordPath) { (Get-FileHash -LiteralPath $recordPath -Algorithm SHA256).Hash.ToLowerInvariant() } else { $null })
+            validationResultSha256 = $(if (Test-Path -LiteralPath $resultPath) { (Get-FileHash -LiteralPath $resultPath -Algorithm SHA256).Hash.ToLowerInvariant() } else { $null })
+            releaseApproval = 'https://github.com/AIAllTheThingz/Engineering-Standards/issues/102#issuecomment-5261328410'
+            behaviorAdjudication = 'https://github.com/AIAllTheThingz/Engineering-Standards/issues/102#issuecomment-5261327053'
+            publicationAuthorization = 'https://github.com/AIAllTheThingz/Engineering-Standards/issues/102#issuecomment-5261329942'
+            tagRulesetId = 20724760
+          } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath candidate/.tmp/releases/1.2.0-pre-release-manifest.json -Encoding utf8NoBOM
+
+      - name: Upload PreRelease lifecycle evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-lifecycle-1.2.0-${{ github.run_id }}
+          path: |
+            candidate/.tmp/releases/1.2.0-lifecycle.json
+            candidate/.tmp/releases/1.2.0-pre-release-result.json
+            candidate/.tmp/releases/1.2.0-pre-release-manifest.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce PreRelease lifecycle result
+        if: always()
+        shell: pwsh
+        env:
+          VALIDATION_OUTCOME: ${{ steps.validate.outcome }}
+        run: |
+          if ($env:VALIDATION_OUTCOME -ne 'success') {
+            throw "PreRelease lifecycle validation did not pass: $env:VALIDATION_OUTCOME"
+          }
+          Write-Output 'PreRelease lifecycle validation passed for the frozen v1.2.0 candidate.'
