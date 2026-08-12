@@ -1,0 +1,288 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordType": "release-lifecycle",
+  "mode": "Live",
+  "synthetic": false,
+  "repository": "AIAllTheThingz/Engineering-Standards",
+  "version": "1.2.0",
+  "candidateSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+  "finalHeadSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+  "createdAtUtc": "2026-08-12T02:18:27Z",
+  "createdBy": "AIAllTheThingz release approval issue #102",
+  "releaseNotes": {
+    "path": "docs/releases/1.2.0.md",
+    "reviewedSha256": "__RELEASE_NOTES_SHA256__"
+  },
+  "compatibilityMatrix": {
+    "path": "governance/downstream-compatibility.json",
+    "schemaVersion": "1.1.0"
+  },
+  "preRelease": {
+    "status": "Passed",
+    "reason": null,
+    "checks": [
+      {
+        "id": "clean-worktree",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Frozen protected master remains at the exact release candidate; Live validation independently rechecks exact HEAD and clean worktree.",
+        "targetSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+        "evidence": [
+          "https://github.com/AIAllTheThingz/Engineering-Standards/commit/6c0050de328ac083e69fbac8971a317689c2c1d6"
+        ]
+      },
+      {
+        "id": "repository-validation",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Exact-candidate hosted Governance CI completed successfully with mandatory governance enforcement passing.",
+        "targetSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+        "evidence": [
+          "https://github.com/AIAllTheThingz/Engineering-Standards/actions/runs/31503776110"
+        ]
+      },
+      {
+        "id": "pester",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Exact-candidate hosted governance evidence records the complete maintainer Pester suite passing 1027 of 1027 tests.",
+        "targetSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+        "evidence": [
+          "https://github.com/AIAllTheThingz/Engineering-Standards/actions/runs/31503776110"
+        ]
+      },
+      {
+        "id": "psscriptanalyzer",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Exact-candidate hosted governance evidence records PSScriptAnalyzer validation as Passed.",
+        "targetSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+        "evidence": [
+          "https://github.com/AIAllTheThingz/Engineering-Standards/actions/runs/31503776110"
+        ]
+      },
+      {
+        "id": "json-schemas",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Exact-candidate hosted governance validation passed the repository JSON schema and fixture checks.",
+        "targetSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+        "evidence": [
+          "https://github.com/AIAllTheThingz/Engineering-Standards/actions/runs/31503776110"
+        ]
+      },
+      {
+        "id": "workflow-architecture",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Exact-candidate hosted governance validation passed workflow architecture and immutable trust-boundary checks.",
+        "targetSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+        "evidence": [
+          "https://github.com/AIAllTheThingz/Engineering-Standards/actions/runs/31503776110"
+        ]
+      },
+      {
+        "id": "codex-skills",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Protected exact-candidate behavior evaluation passed 10 of 10 cases and 30 of 30 samples and received attributable human adjudication.",
+        "targetSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+        "evidence": [
+          "https://github.com/AIAllTheThingz/Engineering-Standards/actions/runs/31516098457",
+          "https://github.com/AIAllTheThingz/Engineering-Standards/issues/102#issuecomment-5261327053"
+        ]
+      },
+      {
+        "id": "documentation",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Exact-candidate hosted governance validation passed documentation completeness and consistency checks.",
+        "targetSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+        "evidence": [
+          "https://github.com/AIAllTheThingz/Engineering-Standards/actions/runs/31503776110"
+        ]
+      },
+      {
+        "id": "evidence",
+        "status": "Passed",
+        "reason": null,
+        "summary": "Success, controlled-failure, protected behavior, and all five downstream canary artifacts were independently downloaded and hash verified.",
+        "targetSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+        "evidence": [
+          "https://github.com/AIAllTheThingz/Engineering-Standards/actions/runs/31503776110",
+          "https://github.com/AIAllTheThingz/Engineering-Standards/actions/runs/31517687522",
+          "https://github.com/AIAllTheThingz/Engineering-Standards-Canary/pull/5"
+        ]
+      },
+      {
+        "id": "release-consistency",
+        "status": "Passed",
+        "reason": null,
+        "summary": "VERSION, prepared changelog section, release notes, workflow interface, compatibility Preview contract, and migration guidance agree on 1.2.0.",
+        "targetSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+        "evidence": [
+          "https://github.com/AIAllTheThingz/Engineering-Standards/blob/6c0050de328ac083e69fbac8971a317689c2c1d6/VERSION",
+          "https://github.com/AIAllTheThingz/Engineering-Standards/blob/6c0050de328ac083e69fbac8971a317689c2c1d6/CHANGELOG.md",
+          "https://github.com/AIAllTheThingz/Engineering-Standards/blob/6c0050de328ac083e69fbac8971a317689c2c1d6/docs/releases/1.2.0.md"
+        ]
+      }
+    ],
+    "successRun": {
+      "status": "Passed",
+      "reason": null,
+      "runId": 31503776110,
+      "conclusion": "success",
+      "targetSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+      "artifact": {
+        "name": "governance-evidence-31503776110",
+        "artifactId": 9106643455,
+        "sha256": "3f8a75d134738ea2fcaaa665180874bbae15759d42398381b4bf8fe1ee92ad50",
+        "downloaded": true,
+        "verified": true
+      }
+    },
+    "controlledFailureRun": {
+      "status": "Passed",
+      "reason": null,
+      "runId": 31517687522,
+      "conclusion": "failure",
+      "targetSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+      "failedStep": "Enforce mandatory governance result",
+      "priorMandatoryStepsPassed": true,
+      "artifactUploadedBeforeFailure": true,
+      "artifact": {
+        "name": "governance-evidence-31517687522",
+        "artifactId": 9112188742,
+        "sha256": "15998aba51b5b990318271fb3d0e1c52b1fc1c1316590f7fe2c33248be010f52",
+        "downloaded": true,
+        "verified": true
+      }
+    },
+    "downstreamCanary": {
+      "status": "Passed",
+      "reason": null,
+      "repository": "AIAllTheThingz/Engineering-Standards-Canary",
+      "canaryCommitSha": "717e8186e2396efcd12224cdde62a386b621a0a4",
+      "standardsSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+      "scenarios": [
+        {
+          "name": "success",
+          "runId": 31546568302,
+          "conclusion": "success",
+          "expectedConclusion": "success",
+          "verified": true,
+          "artifact": {
+            "name": "governance-evidence-31546568302",
+            "artifactId": 9122709528,
+            "sha256": "4158dbf57ada5ffb1593c72b0d8d0de6f1bfc0e7451026be8d7b81784ab8d4e9",
+            "downloaded": true,
+            "verified": true
+          }
+        },
+        {
+          "name": "controlled-failure",
+          "runId": 31546747074,
+          "conclusion": "failure",
+          "expectedConclusion": "failure",
+          "verified": true,
+          "artifact": {
+            "name": "governance-evidence-31546747074",
+            "artifactId": 9122778782,
+            "sha256": "2f89648649da6821ffd0eb580b0f6946daeeb1c098ff818846e117e8799dbb96",
+            "downloaded": true,
+            "verified": true
+          }
+        },
+        {
+          "name": "governance-version-mismatch",
+          "runId": 31550817810,
+          "conclusion": "failure",
+          "expectedConclusion": "failure",
+          "verified": true,
+          "artifact": {
+            "name": "governance-evidence-31550817810",
+            "artifactId": 9124195708,
+            "sha256": "89eb6c3f70caf0014f3ede03bb879433cb58ce189fee80a04040a5157639834a",
+            "downloaded": true,
+            "verified": true
+          }
+        },
+        {
+          "name": "missing-required-file",
+          "runId": 31547911162,
+          "conclusion": "failure",
+          "expectedConclusion": "failure",
+          "verified": true,
+          "artifact": {
+            "name": "governance-evidence-31547911162",
+            "artifactId": 9123176055,
+            "sha256": "a990fdf1f5707b978d122db6e9d077b5e1db8705b5943c79505649c70693abfe",
+            "downloaded": true,
+            "verified": true
+          }
+        },
+        {
+          "name": "mandatory-control-disablement",
+          "runId": 31549110379,
+          "conclusion": "failure",
+          "expectedConclusion": "failure",
+          "verified": true,
+          "artifact": {
+            "name": "governance-evidence-31549110379",
+            "artifactId": 9123576839,
+            "sha256": "44971ce9a694d0bba37d6374dc2a9eb7cb7b1c5c76eddcbec290cc7b19a55098",
+            "downloaded": true,
+            "verified": true
+          }
+        }
+      ]
+    },
+    "metadataConsistency": {
+      "status": "Passed",
+      "reason": null,
+      "versionFile": "1.2.0",
+      "changelogVersion": "1.2.0",
+      "releaseNotesVersion": "1.2.0",
+      "workflowInterfaceVersion": "1.0.0",
+      "supportedProjectManifestSchemaVersions": [
+        "1.0.0",
+        "1.1.0",
+        "1.2.0"
+      ],
+      "migrationGuidance": "docs/releases/1.2.0.md"
+    },
+    "approvals": [
+      {
+        "reviewer": "AIAllTheThingz",
+        "isHuman": true,
+        "decision": "Approved",
+        "targetSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+        "location": "https://github.com/AIAllTheThingz/Engineering-Standards/issues/102#issuecomment-5261328410",
+        "submittedAtUtc": "2026-08-12T02:18:27Z"
+      }
+    ],
+    "protection": {
+      "branch": {
+        "status": "Passed",
+        "reason": null,
+        "pattern": "master",
+        "verifiedAtUtc": "2026-08-12T02:18:27Z"
+      },
+      "tag": {
+        "status": "Passed",
+        "reason": null,
+        "pattern": "v*",
+        "verifiedAtUtc": "2026-08-12T02:18:27Z"
+      }
+    }
+  },
+  "publication": {
+    "status": "NotRun",
+    "reason": "Publication has not started; tag and GitHub Release creation are authorized only after this PreRelease gate passes."
+  },
+  "postRelease": {
+    "status": "NotRun",
+    "reason": "PostRelease verification has not started because v1.2.0 has not yet been published."
+  },
+  "exceptions": []
+}
