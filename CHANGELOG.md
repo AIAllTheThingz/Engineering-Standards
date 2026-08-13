@@ -173,7 +173,6 @@ Version `1.2.0` was published on 2026-08-12. Work after published target `6c0050
   its original schema.
 - Existing aggregate commands with `-Category` remain accepted, but the option now filters optional profile categories only. Maintainers should remove hand-maintained category lists and use the complete default command documented in the Issue #22 coverage matrix.
 - `v1.2.0` is the latest published governance release at immutable commit `6c0050de328ac083e69fbac8971a317689c2c1d6`; `v1.1.0` remains historical at `2704049d7e826975d956611b194214dd79ea3686`.
-- Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `de32b77e2043f5336a54b92ab9ed867abe93ba7e`.
 - Issue #103 records the v1.2.0 publication follow-up; a later patch release will supersede the temporary direct-workflow guidance.
 - See [Release Status](docs/RELEASE_STATUS.md) for the authoritative published state and [1.2.0 Release Record](docs/releases/1.2.0.md) for the immutable release boundary.
 

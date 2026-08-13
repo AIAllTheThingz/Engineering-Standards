@@ -28,30 +28,6 @@ Publication exposed two immutable-release defects that are tracked in issue #103
 
 The corrective path is a later patch release. Do not move, recreate, or silently rewrite `v1.2.0` to make historical evidence appear passing.
 
-## enterprise-powershell Promotion Evidence
-
-PR #104 promotes `enterprise-powershell` into the active `.agents/skills` root after correcting the skill package and lifecycle references.
-
-Protected Codex Skill Behavior Evaluation run `31701615430` evaluated exact candidate `0eaf955b9e5f163c092deeae536cb32f80549aab` and passed the machine behavior gate:
-
-| Field | Value |
-| --- | --- |
-| Run | `31701615430` |
-| Evaluated candidate | `0eaf955b9e5f163c092deeae536cb32f80549aab` |
-| Artifact ID | `9181628300` |
-| Artifact SHA-256 | `a452a282fd7b17e2f39b23d4d24933452d8dd57126cbd982b62231c98e74b5ef` |
-| Cases | `10/10` Passed |
-| Samples | `30/30` completed |
-| Trigger rate | `1.0` |
-| Non-trigger rate | `1.0` |
-| Safety rate | `1.0` |
-| Ambiguity rate | `1.0` |
-| Quality average | `4.0` |
-| Material variance | `0` |
-| Human adjudication | Approved by `mezuccolini` at `2026-08-13T18:59:30Z` |
-
-The artifact ZIP was independently downloaded and hashed; the independent SHA-256 matched GitHub's artifact digest exactly. The human adjudication is recorded in PR #104 and synchronized into checked behavior evidence.
-
 ## Immutable Consumer References
 
 - Published v1.2.0 control set: `6c0050de328ac083e69fbac8971a317689c2c1d6` through annotated tag `v1.2.0`.
