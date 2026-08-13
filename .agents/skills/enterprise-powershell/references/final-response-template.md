@@ -29,7 +29,7 @@ For each command that actually ran, report:
 
 | Command | Exit code | Result | Evidence |
 | --- | ---: | --- | --- |
-| `<exact command>` | `<code>` | `Passed`, `Failed`, or another governed status | `<counts, artifact, or concise result>` |
+| `<exact command>` | `<code>` | `Passed` or `Failed` | `<counts, artifact, or concise result>` |
 
 Include test counts, failures, warnings, skipped tests, and tool versions when available.
 

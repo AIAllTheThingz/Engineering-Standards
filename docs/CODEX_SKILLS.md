@@ -45,7 +45,7 @@ Repository validation is defined in [Codex Skill Validation](CODEX_SKILL_VALIDAT
 
 ## Current Skill
 
-The first implemented skill is [`enterprise-powershell`](../.agents/suspended-skills/enterprise-powershell/SKILL.md); it is currently outside the discoverable active-skills root while suspended.
+The first implemented skill is [`enterprise-powershell`](../.agents/skills/enterprise-powershell/SKILL.md). In the current promotion candidate it is placed under the discoverable active-skills root. Merge remains gated on a passing live behavior evaluation for the exact final candidate, attributable human approval, and required repository validation.
 
 It creates or substantially modifies governed enterprise PowerShell automation, including project structure, configuration, credential handling, safe operating modes, reporting, tests, documentation, validation, and completion evidence.
 
@@ -338,7 +338,7 @@ Skills require human review because changing a skill can change how Codex perfor
 - Policy drift.
 - Distribution impact.
 - Backward compatibility.
-- Whether a new skill should be separate rather than enlarging an existing one.
+- Whether a new skill should be separate rather than enlarging an existing one).
 
 ### 5. Release
 
@@ -381,14 +381,11 @@ A skill installed without its governing context is incomplete. If central standa
 
 ## Demonstration Skill Resolution And Optional Promotion
 
-`enterprise-powershell` is implemented but currently Suspended outside the discoverable `.agents/skills` root by the checked
-`Blocked` controlled behavior result. It may return to Active only after a
-passing unchanged-input live evaluation and attributable human approval.
+`enterprise-powershell` is the governed production skill in the current promotion candidate and is located under `.agents/skills`. The move alone does not authorize merge: the exact final candidate must pass the protected live behavior evaluation, receive attributable human approval, and satisfy required repository validation before promotion is accepted.
 
 Issues #43 through #49 are closed as not planned and superseded by
 portfolio-grade home-lab demonstrations. Their original production Active-skill
-acceptance criteria were intentionally not completed. No production promotion
-is currently planned; a future promotion requires a new or reopened issue,
+acceptance criteria were intentionally not completed. Those demo-only skills remain outside production promotion; any future promotion requires a new or reopened issue,
 passing controlled live behavior evaluation, attributable approval, and all
 other lifecycle evidence.
 

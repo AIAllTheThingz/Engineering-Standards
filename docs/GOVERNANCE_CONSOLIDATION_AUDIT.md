@@ -41,9 +41,9 @@ The authoritative example catalog is [`examples/README.md`](../examples/README.m
 - 15 isolated home-lab skill demonstrations.
 - Explicit separation between functional validation evidence and demonstration output.
 
-The authoritative production-skill catalog is [`.agents/suspended-skills/README.md`](../.agents/suspended-skills/README.md). It contains one governed production skill, `enterprise-powershell`, with status `Suspended`. Issues #43 through #49 remain resolved by demo-only home labs rather than incomplete production skill placeholders.
+At the PR #90 audit boundary, the authoritative production-skill catalog was `.agents/suspended-skills/README.md`. It contained one governed production skill, `enterprise-powershell`, with status `Suspended`. That path is recorded here as historical state rather than a live link. Issues #43 through #49 remain resolved by demo-only home labs rather than incomplete production skill placeholders.
 
-No Active production skill is implied by the example catalog. Demo output remains nonproduction and is not controlled behavior evidence.
+No Active production skill is implied by the example catalog at the PR #90 audit boundary. Demo output remains nonproduction and is not controlled behavior evidence.
 
 ## Standards Reconciliation
 

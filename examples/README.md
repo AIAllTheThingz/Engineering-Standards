@@ -11,8 +11,8 @@ test entry point.
 | --- | ---: | --- |
 | Governed functional examples | 10 | This file |
 | Isolated home-lab demonstrations | 15 | This file |
-| Suspended production skills | 1 | [`.agents/suspended-skills/README.md`](../.agents/suspended-skills/README.md) |
-| Active production skills | 0 | [Codex Skills](../docs/CODEX_SKILLS.md) |
+| Suspended production skills | 0 | [Codex Skills](../docs/CODEX_SKILLS.md) |
+| Active production skills | 1 | [Codex Skills](../docs/CODEX_SKILLS.md) |
 
 Functional examples produce technology-specific validation evidence. Home-lab
 packages produce demonstration output only. A package appearing in this catalog

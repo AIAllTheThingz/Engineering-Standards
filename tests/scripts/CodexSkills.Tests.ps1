@@ -79,15 +79,12 @@ function Set-AggregateFixtureIdentity {
 }
 
 Describe 'Codex skill validation' {
-    It 'validates the suspended repository skill without making it actively discoverable' {
+    It 'validates the active repository skill in the discoverable production root' {
         $report = Invoke-CodexSkillValidation -Path $repoRoot
         $report.deterministicStatus | Should -Be 'Passed'
-        $report.modelEvaluationStatus | Should -Be 'NotApplicable'
-        $report.skillsDiscovered | Should -Not -Contain 'enterprise-powershell'
-        Test-Path -LiteralPath (Join-Path $repoRoot '.agents/suspended-skills/enterprise-powershell/SKILL.md') | Should -BeTrue
-        $suspendedReport = Invoke-CodexSkillValidation -Path $repoRoot -SkillsRootRelative '.agents/suspended-skills'
-        $suspendedReport.deterministicStatus | Should -Be 'Passed'
-        $suspendedReport.skillsDiscovered | Should -Contain 'enterprise-powershell'
+        $report.skillsDiscovered | Should -Contain 'enterprise-powershell'
+        Test-Path -LiteralPath (Join-Path $repoRoot '.agents/skills/enterprise-powershell/SKILL.md') | Should -BeTrue
+        Test-Path -LiteralPath (Join-Path $repoRoot '.agents/suspended-skills/enterprise-powershell/SKILL.md') | Should -BeFalse
     }
 
     It 'fails malformed suspended skill structure through the aggregate wrapper' {

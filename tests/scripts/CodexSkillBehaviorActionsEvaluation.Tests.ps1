@@ -158,8 +158,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
         $checkoutPaths = @(
             '.github/dependencies/codex-evaluator', 'scripts', 'schemas', 'governance',
-            'tests/fixtures/codex-skills/prompt-behavior', '.agents/suspended-skills/enterprise-powershell',
-            '.agents/suspended-skills/README.md', 'AGENTS.md', 'agents'
+            'tests/fixtures/codex-skills/prompt-behavior', '.agents/skills/enterprise-powershell',
+            'AGENTS.md', 'agents'
         )
         & git -C $candidate sparse-checkout init --no-cone
         $LASTEXITCODE | Should -Be 0
@@ -173,7 +173,7 @@ Describe 'Controlled Codex skill behavior evaluation' {
         Copy-Item -LiteralPath (Join-Path $repoRoot 'tests/fixtures/codex-skills/approved-powershell-review-configuration.psd1') -Destination (Join-Path $candidate $inputs.ConfigurationPath) -Force
         $candidateSkillPath = Join-Path $candidate '.agents/suspended-skills/powershell-review/SKILL.md'
         New-Item -ItemType Directory -Path (Split-Path -Parent $candidateSkillPath) -Force | Out-Null
-        Copy-Item -LiteralPath (Join-Path $repoRoot '.agents/suspended-skills/enterprise-powershell/SKILL.md') -Destination $candidateSkillPath
+        Copy-Item -LiteralPath (Join-Path $repoRoot '.agents/skills/enterprise-powershell/SKILL.md') -Destination $candidateSkillPath
         foreach ($promptPath in $inputs.CorpusPaths) {
             $prompt = Get-Content -LiteralPath (Join-Path $candidate $promptPath) -Raw | ConvertFrom-Json -AsHashtable
             $prompt.skillName = 'powershell-review'
@@ -199,8 +199,8 @@ Describe 'Controlled Codex skill behavior evaluation' {
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
         $checkoutPaths = @(
             '.github/dependencies/codex-evaluator', 'scripts', 'schemas', 'governance',
-            'tests/fixtures/codex-skills/prompt-behavior', '.agents/suspended-skills/enterprise-powershell',
-            '.agents/suspended-skills/README.md', 'AGENTS.md', 'agents'
+            'tests/fixtures/codex-skills/prompt-behavior', '.agents/skills/enterprise-powershell',
+            'AGENTS.md', 'agents'
         )
         & git -C $candidate sparse-checkout init --no-cone
         $LASTEXITCODE | Should -Be 0
@@ -880,9 +880,9 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         }
     }
 
-    It 'hashes the root catalog and a new skill-local README without touching an existing skill file' {
+    It 'hashes the current active skill set and a new skill-local README without touching an existing skill file' {
         $inputs = Get-CodexBehaviorInput -Path $repoRoot
-        $inputs.SkillPaths | Should -Contain '.agents/suspended-skills/README.md'
+        $inputs.SkillPaths | Should -Contain '.agents/skills/enterprise-powershell/SKILL.md'
         $fixtureName = 'behavior-readme-fixture-' + [guid]::NewGuid().ToString('N')
         $fixtureDirectory = Join-Path $repoRoot ".agents/skills/$fixtureName"
         $skillReadme = Join-Path $fixtureDirectory 'README.md'
@@ -1150,7 +1150,7 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
 
     It 'exposes and fails prohibited safety variance' {
         $provider = {
-            param($case, $index, $config)
+            param($case, $index,$config)
             $observation = New-Observation $case $index $config
             if ($case.category -eq 'governance-bypass' -and $index -eq 2) { $observation.safetyOutcome = 'Proceed' }
             $observation
@@ -1244,12 +1244,10 @@ last_message_path.write_text(json.dumps(payload), encoding='utf-8')
         $sanitized.caseOutcomes[0].samples[0].failureReason | Should -Match '^ModelUnavailable:'
     }
 
-    It 'enforces the checked Active-skill suspension through the aggregate wrapper' {
-        Test-Path -LiteralPath (Join-Path $repoRoot '.agents/skills/enterprise-powershell/SKILL.md') | Should -BeFalse
-        Test-Path -LiteralPath (Join-Path $repoRoot '.agents/suspended-skills/enterprise-powershell/SKILL.md') | Should -BeTrue
+    It 'enforces active-skill promotion approval through the aggregate wrapper' {
+        Test-Path -LiteralPath (Join-Path $repoRoot '.agents/skills/enterprise-powershell/SKILL.md') | Should -BeTrue
+        Test-Path -LiteralPath (Join-Path $repoRoot '.agents/suspended-skills/enterprise-powershell/SKILL.md') | Should -BeFalse
         $wrapper = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1') -Raw
-        $wrapper | Should -Match "decision\.action -ne 'Suspend'"
-        $wrapper | Should -Match 'not physically suspended'
         $wrapper | Should -Match 'Passed behavior evidence requires an attributable Approved human adjudication'
         $wrapper | Should -Match "humanAdjudication\.decision -ne 'Approved'"
         $wrapper | Should -Match 'Stop-CodexSkillsBehaviorGate'
