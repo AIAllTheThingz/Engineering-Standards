@@ -178,7 +178,7 @@ Describe 'Codex skill validation' {
     It 'selects only approved per-skill behavior verifiers and blocks unknown skills' {
         $wrapperPath = Join-Path $repoRoot 'scripts/Test-CodexSkills.ps1'
         $wrapper = Get-Content -LiteralPath $wrapperPath -Raw
-        $wrapper | Should -Match "'enterprise-powershell' \{ 'Test-CodexSkillBehaviorEvidence\.ps1'; break \}"
+        $wrapper | Should -Match "'enterprise-powershell' \{ 'Test-CodexSkillBehaviorActionsEvidence\.ps1'; break \}"
         $wrapper | Should -Match "'powershell-review' \{ 'Test-CodexSkillBehaviorActionsEvidence\.ps1'; break \}"
         $wrapper | Should -Match "default \{\s+Stop-CodexSkillsBehaviorGate .* does not have an approved behavior-evidence verifier\."
 
