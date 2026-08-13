@@ -17,7 +17,7 @@ The latest published version is `1.2.0`. Annotated tag `v1.2.0` has tag-object S
 
 GitHub Release `v1.2.0` exists as release ID `369234609`, is non-draft and non-prerelease, and was published at `2026-08-12T12:48:46Z`.
 
-Current `master` and open pull requests may contain development after the published target. Historical release evidence validates only the exact commit, run, artifact, or bounded input set it names.
+Current `master` contains development after the published target. Historical release evidence is bounded to the exact commit, run, artifact, or input set it names and does not validate current `master`.
 
 ## Known v1.2.0 Follow-Up
 
@@ -48,9 +48,9 @@ Protected Codex Skill Behavior Evaluation run `31701615430` evaluated exact cand
 | Ambiguity rate | `1.0` |
 | Quality average | `4.0` |
 | Material variance | `0` |
-| Human adjudication | Pending |
+| Human adjudication | Approved by `mezuccolini` at `2026-08-13T18:59:30Z` |
 
-The artifact ZIP was independently downloaded and hashed; the independent SHA-256 matched GitHub's artifact digest exactly. Automation leaves human adjudication pending and cannot manufacture approval.
+The artifact ZIP was independently downloaded and hashed; the independent SHA-256 matched GitHub's artifact digest exactly. The human adjudication is recorded in PR #104 and synchronized into checked behavior evidence.
 
 ## Immutable Consumer References
 
@@ -63,8 +63,8 @@ Production consumers should use immutable published or explicitly documented aut
 ## Verification Boundaries
 
 - The published v1.2.0 tag and release are historical external state and are not rewritten by repository metadata cleanup.
-- A successful hosted workflow does not imply human approval.
-- Checked Replay evidence remains `NotRun` unless a separate real live artifact exists and is explicitly referenced.
+- A successful hosted workflow does not imply human approval unless attributable adjudication is separately recorded.
+- Checked behavior evidence may claim Passed only when the live artifact and attributable human adjudication are both present and verifiable.
 - Missing, failed, blocked, or unverifiable release gates remain visible rather than being relabeled as Passed.
 - Issue #103 owns repair of the v1.2.0 annotated-tag workflow-identity defect and release-notes integrity defect.
 
