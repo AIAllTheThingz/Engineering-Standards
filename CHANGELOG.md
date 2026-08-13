@@ -6,6 +6,8 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 Version `1.2.0` was published on 2026-08-12. Work after published target `6c0050de328ac083e69fbac8971a317689c2c1d6` is unreleased development and must be recorded here rather than attributed retroactively to the immutable release.
 
+- Migrated the `enterprise-powershell` aggregate behavior-evidence gate to the dual-profile `Test-CodexSkillBehaviorActionsEvidence.ps1` verifier so trusted Actions-origin evidence and compatible manual or replay evidence are validated without rewriting evaluator identity.
+
 ## [1.2.0] - 2026-08-12
 
 ### Release Status

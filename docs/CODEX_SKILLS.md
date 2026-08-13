@@ -216,10 +216,12 @@ pwsh -NoProfile -File scripts/Test-CodexSkillBehaviorEvidence.ps1 -Path .
 ```
 
 The aggregate `Test-CodexSkills.ps1` gate selects an evidence verifier only by
-the exact skill name in the approved configuration. During the evaluator
-migration, `enterprise-powershell` retains the legacy verifier and
-`powershell-review` uses the isolated Actions verifier. An unrecognized governed
-skill has no verifier fallback and is reported as `Blocked`.
+the exact skill name in the approved configuration. `enterprise-powershell` and
+`powershell-review` both use the dual-profile Actions verifier,
+`Test-CodexSkillBehaviorActionsEvidence.ps1`, which preserves compatible manual
+or replay evidence handling while validating trusted Actions-origin evidence
+without rewriting evaluator identity. An unrecognized governed skill has no
+verifier fallback and is reported as `Blocked`.
 
 The approved contract is
 [`governance/codex-skill-behavior-evaluation.psd1`](../governance/codex-skill-behavior-evaluation.psd1).
