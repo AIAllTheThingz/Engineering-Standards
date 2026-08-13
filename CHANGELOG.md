@@ -4,19 +4,19 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ## [Unreleased]
 
-No unreleased changes are currently recorded. Version `1.2.0` is prepared but unpublished; new work after the final `1.2.0` release candidate is selected must be recorded here rather than silently added to that candidate.
+Version `1.2.0` was published on 2026-08-12. Work after published target `6c0050de328ac083e69fbac8971a317689c2c1d6` is unreleased development and must be recorded here rather than attributed retroactively to the immutable release.
 
-## [1.2.0] - Prepared 2026-08-10 (unpublished)
+## [1.2.0] - 2026-08-12
 
 ### Release Status
 
-- Selected semantic version: `1.2.0`.
-- Publication status: Prepared and unpublished. No `v1.2.0` tag or GitHub Release exists yet.
-- Published production baseline remains `v1.1.0` at immutable commit `2704049d7e826975d956611b194214dd79ea3686`.
-- PR #100 merged the primary release-preparation change set as `0a47444c0416c397dad769e7e66f9ad7e3119195`; the exact unchanged `1.2.0` release candidate will be frozen only after PR #101 status synchronization is merged.
+- Semantic version: `1.2.0`.
+- Publication status: Published. Annotated tag `v1.2.0` has tag-object SHA `42fa18ed9744fa98ce1f9048e3610f7ed6ff7507` and resolves to immutable commit `6c0050de328ac083e69fbac8971a317689c2c1d6`.
+- GitHub Release ID `369234609` was published as non-draft and non-prerelease on 2026-08-12.
+- Published `v1.1.0` remains historical at immutable commit `2704049d7e826975d956611b194214dd79ea3686`.
 - Protected Codex Skill Behavior Evaluation run `31448468682` passed against status-sync behavior-input commit `954f0a7d1fecdb50ae0c2857ebefb842b3837649` with `10/10` cases, `30/30` samples, `1.0` trigger, non-trigger, safety, and ambiguity rates, quality average `4.0`, and zero material variance. Artifact `9085519608` has SHA-256 `99d392a3c803315ec3adc453c30cef659380b98440f6b8a1aaee5f376df7c53f`.
-- A formatting-only correction to the behavior-bound suspended-skill catalog requires one final protected behavior rerun before PR #101 is finalized; earlier behavior runs remain evidence only for the exact inputs they evaluated.
-- Human behavior adjudication, exact-candidate release evidence, downstream canaries, release approvals, tag authorization, and publication authorization remain separate required gates.
+- Issue #103 tracks the annotated-tag reusable-workflow identity correction and the published release-body mismatch for a later patch release.
+- Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `de32b77e2043f5336a54b92ab9ed867abe93ba7e`.
 
 ### Added
 
@@ -162,7 +162,7 @@ No unreleased changes are currently recorded. Version `1.2.0` is prepared but un
 - Protected Codex Skill Behavior Evaluation run `31433373121` evaluated `dcdf56d20666d08bd96715f00feb5cfd88dcc635` and passed the initial remediated behavior baseline with `10/10` cases, `30/30` completed samples, and zero material variance.
 - Protected status-sync run `31448468682` evaluated behavior-input commit `954f0a7d1fecdb50ae0c2857ebefb842b3837649` and passed `10/10` cases, `30/30` completed samples, all aggregate rates `1.0`, quality average `4.0`, and zero material variance.
 - Sanitized hosted behavior artifact `9085519608` has SHA-256 `99d392a3c803315ec3adc453c30cef659380b98440f6b8a1aaee5f376df7c53f`.
-- A final formatting-only change to the behavior-bound suspended-skill catalog requires a fresh protected run before PR #101 finalization. Human adjudication remains required, and no pre-freeze behavior run substitutes for exact-candidate `1.2.0` lifecycle evidence.
+- These behavior records remain historical evidence for the exact bounded inputs they evaluated. Later post-release skill promotion uses separately governed evidence.
 
 ### Migration Notes
 
@@ -172,10 +172,10 @@ No unreleased changes are currently recorded. Version `1.2.0` is prepared but un
   independently verified. Existing `v1.1.0` historical evidence is retained in
   its original schema.
 - Existing aggregate commands with `-Category` remain accepted, but the option now filters optional profile categories only. Maintainers should remove hand-maintained category lists and use the complete default command documented in the Issue #22 coverage matrix.
-- `v1.1.0` remains the latest published release while `1.2.0` is prepared and unpublished. Consumers needing the published control set may use tag `v1.1.0` at `2704049d7e826975d956611b194214dd79ea3686`.
+- `v1.2.0` is the latest published governance release at immutable commit `6c0050de328ac083e69fbac8971a317689c2c1d6`; `v1.1.0` remains historical at `2704049d7e826975d956611b194214dd79ea3686`.
 - Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `de32b77e2043f5336a54b92ab9ed867abe93ba7e`.
-- Production consumers should not treat `1.2.0`, `master`, or the release-preparation branch as a published compatibility promise until the authorized tag and GitHub Release are created and independently verified.
-- See [Release Status](docs/RELEASE_STATUS.md) for the authoritative published-versus-prepared boundary and [1.2.0 Release Preparation](docs/releases/1.2.0.md) for remaining release gates.
+- Issue #103 records the v1.2.0 publication follow-up; a later patch release will supersede the temporary direct-workflow guidance.
+- See [Release Status](docs/RELEASE_STATUS.md) for the authoritative published state and [1.2.0 Release Record](docs/releases/1.2.0.md) for the immutable release boundary.
 
 ## [1.1.0] - 2026-06-30
 
