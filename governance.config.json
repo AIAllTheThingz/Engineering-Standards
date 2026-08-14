@@ -2,7 +2,7 @@
   "schemaVersion": "1.2.0",
   "manifestPath": "project-manifest.json",
   "governanceVersion": "1.2.1",
-  "governanceCommitSha": "9befbd8d6d0d2e8f07c660265ab092f159552b30",
+  "governanceCommitSha": "7c6e9921e4942dd99ad423a94aefe60a6a3f4e54",
   "workflowInterfaceVersion": "1.0.0",
   "workflowProfile": "standards-maintainer",
   "workflowInterface": {
