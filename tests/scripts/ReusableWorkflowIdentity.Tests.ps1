@@ -37,6 +37,20 @@ function script:New-TestTagName {
     "v999.0.0-$Suffix-$([guid]::NewGuid().ToString('N').Substring(0, 10))"
 }
 
+function script:New-AnnotatedTestTag {
+    param(
+        [Parameter(Mandatory)][string]$Tag,
+        [Parameter(Mandatory)][string]$Target,
+        [Parameter(Mandatory)][string]$Message
+    )
+
+    & git -C $script:repoRoot `
+        -c user.name='Engineering Standards Test' `
+        -c user.email='engineering-standards-test@example.invalid' `
+        tag -a $Tag -m $Message $Target
+    $LASTEXITCODE | Should -Be 0
+}
+
 Describe 'Reusable workflow immutable identity resolution' {
     It 'accepts a direct immutable commit reference' {
         $result = Invoke-IdentityResolver -WorkflowSha $script:head -Reference "$script:workflowPrefix$script:head"
@@ -52,8 +66,7 @@ Describe 'Reusable workflow immutable identity resolution' {
     It 'accepts an annotated semantic-version tag object that peels to HEAD' {
         $tag = New-TestTagName -Suffix annotated
         $script:createdTags.Add($tag)
-        & git -C $script:repoRoot tag -a $tag -m "Synthetic annotated workflow identity tag" $script:head
-        $LASTEXITCODE | Should -Be 0
+        New-AnnotatedTestTag -Tag $tag -Target $script:head -Message 'Synthetic annotated workflow identity tag'
         $tagObject = (& git -C $script:repoRoot rev-parse --verify "refs/tags/$tag").Trim()
 
         $result = Invoke-IdentityResolver -WorkflowSha $tagObject -Reference "$script:workflowPrefix`refs/tags/$tag"
@@ -89,8 +102,7 @@ Describe 'Reusable workflow immutable identity resolution' {
         $parent = (& git -C $script:repoRoot rev-parse --verify 'HEAD^').Trim()
         $tag = New-TestTagName -Suffix stale
         $script:createdTags.Add($tag)
-        & git -C $script:repoRoot tag -a $tag -m "Synthetic stale workflow identity tag" $parent
-        $LASTEXITCODE | Should -Be 0
+        New-AnnotatedTestTag -Tag $tag -Target $parent -Message 'Synthetic stale workflow identity tag'
         $tagObject = (& git -C $script:repoRoot rev-parse --verify "refs/tags/$tag").Trim()
 
         $result = Invoke-IdentityResolver -WorkflowSha $tagObject -Reference "$script:workflowPrefix`refs/tags/$tag"
@@ -102,8 +114,7 @@ Describe 'Reusable workflow immutable identity resolution' {
     It 'rejects a tag ref whose object does not match job.workflow_sha' {
         $tag = New-TestTagName -Suffix mismatch
         $script:createdTags.Add($tag)
-        & git -C $script:repoRoot tag -a $tag -m "Synthetic mismatch workflow identity tag" $script:head
-        $LASTEXITCODE | Should -Be 0
+        New-AnnotatedTestTag -Tag $tag -Target $script:head -Message 'Synthetic mismatch workflow identity tag'
 
         $result = Invoke-IdentityResolver -WorkflowSha $script:head -Reference "$script:workflowPrefix`refs/tags/$tag"
 
