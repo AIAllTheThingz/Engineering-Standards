@@ -33,7 +33,7 @@ The root governance workflow interface remains `1.0.0`; supported project-manife
 
 ## Validation State
 
-- Repository and candidate hosted validation for the final `1.2.1` candidate: `NotRun` until the pull-request candidate is frozen and GitHub reports final results.
+- Repository validation and hosted validation for the final `1.2.1` candidate: `NotRun` until the pull-request candidate is frozen and GitHub reports final results.
 - Controlled-failure hosted proof for the final candidate: `NotRun`.
 - Five-scenario downstream canary against the exact final candidate SHA: `NotRun`.
 - Independent artifact verification for those runs: `NotRun`.
