@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "Passed",
+  "standardsRepository": "AIAllTheThingz/Engineering-Standards",
+  "workflowPath": ".github/workflows/governance-ci-reusable.yml",
+  "workflowRef": "AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@refs/tags/v1.2.0",
+  "workflowObjectSha": "42fa18ed9744fa98ce1f9048e3610f7ed6ff7507",
+  "referenceKind": "AnnotatedTag",
+  "standardsCommitSha": "6c0050de328ac083e69fbac8971a317689c2c1d6"
+}
