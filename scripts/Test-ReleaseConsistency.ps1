@@ -117,15 +117,39 @@ if (Test-Path -LiteralPath $compatibilityMatrixPath -PathType Leaf) {
     try {
         $compatibilityRaw = Get-Content -LiteralPath $compatibilityMatrixPath -Raw
         $compatibilityMatrix = $compatibilityRaw | ConvertFrom-Json
-        if (@('1.0.0', '1.1.0') -cnotcontains [string]$compatibilityMatrix.schemaVersion) {
+        if (@('1.0.0', '1.1.0', '1.2.0') -cnotcontains [string]$compatibilityMatrix.schemaVersion) {
             $failures.Add("Downstream compatibility schemaVersion '$($compatibilityMatrix.schemaVersion)' is unsupported.")
         }
         $hasFunctionalWorkflows = $compatibilityMatrix.unreleasedContract.PSObject.Properties.Name -ccontains 'functionalWorkflows'
         if ($compatibilityMatrix.schemaVersion -ceq '1.0.0' -and $hasFunctionalWorkflows) {
             $failures.Add('Downstream compatibility schema 1.0.0 must not contain functionalWorkflows.')
         }
-        if ($compatibilityMatrix.schemaVersion -ceq '1.1.0' -and @($compatibilityMatrix.unreleasedContract.functionalWorkflows).Count -lt 1) {
-            $failures.Add('Downstream compatibility schema 1.1.0 requires functionalWorkflows.')
+        if ($compatibilityMatrix.schemaVersion -in @('1.1.0', '1.2.0') -and @($compatibilityMatrix.unreleasedContract.functionalWorkflows).Count -lt 1) {
+            $failures.Add("Downstream compatibility schema $($compatibilityMatrix.schemaVersion) requires functionalWorkflows.")
+        }
+        $hasCanaryValidationStatus = $compatibilityMatrix.unreleasedContract.PSObject.Properties.Name -ccontains 'canaryValidationStatus'
+        if ($compatibilityMatrix.schemaVersion -in @('1.0.0', '1.1.0') -and $hasCanaryValidationStatus) {
+            $failures.Add("Downstream compatibility schema $($compatibilityMatrix.schemaVersion) must not contain canaryValidationStatus.")
+        }
+        if ($compatibilityMatrix.schemaVersion -ceq '1.2.0') {
+            if (-not $hasCanaryValidationStatus) {
+                $failures.Add('Downstream compatibility schema 1.2.0 requires canaryValidationStatus.')
+            }
+            else {
+                $canaryValidationStatus = [string]$compatibilityMatrix.unreleasedContract.canaryValidationStatus
+                if (@('Passed', 'Failed', 'Blocked', 'NotRun', 'NotApplicable') -cnotcontains $canaryValidationStatus) {
+                    $failures.Add("Downstream compatibility canaryValidationStatus '$canaryValidationStatus' is noncanonical.")
+                }
+                $matrixCanarySha = $compatibilityMatrix.unreleasedContract.canaryValidatedWorkflowSha
+                if ($canaryValidationStatus -ceq 'Passed') {
+                    if ($null -eq $matrixCanarySha -or [string]$matrixCanarySha -cnotmatch '^[0-9a-f]{40}$') {
+                        $failures.Add('Passed downstream canary validation requires a full immutable canaryValidatedWorkflowSha.')
+                    }
+                }
+                elseif ($null -ne $matrixCanarySha) {
+                    $failures.Add("Downstream canary status '$canaryValidationStatus' must not retain an immutable canary authority.")
+                }
+            }
         }
         if (-not ($compatibilityRaw | Test-Json -SchemaFile $compatibilitySchemaPath)) {
             $failures.Add('Downstream compatibility matrix does not validate against its version-aware JSON Schema.')

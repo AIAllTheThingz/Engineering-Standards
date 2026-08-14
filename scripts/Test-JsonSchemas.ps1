@@ -44,6 +44,8 @@ $map = @{
     'verified-run' = 'verified-run'
     'standards-consistency' = 'standards-consistency'
     'codex-skill-behavior-evaluation' = 'codex-skill-behavior-evaluation'
+    'workflow-identity' = 'workflow-identity'
+    'workflow-environment' = 'workflow-environment'
 }
 foreach ($mode in @('valid','invalid')) {
     $fixtureRoot = Join-Path $root "tests/fixtures/$mode"
@@ -53,14 +55,14 @@ foreach ($mode in @('valid','invalid')) {
             if ($fixture.BaseName -like "$key*") { $kind = $map[$key] }
         }
         if (-not $kind) { continue }
-        if ($kind -eq 'codex-skill-behavior-evaluation') {
+        if ($kind -in @('codex-skill-behavior-evaluation','workflow-identity','workflow-environment')) {
             try {
-                $schemaPath = Join-Path $root 'schemas/codex-skill-behavior-evaluation.schema.json'
+                $schemaPath = Join-Path $root "schemas/$kind.schema.json"
                 $schemaValid = (Get-Content -LiteralPath $fixture.FullName -Raw | Test-Json -SchemaFile $schemaPath -ErrorAction Stop)
-                $fixtureResults = @((New-ValidationResult -Status $(if ($schemaValid) { 'Passed' } else { 'Failed' }) -Message 'Codex behavior evidence fixture schema validation completed.' -Path $fixture.FullName))
+                $fixtureResults = @((New-ValidationResult -Status $(if ($schemaValid) { 'Passed' } else { 'Failed' }) -Message "$kind fixture schema validation completed." -Path $fixture.FullName))
             }
             catch {
-                $fixtureResults = @((New-ValidationResult -Status Failed -Message "Codex behavior evidence fixture schema validation failed: $($_.Exception.Message)" -Path $fixture.FullName))
+                $fixtureResults = @((New-ValidationResult -Status Failed -Message "$kind fixture schema validation failed: $($_.Exception.Message)" -Path $fixture.FullName))
             }
         }
         else {
@@ -178,12 +180,21 @@ try {
     $compatibilityMatrix = $compatibilityRaw | ConvertFrom-Json -Depth 100 -AsHashtable
     $compatibilityRequired = @('schemaVersion', 'repository', 'updatedAtUtc', 'ownerRole', 'supportPolicy', 'governanceReleases', 'unreleasedContract')
     $missingCompatibilityMembers = @($compatibilityRequired | Where-Object { -not $compatibilityMatrix.Contains($_) })
-    $supportedCompatibilityVersions = @('1.0.0', '1.1.0')
+    $supportedCompatibilityVersions = @('1.0.0', '1.1.0', '1.2.0')
     $hasFunctionalWorkflows = $compatibilityMatrix.Contains('unreleasedContract') -and $compatibilityMatrix.unreleasedContract.Contains('functionalWorkflows')
     $functionalWorkflowCount = if ($hasFunctionalWorkflows) { @($compatibilityMatrix.unreleasedContract.functionalWorkflows).Count } else { 0 }
+    $hasCanaryValidationStatus = $compatibilityMatrix.Contains('unreleasedContract') -and $compatibilityMatrix.unreleasedContract.Contains('canaryValidationStatus')
+    $canaryStatus = if ($hasCanaryValidationStatus) { [string]$compatibilityMatrix.unreleasedContract.canaryValidationStatus } else { '' }
+    $canarySha = if ($compatibilityMatrix.Contains('unreleasedContract') -and $compatibilityMatrix.unreleasedContract.Contains('canaryValidatedWorkflowSha')) { $compatibilityMatrix.unreleasedContract.canaryValidatedWorkflowSha } else { $null }
+    $canaryShapeInvalid =
+        ($compatibilityMatrix.schemaVersion -in @('1.0.0', '1.1.0') -and $hasCanaryValidationStatus) -or
+        ($compatibilityMatrix.schemaVersion -ceq '1.2.0' -and (-not $hasCanaryValidationStatus -or @('Passed','Failed','Blocked','NotRun','NotApplicable') -cnotcontains $canaryStatus)) -or
+        ($compatibilityMatrix.schemaVersion -ceq '1.2.0' -and $canaryStatus -ceq 'Passed' -and ($null -eq $canarySha -or [string]$canarySha -cnotmatch '^[0-9a-f]{40}$')) -or
+        ($compatibilityMatrix.schemaVersion -ceq '1.2.0' -and $canaryStatus -cne 'Passed' -and $null -ne $canarySha)
     $versionShapeInvalid =
         ($compatibilityMatrix.schemaVersion -ceq '1.0.0' -and $hasFunctionalWorkflows) -or
-        ($compatibilityMatrix.schemaVersion -ceq '1.1.0' -and $functionalWorkflowCount -lt 1)
+        ($compatibilityMatrix.schemaVersion -in @('1.1.0', '1.2.0') -and $functionalWorkflowCount -lt 1) -or
+        $canaryShapeInvalid
     $schemaValid = $false
     try {
         $schemaValid = $compatibilityRaw | Test-Json -SchemaFile $compatibilitySchemaPath -ErrorAction Stop

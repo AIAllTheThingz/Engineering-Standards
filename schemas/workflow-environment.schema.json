@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:aiallthethingz:engineering-standards:schema:workflow-environment",
+  "title": "Hosted Workflow Environment Identity Fields",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "standardsRepository",
+    "standardsWorkflowSha",
+    "standardsWorkflowObjectSha",
+    "standardsWorkflowRef",
+    "standardsWorkflowReferenceKind"
+  ],
+  "properties": {
+    "standardsRepository": {
+      "type": "string",
+      "const": "AIAllTheThingz/Engineering-Standards"
+    },
+    "standardsWorkflowSha": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "standardsWorkflowObjectSha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "standardsWorkflowRef": {
+      "type": "string",
+      "minLength": 1
+    },
+    "standardsWorkflowReferenceKind": {
+      "type": "string",
+      "enum": ["Commit", "AnnotatedTag", "Unresolved"]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "standardsWorkflowReferenceKind": { "const": "Commit" }
+        },
+        "required": ["standardsWorkflowReferenceKind"]
+      },
+      "then": {
+        "properties": {
+          "standardsWorkflowSha": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "standardsWorkflowRef": {
+            "pattern": "^AIAllTheThingz/Engineering-Standards/\\.github/workflows/governance-ci-reusable\\.yml@[0-9a-f]{40}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "standardsWorkflowReferenceKind": { "const": "AnnotatedTag" }
+        },
+        "required": ["standardsWorkflowReferenceKind"]
+      },
+      "then": {
+        "properties": {
+          "standardsWorkflowSha": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "standardsWorkflowRef": {
+            "pattern": "^AIAllTheThingz/Engineering-Standards/\\.github/workflows/governance-ci-reusable\\.yml@refs/tags/v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "standardsWorkflowReferenceKind": { "const": "Unresolved" }
+        },
+        "required": ["standardsWorkflowReferenceKind"]
+      },
+      "then": {
+        "properties": {
+          "standardsWorkflowSha": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}

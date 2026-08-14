@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:aiallthethingz:engineering-standards:schema:workflow-identity",
+  "title": "Reusable Workflow Identity Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "status",
+    "standardsRepository",
+    "workflowPath",
+    "workflowRef",
+    "workflowObjectSha",
+    "referenceKind",
+    "standardsCommitSha"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0.0" },
+    "status": { "type": "string", "const": "Passed" },
+    "standardsRepository": { "type": "string", "const": "AIAllTheThingz/Engineering-Standards" },
+    "workflowPath": { "type": "string", "const": ".github/workflows/governance-ci-reusable.yml" },
+    "workflowRef": {
+      "type": "string",
+      "pattern": "^AIAllTheThingz/Engineering-Standards/\\.github/workflows/governance-ci-reusable\\.yml@(?:[0-9a-f]{40}|refs/tags/v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?)$"
+    },
+    "workflowObjectSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "referenceKind": { "type": "string", "enum": ["Commit", "AnnotatedTag"] },
+    "standardsCommitSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "referenceKind": { "const": "Commit" } }, "required": ["referenceKind"] },
+      "then": {
+        "properties": {
+          "workflowRef": {
+            "pattern": "@[0-9a-f]{40}$"
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "referenceKind": { "const": "AnnotatedTag" } }, "required": ["referenceKind"] },
+      "then": {
+        "properties": {
+          "workflowRef": {
+            "pattern": "@refs/tags/v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+          }
+        }
+      }
+    }
+  ]
+}

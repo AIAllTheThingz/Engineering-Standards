@@ -2,12 +2,13 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Active |
-| Contract version | 1.1.0 |
+| Status | Active; 1.2.1 preview prepared |
+| Contract version | 1.2.0 |
 | Latest published governance release | 1.2.0 |
 | Published target | `6c0050de328ac083e69fbac8971a317689c2c1d6` |
+| Prepared governance release | 1.2.1, unpublished |
 | Owner role | Release Maintainers |
-| Last reviewed | 2026-08-13 |
+| Last reviewed | 2026-08-14 |
 
 ## Purpose
 
@@ -17,16 +18,17 @@ A moving branch is never release evidence. Consumers MUST select an immutable pu
 
 ## Contract Schema Versions
 
-The compatibility document supports two record shapes:
+The compatibility document supports three record shapes:
 
-- `1.0.0` preserves the historical shape and does not contain `functionalWorkflows`.
-- `1.1.0` requires `functionalWorkflows` in the unreleased contract.
+- `1.0.0` preserves the historical shape and does not contain `functionalWorkflows` or an explicit canary status.
+- `1.1.0` requires `functionalWorkflows` and retains the historical concrete `canaryValidatedWorkflowSha` shape.
+- `1.2.0` requires `functionalWorkflows` plus explicit `canaryValidationStatus`. `Passed` requires a full immutable `canaryValidatedWorkflowSha`; `Failed`, `Blocked`, `NotRun`, and `NotApplicable` require the canary authority to remain `null` so historical evidence cannot be silently reused for a new candidate.
 
 These document-schema versions are independent from the repository governance release version.
 
 ## Published Matrix
 
-Published `1.2.0` is the latest supported governance release. Annotated tag `v1.2.0` has tag-object SHA `42fa18ed9744fa98ce1f9048e3610f7ed6ff7507` and resolves to immutable commit `6c0050de328ac083e69fbac8971a317689c2c1d6`. GitHub Release ID `369234609` was published on 2026-08-12.
+Published `1.2.0` remains the latest supported governance release. Annotated tag `v1.2.0` has tag-object SHA `42fa18ed9744fa98ce1f9048e3610f7ed6ff7507` and resolves to immutable commit `6c0050de328ac083e69fbac8971a317689c2c1d6`. GitHub Release ID `369234609` was published on 2026-08-12.
 
 Published `1.2.0` supports:
 
@@ -37,16 +39,26 @@ Published `1.2.0` supports:
 
 Published `1.1.0` remains historical and supported at annotated tag `v1.1.0`, resolving to commit `2704049d7e826975d956611b194214dd79ea3686`.
 
-## Known v1.2.0 Follow-Up
+## Prepared v1.2.1 Preview
 
-Publication exposed two immutable-release defects tracked in issue #103:
+Version `1.2.1` is prepared and unpublished. The preview intentionally keeps the same central workflow interface and supported schema sets as `1.2.0`; the patch is corrective rather than a new downstream governance obligation.
 
-1. The v1.2.0 reusable-workflow identity check does not correctly distinguish an annotated tag object SHA from the peeled commit SHA.
-2. The GitHub Release body was auto-generated rather than matching the reviewed release-note body exactly.
+The prepared patch repairs issue #103 by making reusable governance workflow identity validation explicitly annotated-tag-aware while preserving exact commit binding. GitHub's tag-object SHA and the peeled standards commit are verified separately and recorded as separate provenance values. Direct full-SHA pins remain supported. Branches, lightweight tags, malformed refs, unexpected repositories, unexpected workflow paths, mismatched tag objects, and mismatched peeled commits fail closed.
 
-Do not move, recreate, or rewrite `v1.2.0` to conceal these defects. They require a later patch release. Until that patch is published, consumers that require the independently canary-validated repaired central reusable workflow should pin the existing immutable authority directly:
+The machine-readable preview records `canaryValidationStatus: NotRun` and a null canary authority until exact-candidate external validation is actually observed. Historical governance-1.1 canary evidence is therefore preserved as history rather than relabeled as proof for 1.2.1.
 
-`AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e`
+The prepared semantic version and preview matrix do not make the branch or its current head a production authority. Exact final-candidate hosted proof, the five-scenario external canary, independent artifact verification, attributable approval, and publication remain required.
+
+## Historical v1.2.0 Follow-Up
+
+Issue #103 records two defects discovered after `v1.2.0` publication:
+
+1. the published reusable workflow did not distinguish the annotated tag-object SHA from its peeled commit SHA;
+2. the GitHub Release body was auto-generated instead of matching reviewed release notes exactly.
+
+Do not move, recreate, delete, or rewrite `v1.2.0` to conceal these defects. Until `v1.2.1` is published and PostRelease verification succeeds, 1.2 consumers needing the complete published workflow set should use the full published target commit `6c0050de328ac083e69fbac8971a317689c2c1d6` rather than annotated `v1.2.0`.
+
+The independently canary-validated `de32b77e2043f5336a54b92ab9ed867abe93ba7e` authority is historical governance-1.1 evidence. It is not the complete 1.2 distribution and is not relabeled as 1.2.1 validation.
 
 ## Functional Workflow Authorities
 
@@ -66,17 +78,17 @@ These SHAs are distribution authorities recorded by the corresponding workflow c
 5. When Python or Bash functional validation is required, pin the matching functional workflow `immutableSha`.
 6. Retain adoption evidence with the chosen entry and its stated limitations.
 
-Production consumers MAY adopt immutable published `v1.2.0` for the published control set, subject to the documented issue #103 limitations. Consumers needing the repaired reusable-governance workflow should pin `de32b77e2043f5336a54b92ab9ed867abe93ba7e` until the patch release supersedes that guidance. They MUST NOT substitute `master`, another moving branch, or an undocumented mutable reference for an immutable supported authority.
+Production consumers MUST NOT substitute `master`, the `1.2.1` preparation branch, another moving branch, or an undocumented mutable reference for an immutable supported authority.
 
 ## Future Release Gate
 
-Future releases must synchronize the matrix with `VERSION`, changelog, release notes, schema declarations, workflow interfaces, migration guidance, and functional workflow authorities on the exact candidate head.
+The prepared patch must synchronize the matrix with `VERSION`, changelog, release notes, schema declarations, workflow interfaces, migration guidance, and functional workflow authorities on the exact final candidate head.
 
 ```powershell
 pwsh -NoProfile -File scripts/Test-ReleaseLifecycle.ps1 -Path . -EvidencePath <release-lifecycle-record.json> -Stage PreRelease
 ```
 
-Reusable-workflow changes also require the applicable exact-candidate external canary contract; repository self-CI is necessary but does not replace external consumer proof.
+Reusable-workflow changes also require the exact-candidate external canary contract; repository self-CI is necessary but does not replace external consumer proof. After publication, the canary must also exercise the published annotated `v1.2.1` ref before PostRelease can pass.
 
 ## Support, Evidence, And Exceptions
 
@@ -89,9 +101,10 @@ An exception requires a `GOV-*` record with owner, scope, rationale, expiration,
 ## Related
 
 - [Release Status](RELEASE_STATUS.md)
+- [Prepared v1.2.1 Release Notes](releases/1.2.1.md)
 - [Release Process](RELEASE_PROCESS.md)
 - [Versioning](VERSIONING.md)
-- [1.2.0 Release Record](releases/1.2.0.md)
+- [v1.2.0 Historical Release Record](releases/1.2.0.md)
 - [Downstream Governance Canary](DOWNSTREAM_CANARY.md)
 - [Adoption Guide](ADOPTION_GUIDE.md)
 - [Troubleshooting](TROUBLESHOOTING.md)

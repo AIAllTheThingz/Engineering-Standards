@@ -4,9 +4,37 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ## [Unreleased]
 
-Version `1.2.0` was published on 2026-08-12. Work after published target `6c0050de328ac083e69fbac8971a317689c2c1d6` is unreleased development and must be recorded here rather than attributed retroactively to the immutable release.
+No unreleased changes outside the prepared `1.2.1` patch scope are currently recorded.
 
-- Migrated the `enterprise-powershell` aggregate behavior-evidence gate to the dual-profile `Test-CodexSkillBehaviorActionsEvidence.ps1` verifier so trusted Actions-origin evidence and compatible manual or replay evidence are validated without rewriting evaluator identity.
+## [1.2.1] - Unreleased
+
+### Release Status
+
+- Semantic version: `1.2.1`.
+- Publication status: Prepared and unpublished. No `v1.2.1` tag or GitHub Release is claimed by this repository state.
+- Latest published version remains `1.2.0` at immutable target `6c0050de328ac083e69fbac8971a317689c2c1d6`; published `v1.2.0` is not moved or rewritten.
+- Historical governance-1.1 consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e`; this retained authority is historical evidence and is not the prepared v1.2.1 candidate authority.
+
+### Fixed
+
+- Repaired reusable governance workflow identity handling for annotated semantic-version release tags by verifying the exact GitHub-reported tag object, requiring an annotated tag object, peeling it to a commit, and requiring that commit to match the trusted standards checkout.
+- Preserved exact binding for direct full-SHA workflow pins while continuing to reject branches, lightweight tags, malformed refs, wrong repositories, wrong workflow paths, mismatched tag objects, and mismatched peeled commits.
+- Added separate hosted provenance for the workflow object SHA and peeled standards commit SHA while retaining commit-based completion-evidence semantics.
+- Defined `docs/releases/1.2.1.md` as the exact reviewed GitHub Release body so publication cannot silently substitute auto-generated `What's Changed` notes.
+- Synchronized post-`v1.2.0` release-state and compatibility guidance and migrated the `enterprise-powershell` aggregate behavior-evidence gate to the dual-profile Actions verifier without weakening lifecycle or human-adjudication requirements.
+
+### Validation
+
+- Final-candidate Governance CI and controlled-failure proof: `NotRun` until the pull-request candidate is frozen and GitHub reports the exact-candidate runs.
+- Exact-candidate five-scenario downstream canary and independent artifact verification: `NotRun`.
+- Attributable final-head human release approval: `NotRun`.
+- Tag creation, GitHub Release publication, published-ref canary, Publication gate, and PostRelease gate: `NotRun`; these require separately authorized external actions.
+
+### Migration Notes
+
+- Published `v1.2.0` consumers should retain the full immutable target SHA while the patch is unpublished; annotated `v1.2.0` remains subject to issue #103.
+- Prepared `1.2.1` does not change the central workflow interface or supported project-manifest, test-evidence, or completion-result schema sets.
+- Moving branches, including the patch preparation branch, are not release authority.
 
 ## [1.2.0] - 2026-08-12
 
@@ -211,7 +239,7 @@ Release approval is `Approved`; `GOV-2026-001` is `Not required`. PR #12 remedia
 - Rebuilt `agents/AGENTS_WorkerService.md` as a comprehensive enterprise Worker Service standard covering execution models, state machines, atomic claims, leases, delivery semantics, idempotency, concurrency, polling, scheduling, DST, retries, poison work, dead letters, replay, cancellation, timeouts, side effects, script/process execution, security, observability, health, capacity, deployment compatibility, validation, evidence, and exceptions.
 - Corrected `agents/AGENTS_WorkerService.md` remaining issues by strengthening ownership-protected finalization, immutable script/executable identity, PowerShell execution semantics, immutable job inputs, artifact publication integrity, mandatory durable transactional handoff, safer container validation guidance, and validator/Pester coverage.
 - Rebuilt `agents/AGENTS_Infrastructure.md` as a comprehensive enterprise infrastructure standard covering discovery, risk, execution modes, source of truth, environment targeting, plan/apply separation, approval, state backends, state migration, supply-chain pinning, destructive changes, storage, networking, DNS/IPAM, IAM/RBAC, secrets, PKI, Kubernetes, backup/DR, HA, drift, policy, cost, observability, deployment, rollback, CI/CD, validation, evidence, and exceptions.
-- Corrected `agents/AGENTS_Infrastructure.md` remaining issues by strengthening IIS, Windows Service, systemd, DNS/IPAM, protected-production image digest, temporary firewall lifecycle, service-account/workload-identity, Terraform backendless validation, and CloudFormation change-set controls, with validator and Pester failure-path coverage.
+- Corrected `agents/AGENTS_Infrastructure.md` remaining issues by strengthening IIS, Windows Service, systemd, DNS/IPAM, protected-production image digest, temporary firewall lifecycle, service-account/workload-identity, Terraform backendless validation guidance, and CloudFormation change-set controls, with validator and Pester failure-path coverage.
 
 ## [1.0.0] - 2026-06-19
 
@@ -221,7 +249,7 @@ Initial production-quality governance baseline prepared for review. Downstream r
 
 ### Added
 
-- Fully authored governance policies for organization contract, completion evidence, risk classification, exception handling, and AI-generated code.
+- Fully authored governance policies for organization contract, completion evidence, risk classification, exception handling, and AI-generated-code policy.
 - Base and technology-specific agent standards for PowerShell, .NET, web frontend, database, worker service, integration, and infrastructure work.
 - JSON schemas and fixtures for project manifests, governance configuration, test evidence, artifact records, and completion results.
 - PowerShell validation module, contract validation, evidence validation, documentation completeness validation, repository health validation, and forbidden-pattern scanning.
