@@ -17,8 +17,15 @@
       "const": "AIAllTheThingz/Engineering-Standards"
     },
     "standardsWorkflowSha": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{40}$"
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "standardsWorkflowObjectSha": {
       "type": "string",
@@ -43,6 +50,10 @@
       },
       "then": {
         "properties": {
+          "standardsWorkflowSha": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
           "standardsWorkflowRef": {
             "pattern": "^AIAllTheThingz/Engineering-Standards/\\.github/workflows/governance-ci-reusable\\.yml@[0-9a-f]{40}$"
           }
@@ -58,8 +69,27 @@
       },
       "then": {
         "properties": {
+          "standardsWorkflowSha": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
           "standardsWorkflowRef": {
             "pattern": "^AIAllTheThingz/Engineering-Standards/\\.github/workflows/governance-ci-reusable\\.yml@refs/tags/v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "standardsWorkflowReferenceKind": { "const": "Unresolved" }
+        },
+        "required": ["standardsWorkflowReferenceKind"]
+      },
+      "then": {
+        "properties": {
+          "standardsWorkflowSha": {
+            "type": "null"
           }
         }
       }
