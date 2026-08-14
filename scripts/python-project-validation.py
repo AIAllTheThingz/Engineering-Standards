@@ -195,8 +195,8 @@ def parse_project_metadata(project: Path) -> dict[str, Any]:
     build_system = data.get("build-system", {})
     if build_system.get("build-backend") != "hatchling.build":
         raise ValueError("only the reviewed hatchling.build backend is supported")
-    if build_system.get("requires") != ["hatchling==1.31.0"]:
-        raise ValueError("build-system requirements must be exactly hatchling==1.31.0")
+    if build_system.get("requires") != ["hatchling==1.32.0"]:
+        raise ValueError("build-system requirements must be exactly hatchling==1.32.0")
     if "backend-path" in build_system:
         raise ValueError("build-system backend-path is not permitted")
     project_table = data.get("project", {})
