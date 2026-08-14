@@ -105,21 +105,35 @@ jobs:
             throw 'Reusable workflow identity evidence failed its owned JSON Schema.'
           }
           $identityJson | Set-Content -LiteralPath evidence/workflow-identity.json -Encoding utf8
-          if ([string]::IsNullOrWhiteSpace($env:PROJECT_PATH)) { throw 'project-path must not be empty.' }
-          if ([System.IO.Path]::IsPathRooted($env:PROJECT_PATH) -or $env:PROJECT_PATH -match '(^|[\/])\.\.([\/]|$)') {
-            throw 'project-path must be repository-relative and must not contain traversal.'
-          }
-          $retention = [int]$env:RETENTION_DAYS
-          if ($retention -lt 1 -or $retention -gt 90) { throw 'artifact-retention-days must be between 1 and 90.' }
-          $repositoryOwnerType = switch -CaseSensitive ($env:CALLER_REPOSITORY_OWNER_TYPE) {
-            'User' { 'User'; break }
-            'Organization' { 'Organization'; break }
-            default { 'Unknown' }
-          }
-          "repository-owner-type=$repositoryOwnerType" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "artifact-retention-days=$retention" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+          # Persist the verified identity before validating caller-controlled inputs.
+          # GitHub preserves values already written to GITHUB_OUTPUT when a later
+          # command in this step fails, so failure evidence can keep the verified
+          # peeled commit instead of falling back to the workflow object SHA.
           "standards-commit-sha=$($identity.standardsCommitSha)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           "workflow-reference-kind=$($identity.referenceKind)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          'identity-resolved=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+          try {
+            if ([string]::IsNullOrWhiteSpace($env:PROJECT_PATH)) { throw 'project-path must not be empty.' }
+            if ([System.IO.Path]::IsPathRooted($env:PROJECT_PATH) -or $env:PROJECT_PATH -match '(^|[\/])\.\.([\/]|$)') {
+              throw 'project-path must be repository-relative and must not contain traversal.'
+            }
+            $retention = [int]$env:RETENTION_DAYS
+            if ($retention -lt 1 -or $retention -gt 90) { throw 'artifact-retention-days must be between 1 and 90.' }
+            $repositoryOwnerType = switch -CaseSensitive ($env:CALLER_REPOSITORY_OWNER_TYPE) {
+              'User' { 'User'; break }
+              'Organization' { 'Organization'; break }
+              default { 'Unknown' }
+            }
+            "repository-owner-type=$repositoryOwnerType" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            "artifact-retention-days=$retention" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
+          catch {
+            $inputError = [string]$_.Exception.Message
+            "input-validation-error=$inputError" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            throw
+          }
 
       - name: Set up pinned Python
         id: setup_python
@@ -178,7 +192,7 @@ jobs:
         shell: pwsh
         env:
           STANDARDS_REPOSITORY: ${{ job.workflow_repository }}
-          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha || job.workflow_sha }}
+          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha }}
           STANDARDS_WORKFLOW_OBJECT_SHA: ${{ job.workflow_sha }}
           STANDARDS_WORKFLOW_REF: ${{ job.workflow_ref }}
           STANDARDS_WORKFLOW_REFERENCE_KIND: ${{ steps.inputs.outputs.workflow-reference-kind || 'Unresolved' }}
@@ -196,6 +210,7 @@ jobs:
         run: |
           Import-Module ./standards/scripts/ValidatorDependencyTools.psm1 -Force
           $lock = Import-ValidatorDependencyLock -Path ./standards/.github/dependencies/validator-dependencies.psd1
+          $resolvedStandardsSha = if ($env:STANDARDS_WORKFLOW_REFERENCE_KIND -eq 'Unresolved' -or [string]::IsNullOrWhiteSpace($env:STANDARDS_WORKFLOW_SHA)) { $null } else { $env:STANDARDS_WORKFLOW_SHA }
           $environmentJson = [ordered]@{
             callerRepository = $env:CALLER_REPOSITORY
             callerRepositoryOwnerType = $env:CALLER_REPOSITORY_OWNER_TYPE
@@ -204,7 +219,7 @@ jobs:
             callerRefName = $env:CALLER_REF_NAME
             callerWorkspace = 'caller'
             standardsRepository = $env:STANDARDS_REPOSITORY
-            standardsWorkflowSha = $env:STANDARDS_WORKFLOW_SHA
+            standardsWorkflowSha = $resolvedStandardsSha
             standardsWorkflowObjectSha = $env:STANDARDS_WORKFLOW_OBJECT_SHA
             standardsWorkflowRef = $env:STANDARDS_WORKFLOW_REF
             standardsWorkflowReferenceKind = $env:STANDARDS_WORKFLOW_REFERENCE_KIND
@@ -262,7 +277,8 @@ jobs:
         shell: pwsh
         env:
           STANDARDS_REPOSITORY: ${{ job.workflow_repository }}
-          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha || job.workflow_sha }}
+          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha }}
+          INPUT_VALIDATION_ERROR: ${{ steps.inputs.outputs.input-validation-error }}
           CALLER_REPOSITORY: ${{ github.repository }}
           CALLER_COMMIT_SHA: ${{ github.sha }}
           GOVERNANCE_VERSION: ${{ inputs.governance-version }}
@@ -271,7 +287,13 @@ jobs:
           Import-Module ./standards/scripts/GovernanceValidation.psm1 -Force
           $failure = $null
           if ('${{ steps.inputs.outcome }}' -ne 'success') {
-            $failure = 'Reusable workflow identity validation failed before trusted governance validation could run.'
+            if ('${{ steps.inputs.outputs.identity-resolved }}' -eq 'true') {
+              $inputDetail = if ([string]::IsNullOrWhiteSpace($env:INPUT_VALIDATION_ERROR)) { 'Caller input validation failed after workflow identity was verified.' } else { $env:INPUT_VALIDATION_ERROR }
+              $failure = "Reusable workflow caller input validation failed after workflow identity was verified: $inputDetail"
+            }
+            else {
+              $failure = 'Reusable workflow identity validation failed before trusted governance validation could run.'
+            }
           }
           if (Test-Path -LiteralPath evidence/runtime-bootstrap.json -PathType Leaf) {
             $runtime = Get-Content -LiteralPath evidence/runtime-bootstrap.json -Raw | ConvertFrom-Json
@@ -310,11 +332,11 @@ jobs:
 
       - name: Generate completion evidence
         id: evidence_initial
-        if: always()
+        if: always() && steps.inputs.outputs.identity-resolved == 'true'
         shell: pwsh
         env:
           STANDARDS_REPOSITORY: ${{ job.workflow_repository }}
-          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha || job.workflow_sha }}
+          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha }}
           CALLER_REPOSITORY: ${{ github.repository }}
           CALLER_COMMIT_SHA: ${{ github.sha }}
           CALLER_REF_NAME: ${{ github.ref_name }}
@@ -328,7 +350,7 @@ jobs:
 
       - name: Validate completion evidence
         id: evidence_validation
-        if: always()
+        if: always() && steps.inputs.outputs.identity-resolved == 'true'
         continue-on-error: true
         shell: pwsh
         env:
@@ -353,11 +375,11 @@ jobs:
 
       - name: Generate final completion evidence
         id: evidence_final
-        if: always()
+        if: always() && steps.inputs.outputs.identity-resolved == 'true'
         shell: pwsh
         env:
           STANDARDS_REPOSITORY: ${{ job.workflow_repository }}
-          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha || job.workflow_sha }}
+          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha }}
           CALLER_REPOSITORY: ${{ github.repository }}
           CALLER_COMMIT_SHA: ${{ github.sha }}
           CALLER_REF_NAME: ${{ github.ref_name }}
@@ -371,7 +393,7 @@ jobs:
 
       - name: Validate final completion evidence
         id: final_evidence_validation
-        if: always()
+        if: always() && steps.inputs.outputs.identity-resolved == 'true'
         continue-on-error: true
         shell: pwsh
         env:
