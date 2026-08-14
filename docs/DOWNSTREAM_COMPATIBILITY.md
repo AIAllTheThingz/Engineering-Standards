@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Status | Active; 1.2.1 preview prepared |
-| Contract version | 1.1.0 |
+| Contract version | 1.2.0 |
 | Latest published governance release | 1.2.0 |
 | Published target | `6c0050de328ac083e69fbac8971a317689c2c1d6` |
 | Prepared governance release | 1.2.1, unpublished |
@@ -18,10 +18,11 @@ A moving branch is never release evidence. Consumers MUST select an immutable pu
 
 ## Contract Schema Versions
 
-The compatibility document supports two record shapes:
+The compatibility document supports three record shapes:
 
-- `1.0.0` preserves the historical shape and does not contain `functionalWorkflows`.
-- `1.1.0` requires `functionalWorkflows` in the unreleased contract.
+- `1.0.0` preserves the historical shape and does not contain `functionalWorkflows` or an explicit canary status.
+- `1.1.0` requires `functionalWorkflows` and retains the historical concrete `canaryValidatedWorkflowSha` shape.
+- `1.2.0` requires `functionalWorkflows` plus explicit `canaryValidationStatus`. `Passed` requires a full immutable `canaryValidatedWorkflowSha`; `Failed`, `Blocked`, `NotRun`, and `NotApplicable` require the canary authority to remain `null` so historical evidence cannot be silently reused for a new candidate.
 
 These document-schema versions are independent from the repository governance release version.
 
@@ -40,9 +41,11 @@ Published `1.1.0` remains historical and supported at annotated tag `v1.1.0`, re
 
 ## Prepared v1.2.1 Preview
 
-Version `1.2.1` is prepared and unpublished. The preview intentionally keeps the same central workflow interface and supported schema sets as `1.2.0`; the patch is corrective rather than a new downstream contract.
+Version `1.2.1` is prepared and unpublished. The preview intentionally keeps the same central workflow interface and supported schema sets as `1.2.0`; the patch is corrective rather than a new downstream governance obligation.
 
 The prepared patch repairs issue #103 by making reusable governance workflow identity validation explicitly annotated-tag-aware while preserving exact commit binding. GitHub's tag-object SHA and the peeled standards commit are verified separately and recorded as separate provenance values. Direct full-SHA pins remain supported. Branches, lightweight tags, malformed refs, unexpected repositories, unexpected workflow paths, mismatched tag objects, and mismatched peeled commits fail closed.
+
+The machine-readable preview records `canaryValidationStatus: NotRun` and a null canary authority until exact-candidate external validation is actually observed. Historical governance-1.1 canary evidence is therefore preserved as history rather than relabeled as proof for 1.2.1.
 
 The prepared semantic version and preview matrix do not make the branch or its current head a production authority. Exact final-candidate hosted proof, the five-scenario external canary, independent artifact verification, attributable approval, and publication remain required.
 
