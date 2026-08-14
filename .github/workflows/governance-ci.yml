@@ -28,7 +28,7 @@ jobs:
     uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@bf3f05d872eb5b032a4437869ea6a32a113313a5
     with:
       project-path: .
-      governance-version: 1.2.0
+      governance-version: 1.2.1
       controlled-failure-test: ${{ inputs.controlled-failure-test || false }}
 
   candidate_implementation:

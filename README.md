@@ -69,7 +69,7 @@ flowchart TD
 - `workflows/`: distribution templates; GitHub does not execute reusable workflows directly from this root directory.
 - `templates/`: repository, pull-request, issue, test-plan, and threat-model templates.
 - [`examples/`](examples/README.md): functional downstream projects and isolated home-lab skill demonstrations.
-- `scripts/`: local validation and evidence tooling.
+- `scripts/`: local validation, evidence, and workflow-verification tooling.
 - `tests/`: Pester tests and schema fixtures.
 - `docs/`: adoption, configuration, architecture, security, release, branch protection, and troubleshooting guidance.
 - `evidence/`: final completion evidence and supporting test-result records for the current repository state.
@@ -293,15 +293,19 @@ The `python-review` and `bash-review` home labs remain isolated demonstrations a
 
 The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Downstream CI SHOULD pin commit SHAs for maximum supply-chain integrity. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md), future changes remain under [Unreleased](CHANGELOG.md#unreleased), and release procedure is defined in [Release Process](docs/RELEASE_PROCESS.md).
 
-The latest published version is `1.2.0`. Annotated tag `v1.2.0` resolves to immutable commit `6c0050de328ac083e69fbac8971a317689c2c1d6`. GitHub Release `v1.2.0` was published on 2026-08-12 as release ID `369234609`. Current development after that target is unreleased and must not be presented as part of immutable v1.2.0.
+The latest published version remains `1.2.0`. Annotated tag `v1.2.0` resolves to immutable commit `6c0050de328ac083e69fbac8971a317689c2c1d6`. GitHub Release `v1.2.0` was published on 2026-08-12 as release ID `369234609` and remains historical external state.
 
-Publication exposed an annotated-tag reusable-workflow identity defect and a reviewed-release-notes integrity mismatch. Those immutable v1.2.0 follow-ups are tracked in issue #103 and must be repaired through a later patch release rather than by moving or silently rewriting `v1.2.0`.
+The prepared version is `1.2.1` and is unpublished. It is a corrective patch for issue #103 and includes the post-`v1.2.0` release-state, compatibility-guidance, and behavior-verifier fixes already merged to `master`. Preparation does not authorize a tag, GitHub Release, or consumer migration.
+
+The `1.2.1` trust-boundary repair verifies an annotated release tag as two related immutable identities: the tag object reported by GitHub and the exact peeled commit checked out for validation. Direct full-SHA pins remain exact, while branches, lightweight tags, malformed refs, wrong repositories, wrong workflow paths, mismatched tag objects, and mismatched peeled commits remain rejected.
 
 The v1.2.0 behavior evidence is protected run `31448468682`, which evaluated behavior-input commit `954f0a7d1fecdb50ae0c2857ebefb842b3837649`; artifact `9085519608` has SHA-256 `99d392a3c803315ec3adc453c30cef659380b98440f6b8a1aaee5f376df7c53f`. Separately, post-release PR #104 behavior evidence run `31701615430` executed after publication against PR #104 candidate `0eaf955b9e5f163c092deeae536cb32f80549aab` and passed with `10/10` cases, `30/30` samples, all aggregate rates `1.0`, quality average `4.0`, and zero material variance. Artifact `9181628300` independently hashes to `a452a282fd7b17e2f39b23d4d24933452d8dd57126cbd982b62231c98e74b5ef`. Run `31701615430` is not v1.2.0 release evidence; human adjudication for PR #104 remains a separate attributable gate.
 
-Release candidates use the read-only lifecycle gate in `scripts/Test-ReleaseLifecycle.ps1`. Its PreRelease, Publication, and PostRelease stages bind validation, canary runs, human approvals, tag/release state, and compatibility updates to one immutable SHA. See [Downstream Compatibility](docs/DOWNSTREAM_COMPATIBILITY.md) for the supported release, schema, and workflow-interface matrix.
+Release candidates use the read-only lifecycle gate in `scripts/Test-ReleaseLifecycle.ps1`. Its PreRelease, Publication, and PostRelease stages bind validation, canary runs, human approvals, tag/release state, and compatibility updates to one immutable SHA. The prepared `1.2.1` exact-candidate hosted proof, controlled failure, five-scenario canary, artifact verification, and human approval remain `NotRun` until they are actually observed.
 
-Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e` until the annotated-tag workflow-identity repair is published through a later patch release. See [Release Status](docs/RELEASE_STATUS.md).
+Historical governance-1.1 consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e`; this is retained historical evidence and is not the prepared 1.2.1 candidate authority. See [Release Status](docs/RELEASE_STATUS.md) and [Downstream Compatibility](docs/DOWNSTREAM_COMPATIBILITY.md).
+
+The reviewed [v1.2.1 release notes](docs/releases/1.2.1.md) are the intended GitHub Release body. Publication must use that content exactly rather than GitHub auto-generated notes so the lifecycle notes hash can be verified.
 
 ## Security Reporting And Contributions
 
@@ -331,7 +335,7 @@ Security issues are handled through [SECURITY.md](SECURITY.md). Contributions mu
 - PR #12 remediated the PR #11 formal-approval defect. Publication approval remediation is complete.
 - Tag and release-publication authorization are granted for `v1.1.0` at immutable target `2704049d7e826975d956611b194214dd79ea3686`.
 - The annotated `v1.1.0` tag was created at the authorized target, and the [Engineering Standards v1.1.0 GitHub Release](https://github.com/AIAllTheThingz/Engineering-Standards/releases/tag/v1.1.0) was published as non-draft and non-prerelease on 2026-07-11.
-- All 13 Phase 8 local validation records passed. Hosted Governance CI run `29144270291` (#79) and artifact `governance-evidence-29144270291` (ID `8246254113`, SHA-256 `393fad60cc4a130e64fa9816c70d2f86f1cf66c95be75e97956f266a14ec57fb`) were independently verified for PR #27 head `49f9b08271ff55198fee1ed31175ae7e890c3672`, distinct from synthetic merge context `e1ca80c3065e7cb4d81df6cbacb92f332bde9119` at `27/merge`. Post-release verification was recorded, and the six-file metadata follow-up was completed by PR #27, which merged at `2026-07-11T13:30:42Z` as `1f93480003e71bbacfb179f72cde1a1898a9b446` with an identical tree. The local completion record remains `Blocked` solely because local evidence cannot claim overall hosted completion; the annotated tag is unsigned.
+- All 13 Phase 8 local validation records passed. Hosted Governance CI run `29144270291` (#79) and artifact `governance-evidence-29144270291` (ID `8246254113`, SHA-256 `393fad60cc4a130e64fa9816c70d2d8a53463241630afc4c6145d9eb84c0914`) were independently verified for PR #27 head `49f9b08271ff55198fee1ed31175ae7e890c3672`, distinct from synthetic merge context `e1ca80c3065e7cb4d81df6cbacb92f332bde9119` at `27/merge`. Post-release verification was recorded, and the six-file metadata follow-up was completed by PR #27, which merged at `2026-07-11T13:30:42Z` as `1f93480003e71bbacfb179f72cde1a1898a9b446` with an identical tree. The local completion record remains `Blocked` solely because local evidence cannot claim overall hosted completion; the annotated tag is unsigned.
 
 ## Related Documents
 

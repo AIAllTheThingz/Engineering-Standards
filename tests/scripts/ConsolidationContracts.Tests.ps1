@@ -145,11 +145,11 @@ Describe 'Consolidation contract regression coverage' {
         $messages | Should -Contain "Standards-consistency schema 1.1.0 is missing required member 'nextReleaseReadiness'."
     }
 
-    It 'separates the published release from prepared but not yet candidate-bound next-release readiness' {
+    It 'preserves the historical 1.2.0 preparation snapshot after the live repository advances' {
         $matrix = Get-Content -LiteralPath $script:standardsPath -Raw | ConvertFrom-Json
         $repositoryVersion = (Get-Content -LiteralPath (Join-Path $script:root 'VERSION') -Raw).Trim()
-        $matrix.repositoryVersion | Should -BeExactly $repositoryVersion
-        $repositoryVersion | Should -BeExactly '1.2.0'
+        $matrix.repositoryVersion | Should -BeExactly '1.2.0'
+        $repositoryVersion | Should -BeExactly '1.2.1'
         $matrix.generatedFromCommit | Should -BeExactly '0a47444c0416c397dad769e7e66f9ad7e3119195'
         $matrix.publishedRelease.status | Should -BeExactly 'Passed'
         $matrix.publishedRelease.version | Should -BeExactly '1.1.0'

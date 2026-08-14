@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.1.0",
   "repository": "AIAllTheThingz/Engineering-Standards",
-  "updatedAtUtc": "2026-08-14T00:07:00Z",
+  "updatedAtUtc": "2026-08-14T02:21:00Z",
   "ownerRole": "Release Maintainers",
   "supportPolicy": {
     "currentMajor": 1,
@@ -48,7 +48,7 @@
     }
   ],
   "unreleasedContract": {
-    "governanceVersion": "1.2.0",
+    "governanceVersion": "1.2.1",
     "supportStatus": "Preview",
     "workflowInterfaceVersions": ["1.0.0"],
     "projectManifestSchemaVersions": ["1.0.0", "1.1.0", "1.2.0"],
