@@ -55,7 +55,8 @@ jobs:
           fetch-depth: 0
 
       - name: Checkout trusted standards
-        # job.workflow_* identifies the immutable repository and commit defining this reusable job.
+        # job.workflow_* identifies the immutable repository and object defining this reusable job.
+        # For annotated release tags, job.workflow_sha is the tag-object SHA and checkout peels it to a commit.
         # These properties are available on GitHub.com but not GitHub Enterprise Server.
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -63,7 +64,7 @@ jobs:
           ref: ${{ job.workflow_sha }}
           path: standards
           persist-credentials: false
-          # Trusted tests validate checked-in evidence against historical standards commits.
+          # Trusted tests validate checked-in evidence against historical standards commits and tag objects.
           fetch-depth: 0
 
       - name: Validate workflow identity and inputs
@@ -82,12 +83,19 @@ jobs:
           RETENTION_DAYS: ${{ inputs.artifact-retention-days }}
         run: |
           $ErrorActionPreference = 'Stop'
-          if ($env:STANDARDS_REPOSITORY -ne 'AIAllTheThingz/Engineering-Standards') {
-            throw "Unexpected reusable workflow repository '$env:STANDARDS_REPOSITORY'."
+          New-Item -ItemType Directory -Path evidence -Force | Out-Null
+          $identityOutput = @(& ./standards/scripts/Resolve-ReusableWorkflowIdentity.ps1 `
+            -Path ./standards `
+            -StandardsRepository $env:STANDARDS_REPOSITORY `
+            -WorkflowSha $env:STANDARDS_WORKFLOW_SHA `
+            -WorkflowRef $env:STANDARDS_WORKFLOW_REF 2>&1)
+          $identityExitCode = $LASTEXITCODE
+          $identityText = ($identityOutput | ForEach-Object { [string]$_ }) -join "`n"
+          if ($identityExitCode -ne 0) {
+            throw "Reusable workflow identity validation failed: $identityText"
           }
-          if ($env:STANDARDS_WORKFLOW_SHA -notmatch '^[a-fA-F0-9]{40}$') {
-            throw 'GitHub did not provide an immutable job.workflow_sha. GitHub Enterprise Server is not supported because no safe fallback exists.'
-          }
+          $identity = $identityText | ConvertFrom-Json
+          $identity | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath evidence/workflow-identity.json -Encoding utf8
           if ([string]::IsNullOrWhiteSpace($env:PROJECT_PATH)) { throw 'project-path must not be empty.' }
           if ([System.IO.Path]::IsPathRooted($env:PROJECT_PATH) -or $env:PROJECT_PATH -match '(^|[\/])\.\.([\/]|$)') {
             throw 'project-path must be repository-relative and must not contain traversal.'
@@ -101,6 +109,8 @@ jobs:
           }
           "repository-owner-type=$repositoryOwnerType" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           "artifact-retention-days=$retention" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "standards-commit-sha=$($identity.standardsCommitSha)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "workflow-reference-kind=$($identity.referenceKind)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Set up pinned Python
         id: setup_python
@@ -159,8 +169,10 @@ jobs:
         shell: pwsh
         env:
           STANDARDS_REPOSITORY: ${{ job.workflow_repository }}
-          STANDARDS_WORKFLOW_SHA: ${{ job.workflow_sha }}
+          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha }}
+          STANDARDS_WORKFLOW_OBJECT_SHA: ${{ job.workflow_sha }}
           STANDARDS_WORKFLOW_REF: ${{ job.workflow_ref }}
+          STANDARDS_WORKFLOW_REFERENCE_KIND: ${{ steps.inputs.outputs.workflow-reference-kind }}
           CALLER_REPOSITORY: ${{ github.repository }}
           CALLER_REPOSITORY_OWNER_TYPE: ${{ steps.inputs.outputs.repository-owner-type }}
           CALLER_COMMIT_SHA: ${{ github.sha }}
@@ -184,7 +196,9 @@ jobs:
             callerWorkspace = 'caller'
             standardsRepository = $env:STANDARDS_REPOSITORY
             standardsWorkflowSha = $env:STANDARDS_WORKFLOW_SHA
+            standardsWorkflowObjectSha = $env:STANDARDS_WORKFLOW_OBJECT_SHA
             standardsWorkflowRef = $env:STANDARDS_WORKFLOW_REF
+            standardsWorkflowReferenceKind = $env:STANDARDS_WORKFLOW_REFERENCE_KIND
             standardsWorkspace = 'standards'
             evidenceWorkspace = 'evidence'
             runId = $env:RUN_ID
@@ -209,7 +223,7 @@ jobs:
         shell: pwsh
         env:
           STANDARDS_REPOSITORY: ${{ job.workflow_repository }}
-          STANDARDS_WORKFLOW_SHA: ${{ job.workflow_sha }}
+          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha }}
           CALLER_REPOSITORY: ${{ github.repository }}
           CALLER_REPOSITORY_OWNER_TYPE: ${{ steps.inputs.outputs.repository-owner-type }}
           CALLER_COMMIT_SHA: ${{ github.sha }}
@@ -235,7 +249,7 @@ jobs:
         shell: pwsh
         env:
           STANDARDS_REPOSITORY: ${{ job.workflow_repository }}
-          STANDARDS_WORKFLOW_SHA: ${{ job.workflow_sha }}
+          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha }}
           CALLER_REPOSITORY: ${{ github.repository }}
           CALLER_COMMIT_SHA: ${{ github.sha }}
           GOVERNANCE_VERSION: ${{ inputs.governance-version }}
@@ -284,14 +298,14 @@ jobs:
         shell: pwsh
         env:
           STANDARDS_REPOSITORY: ${{ job.workflow_repository }}
-          STANDARDS_WORKFLOW_SHA: ${{ job.workflow_sha }}
+          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha }}
           CALLER_REPOSITORY: ${{ github.repository }}
           CALLER_COMMIT_SHA: ${{ github.sha }}
           CALLER_REF_NAME: ${{ github.ref_name }}
           GOVERNANCE_VERSION: ${{ inputs.governance-version }}
         run: |
           $aggregate = Get-Content -LiteralPath evidence/governance-validation.json -Raw | ConvertFrom-Json
-          $artifacts = @('evidence/environment.json','evidence/runtime-bootstrap.json','evidence/dependencies.json','evidence/validator-sbom.cdx.json','evidence/governance-validation.json','evidence/ci-test-results.json')
+          $artifacts = @('evidence/workflow-identity.json','evidence/environment.json','evidence/runtime-bootstrap.json','evidence/dependencies.json','evidence/validator-sbom.cdx.json','evidence/governance-validation.json','evidence/ci-test-results.json')
           $artifacts += @(@('evidence/pester-summary.json','evidence/pester-details.json','evidence/python-static-analysis.json','evidence/bash-static-analysis.json') | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
           & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath . -SourceRepositoryPath ./caller -OutputPath evidence/completion-result.json -GovernanceVersion $env:GOVERNANCE_VERSION -RiskClassification $aggregate.riskClassification -ExecutionContext GitHubActions -ArtifactName 'governance-evidence-${{ github.run_id }}' -Summary 'Reusable governance workflow generated preliminary caller evidence from trusted standards validators.' -TestResultPath evidence/ci-test-results.json -ArtifactPath $artifacts -CommandsExecuted @('Reusable governance validation') -CommandsNotExecuted @('Final workflow enforcement had not completed when preliminary evidence was generated.') -ValidatedCommitSha $env:CALLER_COMMIT_SHA -Repository $env:CALLER_REPOSITORY -Branch $env:CALLER_REF_NAME -StandardsRepository $env:STANDARDS_REPOSITORY -StandardsWorkflowSha $env:STANDARDS_WORKFLOW_SHA -ValidationProfile $aggregate.validationProfile -ChecksExecuted @($aggregate.checksExecuted)
           'evidence-path=evidence/completion-result.json' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
@@ -327,14 +341,14 @@ jobs:
         shell: pwsh
         env:
           STANDARDS_REPOSITORY: ${{ job.workflow_repository }}
-          STANDARDS_WORKFLOW_SHA: ${{ job.workflow_sha }}
+          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha }}
           CALLER_REPOSITORY: ${{ github.repository }}
           CALLER_COMMIT_SHA: ${{ github.sha }}
           CALLER_REF_NAME: ${{ github.ref_name }}
           GOVERNANCE_VERSION: ${{ inputs.governance-version }}
         run: |
           $aggregate = Get-Content -LiteralPath evidence/governance-validation.json -Raw | ConvertFrom-Json
-          $artifacts = @('evidence/environment.json','evidence/runtime-bootstrap.json','evidence/dependencies.json','evidence/validator-sbom.cdx.json','evidence/governance-validation.json','evidence/ci-test-results.json','evidence/evidence-validation.json')
+          $artifacts = @('evidence/workflow-identity.json','evidence/environment.json','evidence/runtime-bootstrap.json','evidence/dependencies.json','evidence/validator-sbom.cdx.json','evidence/governance-validation.json','evidence/ci-test-results.json','evidence/evidence-validation.json')
           $artifacts += @(@('evidence/pester-summary.json','evidence/pester-details.json','evidence/python-static-analysis.json','evidence/bash-static-analysis.json') | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
           & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath . -SourceRepositoryPath ./caller -OutputPath evidence/completion-result.json -GovernanceVersion $env:GOVERNANCE_VERSION -RiskClassification $aggregate.riskClassification -ExecutionContext GitHubActions -ArtifactName 'governance-evidence-${{ github.run_id }}' -Summary 'Reusable governance workflow generated final caller evidence from trusted standards validators.' -TestResultPath evidence/ci-test-results.json -ArtifactPath $artifacts -CommandsExecuted @('Reusable governance validation') -CommandsNotExecuted @() -ValidatedCommitSha $env:CALLER_COMMIT_SHA -Repository $env:CALLER_REPOSITORY -Branch $env:CALLER_REF_NAME -StandardsRepository $env:STANDARDS_REPOSITORY -StandardsWorkflowSha $env:STANDARDS_WORKFLOW_SHA -ValidationProfile $aggregate.validationProfile -ChecksExecuted @($aggregate.checksExecuted)
           'evidence-path=evidence/completion-result.json' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
