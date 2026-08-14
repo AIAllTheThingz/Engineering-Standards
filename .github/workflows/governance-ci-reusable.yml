@@ -55,9 +55,14 @@ jobs:
           fetch-depth: 0
 
       - name: Checkout trusted standards
-        # job.workflow_* identifies the immutable repository and object defining this reusable job.
-        # For annotated release tags, job.workflow_sha is the tag-object SHA and checkout peels it to a commit.
-        # These properties are available on GitHub.com but not GitHub Enterprise Server.
+        # GitHub documents job.workflow_* as workflow-definition identity. A real
+        # GitHub.com annotated-tag run (31652545960) reported job.workflow_sha as
+        # the tag-object SHA while checkout peeled that object to the target commit.
+        # The resolver therefore verifies the observed object and peeled commit
+        # separately instead of assuming those identities are always equal.
+        # actionlint 1.7.12 does not yet model these job.workflow_* properties;
+        # actionlint is not a required repository gate and must be upgraded or use
+        # a targeted compatibility rule before it can become one.
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: ${{ job.workflow_repository }}
@@ -84,7 +89,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Path evidence -Force | Out-Null
-          $identityOutput = @(& ./standards/scripts/Resolve-ReusableWorkflowIdentity.ps1 `
+          $identityOutput = @(& (Join-Path $PSHOME 'pwsh') -NoProfile -File ./standards/scripts/Resolve-ReusableWorkflowIdentity.ps1 `
             -Path ./standards `
             -StandardsRepository $env:STANDARDS_REPOSITORY `
             -WorkflowSha $env:STANDARDS_WORKFLOW_SHA `
@@ -95,7 +100,11 @@ jobs:
             throw "Reusable workflow identity validation failed: $identityText"
           }
           $identity = $identityText | ConvertFrom-Json
-          $identity | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath evidence/workflow-identity.json -Encoding utf8
+          $identityJson = $identity | ConvertTo-Json -Depth 8
+          if (-not ($identityJson | Test-Json -SchemaFile ./standards/schemas/workflow-identity.schema.json -ErrorAction Stop)) {
+            throw 'Reusable workflow identity evidence failed its owned JSON Schema.'
+          }
+          $identityJson | Set-Content -LiteralPath evidence/workflow-identity.json -Encoding utf8
           if ([string]::IsNullOrWhiteSpace($env:PROJECT_PATH)) { throw 'project-path must not be empty.' }
           if ([System.IO.Path]::IsPathRooted($env:PROJECT_PATH) -or $env:PROJECT_PATH -match '(^|[\/])\.\.([\/]|$)') {
             throw 'project-path must be repository-relative and must not contain traversal.'
@@ -169,12 +178,12 @@ jobs:
         shell: pwsh
         env:
           STANDARDS_REPOSITORY: ${{ job.workflow_repository }}
-          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha }}
+          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha || job.workflow_sha }}
           STANDARDS_WORKFLOW_OBJECT_SHA: ${{ job.workflow_sha }}
           STANDARDS_WORKFLOW_REF: ${{ job.workflow_ref }}
-          STANDARDS_WORKFLOW_REFERENCE_KIND: ${{ steps.inputs.outputs.workflow-reference-kind }}
+          STANDARDS_WORKFLOW_REFERENCE_KIND: ${{ steps.inputs.outputs.workflow-reference-kind || 'Unresolved' }}
           CALLER_REPOSITORY: ${{ github.repository }}
-          CALLER_REPOSITORY_OWNER_TYPE: ${{ steps.inputs.outputs.repository-owner-type }}
+          CALLER_REPOSITORY_OWNER_TYPE: ${{ steps.inputs.outputs.repository-owner-type || 'Unknown' }}
           CALLER_COMMIT_SHA: ${{ github.sha }}
           CALLER_REF: ${{ github.ref }}
           CALLER_REF_NAME: ${{ github.ref_name }}
@@ -187,7 +196,7 @@ jobs:
         run: |
           Import-Module ./standards/scripts/ValidatorDependencyTools.psm1 -Force
           $lock = Import-ValidatorDependencyLock -Path ./standards/.github/dependencies/validator-dependencies.psd1
-          [ordered]@{
+          $environmentJson = [ordered]@{
             callerRepository = $env:CALLER_REPOSITORY
             callerRepositoryOwnerType = $env:CALLER_REPOSITORY_OWNER_TYPE
             callerCommitSha = $env:CALLER_COMMIT_SHA
@@ -214,11 +223,15 @@ jobs:
             runtimes = @(Get-ValidatorCommandInventory -Lock $lock -WorkingDirectory ./standards)
             dependencyLockSha256 = Get-ValidatorFileSha256 -Path ./standards/.github/dependencies/validator-dependencies.psd1
             pythonRequirementsSha256 = Get-ValidatorFileSha256 -Path ./standards/.github/dependencies/workflow-validation-requirements.txt
-          } | ConvertTo-Json -Depth 15 | Set-Content -LiteralPath evidence/environment.json -Encoding utf8
+          } | ConvertTo-Json -Depth 15
+          if (-not ($environmentJson | Test-Json -SchemaFile ./standards/schemas/workflow-environment.schema.json -ErrorAction Stop)) {
+            throw 'Workflow environment evidence failed its owned identity JSON Schema.'
+          }
+          $environmentJson | Set-Content -LiteralPath evidence/environment.json -Encoding utf8
 
       - name: Run trusted governance validation
         id: governance_validation
-        if: steps.setup_python.outcome == 'success' && steps.setup_node.outcome == 'success' && steps.setup_dotnet.outcome == 'success' && steps.runtime.outcome == 'success' && steps.dependencies.outcome == 'success'
+        if: steps.inputs.outcome == 'success' && steps.setup_python.outcome == 'success' && steps.setup_node.outcome == 'success' && steps.setup_dotnet.outcome == 'success' && steps.runtime.outcome == 'success' && steps.dependencies.outcome == 'success'
         continue-on-error: true
         shell: pwsh
         env:
@@ -249,7 +262,7 @@ jobs:
         shell: pwsh
         env:
           STANDARDS_REPOSITORY: ${{ job.workflow_repository }}
-          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha }}
+          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha || job.workflow_sha }}
           CALLER_REPOSITORY: ${{ github.repository }}
           CALLER_COMMIT_SHA: ${{ github.sha }}
           GOVERNANCE_VERSION: ${{ inputs.governance-version }}
@@ -257,6 +270,9 @@ jobs:
         run: |
           Import-Module ./standards/scripts/GovernanceValidation.psm1 -Force
           $failure = $null
+          if ('${{ steps.inputs.outcome }}' -ne 'success') {
+            $failure = 'Reusable workflow identity validation failed before trusted governance validation could run.'
+          }
           if (Test-Path -LiteralPath evidence/runtime-bootstrap.json -PathType Leaf) {
             $runtime = Get-Content -LiteralPath evidence/runtime-bootstrap.json -Raw | ConvertFrom-Json
             if ($runtime.status -in @('Failed','Blocked')) { $failure = [string]$(if($runtime.failureReason){$runtime.failureReason}else{$runtime.blockedReason}) }
@@ -298,15 +314,15 @@ jobs:
         shell: pwsh
         env:
           STANDARDS_REPOSITORY: ${{ job.workflow_repository }}
-          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha }}
+          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha || job.workflow_sha }}
           CALLER_REPOSITORY: ${{ github.repository }}
           CALLER_COMMIT_SHA: ${{ github.sha }}
           CALLER_REF_NAME: ${{ github.ref_name }}
           GOVERNANCE_VERSION: ${{ inputs.governance-version }}
         run: |
           $aggregate = Get-Content -LiteralPath evidence/governance-validation.json -Raw | ConvertFrom-Json
-          $artifacts = @('evidence/workflow-identity.json','evidence/environment.json','evidence/runtime-bootstrap.json','evidence/dependencies.json','evidence/validator-sbom.cdx.json','evidence/governance-validation.json','evidence/ci-test-results.json')
-          $artifacts += @(@('evidence/pester-summary.json','evidence/pester-details.json','evidence/python-static-analysis.json','evidence/bash-static-analysis.json') | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
+          $artifacts = @('evidence/environment.json','evidence/runtime-bootstrap.json','evidence/dependencies.json','evidence/validator-sbom.cdx.json','evidence/governance-validation.json','evidence/ci-test-results.json')
+          $artifacts += @(@('evidence/workflow-identity.json','evidence/pester-summary.json','evidence/pester-details.json','evidence/python-static-analysis.json','evidence/bash-static-analysis.json') | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
           & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath . -SourceRepositoryPath ./caller -OutputPath evidence/completion-result.json -GovernanceVersion $env:GOVERNANCE_VERSION -RiskClassification $aggregate.riskClassification -ExecutionContext GitHubActions -ArtifactName 'governance-evidence-${{ github.run_id }}' -Summary 'Reusable governance workflow generated preliminary caller evidence from trusted standards validators.' -TestResultPath evidence/ci-test-results.json -ArtifactPath $artifacts -CommandsExecuted @('Reusable governance validation') -CommandsNotExecuted @('Final workflow enforcement had not completed when preliminary evidence was generated.') -ValidatedCommitSha $env:CALLER_COMMIT_SHA -Repository $env:CALLER_REPOSITORY -Branch $env:CALLER_REF_NAME -StandardsRepository $env:STANDARDS_REPOSITORY -StandardsWorkflowSha $env:STANDARDS_WORKFLOW_SHA -ValidationProfile $aggregate.validationProfile -ChecksExecuted @($aggregate.checksExecuted)
           'evidence-path=evidence/completion-result.json' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
@@ -330,7 +346,7 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $githubOutcome = if ('${{ steps.setup_python.outcome }}' -eq 'success' -and '${{ steps.setup_node.outcome }}' -eq 'success' -and '${{ steps.setup_dotnet.outcome }}' -eq 'success' -and '${{ steps.runtime.outcome }}' -eq 'success' -and '${{ steps.governance_validation.outcome }}' -eq 'success' -and '${{ steps.dependencies.outcome }}' -eq 'success') { 'success' } else { 'failure' }
+          $githubOutcome = if ('${{ steps.inputs.outcome }}' -eq 'success' -and '${{ steps.setup_python.outcome }}' -eq 'success' -and '${{ steps.setup_node.outcome }}' -eq 'success' -and '${{ steps.setup_dotnet.outcome }}' -eq 'success' -and '${{ steps.runtime.outcome }}' -eq 'success' -and '${{ steps.governance_validation.outcome }}' -eq 'success' -and '${{ steps.dependencies.outcome }}' -eq 'success') { 'success' } else { 'failure' }
           $outcomes = @{ evidence_validation='${{ steps.evidence_validation.outcome }}'; github_execution=$githubOutcome }
           $reports = @{ evidence_validation='evidence/evidence-validation.json'; github_execution='evidence/environment.json' }
           & ./standards/scripts/New-WorkflowTestEvidence.ps1 -RepositoryPath . -OutputPath evidence/ci-test-results.json -AggregateReportPath evidence/governance-validation.json -Outcomes $outcomes -Reports $reports -Runtime 'GitHub Actions ubuntu-24.04 / pinned pwsh' -ToolVersion $PSVersionTable.PSVersion.ToString()
@@ -341,15 +357,15 @@ jobs:
         shell: pwsh
         env:
           STANDARDS_REPOSITORY: ${{ job.workflow_repository }}
-          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha }}
+          STANDARDS_WORKFLOW_SHA: ${{ steps.inputs.outputs.standards-commit-sha || job.workflow_sha }}
           CALLER_REPOSITORY: ${{ github.repository }}
           CALLER_COMMIT_SHA: ${{ github.sha }}
           CALLER_REF_NAME: ${{ github.ref_name }}
           GOVERNANCE_VERSION: ${{ inputs.governance-version }}
         run: |
           $aggregate = Get-Content -LiteralPath evidence/governance-validation.json -Raw | ConvertFrom-Json
-          $artifacts = @('evidence/workflow-identity.json','evidence/environment.json','evidence/runtime-bootstrap.json','evidence/dependencies.json','evidence/validator-sbom.cdx.json','evidence/governance-validation.json','evidence/ci-test-results.json','evidence/evidence-validation.json')
-          $artifacts += @(@('evidence/pester-summary.json','evidence/pester-details.json','evidence/python-static-analysis.json','evidence/bash-static-analysis.json') | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
+          $artifacts = @('evidence/environment.json','evidence/runtime-bootstrap.json','evidence/dependencies.json','evidence/validator-sbom.cdx.json','evidence/governance-validation.json','evidence/ci-test-results.json','evidence/evidence-validation.json')
+          $artifacts += @(@('evidence/workflow-identity.json','evidence/pester-summary.json','evidence/pester-details.json','evidence/python-static-analysis.json','evidence/bash-static-analysis.json') | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
           & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath . -SourceRepositoryPath ./caller -OutputPath evidence/completion-result.json -GovernanceVersion $env:GOVERNANCE_VERSION -RiskClassification $aggregate.riskClassification -ExecutionContext GitHubActions -ArtifactName 'governance-evidence-${{ github.run_id }}' -Summary 'Reusable governance workflow generated final caller evidence from trusted standards validators.' -TestResultPath evidence/ci-test-results.json -ArtifactPath $artifacts -CommandsExecuted @('Reusable governance validation') -CommandsNotExecuted @() -ValidatedCommitSha $env:CALLER_COMMIT_SHA -Repository $env:CALLER_REPOSITORY -Branch $env:CALLER_REF_NAME -StandardsRepository $env:STANDARDS_REPOSITORY -StandardsWorkflowSha $env:STANDARDS_WORKFLOW_SHA -ValidationProfile $aggregate.validationProfile -ChecksExecuted @($aggregate.checksExecuted)
           'evidence-path=evidence/completion-result.json' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
@@ -371,7 +387,7 @@ jobs:
           name: governance-evidence-${{ github.run_id }}
           path: evidence/
           if-no-files-found: error
-          retention-days: ${{ steps.inputs.outputs.artifact-retention-days }}
+          retention-days: ${{ steps.inputs.outputs.artifact-retention-days || 30 }}
 
       - name: Record artifact output
         id: artifact
