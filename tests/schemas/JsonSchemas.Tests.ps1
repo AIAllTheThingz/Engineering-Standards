@@ -46,8 +46,13 @@ Describe 'JSON schema validation' {
 
         It 'enforces the release lifecycle structure directly in JSON Schema' {
             $schema = Resolve-Path "$PSScriptRoot/../../schemas/release-lifecycle.schema.json"
-            (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/release-lifecycle/valid/full-lifecycle.json" -Raw | Test-Json -SchemaFile $schema) | Should -BeTrue
+            $validLifecycleRaw = Get-Content -LiteralPath "$PSScriptRoot/../fixtures/release-lifecycle/valid/full-lifecycle.json" -Raw
+            ($validLifecycleRaw | Test-Json -SchemaFile $schema) | Should -BeTrue
             (Get-Content -LiteralPath "$PSScriptRoot/../fixtures/release-lifecycle/invalid/missing-canary.json" -Raw | Test-Json -SchemaFile $schema) | Should -BeFalse
+
+            $legacy11Lifecycle = $validLifecycleRaw | ConvertFrom-Json
+            $legacy11Lifecycle.compatibilityMatrix.schemaVersion = '1.1.0'
+            ($legacy11Lifecycle | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeTrue -Because 'release lifecycle must retain explicit downstream compatibility schema 1.1.0 support'
         }
 
         It 'accepts the owned downstream compatibility matrix directly in JSON Schema' {
@@ -66,6 +71,21 @@ Describe 'JSON schema validation' {
             $legacy.unreleasedContract.PSObject.Properties.Remove('canaryValidationStatus')
             $legacy.unreleasedContract.canaryValidatedWorkflowSha = $historicalCanarySha
             ($legacy | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeTrue
+
+            $legacy11 = $owned | ConvertTo-Json -Depth 30 | ConvertFrom-Json
+            $legacy11.schemaVersion = '1.1.0'
+            $legacy11.unreleasedContract.PSObject.Properties.Remove('canaryValidationStatus')
+            $legacy11.unreleasedContract.canaryValidatedWorkflowSha = $historicalCanarySha
+            @($legacy11.unreleasedContract.functionalWorkflows).Count | Should -BeGreaterThan 0
+            ($legacy11 | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeTrue
+
+            $legacy11WithCanaryStatus = $legacy11 | ConvertTo-Json -Depth 30 | ConvertFrom-Json
+            $legacy11WithCanaryStatus.unreleasedContract | Add-Member -NotePropertyName canaryValidationStatus -NotePropertyValue 'NotRun'
+            ($legacy11WithCanaryStatus | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeFalse
+
+            $legacy11WithoutFunctionalWorkflows = $legacy11 | ConvertTo-Json -Depth 30 | ConvertFrom-Json
+            $legacy11WithoutFunctionalWorkflows.unreleasedContract.PSObject.Properties.Remove('functionalWorkflows')
+            ($legacy11WithoutFunctionalWorkflows | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeFalse
 
             $mislabeled = $owned | ConvertTo-Json -Depth 30 | ConvertFrom-Json
             $mislabeled.schemaVersion = '1.0.0'
