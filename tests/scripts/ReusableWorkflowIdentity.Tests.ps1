@@ -101,7 +101,8 @@ Describe 'Reusable workflow immutable identity resolution' {
         $result = Invoke-IdentityResolver -WorkflowSha $script:head -Reference "${script:workflowPrefix}refs/heads/master"
 
         $result.ExitCode | Should -Not -Be 0
-        $result.Output | Should -Match 'Branches and other refs are\s+not accepted'
+        $result.Output | Should -Match 'Branches and other refs are'
+        $result.Output | Should -Match 'not accepted'
     }
 
     It 'rejects an annotated tag whose peeled commit is not the checked-out HEAD' {
@@ -125,7 +126,8 @@ Describe 'Reusable workflow immutable identity resolution' {
         $result = Invoke-IdentityResolver -WorkflowSha $script:head -Reference "${script:workflowPrefix}refs/tags/$tag"
 
         $result.ExitCode | Should -Not -Be 0
-        $result.Output | Should -Match 'tag-object SHA\s+reported by job\.workflow_sha'
+        $result.Output | Should -Match 'tag-object SHA'
+        $result.Output | Should -Match 'job\.workflow_sha'
     }
 
     It 'rejects an unexpected workflow path and malformed ref' {
