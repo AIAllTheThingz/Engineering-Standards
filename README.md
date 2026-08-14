@@ -109,7 +109,7 @@ flowchart TD
 
 ## Example Workflow
 
-The following example demonstrates the published `1.2.0` contract. Production consumers should pin an immutable published authority such as annotated `v1.2.0` at commit `6c0050de328ac083e69fbac8971a317689c2c1d6`, or another explicitly documented immutable authority.
+The following example demonstrates the published `1.2.0` contract. Until the annotated-tag workflow-identity defect is repaired in a patch release, production workflow consumers should use the explicitly documented immutable authority shown below.
 
 ```yaml
 name: Governance
@@ -121,7 +121,7 @@ permissions:
   contents: read
 jobs:
   governance:
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<commit-sha>
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e
     with:
       project-path: .
       governance-version: 1.2.0
