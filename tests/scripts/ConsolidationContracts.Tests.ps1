@@ -5,36 +5,73 @@ BeforeAll {
     $script:standardsSchema = Join-Path $script:root 'schemas/standards-consistency.schema.json'
     $script:compatibilityPath = Join-Path $script:root 'governance/downstream-compatibility.json'
     $script:compatibilitySchema = Join-Path $script:root 'schemas/downstream-compatibility.schema.json'
+    $script:historicalCanarySha = 'de32b77e2043f5336a54b92ab9ed867abe93ba7e'
 }
 
 Describe 'Consolidation contract regression coverage' {
-    It 'validates both owned version 1.1.0 records against their current schemas and semantics' {
+    It 'validates the owned standards and downstream compatibility records against their current versioned schemas' {
         $standards = Get-Content -LiteralPath $script:standardsPath -Raw | ConvertFrom-Json
         $compatibility = Get-Content -LiteralPath $script:compatibilityPath -Raw | ConvertFrom-Json
         $standards.schemaVersion | Should -BeExactly '1.1.0'
-        $compatibility.schemaVersion | Should -BeExactly '1.1.0'
+        $compatibility.schemaVersion | Should -BeExactly '1.2.0'
         (Get-Content -LiteralPath $script:standardsPath -Raw | Test-Json -SchemaFile $script:standardsSchema) | Should -BeTrue
         (Get-Content -LiteralPath $script:compatibilityPath -Raw | Test-Json -SchemaFile $script:compatibilitySchema) | Should -BeTrue
         @((Test-GovernanceJsonDocument -Path $script:standardsPath -Kind standards-consistency) | Where-Object status -EQ Failed).Count | Should -Be 0
     }
 
-    It 'preserves downstream compatibility schema 1.0.0 without functional workflows' {
+    It 'preserves downstream compatibility schema 1.0.0 without functional workflows or explicit canary status' {
         $matrix = Get-Content -LiteralPath $script:compatibilityPath -Raw | ConvertFrom-Json
         $matrix.schemaVersion = '1.0.0'
         $matrix.unreleasedContract.PSObject.Properties.Remove('functionalWorkflows')
+        $matrix.unreleasedContract.PSObject.Properties.Remove('canaryValidationStatus')
+        $matrix.unreleasedContract.canaryValidatedWorkflowSha = $script:historicalCanarySha
         ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:compatibilitySchema) | Should -BeTrue
     }
 
     It 'rejects unversioned functional workflow additions under compatibility schema 1.0.0' {
         $matrix = Get-Content -LiteralPath $script:compatibilityPath -Raw | ConvertFrom-Json
         $matrix.schemaVersion = '1.0.0'
+        $matrix.unreleasedContract.PSObject.Properties.Remove('canaryValidationStatus')
+        $matrix.unreleasedContract.canaryValidatedWorkflowSha = $script:historicalCanarySha
         ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:compatibilitySchema) | Should -BeFalse
     }
 
-    It 'requires functional workflow authorities only for compatibility schema 1.1.0' {
+    It 'preserves downstream compatibility schema 1.1.0 with functional workflows and a concrete canary authority' {
+        $matrix = Get-Content -LiteralPath $script:compatibilityPath -Raw | ConvertFrom-Json
+        $matrix.schemaVersion = '1.1.0'
+        $matrix.unreleasedContract.PSObject.Properties.Remove('canaryValidationStatus')
+        $matrix.unreleasedContract.canaryValidatedWorkflowSha = $script:historicalCanarySha
+        ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:compatibilitySchema) | Should -BeTrue
+    }
+
+    It 'requires functional workflow authorities for compatibility schema 1.1.0 and later' {
         $matrix = Get-Content -LiteralPath $script:compatibilityPath -Raw | ConvertFrom-Json
         $matrix.unreleasedContract.PSObject.Properties.Remove('functionalWorkflows')
         ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:compatibilitySchema) | Should -BeFalse
+    }
+
+    It 'records an honest NotRun canary state for the prepared compatibility schema 1.2.0 contract' {
+        $matrix = Get-Content -LiteralPath $script:compatibilityPath -Raw | ConvertFrom-Json
+        $matrix.schemaVersion | Should -BeExactly '1.2.0'
+        $matrix.unreleasedContract.canaryValidationStatus | Should -BeExactly 'NotRun'
+        $matrix.unreleasedContract.canaryValidatedWorkflowSha | Should -BeNullOrEmpty
+        ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:compatibilitySchema) | Should -BeTrue
+    }
+
+    It 'rejects a retained canary authority when compatibility schema 1.2.0 reports NotRun' {
+        $matrix = Get-Content -LiteralPath $script:compatibilityPath -Raw | ConvertFrom-Json
+        $matrix.unreleasedContract.canaryValidatedWorkflowSha = $script:historicalCanarySha
+        ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:compatibilitySchema) | Should -BeFalse
+    }
+
+    It 'requires an immutable canary authority when compatibility schema 1.2.0 reports Passed' {
+        $matrix = Get-Content -LiteralPath $script:compatibilityPath -Raw | ConvertFrom-Json
+        $matrix.unreleasedContract.canaryValidationStatus = 'Passed'
+        $matrix.unreleasedContract.canaryValidatedWorkflowSha = $null
+        ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:compatibilitySchema) | Should -BeFalse
+
+        $matrix.unreleasedContract.canaryValidatedWorkflowSha = $script:historicalCanarySha
+        ($matrix | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:compatibilitySchema) | Should -BeTrue
     }
 
     It 'records immutable Python and Bash functional workflow authorities' {
