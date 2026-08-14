@@ -1,0 +1,8 @@
+{
+  "standardsRepository": "AIAllTheThingz/Engineering-Standards",
+  "standardsWorkflowSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
+  "standardsWorkflowObjectSha": "42fa18ed9744fa98ce1f9048e3610f7ed6ff7507",
+  "standardsWorkflowRef": "AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@refs/tags/v1.2.0",
+  "standardsWorkflowReferenceKind": "AnnotatedTag",
+  "callerRepository": "AIAllTheThingz/Engineering-Standards-Canary"
+}
