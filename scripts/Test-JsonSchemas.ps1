@@ -45,6 +45,7 @@ $map = @{
     'standards-consistency' = 'standards-consistency'
     'codex-skill-behavior-evaluation' = 'codex-skill-behavior-evaluation'
     'workflow-identity' = 'workflow-identity'
+    'workflow-environment' = 'workflow-environment'
 }
 foreach ($mode in @('valid','invalid')) {
     $fixtureRoot = Join-Path $root "tests/fixtures/$mode"
@@ -54,7 +55,7 @@ foreach ($mode in @('valid','invalid')) {
             if ($fixture.BaseName -like "$key*") { $kind = $map[$key] }
         }
         if (-not $kind) { continue }
-        if ($kind -in @('codex-skill-behavior-evaluation','workflow-identity')) {
+        if ($kind -in @('codex-skill-behavior-evaluation','workflow-identity','workflow-environment')) {
             try {
                 $schemaPath = Join-Path $root "schemas/$kind.schema.json"
                 $schemaValid = (Get-Content -LiteralPath $fixture.FullName -Raw | Test-Json -SchemaFile $schemaPath -ErrorAction Stop)
