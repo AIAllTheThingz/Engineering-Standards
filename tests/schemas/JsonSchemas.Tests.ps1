@@ -58,10 +58,13 @@ Describe 'JSON schema validation' {
         It 'accepts legacy compatibility records and rejects version-shape mismatches' {
             $schema = Resolve-Path "$PSScriptRoot/../../schemas/downstream-compatibility.schema.json"
             $owned = Get-Content -LiteralPath "$PSScriptRoot/../../governance/downstream-compatibility.json" -Raw | ConvertFrom-Json
+            $historicalCanarySha = 'de32b77e2043f5336a54b92ab9ed867abe93ba7e'
 
             $legacy = $owned | ConvertTo-Json -Depth 30 | ConvertFrom-Json
             $legacy.schemaVersion = '1.0.0'
             $legacy.unreleasedContract.PSObject.Properties.Remove('functionalWorkflows')
+            $legacy.unreleasedContract.PSObject.Properties.Remove('canaryValidationStatus')
+            $legacy.unreleasedContract.canaryValidatedWorkflowSha = $historicalCanarySha
             ($legacy | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeTrue
 
             $mislabeled = $owned | ConvertTo-Json -Depth 30 | ConvertFrom-Json
@@ -158,7 +161,7 @@ Describe 'JSON schema validation' {
             }
 
             $compatibility = Get-Content "$PSScriptRoot/../../schemas/downstream-compatibility.schema.json" -Raw | ConvertFrom-Json
-            @($compatibility.properties.schemaVersion.enum) | Should -BeExactly @('1.0.0', '1.1.0')
+            @($compatibility.properties.schemaVersion.enum) | Should -BeExactly @('1.0.0', '1.1.0', '1.2.0')
         }
     }
 }

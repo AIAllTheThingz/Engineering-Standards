@@ -30,6 +30,7 @@ function script:Invoke-IdentityResolver {
     $exitCode = $LASTEXITCODE
     $text = (($output | ForEach-Object { [string]$_ }) -join "`n")
     $text = [regex]::Replace($text, "`e\[[0-9;?]*[ -/]*[@-~]", '')
+    $text = [regex]::Replace($text, '\[[0-9;?]+m', '')
     [pscustomobject]@{
         ExitCode = $exitCode
         Output = $text
