@@ -1,6 +1,7 @@
 BeforeAll {
     $script:repoRoot = (Resolve-Path "$PSScriptRoot/../..").Path
     $script:resolver = Join-Path $script:repoRoot 'scripts/Resolve-ReusableWorkflowIdentity.ps1'
+    $script:workflowPath = Join-Path $script:repoRoot '.github/workflows/governance-ci-reusable.yml'
     $script:workflowPrefix = 'AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@'
     $script:head = (& git -C $script:repoRoot rev-parse --verify 'HEAD^{commit}').Trim()
     $script:createdTags = [System.Collections.Generic.List[string]]::new()
@@ -69,11 +70,12 @@ Describe 'Reusable workflow immutable identity resolution' {
         New-AnnotatedTestTag -Tag $tag -Target $script:head -Message 'Synthetic annotated workflow identity tag'
         $tagObject = (& git -C $script:repoRoot rev-parse --verify "refs/tags/$tag").Trim()
 
-        $result = Invoke-IdentityResolver -WorkflowSha $tagObject -Reference "$script:workflowPrefix`refs/tags/$tag"
+        $result = Invoke-IdentityResolver -WorkflowSha $tagObject -Reference "${script:workflowPrefix}refs/tags/$tag"
 
         $result.ExitCode | Should -Be 0 -Because $result.Output
         $identity = $result.Output | ConvertFrom-Json
         $identity.referenceKind | Should -BeExactly 'AnnotatedTag'
+        $identity.workflowRef | Should -BeExactly "${script:workflowPrefix}refs/tags/$tag"
         $identity.workflowObjectSha | Should -BeExactly $tagObject
         $identity.standardsCommitSha | Should -BeExactly $script:head
     }
@@ -85,14 +87,14 @@ Describe 'Reusable workflow immutable identity resolution' {
         $LASTEXITCODE | Should -Be 0
         $tagObject = (& git -C $script:repoRoot rev-parse --verify "refs/tags/$tag").Trim()
 
-        $result = Invoke-IdentityResolver -WorkflowSha $tagObject -Reference "$script:workflowPrefix`refs/tags/$tag"
+        $result = Invoke-IdentityResolver -WorkflowSha $tagObject -Reference "${script:workflowPrefix}refs/tags/$tag"
 
         $result.ExitCode | Should -Not -Be 0
         $result.Output | Should -Match 'lightweight tags are not accepted'
     }
 
     It 'rejects a branch workflow ref even when its commit equals HEAD' {
-        $result = Invoke-IdentityResolver -WorkflowSha $script:head -Reference "$script:workflowPrefix`refs/heads/master"
+        $result = Invoke-IdentityResolver -WorkflowSha $script:head -Reference "${script:workflowPrefix}refs/heads/master"
 
         $result.ExitCode | Should -Not -Be 0
         $result.Output | Should -Match 'Branches and other refs are not accepted'
@@ -105,7 +107,7 @@ Describe 'Reusable workflow immutable identity resolution' {
         New-AnnotatedTestTag -Tag $tag -Target $parent -Message 'Synthetic stale workflow identity tag'
         $tagObject = (& git -C $script:repoRoot rev-parse --verify "refs/tags/$tag").Trim()
 
-        $result = Invoke-IdentityResolver -WorkflowSha $tagObject -Reference "$script:workflowPrefix`refs/tags/$tag"
+        $result = Invoke-IdentityResolver -WorkflowSha $tagObject -Reference "${script:workflowPrefix}refs/tags/$tag"
 
         $result.ExitCode | Should -Not -Be 0
         $result.Output | Should -Match 'peeled commit does not match'
@@ -116,7 +118,7 @@ Describe 'Reusable workflow immutable identity resolution' {
         $script:createdTags.Add($tag)
         New-AnnotatedTestTag -Tag $tag -Target $script:head -Message 'Synthetic mismatch workflow identity tag'
 
-        $result = Invoke-IdentityResolver -WorkflowSha $script:head -Reference "$script:workflowPrefix`refs/tags/$tag"
+        $result = Invoke-IdentityResolver -WorkflowSha $script:head -Reference "${script:workflowPrefix}refs/tags/$tag"
 
         $result.ExitCode | Should -Not -Be 0
         $result.Output | Should -Match 'tag-object SHA reported by job.workflow_sha'
@@ -137,5 +139,18 @@ Describe 'Reusable workflow immutable identity resolution' {
 
         $result.ExitCode | Should -Not -Be 0
         $result.Output | Should -Match 'Unexpected standards workflow repository'
+    }
+
+    It 'records the workflow object, peeled commit, ref, and reference kind in hosted environment evidence' {
+        $workflow = Get-Content -LiteralPath $script:workflowPath -Raw
+
+        $workflow | Should -Match 'STANDARDS_WORKFLOW_SHA:\s*\$\{\{\s*steps\.inputs\.outputs\.standards-commit-sha\s*\|\|\s*job\.workflow_sha\s*\}\}'
+        $workflow | Should -Match 'STANDARDS_WORKFLOW_OBJECT_SHA:\s*\$\{\{\s*job\.workflow_sha\s*\}\}'
+        $workflow | Should -Match 'STANDARDS_WORKFLOW_REF:\s*\$\{\{\s*job\.workflow_ref\s*\}\}'
+        $workflow | Should -Match "STANDARDS_WORKFLOW_REFERENCE_KIND:\s*\$\{\{\s*steps\.inputs\.outputs\.workflow-reference-kind\s*\|\|\s*'Unresolved'\s*\}\}"
+        $workflow | Should -Match 'standardsWorkflowSha\s*=\s*\$env:STANDARDS_WORKFLOW_SHA'
+        $workflow | Should -Match 'standardsWorkflowObjectSha\s*=\s*\$env:STANDARDS_WORKFLOW_OBJECT_SHA'
+        $workflow | Should -Match 'standardsWorkflowRef\s*=\s*\$env:STANDARDS_WORKFLOW_REF'
+        $workflow | Should -Match 'standardsWorkflowReferenceKind\s*=\s*\$env:STANDARDS_WORKFLOW_REFERENCE_KIND'
     }
 }
