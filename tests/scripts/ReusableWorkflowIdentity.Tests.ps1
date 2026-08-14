@@ -144,13 +144,29 @@ Describe 'Reusable workflow immutable identity resolution' {
     It 'records the workflow object, peeled commit, ref, and reference kind in hosted environment evidence' {
         $workflow = Get-Content -LiteralPath $script:workflowPath -Raw
 
-        $workflow | Should -Match 'STANDARDS_WORKFLOW_SHA:\s*\$\{\{\s*steps\.inputs\.outputs\.standards-commit-sha\s*\|\|\s*job\.workflow_sha\s*\}\}'
+        $workflow | Should -Match 'STANDARDS_WORKFLOW_SHA:\s*\$\{\{\s*steps\.inputs\.outputs\.standards-commit-sha\s*\}\}'
         $workflow | Should -Match 'STANDARDS_WORKFLOW_OBJECT_SHA:\s*\$\{\{\s*job\.workflow_sha\s*\}\}'
         $workflow | Should -Match 'STANDARDS_WORKFLOW_REF:\s*\$\{\{\s*job\.workflow_ref\s*\}\}'
         $workflow | Should -Match "STANDARDS_WORKFLOW_REFERENCE_KIND:\s*\$\{\{\s*steps\.inputs\.outputs\.workflow-reference-kind\s*\|\|\s*'Unresolved'\s*\}\}"
-        $workflow | Should -Match 'standardsWorkflowSha\s*=\s*\$env:STANDARDS_WORKFLOW_SHA'
+        $workflow | Should -Match 'standardsWorkflowSha\s*=\s*\$resolvedStandardsSha'
         $workflow | Should -Match 'standardsWorkflowObjectSha\s*=\s*\$env:STANDARDS_WORKFLOW_OBJECT_SHA'
         $workflow | Should -Match 'standardsWorkflowRef\s*=\s*\$env:STANDARDS_WORKFLOW_REF'
         $workflow | Should -Match 'standardsWorkflowReferenceKind\s*=\s*\$env:STANDARDS_WORKFLOW_REFERENCE_KIND'
+        $workflow | Should -Not -Match 'steps\.inputs\.outputs\.standards-commit-sha\s*\|\|\s*job\.workflow_sha'
+    }
+
+    It 'persists verified identity before caller input validation can fail' {
+        $workflow = Get-Content -LiteralPath $script:workflowPath -Raw
+        $identityOutputIndex = $workflow.IndexOf('"standards-commit-sha=$($identity.standardsCommitSha)"')
+        $identityResolvedIndex = $workflow.IndexOf("'identity-resolved=true'")
+        $projectValidationIndex = $workflow.IndexOf("project-path must not be empty.")
+
+        $identityOutputIndex | Should -BeGreaterOrEqual 0
+        $identityResolvedIndex | Should -BeGreaterOrEqual 0
+        $projectValidationIndex | Should -BeGreaterOrEqual 0
+        $identityOutputIndex | Should -BeLessThan $projectValidationIndex
+        $identityResolvedIndex | Should -BeLessThan $projectValidationIndex
+        $workflow | Should -Match 'input-validation-error=\$inputError'
+        $workflow | Should -Match 'caller input validation failed after workflow identity was verified'
     }
 }
