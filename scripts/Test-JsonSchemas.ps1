@@ -180,12 +180,21 @@ try {
     $compatibilityMatrix = $compatibilityRaw | ConvertFrom-Json -Depth 100 -AsHashtable
     $compatibilityRequired = @('schemaVersion', 'repository', 'updatedAtUtc', 'ownerRole', 'supportPolicy', 'governanceReleases', 'unreleasedContract')
     $missingCompatibilityMembers = @($compatibilityRequired | Where-Object { -not $compatibilityMatrix.Contains($_) })
-    $supportedCompatibilityVersions = @('1.0.0', '1.1.0')
+    $supportedCompatibilityVersions = @('1.0.0', '1.1.0', '1.2.0')
     $hasFunctionalWorkflows = $compatibilityMatrix.Contains('unreleasedContract') -and $compatibilityMatrix.unreleasedContract.Contains('functionalWorkflows')
     $functionalWorkflowCount = if ($hasFunctionalWorkflows) { @($compatibilityMatrix.unreleasedContract.functionalWorkflows).Count } else { 0 }
+    $hasCanaryValidationStatus = $compatibilityMatrix.Contains('unreleasedContract') -and $compatibilityMatrix.unreleasedContract.Contains('canaryValidationStatus')
+    $canaryStatus = if ($hasCanaryValidationStatus) { [string]$compatibilityMatrix.unreleasedContract.canaryValidationStatus } else { '' }
+    $canarySha = if ($compatibilityMatrix.Contains('unreleasedContract') -and $compatibilityMatrix.unreleasedContract.Contains('canaryValidatedWorkflowSha')) { $compatibilityMatrix.unreleasedContract.canaryValidatedWorkflowSha } else { $null }
+    $canaryShapeInvalid =
+        ($compatibilityMatrix.schemaVersion -in @('1.0.0', '1.1.0') -and $hasCanaryValidationStatus) -or
+        ($compatibilityMatrix.schemaVersion -ceq '1.2.0' -and (-not $hasCanaryValidationStatus -or @('Passed','Failed','Blocked','NotRun','NotApplicable') -cnotcontains $canaryStatus)) -or
+        ($compatibilityMatrix.schemaVersion -ceq '1.2.0' -and $canaryStatus -ceq 'Passed' -and ($null -eq $canarySha -or [string]$canarySha -cnotmatch '^[0-9a-f]{40}$')) -or
+        ($compatibilityMatrix.schemaVersion -ceq '1.2.0' -and $canaryStatus -cne 'Passed' -and $null -ne $canarySha)
     $versionShapeInvalid =
         ($compatibilityMatrix.schemaVersion -ceq '1.0.0' -and $hasFunctionalWorkflows) -or
-        ($compatibilityMatrix.schemaVersion -ceq '1.1.0' -and $functionalWorkflowCount -lt 1)
+        ($compatibilityMatrix.schemaVersion -in @('1.1.0', '1.2.0') -and $functionalWorkflowCount -lt 1) -or
+        $canaryShapeInvalid
     $schemaValid = $false
     try {
         $schemaValid = $compatibilityRaw | Test-Json -SchemaFile $compatibilitySchemaPath -ErrorAction Stop
