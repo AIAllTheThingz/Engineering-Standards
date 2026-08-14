@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["schemaVersion", "repository", "updatedAtUtc", "ownerRole", "supportPolicy", "governanceReleases", "unreleasedContract"],
   "properties": {
-    "schemaVersion": { "type": "string", "enum": ["1.0.0", "1.1.0"] },
+    "schemaVersion": { "type": "string", "enum": ["1.0.0", "1.1.0", "1.2.0"] },
     "repository": { "type": "string", "const": "AIAllTheThingz/Engineering-Standards" },
     "updatedAtUtc": { "type": "string", "format": "date-time" },
     "ownerRole": { "type": "string", "minLength": 3, "maxLength": 120 },
@@ -27,11 +27,55 @@
   "allOf": [
     {
       "if": { "properties": { "schemaVersion": { "const": "1.0.0" } }, "required": ["schemaVersion"] },
-      "then": { "properties": { "unreleasedContract": { "not": { "required": ["functionalWorkflows"] } } } }
+      "then": {
+        "properties": {
+          "unreleasedContract": {
+            "allOf": [
+              { "not": { "required": ["functionalWorkflows"] } },
+              { "not": { "required": ["canaryValidationStatus"] } },
+              { "properties": { "canaryValidatedWorkflowSha": { "$ref": "#/$defs/commitSha" } } }
+            ]
+          }
+        }
+      }
     },
     {
       "if": { "properties": { "schemaVersion": { "const": "1.1.0" } }, "required": ["schemaVersion"] },
-      "then": { "properties": { "unreleasedContract": { "required": ["functionalWorkflows"] } } }
+      "then": {
+        "properties": {
+          "unreleasedContract": {
+            "allOf": [
+              { "required": ["functionalWorkflows"] },
+              { "not": { "required": ["canaryValidationStatus"] } },
+              { "properties": { "canaryValidatedWorkflowSha": { "$ref": "#/$defs/commitSha" } } }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "schemaVersion": { "const": "1.2.0" } }, "required": ["schemaVersion"] },
+      "then": {
+        "properties": {
+          "unreleasedContract": {
+            "allOf": [
+              { "required": ["functionalWorkflows", "canaryValidationStatus"] },
+              {
+                "if": {
+                  "properties": { "canaryValidationStatus": { "const": "Passed" } },
+                  "required": ["canaryValidationStatus"]
+                },
+                "then": {
+                  "properties": { "canaryValidatedWorkflowSha": { "$ref": "#/$defs/commitSha" } }
+                },
+                "else": {
+                  "properties": { "canaryValidatedWorkflowSha": { "type": "null" } }
+                }
+              }
+            ]
+          }
+        }
+      }
     }
   ],
   "$defs": {
@@ -39,6 +83,7 @@
     "commitSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
     "relativePath": { "type": "string", "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?![A-Za-z]:)(?!/)(?!\\\\).+" },
     "versionSet": { "type": "array", "items": { "$ref": "#/$defs/version" }, "minItems": 1, "uniqueItems": true },
+    "status": { "type": "string", "enum": ["Passed", "Failed", "Blocked", "NotRun", "NotApplicable"] },
     "deprecation": {
       "type": "object",
       "additionalProperties": false,
@@ -60,7 +105,7 @@
         "interfaceVersion": { "$ref": "#/$defs/version" },
         "immutableSha": { "$ref": "#/$defs/commitSha" },
         "supportStatus": { "type": "string", "enum": ["Preview", "Supported", "SecurityFixesOnly", "Unsupported"] },
-        "validationStatus": { "type": "string", "enum": ["Passed", "Failed", "Blocked", "NotRun", "NotApplicable"] },
+        "validationStatus": { "$ref": "#/$defs/status" },
         "evidence": { "type": "string", "minLength": 20, "maxLength": 2000 }
       },
       "allOf": [
@@ -104,7 +149,13 @@
         "testEvidenceSchemaVersions": { "$ref": "#/$defs/versionSet" },
         "completionResultSchemaVersions": { "$ref": "#/$defs/versionSet" },
         "migrationGuide": { "$ref": "#/$defs/relativePath" },
-        "canaryValidatedWorkflowSha": { "$ref": "#/$defs/commitSha" },
+        "canaryValidationStatus": { "$ref": "#/$defs/status" },
+        "canaryValidatedWorkflowSha": {
+          "oneOf": [
+            { "$ref": "#/$defs/commitSha" },
+            { "type": "null" }
+          ]
+        },
         "functionalWorkflows": { "type": "array", "items": { "$ref": "#/$defs/functionalWorkflow" }, "minItems": 1, "uniqueItems": true }
       }
     }
