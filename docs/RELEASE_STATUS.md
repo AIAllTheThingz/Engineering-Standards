@@ -32,7 +32,8 @@ The corrective path is a later patch release. Do not move, recreate, or silently
 
 - Published v1.2.0 control set: `6c0050de328ac083e69fbac8971a317689c2c1d6` through annotated tag `v1.2.0`.
 - Historical published v1.1.0 control set: `2704049d7e826975d956611b194214dd79ea3686` through annotated tag `v1.1.0`.
-- Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e` until the annotated-tag workflow-identity repair is published through a later patch release.
+- v1.1-compatible consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e`; this authority was validated for governance 1.1 and is not the v1.2 workflow authority.
+- v1.2 consumers should pin `.github/workflows/governance-ci-reusable.yml@6c0050de328ac083e69fbac8971a317689c2c1d6` by full commit SHA until a later patch release repairs annotated-tag workflow identity handling.
 
 Production consumers should use immutable published or explicitly documented authorities and must not treat a moving branch as a release identity.
 
