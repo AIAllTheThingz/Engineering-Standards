@@ -44,6 +44,7 @@ $map = @{
     'verified-run' = 'verified-run'
     'standards-consistency' = 'standards-consistency'
     'codex-skill-behavior-evaluation' = 'codex-skill-behavior-evaluation'
+    'workflow-identity' = 'workflow-identity'
 }
 foreach ($mode in @('valid','invalid')) {
     $fixtureRoot = Join-Path $root "tests/fixtures/$mode"
@@ -53,14 +54,14 @@ foreach ($mode in @('valid','invalid')) {
             if ($fixture.BaseName -like "$key*") { $kind = $map[$key] }
         }
         if (-not $kind) { continue }
-        if ($kind -eq 'codex-skill-behavior-evaluation') {
+        if ($kind -in @('codex-skill-behavior-evaluation','workflow-identity')) {
             try {
-                $schemaPath = Join-Path $root 'schemas/codex-skill-behavior-evaluation.schema.json'
+                $schemaPath = Join-Path $root "schemas/$kind.schema.json"
                 $schemaValid = (Get-Content -LiteralPath $fixture.FullName -Raw | Test-Json -SchemaFile $schemaPath -ErrorAction Stop)
-                $fixtureResults = @((New-ValidationResult -Status $(if ($schemaValid) { 'Passed' } else { 'Failed' }) -Message 'Codex behavior evidence fixture schema validation completed.' -Path $fixture.FullName))
+                $fixtureResults = @((New-ValidationResult -Status $(if ($schemaValid) { 'Passed' } else { 'Failed' }) -Message "$kind fixture schema validation completed." -Path $fixture.FullName))
             }
             catch {
-                $fixtureResults = @((New-ValidationResult -Status Failed -Message "Codex behavior evidence fixture schema validation failed: $($_.Exception.Message)" -Path $fixture.FullName))
+                $fixtureResults = @((New-ValidationResult -Status Failed -Message "$kind fixture schema validation failed: $($_.Exception.Message)" -Path $fixture.FullName))
             }
         }
         else {
