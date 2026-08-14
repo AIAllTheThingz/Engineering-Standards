@@ -92,7 +92,7 @@ try {
         }
         $approvedBehavior = Import-PowerShellDataFile -LiteralPath $behaviorConfiguration
         $behaviorVerifier = switch ([string]$approvedBehavior.Skill.Name) {
-            'enterprise-powershell' { 'Test-CodexSkillBehaviorEvidence.ps1'; break }
+            'enterprise-powershell' { 'Test-CodexSkillBehaviorActionsEvidence.ps1'; break }
             'powershell-review' { 'Test-CodexSkillBehaviorActionsEvidence.ps1'; break }
             default {
                 Stop-CodexSkillsBehaviorGate "Governed skill '$([string]$approvedBehavior.Skill.Name)' does not have an approved behavior-evidence verifier." -Status Blocked

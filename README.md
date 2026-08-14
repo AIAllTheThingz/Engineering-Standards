@@ -109,7 +109,7 @@ flowchart TD
 
 ## Example Workflow
 
-**Preview-only:** the following example demonstrates the prepared, unpublished `1.2.0` contract. It is not production authority until `1.2.0` is published. Production consumers should continue using immutable published `v1.1.0` or another explicitly documented immutable authority.
+The following example demonstrates the published `1.2.0` contract. For the complete published 1.2 governance, Python, and Bash workflow set, production consumers should pin the exact published target commit `6c0050de328ac083e69fbac8971a317689c2c1d6` by full SHA. Do not invoke the reusable governance workflow through annotated `v1.2.0` until issue #103 is repaired in a patch release.
 
 ```yaml
 name: Governance
@@ -121,7 +121,7 @@ permissions:
   contents: read
 jobs:
   governance:
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@<commit-sha>
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@6c0050de328ac083e69fbac8971a317689c2c1d6
     with:
       project-path: .
       governance-version: 1.2.0
@@ -131,6 +131,8 @@ jobs:
 The local event workflow is `.github/workflows/governance-ci.yml`. It triggers on pull requests, pushes to `master`, and manual `workflow_dispatch`, then calls both the trusted baseline and the unprivileged candidate-validation harness at the same reviewed full commit SHA. Pinning both self-CI jobs prevents pull-request changes from redefining either security envelope; the baseline treats candidate content as data, while the isolated candidate job deliberately executes proposed validators and tests without secrets or write permissions. Downstream repositories must call the reusable workflow path under `.github/workflows`, not files under the root `workflows/` template directory. The baseline reusable job separates caller content, immutable central tooling, and evidence into `caller/`, `standards/`, and `evidence/`; it never requires downstream copies of central `scripts/`, `actions/`, `tests/`, or `examples/`.
 
 Reusable-workflow releases also require the external proof described in [Downstream Governance Canary](docs/DOWNSTREAM_CANARY.md). Self-CI and the public canary test different trust boundaries; maintainers must run and independently verify all five canary scenarios against the exact candidate SHA before release approval or an authoritative pin rotation.
+
+The post-release `de32b77e2043f5336a54b92ab9ed867abe93ba7e` governance-only repair does not contain the published 1.2 Python and Bash reusable workflows, so it is not the pin used by this complete 1.2 example.
 
 Governed Python projects pair the non-executing static workflow with `.github/workflows/python-ci-reusable.yml`, pinned to the same immutable SHA. The functional job uses CPython 3.12.11 and a fully hashed project-owned lock to run pytest, strict mypy, pip-audit, package build and inspection, isolated wheel installation, an import smoke test, SBOM generation, and evidence upload.
 
@@ -150,7 +152,7 @@ Local rules may add stricter validation and repository-specific commands. Local 
 
 ## Example Project Manifest
 
-**Preview-only:** the manifest below demonstrates prepared schema/governance contract `1.2.0`. Do not copy its `1.2.0` version values into production until an immutable `1.2.0` authority is published or explicitly documented.
+The manifest below demonstrates the published schema/governance contract `1.2.0`. Production use should pin the governing repository and workflow references to immutable published or explicitly documented SHAs.
 
 ```json
 {
@@ -207,7 +209,7 @@ Local rules may add stricter validation and repository-specific commands. Local 
 
 Schema versions `1.0.0` and `1.1.0` remain supported. Version `1.2.0` separates the semantic governance release from its immutable commit, makes workflow interface compatibility explicit, and uses structured ownership, standards consumption, evidence, and exception records. See the [Issue #21 compatibility proposal](docs/migrations/ISSUE_21_CONTRACT_COMPATIBILITY_PROPOSAL.md).
 
-The example above reflects the prepared `1.2.0` contract. Production consumers should continue to use immutable published `v1.1.0` or another explicitly documented immutable authority until `1.2.0` is published.
+The example above reflects the published `1.2.0` contract. Consumers should use an immutable published tag/commit or another explicitly documented immutable authority.
 
 ## Local Validation
 
@@ -291,13 +293,15 @@ The `python-review` and `bash-review` home labs remain isolated demonstrations a
 
 The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Downstream CI SHOULD pin commit SHAs for maximum supply-chain integrity. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md), future changes remain under [Unreleased](CHANGELOG.md#unreleased), and release procedure is defined in [Release Process](docs/RELEASE_PROCESS.md).
 
-The prepared version is `1.2.0` and is unpublished. The latest published version remains `1.1.0`; annotated tag `v1.1.0` resolves to immutable commit `2704049d7e826975d956611b194214dd79ea3686`. PR #100 merged the primary release-preparation change set as `0a47444c0416c397dad769e7e66f9ad7e3119195`. The exact `1.2.0` release candidate will be frozen only after PR #101 status synchronization is merged; that resulting unchanged `master` SHA then enters the exact-target release lifecycle.
+The latest published version is `1.2.0`. Annotated tag `v1.2.0` resolves to immutable commit `6c0050de328ac083e69fbac8971a317689c2c1d6`. GitHub Release `v1.2.0` was published on 2026-08-12 as release ID `369234609`. Current development after that target is unreleased and must not be presented as part of immutable v1.2.0.
 
-Protected Codex Skill Behavior Evaluation run `31448468682` passed against status-sync behavior-input commit `954f0a7d1fecdb50ae0c2857ebefb842b3837649` with `10/10` cases, `30/30` samples, all aggregate rates `1.0`, quality average `4.0`, and zero material variance. A subsequent formatting-only correction to the behavior-bound suspended-skill catalog requires one final protected behavior rerun before PR #101 is finalized; earlier runs remain historical evidence for the exact inputs they evaluated.
+Publication exposed an annotated-tag reusable-workflow identity defect and a reviewed-release-notes integrity mismatch. Those immutable v1.2.0 follow-ups are tracked in issue #103 and must be repaired through a later patch release rather than by moving or silently rewriting `v1.2.0`.
+
+The v1.2.0 behavior evidence is protected run `31448468682`, which evaluated behavior-input commit `954f0a7d1fecdb50ae0c2857ebefb842b3837649`; artifact `9085519608` has SHA-256 `99d392a3c803315ec3adc453c30cef659380b98440f6b8a1aaee5f376df7c53f`. Separately, post-release PR #104 behavior evidence run `31701615430` executed after publication against PR #104 candidate `0eaf955b9e5f163c092deeae536cb32f80549aab` and passed with `10/10` cases, `30/30` samples, all aggregate rates `1.0`, quality average `4.0`, and zero material variance. Artifact `9181628300` independently hashes to `a452a282fd7b17e2f39b23d4d24933452d8dd57126cbd982b62231c98e74b5ef`. Run `31701615430` is not v1.2.0 release evidence; human adjudication for PR #104 remains a separate attributable gate.
 
 Release candidates use the read-only lifecycle gate in `scripts/Test-ReleaseLifecycle.ps1`. Its PreRelease, Publication, and PostRelease stages bind validation, canary runs, human approvals, tag/release state, and compatibility updates to one immutable SHA. See [Downstream Compatibility](docs/DOWNSTREAM_COMPATIBILITY.md) for the supported release, schema, and workflow-interface matrix.
 
-Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml` to immutable post-release commit `de32b77e2043f5336a54b92ab9ed867abe93ba7e` while `1.2.0` is prepared. See [Release Status](docs/RELEASE_STATUS.md).
+Consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e` until the annotated-tag workflow-identity repair is published through a later patch release. See [Release Status](docs/RELEASE_STATUS.md).
 
 ## Security Reporting And Contributions
 
