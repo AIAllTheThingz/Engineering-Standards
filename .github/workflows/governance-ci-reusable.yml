@@ -295,11 +295,11 @@ jobs:
               $failure = 'Reusable workflow identity validation failed before trusted governance validation could run.'
             }
           }
-          if (Test-Path -LiteralPath evidence/runtime-bootstrap.json -PathType Leaf) {
+          if ($null -eq $failure -and (Test-Path -LiteralPath evidence/runtime-bootstrap.json -PathType Leaf)) {
             $runtime = Get-Content -LiteralPath evidence/runtime-bootstrap.json -Raw | ConvertFrom-Json
             if ($runtime.status -in @('Failed','Blocked')) { $failure = [string]$(if($runtime.failureReason){$runtime.failureReason}else{$runtime.blockedReason}) }
           }
-          if (Test-Path -LiteralPath evidence/dependencies.json -PathType Leaf) {
+          if ($null -eq $failure -and (Test-Path -LiteralPath evidence/dependencies.json -PathType Leaf)) {
             $dependencies = Get-Content -LiteralPath evidence/dependencies.json -Raw | ConvertFrom-Json
             if ($dependencies.status -in @('Failed','Blocked')) { $failure = [string]$(if($dependencies.failureReason){$dependencies.failureReason}else{$dependencies.blockedReason}) }
           }
