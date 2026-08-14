@@ -15,7 +15,7 @@
   },
   "compatibilityMatrix": {
     "path": "governance/downstream-compatibility.json",
-    "schemaVersion": "1.1.0"
+    "schemaVersion": "1.2.0"
   },
   "preRelease": {
     "status": "Passed",
