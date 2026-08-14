@@ -109,7 +109,7 @@ flowchart TD
 
 ## Example Workflow
 
-The following example demonstrates the published `1.2.0` contract. Until the annotated-tag workflow-identity defect is repaired in a patch release, production workflow consumers should use the explicitly documented immutable authority shown below.
+The following example demonstrates the published `1.2.0` contract. For the complete published 1.2 governance, Python, and Bash workflow set, production consumers should pin the exact published target commit `6c0050de328ac083e69fbac8971a317689c2c1d6` by full SHA. Do not invoke the reusable governance workflow through annotated `v1.2.0` until issue #103 is repaired in a patch release.
 
 ```yaml
 name: Governance
@@ -121,7 +121,7 @@ permissions:
   contents: read
 jobs:
   governance:
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@6c0050de328ac083e69fbac8971a317689c2c1d6
     with:
       project-path: .
       governance-version: 1.2.0
@@ -131,6 +131,8 @@ jobs:
 The local event workflow is `.github/workflows/governance-ci.yml`. It triggers on pull requests, pushes to `master`, and manual `workflow_dispatch`, then calls both the trusted baseline and the unprivileged candidate-validation harness at the same reviewed full commit SHA. Pinning both self-CI jobs prevents pull-request changes from redefining either security envelope; the baseline treats candidate content as data, while the isolated candidate job deliberately executes proposed validators and tests without secrets or write permissions. Downstream repositories must call the reusable workflow path under `.github/workflows`, not files under the root `workflows/` template directory. The baseline reusable job separates caller content, immutable central tooling, and evidence into `caller/`, `standards/`, and `evidence/`; it never requires downstream copies of central `scripts/`, `actions/`, `tests/`, or `examples/`.
 
 Reusable-workflow releases also require the external proof described in [Downstream Governance Canary](docs/DOWNSTREAM_CANARY.md). Self-CI and the public canary test different trust boundaries; maintainers must run and independently verify all five canary scenarios against the exact candidate SHA before release approval or an authoritative pin rotation.
+
+The post-release `de32b77e2043f5336a54b92ab9ed867abe93ba7e` governance-only repair does not contain the published 1.2 Python and Bash reusable workflows, so it is not the pin used by this complete 1.2 example.
 
 Governed Python projects pair the non-executing static workflow with `.github/workflows/python-ci-reusable.yml`, pinned to the same immutable SHA. The functional job uses CPython 3.12.11 and a fully hashed project-owned lock to run pytest, strict mypy, pip-audit, package build and inspection, isolated wheel installation, an import smoke test, SBOM generation, and evidence upload.
 
