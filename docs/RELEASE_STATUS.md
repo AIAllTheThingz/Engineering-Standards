@@ -2,72 +2,55 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Prepared; unpublished |
-| Prepared version | 1.2.1 |
-| Latest published version | 1.2.0 |
-| Published v1.2.0 target | `6c0050de328ac083e69fbac8971a317689c2c1d6` |
-| Published v1.2.0 tag object | `42fa18ed9744fa98ce1f9048e3610f7ed6ff7507` |
-| Published v1.2.0 GitHub Release ID | `369234609` |
+| Status | Published; published-ref canary verified; final PostRelease lifecycle pending |
+| Latest published version | 1.2.1 |
+| Published v1.2.1 target | `7d15ec8be6d8c3cdca35061728901584437e4a50` |
+| Published v1.2.1 tag object | `aea6330ee3d51b3f5bb55031d878ef302ba1dbca` |
+| Published v1.2.1 GitHub Release ID | `370882222` |
 | Owner role | Release Maintainers |
-| Last verified | 2026-08-14 |
+| Last verified | 2026-08-15 |
 
 ## Current Release State
 
-The prepared version is `1.2.1` and is unpublished. No `v1.2.1` tag or GitHub Release is claimed by this repository state.
+The latest published version is `1.2.1`. Annotated tag `v1.2.1` has tag-object SHA `aea6330ee3d51b3f5bb55031d878ef302ba1dbca` and resolves to immutable commit `7d15ec8be6d8c3cdca35061728901584437e4a50`. GitHub Release `370882222` is non-draft and non-prerelease and was published on 2026-08-15 from the reviewed `docs/releases/1.2.1.md` content exactly.
 
-The latest published version remains `1.2.0`. Annotated tag `v1.2.0` has tag-object SHA `42fa18ed9744fa98ce1f9048e3610f7ed6ff7507` and resolves to immutable commit `6c0050de328ac083e69fbac8971a317689c2c1d6`. GitHub Release `v1.2.0` is historical external state and is not rewritten by the patch preparation.
+The published release-note SHA-256 is `a6598577ac6ad67d5f4b55c534a90f15505f80fed822878598c231433b29877d`. Published `v1.2.0` remains immutable historical evidence at commit `6c0050de328ac083e69fbac8971a317689c2c1d6`; it is not moved, recreated, deleted, or rewritten.
 
-Current `master` contains development after the published target. Historical release evidence is bounded to the exact commit, run, artifact, or input set it names and does not validate current `master`.
+## v1.2.1 Lifecycle Evidence
 
-## Prepared v1.2.1 Scope
+- Exact-candidate Governance CI: run `31826861530`, Passed; artifact `9229568604` independently verified.
+- Exact-candidate controlled failure: run `31843005246`, expected failure only at final mandatory enforcement; artifact `9235313486` independently verified.
+- Live PreRelease lifecycle: run `31846242114`, Passed; artifact `9235993449` independently verified.
+- Publication lifecycle: run `31853146258`, Passed; artifact `9238154042` independently verified.
+- Published-ref PostRelease canary caller: `03979bdd46e36593faf044e2206e24c7ed485d62`.
+- Published-ref success: `31853248739`; expected-negative runs: `31853248720`, `31853248752`, `31853248718`, `31853248799`. All five artifacts were independently hash verified.
+- Every published-ref artifact records workflow object `aea6330ee3d51b3f5bb55031d878ef302ba1dbca`, reference kind `AnnotatedTag`, and peeled standards commit `7d15ec8be6d8c3cdca35061728901584437e4a50`.
+- No unexpected regression was observed and no defect follow-up issue is required.
 
-The patch release is scoped to issue #103 and the post-`v1.2.0` corrections already merged to `master`:
+## Consumer Authority
 
-- make the reusable governance workflow explicitly aware of annotated release-tag object identity while preserving exact peeled-commit binding;
-- reject branches, lightweight tags, malformed refs, wrong repositories, wrong workflow paths, mismatched tag objects, and mismatched peeled commits;
-- record both workflow object identity and peeled standards commit identity in hosted evidence;
-- require the future `v1.2.1` GitHub Release body to match the reviewed `docs/releases/1.2.1.md` content exactly rather than using auto-generated notes;
-- include the post-release release-state, compatibility-guidance, and `enterprise-powershell` verifier-routing corrections merged through PR #106.
+Published `v1.2.1` consumers requiring the canary-validated repaired workflow should pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50` for maximum supply-chain integrity. The protected annotated `v1.2.1` reference is verified by the full published-ref five-scenario canary. Final PostRelease lifecycle validation remains pending until this state synchronization is merged and the refreshed compatibility state is machine-checked.
 
-The root governance workflow interface remains `1.0.0`; supported project-manifest, test-evidence, and completion-result schema sets are unchanged.
+The v1.2.1 patch does not change downstream obligations, central workflow interface `1.0.0`, or the supported project-manifest, test-evidence, and completion-result schema sets.
 
-## Validation State
+## Current Master Boundary
 
-- Repository validation and hosted validation for the final `1.2.1` candidate: `NotRun` until the pull-request candidate is frozen and GitHub reports final results.
-- Controlled-failure hosted proof for the final candidate: `NotRun`.
-- Five-scenario downstream canary against the exact final candidate SHA: `NotRun`.
-- Independent artifact verification for those runs: `NotRun`.
-- Attributable final-head human release approval: `NotRun`.
-- Tag creation, GitHub Release publication, Publication gate, and PostRelease gate: `NotRun` and require separate authorized external actions.
+Current `master` contains development after the published target because PR #108 merged after `7d15ec8be6d8c3cdca35061728901584437e4a50`. That post-release work is `[Unreleased]`. Historical v1.2.1 evidence does not validate current `master`; it validates only the immutable published target.
 
-No pending gate above is inferred from historical evidence.
+The machine-readable `unreleasedContract` therefore retains governance version `1.2.1` but remains Preview with `canaryValidationStatus: NotRun` and a null canary authority. The published v1.2.1 PostRelease canary is not relabeled as validation of newer moving branch content.
 
-## Historical v1.2.0 Follow-Up
+## Issue #103 Disposition
 
-Issue #103 remains the owning defect record until the prepared patch passes PreRelease, is explicitly authorized and published as a new immutable release, passes the published annotated-tag canary path, and completes PostRelease verification. The existing `v1.2.0` tag and release must not be moved, recreated, deleted, or silently rewritten.
+The published `v1.2.1` PostRelease matrix proves the original annotated-tag reusable-workflow identity defect is repaired: GitHub's annotated tag-object SHA is verified separately from the peeled standards commit and both are preserved in hosted evidence. The v1.2.0 release-body mismatch is also corrected by the exact reviewed-body publication contract.
 
-## Immutable Consumer References
-
-- Published v1.2.0 control set: full commit `6c0050de328ac083e69fbac8971a317689c2c1d6`. Consumers should use the full SHA rather than annotated `v1.2.0` while issue #103 remains unresolved.
-- Historical published v1.1.0 control set: `2704049d7e826975d956611b194214dd79ea3686` through annotated tag `v1.1.0`.
-- Historical governance-1.1 consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e`; this retained authority is historical evidence and is not the prepared v1.2.1 candidate authority.
-- Prepared `1.2.1` is not yet a production consumer authority. Consumers must not pin the moving preparation branch or treat preparation as publication.
-
-## Verification Boundaries
-
-- A successful hosted workflow does not imply human approval unless attributable adjudication is separately recorded.
-- Checked behavior evidence may claim `Passed` only when its exact live artifact and attributable human adjudication are both present and verifiable.
-- Missing, failed, blocked, or unverifiable release gates remain visible rather than being relabeled as `Passed`.
-- The reviewed `docs/releases/1.2.1.md` file is the intended publication body; using generated release notes would recreate the release-integrity defect.
+Issue #103 may be closed only after this repository status synchronization is merged and the final PostRelease lifecycle gate records the refreshed compatibility state.
 
 ## Related Documents
 
-- [Prepared v1.2.1 Release Notes](releases/1.2.1.md)
-- [v1.2.0 Historical Release Record](releases/1.2.0.md)
-- [Unreleased / Prepared Migration Guide](releases/unreleased.md)
+- [Published v1.2.1 Release Notes](releases/1.2.1.md)
+- [Unreleased Development](releases/unreleased.md)
 - [Changelog](../CHANGELOG.md)
 - [Versioning](VERSIONING.md)
 - [Release Process](RELEASE_PROCESS.md)
 - [Downstream Compatibility](DOWNSTREAM_COMPATIBILITY.md)
 - [Downstream Governance Canary](DOWNSTREAM_CANARY.md)
-- [Codex Skill Validation](CODEX_SKILL_VALIDATION.md)

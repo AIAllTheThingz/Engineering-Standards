@@ -3,17 +3,17 @@
 | Field | Value |
 | --- | --- |
 | Status | Active |
-| Governance version | 1.1.0 |
+| Governance version | 1.2.1 |
 | Owner role | Engineering Standards Maintainers |
 | Canary repository | `AIAllTheThingz/Engineering-Standards-Canary` |
-| Validated standards SHA | `de32b77e2043f5336a54b92ab9ed867abe93ba7e` |
-| Last verified | 2026-07-11 |
+| Validated standards SHA | `7d15ec8be6d8c3cdca35061728901584437e4a50` |
+| Last verified | 2026-08-15 |
 
 ## Purpose
 
 The public downstream canary proves that the reusable governance workflow operates across a real repository boundary without copying central `scripts/`, `actions/`, `tests/`, or `examples/`. It is a release gate for reusable-workflow changes, not a template repository and not a substitute for each consumer's application-specific CI.
 
-The canary is intentionally non-production, contains no secrets, and uses only the `Contract` validation category. Its manifest classifies it as an `integration` project with `Moderate` risk and `Public` data. The workflow has only `contents: read` permission and pins every reusable-workflow call to one reviewed full commit SHA.
+The canary is intentionally non-production, contains no secrets, and uses only the `Contract` validation category. Its manifest classifies it as an `integration` project with `Moderate` risk and `Public` data. Candidate release proof uses exact full-SHA workflow pins; the published-ref canary intentionally invokes the protected published semantic ref so annotated-tag identity is exercised across the real repository boundary before the final PostRelease lifecycle gate.
 
 ## Repository Shape
 
@@ -33,17 +33,19 @@ Only the selected scenario job runs during manual dispatch. Pull requests and pu
 
 ## Verified Baseline
 
-The corrected cross-repository proof used canary commit `a7671ec1b8b702fc7703e49a7819bbffffd04fc3` and Engineering Standards functional candidate `de32b77e2043f5336a54b92ab9ed867abe93ba7e`. Every run uploaded evidence, and each downloaded artifact passed independent verification with `scripts/Test-WorkflowEvidenceArtifact.ps1`. This table validates that functional candidate, not a later metadata-only documentation commit. Release lifecycle records use the same five-scenario contract and bind it to the candidate declared in [Downstream Compatibility](DOWNSTREAM_COMPATIBILITY.md).
+The latest complete canary proof is the published `v1.2.1` five-scenario matrix from canary caller commit `03979bdd46e36593faf044e2206e24c7ed485d62`. All five isolated workflows invoked `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@v1.2.1`. GitHub resolved that ref to annotated tag object `aea6330ee3d51b3f5bb55031d878ef302ba1dbca`, and the workflow identity resolver independently peeled and validated standards commit `7d15ec8be6d8c3cdca35061728901584437e4a50`.
 
-| Scenario | Run | Governance job | Artifact ID | Artifact SHA-256 | Result |
-| --- | ---: | ---: | ---: | --- | --- |
-| Success | `29174960763` | `86602384012` | `8254615849` | `5442a898d2fef5d957b2c982c4c932fe58dad01da3c5b92b3758657f47d7293f` | Passed |
-| Controlled failure | `29174961493` | `86602386096` | `8254615773` | `a12f37222cf30c98296e85ebbffb97f8e13bd467ae3d923783163d4141b59e97` | Expected failure verified |
-| Governance version mismatch | `29174962200` | `86602384436` | `8254615629` | `1099b349006aaa8ea7801a30cebda46370258622d5cfcef06c792c21ad4df922` | Exact mismatch reason verified |
-| Missing required file | `29174962956` | `86602391036` | `8254616287` | `4dd42b75ea3d992cabe0b6c1519753fc17e86eb5cb01eac79f90bfb9fdfd606f` | Exact `SECURITY.md` reason verified |
-| Mandatory control disablement | `29174963655` | `86602388751` | `8254616945` | `3a6ba0b648c0adf3fd7a4b0fb7f27ccf526a6e5e0110197c36da755724c6b3ac` | Exact disablement reason verified |
+| Scenario | Run | Artifact ID | Artifact SHA-256 | Result |
+| --- | ---: | ---: | --- | --- |
+| Success | `31853248739` | `9238210172` | `75da2fdf61b1c56b7c306eaf16fbb8d8b985f7ef41ee13d814dbd3b3d5c67d56` | Passed |
+| Controlled failure | `31853248720` | `9238209524` | `595669f03ba1031ae5c693d2341b68545ef4d51e8dd6b0e3815d8226357db7a5` | Expected failure verified |
+| Governance version mismatch | `31853248752` | `9238207090` | `586353be72b9b1d60d22e5225ae67c4e85f780286b61ad9644c43f2a820dab50` | Exact mismatch reason verified |
+| Missing required file | `31853248718` | `9238208902` | `fcfd7c9b44a476e7b7d42a2eecabd92b013375d00001a75f3246fc01d882281e` | Exact `SECURITY.md` reason verified |
+| Mandatory control disablement | `31853248799` | `9238211637` | `856b94df35b8d9921bd0aa3cc0ce6de12a2b2ae6f18e6e66f8be9c5a078ed3ca` | Exact disablement reason verified |
 
-All five manual artifacts record the exact canary head and immutable standards workflow identity above. The version-mismatch and mandatory-disablement artifacts use `BootstrapValidation` and preserve the sanitized exception message; the missing-file artifact preserves the Contract diagnostic identifying `SECURITY.md`.
+All five artifacts were independently downloaded and their ZIP SHA-256 values matched GitHub. Every `workflow-identity.json` records `referenceKind: AnnotatedTag`, workflow object `aea6330ee3d51b3f5bb55031d878ef302ba1dbca`, ref `refs/tags/v1.2.1`, and peeled standards commit `7d15ec8be6d8c3cdca35061728901584437e4a50`. Archive safety inspection found no unsafe paths, symlinks, runner/workspace absolute paths, PAT/API-key patterns, Windows absolute paths, or private-key markers.
+
+This supersedes the older governance-1.1 canary baseline as the current central governance release proof. Historical runs remain valid only for the exact commits and artifacts they name.
 
 ## Release Gate
 
@@ -55,6 +57,7 @@ Before approving a reusable-workflow release or rotating the authoritative self-
 4. Confirm success passes and each negative scenario fails for only its intended reason.
 5. Download every evidence artifact into a temporary directory and independently verify repository, caller commit, branch, run identity, conclusion, and hash.
 6. Record the runs, artifact IDs, hashes, candidate SHA, canary commit, and reviewer decision in the release pull request.
+7. After authorized publication, rerun the full five-scenario matrix through the immutable published `v<version>` ref and verify the workflow tag-object identity, annotated reference kind, peeled standards commit, conclusions, artifacts, and hashes before PostRelease can pass.
 
 A missing run, unexpected conclusion, absent artifact, verification failure, mutable pin, or unexplained difference blocks release. Self-CI success in this repository does not replace the external canary because it does not test the cross-repository caller boundary.
 

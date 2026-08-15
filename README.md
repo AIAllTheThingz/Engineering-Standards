@@ -109,7 +109,7 @@ flowchart TD
 
 ## Example Workflow
 
-The following example demonstrates the published `1.2.0` contract. For the complete published 1.2 governance, Python, and Bash workflow set, production consumers should pin the exact published target commit `6c0050de328ac083e69fbac8971a317689c2c1d6` by full SHA. Do not invoke the reusable governance workflow through annotated `v1.2.0` until issue #103 is repaired in a patch release.
+The following example demonstrates the published `1.2.1` governance release. Production workflow consumers MUST pin the exact published target `7d15ec8be6d8c3cdca35061728901584437e4a50` by full commit SHA. The protected annotated `v1.2.1` ref has passed the complete published-ref five-scenario canary and correctly separates tag-object identity from the peeled standards commit, but it is release/canary identity only and MUST NOT be the sole production GitHub Actions workflow identity.
 
 ```yaml
 name: Governance
@@ -121,10 +121,10 @@ permissions:
   contents: read
 jobs:
   governance:
-    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@6c0050de328ac083e69fbac8971a317689c2c1d6
+    uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50
     with:
       project-path: .
-      governance-version: 1.2.0
+      governance-version: 1.2.1
       artifact-retention-days: 30
 ```
 
@@ -132,7 +132,7 @@ The local event workflow is `.github/workflows/governance-ci.yml`. It triggers o
 
 Reusable-workflow releases also require the external proof described in [Downstream Governance Canary](docs/DOWNSTREAM_CANARY.md). Self-CI and the public canary test different trust boundaries; maintainers must run and independently verify all five canary scenarios against the exact candidate SHA before release approval or an authoritative pin rotation.
 
-The post-release `de32b77e2043f5336a54b92ab9ed867abe93ba7e` governance-only repair does not contain the published 1.2 Python and Bash reusable workflows, so it is not the pin used by this complete 1.2 example.
+The published `v1.2.1` target `7d15ec8be6d8c3cdca35061728901584437e4a50` contains the complete governed 1.2 distribution used by this example. The historical `de32b77e2043f5336a54b92ab9ed867abe93ba7e` authority remains governance-1.1 evidence only.
 
 Governed Python projects pair the non-executing static workflow with `.github/workflows/python-ci-reusable.yml`, pinned to the same immutable SHA. The functional job uses CPython 3.12.11 and a fully hashed project-owned lock to run pytest, strict mypy, pip-audit, package build and inspection, isolated wheel installation, an import smoke test, SBOM generation, and evidence upload.
 
@@ -162,7 +162,7 @@ The manifest below demonstrates the published schema/governance contract `1.2.0`
   "description": "Example service used to demonstrate governance adoption.",
   "projectType": "dotnet",
   "technologies": ["dotnet", "github-actions"],
-  "governanceVersion": "1.2.0",
+  "governanceVersion": "1.2.1",
   "governanceCommitSha": "<full-40-character-workflow-commit-sha>",
   "workflowInterfaceVersion": "1.0.0",
   "repositoryOwnerType": "Organization",
@@ -209,7 +209,7 @@ The manifest below demonstrates the published schema/governance contract `1.2.0`
 
 Schema versions `1.0.0` and `1.1.0` remain supported. Version `1.2.0` separates the semantic governance release from its immutable commit, makes workflow interface compatibility explicit, and uses structured ownership, standards consumption, evidence, and exception records. See the [Issue #21 compatibility proposal](docs/migrations/ISSUE_21_CONTRACT_COMPATIBILITY_PROPOSAL.md).
 
-The example above reflects the published `1.2.0` contract. Consumers should use an immutable published tag/commit or another explicitly documented immutable authority.
+The example above reflects the published `1.2.1` governance release while continuing to use project-manifest schema `1.2.0`. Production GitHub Actions consumers MUST use an immutable full commit SHA; semantic release tags may identify published releases and verification paths but MUST NOT be the sole production workflow identity.
 
 ## Local Validation
 
@@ -291,21 +291,21 @@ The `python-review` and `bash-review` home labs remain isolated demonstrations a
 
 ## Release And Versioning
 
-The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Downstream CI SHOULD pin commit SHAs for maximum supply-chain integrity. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md), future changes remain under [Unreleased](CHANGELOG.md#unreleased), and release procedure is defined in [Release Process](docs/RELEASE_PROCESS.md).
+The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Production downstream GitHub Actions workflows MUST pin immutable full commit SHAs; semantic release tags are insufficient as the sole workflow identity. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md), future changes remain under [Unreleased](CHANGELOG.md#unreleased), and release procedure is defined in [Release Process](docs/RELEASE_PROCESS.md).
 
-The latest published version remains `1.2.0`. Annotated tag `v1.2.0` resolves to immutable commit `6c0050de328ac083e69fbac8971a317689c2c1d6`. GitHub Release `v1.2.0` was published on 2026-08-12 as release ID `369234609` and remains historical external state.
+The latest published version is `1.2.1`. Annotated tag `v1.2.1` resolves to immutable commit `7d15ec8be6d8c3cdca35061728901584437e4a50` and has tag-object SHA `aea6330ee3d51b3f5bb55031d878ef302ba1dbca`. GitHub Release `v1.2.1` was published on 2026-08-15 as release ID `370882222` using the reviewed release-note body exactly.
 
-The prepared version is `1.2.1` and is unpublished. It is a corrective patch for issue #103 and includes the post-`v1.2.0` release-state, compatibility-guidance, and behavior-verifier fixes already merged to `master`. Preparation does not authorize a tag, GitHub Release, or consumer migration.
+The `1.2.1` trust-boundary repair verifies an annotated release tag as two related immutable identities: the tag object reported by GitHub and the exact peeled commit checked out for validation. The full published-ref five-scenario matrix passed through `@v1.2.1`, proving the original issue #103 annotated-tag defect no longer reproduces. Direct full-SHA pins remain exact, while branches, lightweight tags, malformed refs, wrong repositories, wrong workflow paths, mismatched tag objects, and mismatched peeled commits remain rejected.
 
-The `1.2.1` trust-boundary repair verifies an annotated release tag as two related immutable identities: the tag object reported by GitHub and the exact peeled commit checked out for validation. Direct full-SHA pins remain exact, while branches, lightweight tags, malformed refs, wrong repositories, wrong workflow paths, mismatched tag objects, and mismatched peeled commits remain rejected.
+Published `v1.2.0` remains immutable historical evidence. Current `master` includes PR #108 after the v1.2.1 release target; that later work remains `[Unreleased]` and is not covered by v1.2.1 release evidence.
 
 The v1.2.0 behavior evidence is protected run `31448468682`, which evaluated behavior-input commit `954f0a7d1fecdb50ae0c2857ebefb842b3837649`; artifact `9085519608` has SHA-256 `99d392a3c803315ec3adc453c30cef659380b98440f6b8a1aaee5f376df7c53f`. Separately, post-release PR #104 behavior evidence run `31701615430` executed after publication against PR #104 candidate `0eaf955b9e5f163c092deeae536cb32f80549aab` and passed with `10/10` cases, `30/30` samples, all aggregate rates `1.0`, quality average `4.0`, and zero material variance. Artifact `9181628300` independently hashes to `a452a282fd7b17e2f39b23d4d24933452d8dd57126cbd982b62231c98e74b5ef`. Run `31701615430` is not v1.2.0 release evidence; human adjudication for PR #104 remains a separate attributable gate.
 
-Release candidates use the read-only lifecycle gate in `scripts/Test-ReleaseLifecycle.ps1`. Its PreRelease, Publication, and PostRelease stages bind validation, canary runs, human approvals, tag/release state, and compatibility updates to one immutable SHA. The prepared `1.2.1` exact-candidate hosted proof, controlled failure, five-scenario canary, artifact verification, and human approval remain `NotRun` until they are actually observed.
+Release candidates use the read-only lifecycle gate in `scripts/Test-ReleaseLifecycle.ps1`. Its PreRelease, Publication, and PostRelease stages bind validation, canary runs, human approvals, tag/release state, and compatibility updates to one immutable SHA. For `v1.2.1`, exact-candidate success and controlled-failure proof, PreRelease, Publication, attributable human approval, and the published-ref five-scenario canary are complete; final repository PostRelease state synchronization is tracked by issue #103.
 
-Historical governance-1.1 consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e`; this is retained historical evidence and is not the prepared 1.2.1 candidate authority. See [Release Status](docs/RELEASE_STATUS.md) and [Downstream Compatibility](docs/DOWNSTREAM_COMPATIBILITY.md).
+Published v1.2.1 consumers requiring the canary-validated repaired workflow should pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50`; the protected annotated `v1.2.1` reference is also verified by the published-ref canary, while the full SHA remains preferred for workflow execution. Final PostRelease lifecycle validation remains pending until the release-state synchronization is merged. See [Release Status](docs/RELEASE_STATUS.md) and [Downstream Compatibility](docs/DOWNSTREAM_COMPATIBILITY.md).
 
-The reviewed [v1.2.1 release notes](docs/releases/1.2.1.md) are the intended GitHub Release body. Publication must use that content exactly rather than GitHub auto-generated notes so the lifecycle notes hash can be verified.
+The published [v1.2.1 release notes](docs/releases/1.2.1.md) are the exact reviewed GitHub Release body; the published/reviewed SHA-256 is `a6598577ac6ad67d5f4b55c534a90f15505f80fed822878598c231433b29877d`.
 
 ## Security Reporting And Contributions
 

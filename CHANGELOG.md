@@ -4,37 +4,44 @@ All notable changes to the Engineering Standards repository are recorded here. T
 
 ## [Unreleased]
 
-No unreleased changes outside the prepared `1.2.1` patch scope are currently recorded.
+### Changed
 
-## [1.2.1] - Unreleased
+- Updated the governed Python example build backend from Hatchling `1.31.0` to `1.32.0`, including the synchronized hash lock, `tomlkit==0.15.1`, validator expectation, and regression contract from PR #108. This work merged after the frozen `v1.2.1` target and is not part of the published patch.
+
+## [1.2.1] - 2026-08-15
 
 ### Release Status
 
 - Semantic version: `1.2.1`.
-- Publication status: Prepared and unpublished. No `v1.2.1` tag or GitHub Release is claimed by this repository state.
-- Latest published version remains `1.2.0` at immutable target `6c0050de328ac083e69fbac8971a317689c2c1d6`; published `v1.2.0` is not moved or rewritten.
-- Historical governance-1.1 consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e`; this retained authority is historical evidence and is not the prepared v1.2.1 candidate authority.
+- Publication status: Published. Annotated tag `v1.2.1` has tag-object SHA `aea6330ee3d51b3f5bb55031d878ef302ba1dbca` and resolves to immutable commit `7d15ec8be6d8c3cdca35061728901584437e4a50`.
+- GitHub Release ID `370882222` was published as non-draft and non-prerelease on 2026-08-15 using the reviewed `docs/releases/1.2.1.md` body exactly; published/reviewed notes SHA-256 is `a6598577ac6ad67d5f4b55c534a90f15505f80fed822878598c231433b29877d`.
+- Published `v1.2.0` remains immutable historical evidence and is not moved, rewritten, or deleted by this patch.
+- Published `v1.2.1` production consumers requiring the canary-validated repaired workflow MUST pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50` by full commit SHA. The protected annotated `v1.2.1` path remains verified as human-readable release identity and published-ref canary/lifecycle evidence, but it MUST NOT be the sole production GitHub Actions workflow identity. Final PostRelease lifecycle validation remains pending until repository state synchronization is merged.
 
 ### Fixed
 
 - Repaired reusable governance workflow identity handling for annotated semantic-version release tags by verifying the exact GitHub-reported tag object, requiring an annotated tag object, peeling it to a commit, and requiring that commit to match the trusted standards checkout.
 - Preserved exact binding for direct full-SHA workflow pins while continuing to reject branches, lightweight tags, malformed refs, wrong repositories, wrong workflow paths, mismatched tag objects, and mismatched peeled commits.
 - Added separate hosted provenance for the workflow object SHA and peeled standards commit SHA while retaining commit-based completion-evidence semantics.
-- Defined `docs/releases/1.2.1.md` as the exact reviewed GitHub Release body so publication cannot silently substitute auto-generated `What's Changed` notes.
+- Published the GitHub Release from the reviewed `docs/releases/1.2.1.md` body exactly, correcting the v1.2.0 release-body integrity defect.
 - Synchronized post-`v1.2.0` release-state and compatibility guidance and migrated the `enterprise-powershell` aggregate behavior-evidence gate to the dual-profile Actions verifier without weakening lifecycle or human-adjudication requirements.
 
 ### Validation
 
-- Final-candidate Governance CI and controlled-failure proof: `NotRun` until the pull-request candidate is frozen and GitHub reports the exact-candidate runs.
-- Exact-candidate five-scenario downstream canary and independent artifact verification: `NotRun`.
-- Attributable final-head human release approval: `NotRun`.
-- Tag creation, GitHub Release publication, published-ref canary, Publication gate, and PostRelease gate: `NotRun`; these require separately authorized external actions.
+- Exact-candidate Governance CI run `31826861530` passed; artifact `9229568604` was independently downloaded and SHA-256 verified.
+- Central controlled-failure run `31843005246` failed only at final mandatory enforcement after evidence upload; artifact `9235313486` was independently verified.
+- Live PreRelease lifecycle run `31846242114` passed with artifact `9235993449`.
+- Publication lifecycle run `31853146258` passed with independently verified artifact `9238154042`.
+- Published-ref five-scenario canary used caller commit `03979bdd46e36593faf044e2206e24c7ed485d62` and `@v1.2.1`: success run `31853248739` passed; controlled-failure `31853248720`, version-mismatch `31853248752`, missing-file `31853248718`, and control-disablement `31853248799` failed only for their intended fail-closed reasons. All five artifacts were independently downloaded and hash verified.
+- Published-ref workflow identity evidence records `referenceKind: AnnotatedTag`, workflow object SHA `aea6330ee3d51b3f5bb55031d878ef302ba1dbca`, and peeled standards commit `7d15ec8be6d8c3cdca35061728901584437e4a50`.
+- Attributable exact-candidate human release approval was recorded by `mezuccolini`; no published-ref canary regression or defect follow-up issue was required; final PostRelease lifecycle validation remains pending.
 
 ### Migration Notes
 
-- Published `v1.2.0` consumers should retain the full immutable target SHA while the patch is unpublished; annotated `v1.2.0` remains subject to issue #103.
-- Prepared `1.2.1` does not change the central workflow interface or supported project-manifest, test-evidence, or completion-result schema sets.
-- Moving branches, including the patch preparation branch, are not release authority.
+- Consumers may adopt the published `1.2.1` patch without new downstream governance obligations; the central workflow interface and supported project-manifest, test-evidence, and completion-result schema sets are unchanged.
+- Production workflow consumers MUST pin the full immutable target `7d15ec8be6d8c3cdca35061728901584437e4a50`. The protected `v1.2.1` annotated ref remains verified for release, canary, and lifecycle identity only and MUST NOT be used as the sole production GitHub Actions workflow identity.
+- The known annotated-tag defect remains historical only for `v1.2.0`; do not move or rewrite that historical tag.
+- Current `master` contains PR #108 after the release target. That later work remains under `[Unreleased]` and is not validated by v1.2.1 release evidence.
 
 ## [1.2.0] - 2026-08-12
 

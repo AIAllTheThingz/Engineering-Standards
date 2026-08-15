@@ -30,6 +30,27 @@ Current `master` contains development after the published target. Historical evi
 Final canary-validated repaired reusable workflow: `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`.
 '@
         }
+
+        function script:Get-CurrentRepositoryReleaseValidationArguments {
+            param(
+                [Parameter(Mandatory)][string]$RepositoryRoot,
+                [Parameter(Mandatory)][string]$Validator
+            )
+
+            $version = (Get-Content -LiteralPath (Join-Path $RepositoryRoot 'VERSION') -Raw).Trim()
+            $tag = "v$version"
+            $arguments = @('-NoProfile', '-File', $Validator, '-Path', $RepositoryRoot)
+
+            # A missing local tag makes live tag verification unavailable. If the tag
+            # exists at all, keep verification enabled so lightweight, moved, newer,
+            # or divergent refs are rejected by Test-ReleaseConsistency.ps1.
+            & git -C $RepositoryRoot rev-parse --verify --quiet "$tag^{}" *> $null
+            if ($LASTEXITCODE -ne 0) {
+                $arguments += '-SkipTagVerification'
+            }
+
+            return $arguments
+        }
     }
 
     BeforeEach {
@@ -139,13 +160,57 @@ The machine-readable contract is `governance/downstream-compatibility.json`.
 
     It 'validates the current repository release records' {
         $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-        & git -C $repositoryRoot rev-parse --verify --quiet 'v1.1.0^{}' *> $null
-        $arguments = @('-NoProfile', '-File', $script:validator, '-Path', $repositoryRoot)
-        if ($LASTEXITCODE -ne 0) {
-            $arguments += '-SkipTagVerification'
-        }
+        $arguments = @(Get-CurrentRepositoryReleaseValidationArguments -RepositoryRoot $repositoryRoot -Validator $script:validator)
         $output = @(& pwsh @arguments 2>&1)
         $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
+    }
+
+    It 'uses SkipTagVerification only when the current version tag is absent' {
+        Push-Location $script:fixture
+        try {
+            git init -q
+            git config user.email 'test@example.invalid'
+            git config user.name 'Test'
+            git add .
+            git commit -qm tagless-snapshot
+
+            $arguments = @(Get-CurrentRepositoryReleaseValidationArguments -RepositoryRoot $script:fixture -Validator $script:validator)
+            $arguments | Should -Contain '-SkipTagVerification'
+        }
+        finally { Pop-Location }
+    }
+
+    It 'does not disable tag verification for a divergent visible tag' {
+        Push-Location $script:fixture
+        try {
+            git init -q
+            git config user.email 'test@example.invalid'
+            git config user.name 'Test'
+            git add .
+            git commit -qm root
+            $rootCommit = (& git rev-parse HEAD).Trim()
+
+            git checkout -qb snapshot
+            Add-Content README.md 'snapshot branch'
+            git add README.md
+            git commit -qm snapshot
+            $snapshotHead = (& git rev-parse HEAD).Trim()
+
+            git checkout -qb divergent $rootCommit
+            Set-Content divergent.txt 'divergent branch'
+            git add divergent.txt
+            git commit -qm divergent
+            git tag -a v1.1.0 -m divergent
+            git checkout -q --detach $snapshotHead
+
+            $arguments = @(Get-CurrentRepositoryReleaseValidationArguments -RepositoryRoot $script:fixture -Validator $script:validator)
+            $arguments | Should -Not -Contain '-SkipTagVerification'
+
+            $output = @(& pwsh @arguments 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'does not match local tag (object|target)'
+        }
+        finally { Pop-Location }
     }
 
     It 'still validates repository-controlled records when tag verification is explicitly unavailable' {

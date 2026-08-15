@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.2.0",
   "repository": "AIAllTheThingz/Engineering-Standards",
-  "updatedAtUtc": "2026-08-14T02:21:00Z",
+  "updatedAtUtc": "2026-08-15T00:22:39Z",
   "ownerRole": "Release Maintainers",
   "supportPolicy": {
     "currentMajor": 1,
@@ -39,6 +39,24 @@
       "testEvidenceSchemaVersions": ["1.0.0", "1.1.0"],
       "completionResultSchemaVersions": ["1.0.0", "1.1.0"],
       "migrationGuide": "docs/releases/1.2.0.md",
+      "deprecation": {
+        "status": "NotDeprecated",
+        "announcedAtUtc": null,
+        "removalVersion": null,
+        "replacement": null
+      }
+    },
+    {
+      "version": "1.2.1",
+      "lifecycle": "Published",
+      "supportStatus": "Supported",
+      "immutableRef": "v1.2.1",
+      "immutableSha": "7d15ec8be6d8c3cdca35061728901584437e4a50",
+      "workflowInterfaceVersions": ["1.0.0"],
+      "projectManifestSchemaVersions": ["1.0.0", "1.1.0", "1.2.0"],
+      "testEvidenceSchemaVersions": ["1.0.0", "1.1.0"],
+      "completionResultSchemaVersions": ["1.0.0", "1.1.0"],
+      "migrationGuide": "docs/releases/1.2.1.md",
       "deprecation": {
         "status": "NotDeprecated",
         "announcedAtUtc": null,
