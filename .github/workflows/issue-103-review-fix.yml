@@ -1,0 +1,89 @@
+name: Issue 103 PR 109 Review Fix
+
+on:
+  push:
+    branches:
+      - release/1.2.1-postrelease-sync
+    paths:
+      - .github/workflows/issue-103-review-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: release/1.2.1-postrelease-sync
+          fetch-depth: 0
+
+      - name: Correct lifecycle wording
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+            'docs/RELEASE_STATUS.md': [
+              ('| Status | Published; PostRelease verification complete |', '| Status | Published; published-ref canary verified; final PostRelease lifecycle pending |'),
+              ('The protected annotated `v1.2.1` reference is also verified through the full PostRelease matrix and may be used where protected semantic release refs are the approved policy.', 'The protected annotated `v1.2.1` reference is verified by the full published-ref five-scenario canary. Final PostRelease lifecycle validation remains pending until this state synchronization is merged and the refreshed compatibility state is machine-checked.'),
+            ],
+            'docs/DOWNSTREAM_COMPATIBILITY.md': [
+              ('| Status | Active; v1.2.1 published and PostRelease verified |', '| Status | Active; v1.2.1 published; published-ref canary verified; final PostRelease lifecycle pending |'),
+              ('The full published-ref PostRelease canary used caller commit `03979bdd46e36593faf044e2206e24c7ed485d62`.', 'The full published-ref five-scenario canary used caller commit `03979bdd46e36593faf044e2206e24c7ed485d62`.'),
+              ('The protected semantic ref `v1.2.1` has also completed PostRelease annotated-tag verification and may be used where protected release refs are explicitly accepted.', 'The protected semantic ref `v1.2.1` has completed published-ref annotated-tag canary verification and may be used where protected release refs are explicitly accepted. Final PostRelease lifecycle validation remains pending until this repository synchronization is merged.'),
+            ],
+            'README.md': [
+              ('The protected annotated `v1.2.1` ref has also passed the complete PostRelease canary and correctly separates tag-object identity from the peeled standards commit.', 'The protected annotated `v1.2.1` ref has also passed the complete published-ref five-scenario canary and correctly separates tag-object identity from the peeled standards commit.'),
+              ('The full published-ref PostRelease matrix passed through `@v1.2.1`, proving the original issue #103 annotated-tag defect no longer reproduces.', 'The full published-ref five-scenario matrix passed through `@v1.2.1`, proving the original issue #103 annotated-tag defect no longer reproduces.'),
+              ('the protected annotated `v1.2.1` reference is also PostRelease verified, while the full SHA remains preferred for workflow execution.', 'the protected annotated `v1.2.1` reference is also verified by the published-ref canary, while the full SHA remains preferred for workflow execution. Final PostRelease lifecycle validation remains pending until the release-state synchronization is merged.'),
+            ],
+            'CHANGELOG.md': [
+              ('the protected annotated `v1.2.1` path is also PostRelease verified, while the full SHA remains the preferred workflow pin for maximum supply-chain integrity.', 'the protected annotated `v1.2.1` path is also verified by the published-ref five-scenario canary, while the full SHA remains the preferred workflow pin for maximum supply-chain integrity. Final PostRelease lifecycle validation remains pending until repository state synchronization is merged.'),
+              ('Published-ref PostRelease canary used caller commit `03979bdd46e36593faf044e2206e24c7ed485d62` and `@v1.2.1`:', 'Published-ref five-scenario canary used caller commit `03979bdd46e36593faf044e2206e24c7ed485d62` and `@v1.2.1`:'),
+              ('no PostRelease regression or defect follow-up issue was required.', 'no published-ref canary regression or defect follow-up issue was required; final PostRelease lifecycle validation remains pending.'),
+            ],
+            'docs/DOWNSTREAM_CANARY.md': [
+              ('Candidate release proof uses exact full-SHA workflow pins; PostRelease proof intentionally invokes the protected published semantic ref so annotated-tag identity is exercised across the real repository boundary.', 'Candidate release proof uses exact full-SHA workflow pins; the published-ref canary intentionally invokes the protected published semantic ref so annotated-tag identity is exercised across the real repository boundary before the final PostRelease lifecycle gate.'),
+              ('The latest complete proof is the published `v1.2.1` PostRelease matrix from canary caller commit `03979bdd46e36593faf044e2206e24c7ed485d62`.', 'The latest complete canary proof is the published `v1.2.1` five-scenario matrix from canary caller commit `03979bdd46e36593faf044e2206e24c7ed485d62`.'),
+            ],
+            'docs/releases/unreleased.md': [
+              ('The published v1.2.1 PostRelease canary proves the immutable release path; it does not validate the later PR #108 master state.', 'The published v1.2.1 five-scenario canary proves the immutable release path; it does not validate the later PR #108 master state, and final PostRelease lifecycle validation remains pending until the release-state synchronization is merged.'),
+            ],
+          }
+
+          for rel, pairs in replacements.items():
+              path = Path(rel)
+              text = path.read_text(encoding='utf-8')
+              for old, new in pairs:
+                  if old not in text:
+                      raise SystemExit(f'Expected review-fix text not found in {rel}: {old}')
+                  text = text.replace(old, new, 1)
+              path.write_text(text, encoding='utf-8')
+
+          status = Path('docs/RELEASE_STATUS.md').read_text(encoding='utf-8')
+          if 'Published; PostRelease verification complete' in status:
+              raise SystemExit('Premature PostRelease completion claim remains in release status.')
+          if 'final PostRelease lifecycle pending' not in status:
+              raise SystemExit('Release status does not preserve pending final PostRelease gate.')
+          print('PR #109 lifecycle wording corrected.')
+          PY
+
+      - name: Validate release consistency
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/Test-ReleaseConsistency.ps1 -Path . -SkipTagVerification
+
+      - name: Commit review fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'AIAllTheThingz Automation'
+          git config user.email 'aiallthethingz@users.noreply.github.com'
+          git add README.md CHANGELOG.md docs/RELEASE_STATUS.md docs/DOWNSTREAM_COMPATIBILITY.md docs/DOWNSTREAM_CANARY.md docs/releases/unreleased.md
+          git commit -m 'docs(release): keep final PostRelease gate pending'
+          git push origin HEAD:release/1.2.1-postrelease-sync
