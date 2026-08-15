@@ -1,0 +1,68 @@
+name: Issue 112 Stale Branch Cleanup
+
+on:
+  push:
+    branches:
+      - chore/issue-112-repository-cleanup
+    paths:
+      - .github/workflows/issue-112-stale-branch-cleanup.yml
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout cleanup branch
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: chore/issue-112-repository-cleanup
+          fetch-depth: 1
+
+      - name: Verify and delete only approved stale branches
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          delete_exact() {
+            local branch="$1"
+            local expected="$2"
+            local actual
+            actual="$(git ls-remote --heads origin "refs/heads/${branch}" | awk '{print $1}')"
+
+            if [[ -z "${actual}" ]]; then
+              echo "Branch ${branch} is already absent."
+              return 0
+            fi
+
+            if [[ "${actual}" != "${expected}" ]]; then
+              echo "Refusing to delete ${branch}: expected ${expected}, found ${actual}." >&2
+              exit 1
+            fi
+
+            git push origin --delete "${branch}"
+
+            if git ls-remote --heads origin "refs/heads/${branch}" | grep -q .; then
+              echo "Branch ${branch} still exists after deletion attempt." >&2
+              exit 1
+            fi
+
+            echo "Deleted ${branch} at verified tip ${expected}."
+          }
+
+          delete_exact 'automation/pr108-hatchling-refresh' '65ab14ce0eb6ac40352f1bdb20fba8141ff9cb7b'
+          delete_exact 'fix/codex-actions-evidence-bootstrap' '9d4fa974880f52dd8e466beff7f70c29e74bc126'
+          delete_exact 'release/1.2.1-candidate-validation' '7d15ec8be6d8c3cdca35061728901584437e4a50'
+
+          for preserved in \
+            'release/1.2.0-lifecycle-validation' \
+            'release/1.2.1-lifecycle-validation' \
+            'promote/enterprise-powershell'; do
+            if ! git ls-remote --heads origin "refs/heads/${preserved}" | grep -q .; then
+              echo "Required preserved branch ${preserved} is unexpectedly absent." >&2
+              exit 1
+            fi
+            echo "Preserved ${preserved}."
+          done
