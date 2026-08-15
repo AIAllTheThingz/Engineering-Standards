@@ -139,11 +139,33 @@ The machine-readable contract is `governance/downstream-compatibility.json`.
 
     It 'validates the current repository release records' {
     $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-    # This is a deterministic repository-snapshot regression test. External tag
-    # publication can legitimately occur after an immutable historical self-CI
-    # commit was created, so live tag state is verified by release lifecycle gates,
-    # not by this repository-controlled Pester snapshot check.
-    $output = @(& pwsh -NoProfile -File $script:validator -Path $repositoryRoot -SkipTagVerification 2>&1)
+    $version = (Get-Content -LiteralPath (Join-Path $repositoryRoot 'VERSION') -Raw).Trim()
+    $tag = "v$version"
+    $arguments = @('-NoProfile', '-File', $script:validator, '-Path', $repositoryRoot)
+
+    & git -C $repositoryRoot rev-parse --verify --quiet "$tag^{}" *> $null
+    if ($LASTEXITCODE -ne 0) {
+        $arguments += '-SkipTagVerification'
+    }
+    else {
+        $tagTarget = (& git -C $repositoryRoot rev-parse "$tag^{}" 2>$null).Trim()
+        if ($LASTEXITCODE -ne 0 -or $tagTarget -notmatch '^[0-9a-fA-F]{40}$') {
+            throw "Unable to resolve $tag to a commit for release-consistency validation."
+        }
+
+        & git -C $repositoryRoot merge-base --is-ancestor $tagTarget HEAD *> $null
+        if ($LASTEXITCODE -eq 1) {
+            # A newer external tag may be visible while validating an immutable
+            # historical snapshot that predates the tag target. In that case only,
+            # validate the repository-controlled records without live tag lookup.
+            $arguments += '-SkipTagVerification'
+        }
+        elseif ($LASTEXITCODE -ne 0) {
+            throw "Unable to determine whether $tag belongs to the repository snapshot."
+        }
+    }
+
+    $output = @(& pwsh @arguments 2>&1)
     $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
 }
 
