@@ -27,37 +27,14 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
+          import base64
           import re
 
           path = Path('tests/scripts/ReleaseConsistency.Tests.ps1')
           text = path.read_text(encoding='utf-8-sig')
 
           helper_marker = "        }\n    }\n\n    BeforeEach {"
-          helper_replacement = """        }
-
-        function script:Get-CurrentRepositoryReleaseValidationArguments {
-            param(
-                [Parameter(Mandatory)][string]$RepositoryRoot,
-                [Parameter(Mandatory)][string]$Validator
-            )
-
-            $version = (Get-Content -LiteralPath (Join-Path $RepositoryRoot 'VERSION') -Raw).Trim()
-            $tag = \"v$version\"
-            $arguments = @('-NoProfile', '-File', $Validator, '-Path', $RepositoryRoot)
-
-            # A missing local tag makes live tag verification unavailable. If the tag
-            # exists at all, keep verification enabled so lightweight, moved, newer,
-            # or divergent refs are rejected by Test-ReleaseConsistency.ps1.
-            & git -C $RepositoryRoot rev-parse --verify --quiet \"$tag^{}\" *> $null
-            if ($LASTEXITCODE -ne 0) {
-                $arguments += '-SkipTagVerification'
-            }
-
-            return $arguments
-        }
-    }
-
-    BeforeEach {"""
+          helper_replacement = base64.b64decode('ICAgICAgICB9CgogICAgICAgIGZ1bmN0aW9uIHNjcmlwdDpHZXQtQ3VycmVudFJlcG9zaXRvcnlSZWxlYXNlVmFsaWRhdGlvbkFyZ3VtZW50cyB7CiAgICAgICAgICAgIHBhcmFtKAogICAgICAgICAgICAgICAgW1BhcmFtZXRlcihNYW5kYXRvcnkpXVtzdHJpbmddJFJlcG9zaXRvcnlSb290LAogICAgICAgICAgICAgICAgW1BhcmFtZXRlcihNYW5kYXRvcnkpXVtzdHJpbmddJFZhbGlkYXRvcgogICAgICAgICAgICApCgogICAgICAgICAgICAkdmVyc2lvbiA9IChHZXQtQ29udGVudCAtTGl0ZXJhbFBhdGggKEpvaW4tUGF0aCAkUmVwb3NpdG9yeVJvb3QgJ1ZFUlNJT04nKSAtUmF3KS5UcmltKCkKICAgICAgICAgICAgJHRhZyA9ICJ2JHZlcnNpb24iCiAgICAgICAgICAgICRhcmd1bWVudHMgPSBAKCctTm9Qcm9maWxlJywgJy1GaWxlJywgJFZhbGlkYXRvciwgJy1QYXRoJywgJFJlcG9zaXRvcnlSb290KQoKICAgICAgICAgICAgIyBBIG1pc3NpbmcgbG9jYWwgdGFnIG1ha2VzIGxpdmUgdGFnIHZlcmlmaWNhdGlvbiB1bmF2YWlsYWJsZS4gSWYgdGhlIHRhZwogICAgICAgICAgICAjIGV4aXN0cyBhdCBhbGwsIGtlZXAgdmVyaWZpY2F0aW9uIGVuYWJsZWQgc28gbGlnaHR3ZWlnaHQsIG1vdmVkLCBuZXdlciwKICAgICAgICAgICAgIyBvciBkaXZlcmdlbnQgcmVmcyBhcmUgcmVqZWN0ZWQgYnkgVGVzdC1SZWxlYXNlQ29uc2lzdGVuY3kucHMxLgogICAgICAgICAgICAmIGdpdCAtQyAkUmVwb3NpdG9yeVJvb3QgcmV2LXBhcnNlIC0tdmVyaWZ5IC0tcXVpZXQgIiR0YWdee30iICo+ICRudWxsCiAgICAgICAgICAgIGlmICgkTEFTVEVYSVRDT0RFIC1uZSAwKSB7CiAgICAgICAgICAgICAgICAkYXJndW1lbnRzICs9ICctU2tpcFRhZ1ZlcmlmaWNhdGlvbicKICAgICAgICAgICAgfQoKICAgICAgICAgICAgcmV0dXJuICRhcmd1bWVudHMKICAgICAgICB9CiAgICB9CgogICAgQmVmb3JlRWFjaCB7').decode('utf-8')
 
           if 'function script:Get-CurrentRepositoryReleaseValidationArguments' not in text:
               if helper_marker not in text:
@@ -68,62 +45,7 @@ jobs:
               r"    It 'validates the current repository release records' \{.*?(?=    It 'still validates repository-controlled records when tag verification is explicitly unavailable' \{)",
               re.S,
           )
-          block_replacement = """    It 'validates the current repository release records' {
-        $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-        $arguments = @(Get-CurrentRepositoryReleaseValidationArguments -RepositoryRoot $repositoryRoot -Validator $script:validator)
-        $output = @(& pwsh @arguments 2>&1)
-        $LASTEXITCODE | Should -Be 0 -Because ($output -join \"`n\")
-    }
-
-    It 'uses SkipTagVerification only when the current version tag is absent' {
-        Push-Location $script:fixture
-        try {
-            git init -q
-            git config user.email 'test@example.invalid'
-            git config user.name 'Test'
-            git add .
-            git commit -qm tagless-snapshot
-
-            $arguments = @(Get-CurrentRepositoryReleaseValidationArguments -RepositoryRoot $script:fixture -Validator $script:validator)
-            $arguments | Should -Contain '-SkipTagVerification'
-        }
-        finally { Pop-Location }
-    }
-
-    It 'does not disable tag verification for a divergent visible tag' {
-        Push-Location $script:fixture
-        try {
-            git init -q
-            git config user.email 'test@example.invalid'
-            git config user.name 'Test'
-            git add .
-            git commit -qm root
-            $rootCommit = (& git rev-parse HEAD).Trim()
-
-            git checkout -qb snapshot
-            Add-Content README.md 'snapshot branch'
-            git add README.md
-            git commit -qm snapshot
-            $snapshotHead = (& git rev-parse HEAD).Trim()
-
-            git checkout -qb divergent $rootCommit
-            Set-Content divergent.txt 'divergent branch'
-            git add divergent.txt
-            git commit -qm divergent
-            git tag -a v1.1.0 -m divergent
-            git checkout -q --detach $snapshotHead
-
-            $arguments = @(Get-CurrentRepositoryReleaseValidationArguments -RepositoryRoot $script:fixture -Validator $script:validator)
-            $arguments | Should -Not -Contain '-SkipTagVerification'
-
-            $output = @(& pwsh @arguments 2>&1)
-            $LASTEXITCODE | Should -Not -Be 0
-            $output -join \"`n\" | Should -Match 'does not match local tag (object|target)'
-        }
-        finally { Pop-Location }
-    }
-
-"""
+          block_replacement = base64.b64decode('ICAgIEl0ICd2YWxpZGF0ZXMgdGhlIGN1cnJlbnQgcmVwb3NpdG9yeSByZWxlYXNlIHJlY29yZHMnIHsKICAgICAgICAkcmVwb3NpdG9yeVJvb3QgPSAoUmVzb2x2ZS1QYXRoIChKb2luLVBhdGggJFBTU2NyaXB0Um9vdCAnLi4vLi4nKSkuUGF0aAogICAgICAgICRhcmd1bWVudHMgPSBAKEdldC1DdXJyZW50UmVwb3NpdG9yeVJlbGVhc2VWYWxpZGF0aW9uQXJndW1lbnRzIC1SZXBvc2l0b3J5Um9vdCAkcmVwb3NpdG9yeVJvb3QgLVZhbGlkYXRvciAkc2NyaXB0OnZhbGlkYXRvcikKICAgICAgICAkb3V0cHV0ID0gQCgmIHB3c2ggQGFyZ3VtZW50cyAyPiYxKQogICAgICAgICRMQVNURVhJVENPREUgfCBTaG91bGQgLUJlIDAgLUJlY2F1c2UgKCRvdXRwdXQgLWpvaW4gImBuIikKICAgIH0KCiAgICBJdCAndXNlcyBTa2lwVGFnVmVyaWZpY2F0aW9uIG9ubHkgd2hlbiB0aGUgY3VycmVudCB2ZXJzaW9uIHRhZyBpcyBhYnNlbnQnIHsKICAgICAgICBQdXNoLUxvY2F0aW9uICRzY3JpcHQ6Zml4dHVyZQogICAgICAgIHRyeSB7CiAgICAgICAgICAgIGdpdCBpbml0IC1xCiAgICAgICAgICAgIGdpdCBjb25maWcgdXNlci5lbWFpbCAndGVzdEBleGFtcGxlLmludmFsaWQnCiAgICAgICAgICAgIGdpdCBjb25maWcgdXNlci5uYW1lICdUZXN0JwogICAgICAgICAgICBnaXQgYWRkIC4KICAgICAgICAgICAgZ2l0IGNvbW1pdCAtcW0gdGFnbGVzcy1zbmFwc2hvdAoKICAgICAgICAgICAgJGFyZ3VtZW50cyA9IEAoR2V0LUN1cnJlbnRSZXBvc2l0b3J5UmVsZWFzZVZhbGlkYXRpb25Bcmd1bWVudHMgLVJlcG9zaXRvcnlSb290ICRzY3JpcHQ6Zml4dHVyZSAtVmFsaWRhdG9yICRzY3JpcHQ6dmFsaWRhdG9yKQogICAgICAgICAgICAkYXJndW1lbnRzIHwgU2hvdWxkIC1Db250YWluICctU2tpcFRhZ1ZlcmlmaWNhdGlvbicKICAgICAgICB9CiAgICAgICAgZmluYWxseSB7IFBvcC1Mb2NhdGlvbiB9CiAgICB9CgogICAgSXQgJ2RvZXMgbm90IGRpc2FibGUgdGFnIHZlcmlmaWNhdGlvbiBmb3IgYSBkaXZlcmdlbnQgdmlzaWJsZSB0YWcnIHsKICAgICAgICBQdXNoLUxvY2F0aW9uICRzY3JpcHQ6Zml4dHVyZQogICAgICAgIHRyeSB7CiAgICAgICAgICAgIGdpdCBpbml0IC1xCiAgICAgICAgICAgIGdpdCBjb25maWcgdXNlci5lbWFpbCAndGVzdEBleGFtcGxlLmludmFsaWQnCiAgICAgICAgICAgIGdpdCBjb25maWcgdXNlci5uYW1lICdUZXN0JwogICAgICAgICAgICBnaXQgYWRkIC4KICAgICAgICAgICAgZ2l0IGNvbW1pdCAtcW0gcm9vdAogICAgICAgICAgICAkcm9vdENvbW1pdCA9ICgmIGdpdCByZXYtcGFyc2UgSEVBRCkuVHJpbSgpCgogICAgICAgICAgICBnaXQgY2hlY2tvdXQgLXFiIHNuYXBzaG90CiAgICAgICAgICAgIEFkZC1Db250ZW50IFJFQURNRS5tZCAnc25hcHNob3QgYnJhbmNoJwogICAgICAgICAgICBnaXQgYWRkIFJFQURNRS5tZAogICAgICAgICAgICBnaXQgY29tbWl0IC1xbSBzbmFwc2hvdAogICAgICAgICAgICAkc25hcHNob3RIZWFkID0gKCYgZ2l0IHJldi1wYXJzZSBIRUFEKS5UcmltKCkKCiAgICAgICAgICAgIGdpdCBjaGVja291dCAtcWIgZGl2ZXJnZW50ICRyb290Q29tbWl0CiAgICAgICAgICAgIFNldC1Db250ZW50IGRpdmVyZ2VudC50eHQgJ2RpdmVyZ2VudCBicmFuY2gnCiAgICAgICAgICAgIGdpdCBhZGQgZGl2ZXJnZW50LnR4dAogICAgICAgICAgICBnaXQgY29tbWl0IC1xbSBkaXZlcmdlbnQKICAgICAgICAgICAgZ2l0IHRhZyAtYSB2MS4xLjAgLW0gZGl2ZXJnZW50CiAgICAgICAgICAgIGdpdCBjaGVja291dCAtcSAtLWRldGFjaCAkc25hcHNob3RIZWFkCgogICAgICAgICAgICAkYXJndW1lbnRzID0gQChHZXQtQ3VycmVudFJlcG9zaXRvcnlSZWxlYXNlVmFsaWRhdGlvbkFyZ3VtZW50cyAtUmVwb3NpdG9yeVJvb3QgJHNjcmlwdDpmaXh0dXJlIC1WYWxpZGF0b3IgJHNjcmlwdDp2YWxpZGF0b3IpCiAgICAgICAgICAgICRhcmd1bWVudHMgfCBTaG91bGQgLU5vdCAtQ29udGFpbiAnLVNraXBUYWdWZXJpZmljYXRpb24nCgogICAgICAgICAgICAkb3V0cHV0ID0gQCgmIHB3c2ggQGFyZ3VtZW50cyAyPiYxKQogICAgICAgICAgICAkTEFTVEVYSVRDT0RFIHwgU2hvdWxkIC1Ob3QgLUJlIDAKICAgICAgICAgICAgJG91dHB1dCAtam9pbiAiYG4iIHwgU2hvdWxkIC1NYXRjaCAnZG9lcyBub3QgbWF0Y2ggbG9jYWwgdGFnIChvYmplY3R8dGFyZ2V0KScKICAgICAgICB9CiAgICAgICAgZmluYWxseSB7IFBvcC1Mb2NhdGlvbiB9CiAgICB9Cgo=').decode('utf-8')
 
           updated, count = block_pattern.subn(block_replacement, text, count=1)
           if count != 1:
