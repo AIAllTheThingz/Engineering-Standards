@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Published; published-ref canary verified; final PostRelease lifecycle pending |
+| Status | Published; PostRelease lifecycle complete |
 | Latest published version | 1.2.1 |
 | Published v1.2.1 target | `7d15ec8be6d8c3cdca35061728901584437e4a50` |
 | Published v1.2.1 tag object | `aea6330ee3d51b3f5bb55031d878ef302ba1dbca` |
@@ -22,6 +22,7 @@ The published release-note SHA-256 is `a6598577ac6ad67d5f4b55c534a90f15505f80fed
 - Exact-candidate controlled failure: run `31843005246`, expected failure only at final mandatory enforcement; artifact `9235313486` independently verified.
 - Live PreRelease lifecycle: run `31846242114`, Passed; artifact `9235993449` independently verified.
 - Publication lifecycle: run `31853146258`, Passed; artifact `9238154042` independently verified.
+- Final PostRelease lifecycle: run `31858980152`, Passed; artifact `9239916377` independently downloaded and SHA-256 verified as `0acc21c127588ed0dd5c7d5e55bd0f9c087a1c94015cc018b078a5eb1f154717`.
 - Published-ref PostRelease canary caller: `03979bdd46e36593faf044e2206e24c7ed485d62`.
 - Published-ref success: `31853248739`; expected-negative runs: `31853248720`, `31853248752`, `31853248718`, `31853248799`. All five artifacts were independently hash verified.
 - Every published-ref artifact records workflow object `aea6330ee3d51b3f5bb55031d878ef302ba1dbca`, reference kind `AnnotatedTag`, and peeled standards commit `7d15ec8be6d8c3cdca35061728901584437e4a50`.
@@ -29,7 +30,7 @@ The published release-note SHA-256 is `a6598577ac6ad67d5f4b55c534a90f15505f80fed
 
 ## Consumer Authority
 
-Published `v1.2.1` consumers requiring the canary-validated repaired workflow should pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50` for maximum supply-chain integrity. The protected annotated `v1.2.1` reference is verified by the full published-ref five-scenario canary. Final PostRelease lifecycle validation remains pending until this state synchronization is merged and the refreshed compatibility state is machine-checked.
+Published `v1.2.1` consumers requiring the canary-validated repaired workflow should pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50` for maximum supply-chain integrity. The protected annotated `v1.2.1` reference is verified by the full published-ref five-scenario canary. Final PostRelease lifecycle validation passed in run `31858980152`; artifact `9239916377` was independently hash verified and the refreshed compatibility state from PR #109 was machine-checked.
 
 The v1.2.1 patch does not change downstream obligations, central workflow interface `1.0.0`, or the supported project-manifest, test-evidence, and completion-result schema sets.
 
@@ -43,7 +44,7 @@ The machine-readable `unreleasedContract` therefore retains governance version `
 
 The published `v1.2.1` PostRelease matrix proves the original annotated-tag reusable-workflow identity defect is repaired: GitHub's annotated tag-object SHA is verified separately from the peeled standards commit and both are preserved in hosted evidence. The v1.2.0 release-body mismatch is also corrected by the exact reviewed-body publication contract.
 
-Issue #103 may be closed only after this repository status synchronization is merged and the final PostRelease lifecycle gate records the refreshed compatibility state.
+Issue #103 was closed as completed after PR #109 merged at `fa34bb533c8288d283996f2aa4f948c3505b61dc` and final PostRelease lifecycle run `31858980152` passed against the refreshed compatibility state.
 
 ## Related Documents
 

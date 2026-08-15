@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Active; v1.2.1 published; published-ref canary verified; final PostRelease lifecycle pending |
+| Status | Active; v1.2.1 published; PostRelease lifecycle complete |
 | Contract version | 1.2.0 |
 | Latest published governance release | 1.2.1 |
 | Published target | `7d15ec8be6d8c3cdca35061728901584437e4a50` |
@@ -65,7 +65,7 @@ These SHAs are distribution authorities recorded by the corresponding workflow c
 5. When Python or Bash functional validation is required, pin the matching functional workflow `immutableSha`.
 6. Retain adoption evidence with the chosen entry and its stated limitations.
 
-Production workflow consumers MUST pin the published v1.2.1 governance workflow to full commit SHA `7d15ec8be6d8c3cdca35061728901584437e4a50`. The protected semantic ref `v1.2.1` is retained for human-readable release identity and published-ref annotated-tag canary/lifecycle verification; it MUST NOT be used as the sole production GitHub Actions workflow identity. Final PostRelease lifecycle validation remains pending until this repository synchronization is merged. `master`, semantic release refs, and validation/preparation branches are not production workflow authorities.
+Production workflow consumers MUST pin the published v1.2.1 governance workflow to full commit SHA `7d15ec8be6d8c3cdca35061728901584437e4a50`. The protected semantic ref `v1.2.1` is retained for human-readable release identity and published-ref annotated-tag canary/lifecycle verification; it MUST NOT be used as the sole production GitHub Actions workflow identity. Final PostRelease lifecycle validation passed in run `31858980152` after repository synchronization merge `fa34bb533c8288d283996f2aa4f948c3505b61dc`; artifact `9239916377` was independently verified. `master`, semantic release refs, and validation/preparation branches are not production workflow authorities.
 
 ## Historical v1.2.0 Follow-Up
 
