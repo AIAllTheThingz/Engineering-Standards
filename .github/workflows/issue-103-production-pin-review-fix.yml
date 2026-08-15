@@ -1,0 +1,110 @@
+name: Issue 103 Production Pin Review Fix
+
+on:
+  push:
+    branches:
+      - release/1.2.1-postrelease-sync
+    paths:
+      - .github/workflows/issue-103-production-pin-review-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: release/1.2.1-postrelease-sync
+          fetch-depth: 0
+
+      - name: Make production workflow SHA guidance consistent
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          function Replace-Exact {
+            param(
+              [Parameter(Mandatory)][string]$Path,
+              [Parameter(Mandatory)][string]$Old,
+              [Parameter(Mandatory)][string]$New
+            )
+            $text = Get-Content -LiteralPath $Path -Raw
+            if (-not $text.Contains($Old)) {
+              throw "Expected text was not found in $Path: $Old"
+            }
+            $updated = $text.Replace($Old, $New)
+            [System.IO.File]::WriteAllText((Resolve-Path $Path).Path, $updated, [System.Text.UTF8Encoding]::new($false))
+          }
+
+          Replace-Exact -Path 'CHANGELOG.md' `
+            -Old '- Published `v1.2.1` consumers requiring the canary-validated repaired workflow should pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50`; the protected annotated `v1.2.1` path is also verified by the published-ref five-scenario canary, while the full SHA remains the preferred workflow pin for maximum supply-chain integrity. Final PostRelease lifecycle validation remains pending until repository state synchronization is merged.' `
+            -New '- Published `v1.2.1` production workflow consumers MUST pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50` by full commit SHA. The protected annotated `v1.2.1` path remains verified as human-readable release identity and published-ref canary/lifecycle evidence, but it MUST NOT be the sole production GitHub Actions workflow identity. Final PostRelease lifecycle validation remains pending until repository state synchronization is merged.'
+
+          Replace-Exact -Path 'CHANGELOG.md' `
+            -Old '- Production workflow consumers SHOULD pin the full immutable target `7d15ec8be6d8c3cdca35061728901584437e4a50`. The protected `v1.2.1` annotated ref is verified to resolve correctly and may be used where protected semantic release references are the approved policy.' `
+            -New '- Production workflow consumers MUST pin the full immutable target `7d15ec8be6d8c3cdca35061728901584437e4a50`. The protected `v1.2.1` annotated ref remains verified for release, canary, and lifecycle identity only and MUST NOT be used as the sole production GitHub Actions workflow identity.'
+
+          Replace-Exact -Path 'docs/releases/unreleased.md' `
+            -Old '- Production consumers should use published `v1.2.1` or, preferably for workflow supply-chain integrity, exact commit `7d15ec8be6d8c3cdca35061728901584437e4a50`.' `
+            -New '- Production GitHub Actions workflow consumers MUST pin exact commit `7d15ec8be6d8c3cdca35061728901584437e4a50` for the published v1.2.1 governance workflow. The semantic `v1.2.1` ref remains release/canary identity and MUST NOT be the sole production workflow identity.'
+
+          Replace-Exact -Path 'docs/releases/unreleased.md' `
+            -Old '- Do not pin `master` or this unreleased state as release authority.' `
+            -New '- Do not pin `master`, the semantic `v1.2.1` ref, or this unreleased state as a production GitHub Actions workflow authority; production workflow identity requires the full commit SHA.'
+
+          Replace-Exact -Path 'README.md' `
+            -Old 'The following example demonstrates the published `1.2.1` governance release. Production workflow consumers SHOULD pin the exact published target `7d15ec8be6d8c3cdca35061728901584437e4a50` by full SHA for maximum supply-chain integrity. The protected annotated `v1.2.1` ref has also passed the complete published-ref five-scenario canary and correctly separates tag-object identity from the peeled standards commit.' `
+            -New 'The following example demonstrates the published `1.2.1` governance release. Production workflow consumers MUST pin the exact published target `7d15ec8be6d8c3cdca35061728901584437e4a50` by full commit SHA. The protected annotated `v1.2.1` ref has passed the complete published-ref five-scenario canary and correctly separates tag-object identity from the peeled standards commit, but it is release/canary identity only and MUST NOT be the sole production GitHub Actions workflow identity.'
+
+          Replace-Exact -Path 'README.md' `
+            -Old 'The example above reflects the published `1.2.1` governance release while continuing to use project-manifest schema `1.2.0`. Consumers should use an immutable published tag/commit or another explicitly documented immutable authority.' `
+            -New 'The example above reflects the published `1.2.1` governance release while continuing to use project-manifest schema `1.2.0`. Production GitHub Actions consumers MUST use an immutable full commit SHA; semantic release tags may identify published releases and verification paths but MUST NOT be the sole production workflow identity.'
+
+          Replace-Exact -Path 'README.md' `
+            -Old 'The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Downstream CI SHOULD pin commit SHAs for maximum supply-chain integrity. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md), future changes remain under [Unreleased](CHANGELOG.md#unreleased), and release procedure is defined in [Release Process](docs/RELEASE_PROCESS.md).' `
+            -New 'The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Production downstream GitHub Actions workflows MUST pin immutable full commit SHAs; semantic release tags are insufficient as the sole workflow identity. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md), future changes remain under [Unreleased](CHANGELOG.md#unreleased), and release procedure is defined in [Release Process](docs/RELEASE_PROCESS.md).'
+
+      - name: Validate guidance and release consistency
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $combined = @(
+            Get-Content -LiteralPath 'CHANGELOG.md' -Raw
+            Get-Content -LiteralPath 'README.md' -Raw
+            Get-Content -LiteralPath 'docs/releases/unreleased.md' -Raw
+            Get-Content -LiteralPath 'docs/DOWNSTREAM_COMPATIBILITY.md' -Raw
+          ) -join "`n"
+
+          foreach ($forbidden in @(
+            'may be used where protected semantic release references are the approved policy',
+            'Production workflow consumers SHOULD pin',
+            'Production consumers should use published `v1.2.1` or, preferably',
+            'Consumers should use an immutable published tag/commit'
+          )) {
+            if ($combined.Contains($forbidden)) {
+              throw "Ambiguous semantic-ref production guidance remains: $forbidden"
+            }
+          }
+
+          if ($combined -notmatch 'Production workflow consumers MUST pin') {
+            throw 'Required full-SHA production pin guidance is missing.'
+          }
+          if ($combined -notmatch 'MUST NOT be the sole production') {
+            throw 'Required semantic-ref prohibition is missing.'
+          }
+
+          pwsh -NoProfile -File scripts/Test-ReleaseConsistency.ps1 -Path .
+
+      - name: Commit guidance correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'AIAllTheThingz Automation'
+          git config user.email 'aiallthethingz@users.noreply.github.com'
+          git add CHANGELOG.md README.md docs/releases/unreleased.md
+          git commit -m 'docs(release): require full SHA production workflow pins'
+          git push origin HEAD:release/1.2.1-postrelease-sync
