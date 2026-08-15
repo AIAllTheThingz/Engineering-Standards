@@ -16,7 +16,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 - Publication status: Published. Annotated tag `v1.2.1` has tag-object SHA `aea6330ee3d51b3f5bb55031d878ef302ba1dbca` and resolves to immutable commit `7d15ec8be6d8c3cdca35061728901584437e4a50`.
 - GitHub Release ID `370882222` was published as non-draft and non-prerelease on 2026-08-15 using the reviewed `docs/releases/1.2.1.md` body exactly; published/reviewed notes SHA-256 is `a6598577ac6ad67d5f4b55c534a90f15505f80fed822878598c231433b29877d`.
 - Published `v1.2.0` remains immutable historical evidence and is not moved, rewritten, or deleted by this patch.
-- Published `v1.2.1` production consumers requiring the canary-validated repaired workflow MUST pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50` by full commit SHA. The protected annotated `v1.2.1` path remains verified as human-readable release identity and published-ref canary/lifecycle evidence, but it MUST NOT be the sole production GitHub Actions workflow identity. Final PostRelease lifecycle validation remains pending until repository state synchronization is merged.
+- Published `v1.2.1` production consumers requiring the canary-validated repaired workflow MUST pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50` by full commit SHA. The protected annotated `v1.2.1` path remains verified as human-readable release identity and published-ref canary/lifecycle evidence, but it MUST NOT be the sole production GitHub Actions workflow identity. Final PostRelease lifecycle run `31858980152` passed after repository state synchronization.
 
 ### Fixed
 
@@ -34,7 +34,8 @@ All notable changes to the Engineering Standards repository are recorded here. T
 - Publication lifecycle run `31853146258` passed with independently verified artifact `9238154042`.
 - Published-ref five-scenario canary used caller commit `03979bdd46e36593faf044e2206e24c7ed485d62` and `@v1.2.1`: success run `31853248739` passed; controlled-failure `31853248720`, version-mismatch `31853248752`, missing-file `31853248718`, and control-disablement `31853248799` failed only for their intended fail-closed reasons. All five artifacts were independently downloaded and hash verified.
 - Published-ref workflow identity evidence records `referenceKind: AnnotatedTag`, workflow object SHA `aea6330ee3d51b3f5bb55031d878ef302ba1dbca`, and peeled standards commit `7d15ec8be6d8c3cdca35061728901584437e4a50`.
-- Attributable exact-candidate human release approval was recorded by `mezuccolini`; no published-ref canary regression or defect follow-up issue was required; final PostRelease lifecycle validation remains pending.
+- Attributable exact-candidate human release approval was recorded by `mezuccolini`; no published-ref canary regression or defect follow-up issue was required.
+- Final PostRelease lifecycle run `31858980152` passed with independently verified artifact `9239916377` (SHA-256 `0acc21c127588ed0dd5c7d5e55bd0f9c087a1c94015cc018b078a5eb1f154717`) after PR #109 merge `fa34bb533c8288d283996f2aa4f948c3505b61dc` synchronized the published compatibility state.
 
 ### Migration Notes
 

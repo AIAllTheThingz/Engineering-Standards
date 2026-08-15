@@ -25,7 +25,7 @@ No later semantic governance version has been selected. The root `VERSION` remai
 
 - Production GitHub Actions workflow consumers MUST pin exact commit `7d15ec8be6d8c3cdca35061728901584437e4a50` for the published v1.2.1 governance workflow. The semantic `v1.2.1` ref remains release/canary identity and MUST NOT be the sole production workflow identity.
 - Do not pin `master`, the semantic `v1.2.1` ref, or this unreleased state as a production GitHub Actions workflow authority; production workflow identity requires the full commit SHA.
-- The published v1.2.1 five-scenario canary proves the immutable release path; it does not validate the later PR #108 master state, and final PostRelease lifecycle validation remains pending until the release-state synchronization is merged.
+- The published v1.2.1 five-scenario canary proves the immutable release path; it does not validate later moving-master content. Final PostRelease lifecycle run `31858980152` passed after synchronization merge `fa34bb533c8288d283996f2aa4f948c3505b61dc` while the current `unreleasedContract` correctly remains Preview/NotRun.
 - The current `unreleasedContract` therefore truthfully remains `canaryValidationStatus: NotRun` with `canaryValidatedWorkflowSha: null`.
 
 ## Published Baseline
