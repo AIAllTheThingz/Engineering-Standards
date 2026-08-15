@@ -35,7 +35,7 @@ The v1.2.1 patch does not change downstream obligations, central workflow interf
 
 ## Current Master Boundary
 
-Current `master` is newer than the published release target because PR #108 merged after `7d15ec8be6d8c3cdca35061728901584437e4a50`. That post-release work is `[Unreleased]`; historical v1.2.1 runs validate only the immutable release target, not later `master`.
+Current `master` contains development after the published target because PR #108 merged after `7d15ec8be6d8c3cdca35061728901584437e4a50`. That post-release work is `[Unreleased]`. Historical v1.2.1 evidence does not validate current `master`; it validates only the immutable published target.
 
 The machine-readable `unreleasedContract` therefore retains governance version `1.2.1` but remains Preview with `canaryValidationStatus: NotRun` and a null canary authority. The published v1.2.1 PostRelease canary is not relabeled as validation of newer moving branch content.
 
