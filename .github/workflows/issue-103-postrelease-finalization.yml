@@ -54,7 +54,7 @@ jobs:
 
           Replace-Exact -Path 'docs/RELEASE_STATUS.md' `
             -Old 'Final PostRelease lifecycle validation remains pending until this state synchronization is merged and the refreshed compatibility state is machine-checked.' `
-            -New "Final PostRelease lifecycle validation passed in run ``$postRun`` after PR #109 merge ``$syncMerge``; artifact ``$postArtifact`` was independently hash verified and the refreshed compatibility state was machine-checked."
+            -New "Final PostRelease lifecycle validation passed in run ``$postRun``; artifact ``$postArtifact`` was independently hash verified and the refreshed compatibility state from PR #109 was machine-checked."
 
           Replace-Exact -Path 'docs/RELEASE_STATUS.md' `
             -Old 'Issue #103 may be closed only after this repository status synchronization is merged and the final PostRelease lifecycle gate records the refreshed compatibility state.' `
@@ -66,7 +66,7 @@ jobs:
 
           Replace-Exact -Path 'README.md' `
             -Old 'Published v1.2.1 consumers requiring the canary-validated repaired workflow should pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50`; the protected annotated `v1.2.1` reference is also verified by the published-ref canary, while the full SHA remains preferred for workflow execution. Final PostRelease lifecycle validation remains pending until the release-state synchronization is merged.' `
-            -New "Published v1.2.1 production workflow consumers MUST pin ``.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50`` by full commit SHA. The protected annotated ``v1.2.1`` reference remains release/canary/lifecycle identity and MUST NOT be the sole production GitHub Actions workflow identity. Final PostRelease lifecycle run ``$postRun`` passed with independently verified artifact ``$postArtifact``."
+            -New "Published v1.2.1 production consumers requiring the canary-validated repaired workflow MUST pin ``.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50`` by full commit SHA. The protected annotated ``v1.2.1`` reference remains release/canary/lifecycle identity and MUST NOT be the sole production GitHub Actions workflow identity. Final PostRelease lifecycle run ``$postRun`` passed with independently verified artifact ``$postArtifact``."
 
           Replace-Exact -Path 'docs/DOWNSTREAM_COMPATIBILITY.md' `
             -Old '| Status | Active; v1.2.1 published; published-ref canary verified; final PostRelease lifecycle pending |' `
@@ -82,7 +82,7 @@ jobs:
 
           Replace-Exact -Path 'CHANGELOG.md' `
             -Old '- Published `v1.2.1` production consumers requiring the canary-validated repaired workflow MUST pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50` by full commit SHA. The protected annotated `v1.2.1` path remains verified as human-readable release identity and published-ref canary/lifecycle evidence, but it MUST NOT be the sole production GitHub Actions workflow identity. Final PostRelease lifecycle validation remains pending until repository state synchronization is merged.' `
-            -New "- Published ``v1.2.1`` production consumers requiring the canary-validated repaired workflow MUST pin ``.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50`` by full commit SHA. The protected annotated ``v1.2.1`` path remains verified as human-readable release identity and published-ref canary/lifecycle evidence, but it MUST NOT be the sole production GitHub Actions workflow identity. Final PostRelease lifecycle run ``$postRun`` passed after repository state synchronization merge ``$syncMerge``."
+            -New "- Published ``v1.2.1`` production consumers requiring the canary-validated repaired workflow MUST pin ``.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50`` by full commit SHA. The protected annotated ``v1.2.1`` path remains verified as human-readable release identity and published-ref canary/lifecycle evidence, but it MUST NOT be the sole production GitHub Actions workflow identity. Final PostRelease lifecycle run ``$postRun`` passed after repository state synchronization."
 
           Replace-Exact -Path 'CHANGELOG.md' `
             -Old '- Attributable exact-candidate human release approval was recorded by `mezuccolini`; no published-ref canary regression or defect follow-up issue was required; final PostRelease lifecycle validation remains pending.' `
