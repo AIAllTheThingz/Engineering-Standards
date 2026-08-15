@@ -16,21 +16,10 @@
       "supportStatus": "Supported",
       "immutableRef": "v1.1.0",
       "immutableSha": "2704049d7e826975d956611b194214dd79ea3686",
-      "workflowInterfaceVersions": [
-        "1.0.0"
-      ],
-      "projectManifestSchemaVersions": [
-        "1.0.0",
-        "1.1.0"
-      ],
-      "testEvidenceSchemaVersions": [
-        "1.0.0",
-        "1.1.0"
-      ],
-      "completionResultSchemaVersions": [
-        "1.0.0",
-        "1.1.0"
-      ],
+      "workflowInterfaceVersions": ["1.0.0"],
+      "projectManifestSchemaVersions": ["1.0.0", "1.1.0"],
+      "testEvidenceSchemaVersions": ["1.0.0", "1.1.0"],
+      "completionResultSchemaVersions": ["1.0.0", "1.1.0"],
       "migrationGuide": "docs/ADOPTION_GUIDE.md",
       "deprecation": {
         "status": "NotDeprecated",
@@ -45,22 +34,10 @@
       "supportStatus": "Supported",
       "immutableRef": "v1.2.0",
       "immutableSha": "6c0050de328ac083e69fbac8971a317689c2c1d6",
-      "workflowInterfaceVersions": [
-        "1.0.0"
-      ],
-      "projectManifestSchemaVersions": [
-        "1.0.0",
-        "1.1.0",
-        "1.2.0"
-      ],
-      "testEvidenceSchemaVersions": [
-        "1.0.0",
-        "1.1.0"
-      ],
-      "completionResultSchemaVersions": [
-        "1.0.0",
-        "1.1.0"
-      ],
+      "workflowInterfaceVersions": ["1.0.0"],
+      "projectManifestSchemaVersions": ["1.0.0", "1.1.0", "1.2.0"],
+      "testEvidenceSchemaVersions": ["1.0.0", "1.1.0"],
+      "completionResultSchemaVersions": ["1.0.0", "1.1.0"],
       "migrationGuide": "docs/releases/1.2.0.md",
       "deprecation": {
         "status": "NotDeprecated",
@@ -75,22 +52,10 @@
       "supportStatus": "Supported",
       "immutableRef": "v1.2.1",
       "immutableSha": "7d15ec8be6d8c3cdca35061728901584437e4a50",
-      "workflowInterfaceVersions": [
-        "1.0.0"
-      ],
-      "projectManifestSchemaVersions": [
-        "1.0.0",
-        "1.1.0",
-        "1.2.0"
-      ],
-      "testEvidenceSchemaVersions": [
-        "1.0.0",
-        "1.1.0"
-      ],
-      "completionResultSchemaVersions": [
-        "1.0.0",
-        "1.1.0"
-      ],
+      "workflowInterfaceVersions": ["1.0.0"],
+      "projectManifestSchemaVersions": ["1.0.0", "1.1.0", "1.2.0"],
+      "testEvidenceSchemaVersions": ["1.0.0", "1.1.0"],
+      "completionResultSchemaVersions": ["1.0.0", "1.1.0"],
       "migrationGuide": "docs/releases/1.2.1.md",
       "deprecation": {
         "status": "NotDeprecated",
@@ -103,22 +68,10 @@
   "unreleasedContract": {
     "governanceVersion": "1.2.1",
     "supportStatus": "Preview",
-    "workflowInterfaceVersions": [
-      "1.0.0"
-    ],
-    "projectManifestSchemaVersions": [
-      "1.0.0",
-      "1.1.0",
-      "1.2.0"
-    ],
-    "testEvidenceSchemaVersions": [
-      "1.0.0",
-      "1.1.0"
-    ],
-    "completionResultSchemaVersions": [
-      "1.0.0",
-      "1.1.0"
-    ],
+    "workflowInterfaceVersions": ["1.0.0"],
+    "projectManifestSchemaVersions": ["1.0.0", "1.1.0", "1.2.0"],
+    "testEvidenceSchemaVersions": ["1.0.0", "1.1.0"],
+    "completionResultSchemaVersions": ["1.0.0", "1.1.0"],
     "migrationGuide": "docs/releases/unreleased.md",
     "canaryValidationStatus": "NotRun",
     "canaryValidatedWorkflowSha": null,
