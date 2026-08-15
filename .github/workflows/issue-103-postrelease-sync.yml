@@ -1,0 +1,206 @@
+name: Issue 103 v1.2.1 PostRelease State Sync
+
+on:
+  push:
+    branches:
+      - release/1.2.1-postrelease-sync
+    paths:
+      - .github/workflows/issue-103-postrelease-sync.yml
+
+permissions:
+  contents: write
+
+jobs:
+  synchronize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout synchronization branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: release/1.2.1-postrelease-sync
+          fetch-depth: 0
+
+      - name: Synchronize published v1.2.1 state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import pathlib
+          import re
+
+          root = pathlib.Path('.')
+          candidate = '7d15ec8be6d8c3cdca35061728901584437e4a50'
+          tag_object = 'aea6330ee3d51b3f5bb55031d878ef302ba1dbca'
+          release_id = 370882222
+          notes_hash = 'a6598577ac6ad67d5f4b55c534a90f15505f80fed822878598c231433b29877d'
+          canary_commit = '03979bdd46e36593faf044e2206e24c7ed485d62'
+          verified_at = '2026-08-15T00:22:39Z'
+
+          # Machine-readable compatibility state: published v1.2.1 plus a truthful
+          # current-master Preview contract. PR #108 is newer than the release target,
+          # so the moving master contract deliberately remains NotRun/null for canary authority.
+          matrix_path = root / 'governance/downstream-compatibility.json'
+          matrix = json.loads(matrix_path.read_text(encoding='utf-8'))
+          releases = [r for r in matrix['governanceReleases'] if r['version'] != '1.2.1']
+          releases.append({
+              'version': '1.2.1',
+              'lifecycle': 'Published',
+              'supportStatus': 'Supported',
+              'immutableRef': 'v1.2.1',
+              'immutableSha': candidate,
+              'workflowInterfaceVersions': ['1.0.0'],
+              'projectManifestSchemaVersions': ['1.0.0', '1.1.0', '1.2.0'],
+              'testEvidenceSchemaVersions': ['1.0.0', '1.1.0'],
+              'completionResultSchemaVersions': ['1.0.0', '1.1.0'],
+              'migrationGuide': 'docs/releases/1.2.1.md',
+              'deprecation': {
+                  'status': 'NotDeprecated',
+                  'announcedAtUtc': None,
+                  'removalVersion': None,
+                  'replacement': None,
+              },
+          })
+          matrix['governanceReleases'] = releases
+          matrix['updatedAtUtc'] = verified_at
+          matrix['unreleasedContract']['governanceVersion'] = '1.2.1'
+          matrix['unreleasedContract']['supportStatus'] = 'Preview'
+          matrix['unreleasedContract']['migrationGuide'] = 'docs/releases/unreleased.md'
+          matrix['unreleasedContract']['canaryValidationStatus'] = 'NotRun'
+          matrix['unreleasedContract']['canaryValidatedWorkflowSha'] = None
+          matrix_path.write_text(json.dumps(matrix, indent=2) + '\n', encoding='utf-8')
+
+          # Changelog: convert 1.2.1 from prepared to published and retain PR #108 as Unreleased.
+          changelog_path = root / 'CHANGELOG.md'
+          changelog = changelog_path.read_text(encoding='utf-8')
+          new_top = f'''## [Unreleased]\n\n### Changed\n\n- Updated the governed Python example build backend from Hatchling `1.31.0` to `1.32.0`, including the synchronized hash lock, `tomlkit==0.15.1`, validator expectation, and regression contract from PR #108. This work merged after the frozen `v1.2.1` target and is not part of the published patch.\n\n## [1.2.1] - 2026-08-15\n\n### Release Status\n\n- Semantic version: `1.2.1`.\n- Publication status: Published. Annotated tag `v1.2.1` has tag-object SHA `{tag_object}` and resolves to immutable commit `{candidate}`.\n- GitHub Release ID `{release_id}` was published as non-draft and non-prerelease on 2026-08-15 using the reviewed `docs/releases/1.2.1.md` body exactly; published/reviewed notes SHA-256 is `{notes_hash}`.\n- Published `v1.2.0` remains immutable historical evidence and is not moved, rewritten, or deleted by this patch.\n- Published `v1.2.1` consumers requiring the canary-validated repaired workflow should pin `.github/workflows/governance-ci-reusable.yml@{candidate}`; the protected annotated `v1.2.1` path is also PostRelease verified, while the full SHA remains the preferred workflow pin for maximum supply-chain integrity.\n\n### Fixed\n\n- Repaired reusable governance workflow identity handling for annotated semantic-version release tags by verifying the exact GitHub-reported tag object, requiring an annotated tag object, peeling it to a commit, and requiring that commit to match the trusted standards checkout.\n- Preserved exact binding for direct full-SHA workflow pins while continuing to reject branches, lightweight tags, malformed refs, wrong repositories, wrong workflow paths, mismatched tag objects, and mismatched peeled commits.\n- Added separate hosted provenance for the workflow object SHA and peeled standards commit SHA while retaining commit-based completion-evidence semantics.\n- Published the GitHub Release from the reviewed `docs/releases/1.2.1.md` body exactly, correcting the v1.2.0 release-body integrity defect.\n- Synchronized post-`v1.2.0` release-state and compatibility guidance and migrated the `enterprise-powershell` aggregate behavior-evidence gate to the dual-profile Actions verifier without weakening lifecycle or human-adjudication requirements.\n\n### Validation\n\n- Exact-candidate Governance CI run `31826861530` passed; artifact `9229568604` was independently downloaded and SHA-256 verified.\n- Central controlled-failure run `31843005246` failed only at final mandatory enforcement after evidence upload; artifact `9235313486` was independently verified.\n- Live PreRelease lifecycle run `31846242114` passed with artifact `9235993449`.\n- Publication lifecycle run `31853146258` passed with independently verified artifact `9238154042`.\n- Published-ref PostRelease canary used caller commit `{canary_commit}` and `@v1.2.1`: success run `31853248739` passed; controlled-failure `31853248720`, version-mismatch `31853248752`, missing-file `31853248718`, and control-disablement `31853248799` failed only for their intended fail-closed reasons. All five artifacts were independently downloaded and hash verified.\n- Published-ref workflow identity evidence records `referenceKind: AnnotatedTag`, workflow object SHA `{tag_object}`, and peeled standards commit `{candidate}`.\n- Attributable exact-candidate human release approval was recorded by `mezuccolini`; no PostRelease regression or defect follow-up issue was required.\n\n### Migration Notes\n\n- Consumers may adopt the published `1.2.1` patch without new downstream governance obligations; the central workflow interface and supported project-manifest, test-evidence, and completion-result schema sets are unchanged.\n- Production workflow consumers SHOULD pin the full immutable target `{candidate}`. The protected `v1.2.1` annotated ref is verified to resolve correctly and may be used where protected semantic release references are the approved policy.\n- The known annotated-tag defect remains historical only for `v1.2.0`; do not move or rewrite that historical tag.\n- Current `master` contains PR #108 after the release target. That later work remains under `[Unreleased]` and is not validated by v1.2.1 release evidence.\n\n'''
+          pattern = re.compile(r'^## \[Unreleased\]\s*\n.*?(?=^## \[1\.2\.0\] - 2026-08-12\s*$)', re.M | re.S)
+          changelog, count = pattern.subn(new_top, changelog, count=1)
+          if count != 1:
+              raise SystemExit('Unable to replace v1.2.1 changelog preparation block exactly once.')
+          changelog_path.write_text(changelog, encoding='utf-8')
+
+          # Current release status is intentionally rewritten as the durable post-release summary.
+          release_status = f'''# Release Status\n\n| Field | Value |\n| --- | --- |\n| Status | Published; PostRelease verification complete |\n| Latest published version | 1.2.1 |\n| Published v1.2.1 target | `{candidate}` |\n| Published v1.2.1 tag object | `{tag_object}` |\n| Published v1.2.1 GitHub Release ID | `{release_id}` |\n| Owner role | Release Maintainers |\n| Last verified | 2026-08-15 |\n\n## Current Release State\n\nThe latest published version is `1.2.1`. Annotated tag `v1.2.1` has tag-object SHA `{tag_object}` and resolves to immutable commit `{candidate}`. GitHub Release `{release_id}` is non-draft and non-prerelease and was published on 2026-08-15 from the reviewed `docs/releases/1.2.1.md` content exactly.\n\nThe published release-note SHA-256 is `{notes_hash}`. Published `v1.2.0` remains immutable historical evidence at commit `6c0050de328ac083e69fbac8971a317689c2c1d6`; it is not moved, recreated, deleted, or rewritten.\n\n## v1.2.1 Lifecycle Evidence\n\n- Exact-candidate Governance CI: run `31826861530`, Passed; artifact `9229568604` independently verified.\n- Exact-candidate controlled failure: run `31843005246`, expected failure only at final mandatory enforcement; artifact `9235313486` independently verified.\n- Live PreRelease lifecycle: run `31846242114`, Passed; artifact `9235993449` independently verified.\n- Publication lifecycle: run `31853146258`, Passed; artifact `9238154042` independently verified.\n- Published-ref PostRelease canary caller: `{canary_commit}`.\n- Published-ref success: `31853248739`; expected-negative runs: `31853248720`, `31853248752`, `31853248718`, `31853248799`. All five artifacts were independently hash verified.\n- Every published-ref artifact records workflow object `{tag_object}`, reference kind `AnnotatedTag`, and peeled standards commit `{candidate}`.\n- No unexpected regression was observed and no defect follow-up issue is required.\n\n## Consumer Authority\n\nPublished `v1.2.1` consumers requiring the canary-validated repaired workflow should pin `.github/workflows/governance-ci-reusable.yml@{candidate}` for maximum supply-chain integrity. The protected annotated `v1.2.1` reference is also verified through the full PostRelease matrix and may be used where protected semantic release refs are the approved policy.\n\nThe v1.2.1 patch does not change downstream obligations, central workflow interface `1.0.0`, or the supported project-manifest, test-evidence, and completion-result schema sets.\n\n## Current Master Boundary\n\nCurrent `master` is newer than the published release target because PR #108 merged after `{candidate}`. That post-release work is `[Unreleased]`; historical v1.2.1 runs validate only the immutable release target, not later `master`.\n\nThe machine-readable `unreleasedContract` therefore retains governance version `1.2.1` but remains Preview with `canaryValidationStatus: NotRun` and a null canary authority. The published v1.2.1 PostRelease canary is not relabeled as validation of newer moving branch content.\n\n## Issue #103 Disposition\n\nThe published `v1.2.1` PostRelease matrix proves the original annotated-tag reusable-workflow identity defect is repaired: GitHub's annotated tag-object SHA is verified separately from the peeled standards commit and both are preserved in hosted evidence. The v1.2.0 release-body mismatch is also corrected by the exact reviewed-body publication contract.\n\nIssue #103 may be closed only after this repository status synchronization is merged and the final PostRelease lifecycle gate records the refreshed compatibility state.\n\n## Related Documents\n\n- [Published v1.2.1 Release Notes](releases/1.2.1.md)\n- [Unreleased Development](releases/unreleased.md)\n- [Changelog](../CHANGELOG.md)\n- [Versioning](VERSIONING.md)\n- [Release Process](RELEASE_PROCESS.md)\n- [Downstream Compatibility](DOWNSTREAM_COMPATIBILITY.md)\n- [Downstream Governance Canary](DOWNSTREAM_CANARY.md)\n'''
+          (root / 'docs/RELEASE_STATUS.md').write_text(release_status, encoding='utf-8')
+
+          compatibility = f'''# Downstream Compatibility\n\n| Field | Value |\n| --- | --- |\n| Status | Active; v1.2.1 published and PostRelease verified |\n| Contract version | 1.2.0 |\n| Latest published governance release | 1.2.1 |\n| Published target | `{candidate}` |\n| Current master contract | 1.2.1 Preview; newer than published target |\n| Owner role | Release Maintainers |\n| Last reviewed | 2026-08-15 |\n\n## Purpose\n\nThis document defines how maintainers and downstream consumers determine whether a governance release, evidence schema, project-manifest schema, central reusable-workflow interface, or language-specific functional workflow remains supported. The machine-readable source of truth is [`governance/downstream-compatibility.json`](../governance/downstream-compatibility.json), validated against [`schemas/downstream-compatibility.schema.json`](../schemas/downstream-compatibility.schema.json).\n\nA moving branch is never release evidence. Consumers MUST select an immutable published release target or an explicitly recorded immutable workflow authority and MUST NOT infer compatibility from a matching semantic version alone.\n\n## Contract Schema Versions\n\n- `1.0.0` preserves the historical compatibility shape.\n- `1.1.0` adds functional workflow authorities.\n- `1.2.0` adds explicit `canaryValidationStatus`; only `Passed` may carry a concrete `canaryValidatedWorkflowSha`, while `Failed`, `Blocked`, `NotRun`, and `NotApplicable` require that authority to remain null.\n\nThese compatibility-document schema versions are independent from the repository governance release version.\n\n## Published Matrix\n\nPublished `1.2.1` is the latest supported governance release. Annotated tag `v1.2.1` has tag-object SHA `{tag_object}` and resolves to immutable commit `{candidate}`. GitHub Release ID `{release_id}` was published on 2026-08-15 from the reviewed release-note body exactly.\n\nPublished `1.2.1` supports:\n\n- Central governance workflow interface `1.0.0`.\n- Project-manifest schemas `1.0.0`, `1.1.0`, and `1.2.0`.\n- Test-evidence schemas `1.0.0` and `1.1.0`.\n- Completion-result schemas `1.0.0` and `1.1.0`.\n\nThe full published-ref PostRelease canary used caller commit `{canary_commit}`. Success run `31853248739` passed and all four isolated negative scenarios failed only for their intended reasons. Every artifact records the annotated workflow object `{tag_object}` separately from peeled standards commit `{candidate}`.\n\nPublished `1.2.0` and `1.1.0` remain historical supported entries in the machine-readable matrix. Their immutable tags and targets are not rewritten by this patch.\n\n## Current Master Preview\n\nCurrent `master` contains PR #108 after the frozen v1.2.1 release target. The root governance version therefore remains `1.2.1`, but the `unreleasedContract` describes newer moving-branch development rather than the contents of published `v1.2.1`.\n\nFor that reason the current-master Preview records `canaryValidationStatus: NotRun` and `canaryValidatedWorkflowSha: null`. The successful published-ref canary is release evidence for `v1.2.1`; it is not silently reused as certification of later `master`.\n\nThe current unreleased migration guide is [`docs/releases/unreleased.md`](releases/unreleased.md).\n\n## Functional Workflow Authorities\n\n| Language | Reusable workflow | Interface | Immutable authority | Support | Validation boundary |\n| --- | --- | --- | --- | --- | --- |\n| Python | `.github/workflows/python-ci-reusable.yml` | `1.0.0` | `e066df32a0deaee38fed4a4cd477d1f4b4b549ed` | Preview | Maintained Python example and hosted Python CI passed; no external functional canary is claimed. |\n| Bash | `.github/workflows/bash-ci-reusable.yml` | `1.0.0` | `d55bb8e6778030f5490e900ba52ba99ac6403827` | Preview | Maintained Bash example and hosted Bash CI passed; no external functional canary is claimed. |\n\nThese SHAs are distribution authorities recorded by the corresponding workflow contracts. They are distinct from the central governance authority and repository self-CI.\n\n## Consumer Procedure\n\n1. Identify the exact published release or explicitly documented immutable authority.\n2. Confirm the compatibility-document schema version.\n3. Confirm every schema version used by the downstream repository.\n4. Confirm the central workflow interface and immutable authority.\n5. When Python or Bash functional validation is required, pin the matching functional workflow `immutableSha`.\n6. Retain adoption evidence with the chosen entry and its stated limitations.\n\nProduction workflow consumers SHOULD use full commit SHA `{candidate}` for the published v1.2.1 governance workflow. The protected semantic ref `v1.2.1` has also completed PostRelease annotated-tag verification and may be used where protected release refs are explicitly accepted. `master` and validation/preparation branches are not production authorities.\n\n## Historical v1.2.0 Follow-Up\n\nIssue #103 recorded the v1.2.0 annotated-tag identity defect and release-body mismatch. Published v1.2.1 corrects both without mutating v1.2.0. Historical evidence remains attributable to the exact version, commit, run, and artifact it names.\n\n## Support, Evidence, And Exceptions\n\nA deprecation MUST identify announcement time, replacement, intended removal version, downstream impact, and migration guidance. Evidence MUST identify actual commands or runs, outcomes, candidate SHA, schema/interface versions, immutable authorities, artifact hashes, approvals, and limitations. `Blocked`, `NotRun`, and `NotApplicable` remain visible and cannot be relabeled as `Passed`.\n\nAn exception requires a `GOV-*` record with owner, scope, rationale, expiration, compensating controls, and migration plan. Exceptions do not rewrite historical matrix entries and cannot convert unavailable external validation into `Passed`.\n\n## Related\n\n- [Release Status](RELEASE_STATUS.md)\n- [Published v1.2.1 Release Notes](releases/1.2.1.md)\n- [Unreleased Development](releases/unreleased.md)\n- [Release Process](RELEASE_PROCESS.md)\n- [Versioning](VERSIONING.md)\n- [Downstream Governance Canary](DOWNSTREAM_CANARY.md)\n- [Adoption Guide](ADOPTION_GUIDE.md)\n- [Troubleshooting](TROUBLESHOOTING.md)\n'''
+          (root / 'docs/DOWNSTREAM_COMPATIBILITY.md').write_text(compatibility, encoding='utf-8')
+
+          unreleased = f'''# Unreleased Development After v1.2.1\n\n| Field | Value |\n| --- | --- |\n| Status | Preview; unpublished current-master development |\n| Governance version | `1.2.1` |\n| Published baseline | `v1.2.1` |\n| Published target | `{candidate}` |\n| Current-master canary status | `NotRun` |\n| Owner role | Release Maintainers |\n\n## Purpose\n\nThis document is the migration guide for the current `unreleasedContract` in `governance/downstream-compatibility.json`. Published `v1.2.1` is immutable release evidence; this file describes development merged after that release target and does not claim a new release or reuse historical canary proof for moving `master`.\n\n## Current Unreleased Scope\n\n- PR #108 updated the governed Python example build backend from Hatchling `1.31.0` to `1.32.0`.\n- The synchronized toolchain adds exact `tomlkit==0.15.1` runtime locking and updates the owned validator/regression expectation.\n- This work merged after the frozen v1.2.1 target and therefore remains `[Unreleased]`.\n\nNo later semantic governance version has been selected. The root `VERSION` remains `1.2.1` until maintainers deliberately start another release-preparation cycle.\n\n## Consumer Guidance\n\n- Production consumers should use published `v1.2.1` or, preferably for workflow supply-chain integrity, exact commit `{candidate}`.\n- Do not pin `master` or this unreleased state as release authority.\n- The published v1.2.1 PostRelease canary proves the immutable release path; it does not validate the later PR #108 master state.\n- The current `unreleasedContract` therefore truthfully remains `canaryValidationStatus: NotRun` with `canaryValidatedWorkflowSha: null`.\n\n## Published Baseline\n\nAnnotated tag `v1.2.1` has tag-object SHA `{tag_object}` and peels to `{candidate}`. GitHub Release ID `{release_id}` is non-draft/non-prerelease and its body matches the reviewed `docs/releases/1.2.1.md` SHA-256 `{notes_hash}`.\n\nThe complete published-ref canary successfully exercised `@v1.2.1`, including one success scenario and four isolated fail-closed scenarios.\n\n## Related Records\n\n- [Published v1.2.1 Release Notes](1.2.1.md)\n- [Release Status](../RELEASE_STATUS.md)\n- [Downstream Compatibility](../DOWNSTREAM_COMPATIBILITY.md)\n- [Downstream Governance Canary](../DOWNSTREAM_CANARY.md)\n- [Changelog](../../CHANGELOG.md)\n'''
+          (root / 'docs/releases/unreleased.md').write_text(unreleased, encoding='utf-8')
+
+          release_index = f'''# Release Records\n\nThis directory contains immutable published release records plus current unreleased migration guidance.\n\n| Record | Lifecycle |\n| --- | --- |\n| [`1.2.1.md`](1.2.1.md) | Published release notes for protected annotated tag `v1.2.1`, tag object `{tag_object}`, resolving to immutable commit `{candidate}`. |\n| [`1.2.0.md`](1.2.0.md) | Published historical release record for annotated tag `v1.2.0`, resolving to immutable commit `6c0050de328ac083e69fbac8971a317689c2c1d6`. |\n| [`1.1.0.md`](1.1.0.md) | Published historical release record for tag `v1.1.0`. |\n| [`unreleased.md`](unreleased.md) | Current migration guidance for development merged after the published v1.2.1 target. |\n| [`unreleased-consolidation.md`](unreleased-consolidation.md) | Consolidated post-`v1.1.0` development history retained as release-preparation history. |\n\nPublished records describe only the immutable tag and commit they name. Unreleased records are not publication, tag authorization, or production compatibility promises.\n\nThe authoritative current state is maintained in [Release Status](../RELEASE_STATUS.md). Version `1.2.1` is the latest published release; later `master` changes remain `[Unreleased]` until a future release is deliberately prepared.\n'''
+          (root / 'docs/releases/README.md').write_text(release_index, encoding='utf-8')
+
+          # Refresh the canary document to the latest independently verified published-ref matrix.
+          canary_path = root / 'docs/DOWNSTREAM_CANARY.md'
+          canary = canary_path.read_text(encoding='utf-8')
+          canary = canary.replace('| Governance version | 1.1.0 |', '| Governance version | 1.2.1 |')
+          canary = re.sub(r'\| Validated standards SHA \| `[^`]+` \|', f'| Validated standards SHA | `{candidate}` |', canary, count=1)
+          canary = re.sub(r'\| Last verified \| [^|]+ \|', '| Last verified | 2026-08-15 |', canary, count=1)
+          canary = canary.replace(
+              'The canary is intentionally non-production, contains no secrets, and uses only the `Contract` validation category. Its manifest classifies it as an `integration` project with `Moderate` risk and `Public` data. The workflow has only `contents: read` permission and pins every reusable-workflow call to one reviewed full commit SHA.',
+              'The canary is intentionally non-production, contains no secrets, and uses only the `Contract` validation category. Its manifest classifies it as an `integration` project with `Moderate` risk and `Public` data. Candidate release proof uses exact full-SHA workflow pins; PostRelease proof intentionally invokes the protected published semantic ref so annotated-tag identity is exercised across the real repository boundary.'
+          )
+          verified_section = f'''## Verified Baseline\n\nThe latest complete proof is the published `v1.2.1` PostRelease matrix from canary caller commit `{canary_commit}`. All five isolated workflows invoked `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@v1.2.1`. GitHub resolved that ref to annotated tag object `{tag_object}`, and the workflow identity resolver independently peeled and validated standards commit `{candidate}`.\n\n| Scenario | Run | Artifact ID | Artifact SHA-256 | Result |\n| --- | ---: | ---: | --- | --- |\n| Success | `31853248739` | `9238210172` | `75da2fdf61b1c56b7c306eaf16fbb8d8b985f7ef41ee13d814dbd3b3d5c67d56` | Passed |\n| Controlled failure | `31853248720` | `9238209524` | `595669f03ba1031ae5c693d2341b68545ef4d51e8dd6b0e3815d8226357db7a5` | Expected failure verified |\n| Governance version mismatch | `31853248752` | `9238207090` | `586353be72b9b1d60d22e5225ae67c4e85f780286b61ad9644c43f2a820dab50` | Exact mismatch reason verified |\n| Missing required file | `31853248718` | `9238208902` | `fcfd7c9b44a476e7b7d42a2eecabd92b013375d00001a75f3246fc01d882281e` | Exact `SECURITY.md` reason verified |\n| Mandatory control disablement | `31853248799` | `9238211637` | `856b94df35b8d9921bd0aa3cc0ce6de12a2b2ae6f18e6e66f8be9c5a078ed3ca` | Exact disablement reason verified |\n\nAll five artifacts were independently downloaded and their ZIP SHA-256 values matched GitHub. Every `workflow-identity.json` records `referenceKind: AnnotatedTag`, workflow object `{tag_object}`, ref `refs/tags/v1.2.1`, and peeled standards commit `{candidate}`. Archive safety inspection found no unsafe paths, symlinks, runner/workspace absolute paths, PAT/API-key patterns, Windows absolute paths, or private-key markers.\n\nThis supersedes the older governance-1.1 canary baseline as the current central governance release proof. Historical runs remain valid only for the exact commits and artifacts they name.\n\n'''
+          canary, count = re.subn(r'## Verified Baseline\n.*?(?=## Release Gate\n)', verified_section, canary, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit('Unable to replace DOWNSTREAM_CANARY Verified Baseline section.')
+          canary = canary.replace(
+              '6. Record the runs, artifact IDs, hashes, candidate SHA, canary commit, and reviewer decision in the release pull request.\n',
+              '6. Record the runs, artifact IDs, hashes, candidate SHA, canary commit, and reviewer decision in the release pull request.\n7. After authorized publication, rerun the full five-scenario matrix through the immutable published `v<version>` ref and verify the workflow tag-object identity, annotated reference kind, peeled standards commit, conclusions, artifacts, and hashes before PostRelease can pass.\n'
+          )
+          canary_path.write_text(canary, encoding='utf-8')
+
+          # README: update current published example and release summary without disturbing unrelated content.
+          readme_path = root / 'README.md'
+          readme = readme_path.read_text(encoding='utf-8')
+          old_example = 'The following example demonstrates the published `1.2.0` contract. For the complete published 1.2 governance, Python, and Bash workflow set, production consumers should pin the exact published target commit `6c0050de328ac083e69fbac8971a317689c2c1d6` by full SHA. Do not invoke the reusable governance workflow through annotated `v1.2.0` until issue #103 is repaired in a patch release.'
+          new_example = f'The following example demonstrates the published `1.2.1` governance release. Production workflow consumers SHOULD pin the exact published target `{candidate}` by full SHA for maximum supply-chain integrity. The protected annotated `v1.2.1` ref has also passed the complete PostRelease canary and correctly separates tag-object identity from the peeled standards commit.'
+          if old_example not in readme:
+              raise SystemExit('Expected README published 1.2.0 example paragraph not found.')
+          readme = readme.replace(old_example, new_example, 1)
+          readme = readme.replace('uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@6c0050de328ac083e69fbac8971a317689c2c1d6', f'uses: AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@{candidate}', 1)
+          readme = readme.replace('      governance-version: 1.2.0', '      governance-version: 1.2.1', 1)
+          readme = readme.replace(
+              'The post-release `de32b77e2043f5336a54b92ab9ed867abe93ba7e` governance-only repair does not contain the published 1.2 Python and Bash reusable workflows, so it is not the pin used by this complete 1.2 example.',
+              f'The published `v1.2.1` target `{candidate}` contains the complete governed 1.2 distribution used by this example. The historical `de32b77e2043f5336a54b92ab9ed867abe93ba7e` authority remains governance-1.1 evidence only.'
+          )
+          readme = readme.replace('The example above reflects the published `1.2.0` contract.', 'The example above reflects the published `1.2.1` governance release while continuing to use project-manifest schema `1.2.0`.', 1)
+          readme = readme.replace('  "governanceVersion": "1.2.0",', '  "governanceVersion": "1.2.1",', 1)
+
+          old_release_block = '''The latest published version remains `1.2.0`. Annotated tag `v1.2.0` resolves to immutable commit `6c0050de328ac083e69fbac8971a317689c2c1d6`. GitHub Release `v1.2.0` was published on 2026-08-12 as release ID `369234609` and remains historical external state.\n\nThe prepared version is `1.2.1` and is unpublished. It is a corrective patch for issue #103 and includes the post-`v1.2.0` release-state, compatibility-guidance, and behavior-verifier fixes already merged to `master`. Preparation does not authorize a tag, GitHub Release, or consumer migration.\n\nThe `1.2.1` trust-boundary repair verifies an annotated release tag as two related immutable identities: the tag object reported by GitHub and the exact peeled commit checked out for validation. Direct full-SHA pins remain exact, while branches, lightweight tags, malformed refs, wrong repositories, wrong workflow paths, mismatched tag objects, and mismatched peeled commits remain rejected.\n'''
+          new_release_block = f'''The latest published version is `1.2.1`. Annotated tag `v1.2.1` resolves to immutable commit `{candidate}` and has tag-object SHA `{tag_object}`. GitHub Release `v1.2.1` was published on 2026-08-15 as release ID `{release_id}` using the reviewed release-note body exactly.\n\nThe `1.2.1` trust-boundary repair verifies an annotated release tag as two related immutable identities: the tag object reported by GitHub and the exact peeled commit checked out for validation. The full published-ref PostRelease matrix passed through `@v1.2.1`, proving the original issue #103 annotated-tag defect no longer reproduces. Direct full-SHA pins remain exact, while branches, lightweight tags, malformed refs, wrong repositories, wrong workflow paths, mismatched tag objects, and mismatched peeled commits remain rejected.\n\nPublished `v1.2.0` remains immutable historical evidence. Current `master` includes PR #108 after the v1.2.1 release target; that later work remains `[Unreleased]` and is not covered by v1.2.1 release evidence.\n'''
+          if old_release_block not in readme:
+              raise SystemExit('Expected README prepared-release block not found.')
+          readme = readme.replace(old_release_block, new_release_block, 1)
+          readme = readme.replace(
+              'Release candidates use the read-only lifecycle gate in `scripts/Test-ReleaseLifecycle.ps1`. Its PreRelease, Publication, and PostRelease stages bind validation, canary runs, human approvals, tag/release state, and compatibility updates to one immutable SHA. The prepared `1.2.1` exact-candidate hosted proof, controlled failure, five-scenario canary, artifact verification, and human approval remain `NotRun` until they are actually observed.',
+              'Release candidates use the read-only lifecycle gate in `scripts/Test-ReleaseLifecycle.ps1`. Its PreRelease, Publication, and PostRelease stages bind validation, canary runs, human approvals, tag/release state, and compatibility updates to one immutable SHA. For `v1.2.1`, exact-candidate success and controlled-failure proof, PreRelease, Publication, attributable human approval, and the published-ref five-scenario canary are complete; final repository PostRelease state synchronization is tracked by issue #103.'
+          )
+          readme = readme.replace(
+              'Historical governance-1.1 consumers requiring the final canary-validated repaired reusable workflow should pin `.github/workflows/governance-ci-reusable.yml@de32b77e2043f5336a54b92ab9ed867abe93ba7e`; this is retained historical evidence and is not the prepared 1.2.1 candidate authority.',
+              f'Published v1.2.1 consumers requiring the canary-validated repaired workflow should pin `.github/workflows/governance-ci-reusable.yml@{candidate}`; the protected annotated `v1.2.1` reference is also PostRelease verified, while the full SHA remains preferred for workflow execution.'
+          )
+          readme = readme.replace(
+              'The reviewed [v1.2.1 release notes](docs/releases/1.2.1.md) are the intended GitHub Release body. Publication must use that content exactly rather than GitHub auto-generated notes so the lifecycle notes hash can be verified.',
+              f'The published [v1.2.1 release notes](docs/releases/1.2.1.md) are the exact reviewed GitHub Release body; the published/reviewed SHA-256 is `{notes_hash}`.'
+          )
+          readme_path.write_text(readme, encoding='utf-8')
+
+          # Fail closed on stale publication claims in current-state documents.
+          stale_checks = {
+              'README.md': ['prepared version is `1.2.1` and is unpublished', 'latest published version remains `1.2.0`'],
+              'CHANGELOG.md': ['## [1.2.1] - Unreleased', 'Prepared and unpublished. No `v1.2.1` tag'],
+              'docs/RELEASE_STATUS.md': ['Prepared; unpublished'],
+              'docs/DOWNSTREAM_COMPATIBILITY.md': ['1.2.1, unpublished'],
+              'docs/releases/README.md': ['Version `1.2.1` is unpublished'],
+              'docs/releases/unreleased.md': ['Prepared v1.2.1 Governance Preview'],
+          }
+          for rel, needles in stale_checks.items():
+              text = (root / rel).read_text(encoding='utf-8')
+              for needle in needles:
+                  if needle in text:
+                      raise SystemExit(f'Stale release claim remains in {rel}: {needle}')
+
+          # Release-consistency's canary recommendation must be singular and agree
+          # with docs/DOWNSTREAM_CANARY.md in README, current release changelog, and status.
+          recommendation = f'.github/workflows/governance-ci-reusable.yml@{candidate}'
+          for rel in ['README.md', 'docs/RELEASE_STATUS.md']:
+              text = (root / rel).read_text(encoding='utf-8')
+              lines = [line for line in text.splitlines() if re.search(r'canary-(?:proven|validated).*repaired.*workflow', line, re.I)]
+              if len(lines) != 1 or recommendation not in lines[0]:
+                  raise SystemExit(f'Unexpected canary recommendation in {rel}: {lines}')
+          current_release = re.search(r'(?ms)^## \[1\.2\.1\].*?(?=^## \[1\.2\.0\])', (root/'CHANGELOG.md').read_text(encoding='utf-8')).group(0)
+          lines = [line for line in current_release.splitlines() if re.search(r'canary-(?:proven|validated).*repaired.*workflow', line, re.I)]
+          if len(lines) != 1 or recommendation not in lines[0]:
+              raise SystemExit(f'Unexpected canary recommendation in CHANGELOG.md: {lines}')
+
+          print('v1.2.1 post-release repository state synchronized.')
+          PY
+
+      - name: Validate release consistency
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File scripts/Test-ReleaseConsistency.ps1 -Path . -SkipTagVerification
+
+      - name: Validate JSON schemas
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File scripts/Test-JsonSchemas.ps1 -Path .
+
+      - name: Commit synchronized state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'AIAllTheThingz Automation'
+          git config user.email 'aiallthethingz@users.noreply.github.com'
+          git add CHANGELOG.md README.md docs/RELEASE_STATUS.md docs/DOWNSTREAM_CANARY.md docs/DOWNSTREAM_COMPATIBILITY.md docs/releases/README.md docs/releases/unreleased.md governance/downstream-compatibility.json
+          if git diff --cached --quiet; then
+            echo 'No synchronized state changes to commit.'
+            exit 1
+          fi
+          git commit -m 'docs(release): synchronize v1.2.1 post-release state'
+          git push origin HEAD:release/1.2.1-postrelease-sync
