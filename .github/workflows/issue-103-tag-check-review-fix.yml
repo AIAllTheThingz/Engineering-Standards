@@ -1,3 +1,4 @@
+# Retriggered after restoring the explicit current-master release boundary.
 name: Issue 103 Tag Check Review Fix
 
 on:
