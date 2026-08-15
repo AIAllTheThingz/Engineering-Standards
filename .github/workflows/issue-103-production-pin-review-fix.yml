@@ -42,7 +42,7 @@ jobs:
 
           Replace-Exact -Path 'CHANGELOG.md' `
             -Old '- Published `v1.2.1` consumers requiring the canary-validated repaired workflow should pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50`; the protected annotated `v1.2.1` path is also verified by the published-ref five-scenario canary, while the full SHA remains the preferred workflow pin for maximum supply-chain integrity. Final PostRelease lifecycle validation remains pending until repository state synchronization is merged.' `
-            -New '- Published `v1.2.1` production workflow consumers MUST pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50` by full commit SHA. The protected annotated `v1.2.1` path remains verified as human-readable release identity and published-ref canary/lifecycle evidence, but it MUST NOT be the sole production GitHub Actions workflow identity. Final PostRelease lifecycle validation remains pending until repository state synchronization is merged.'
+            -New '- Published `v1.2.1` production consumers requiring the canary-validated repaired workflow MUST pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50` by full commit SHA. The protected annotated `v1.2.1` path remains verified as human-readable release identity and published-ref canary/lifecycle evidence, but it MUST NOT be the sole production GitHub Actions workflow identity. Final PostRelease lifecycle validation remains pending until repository state synchronization is merged.'
 
           Replace-Exact -Path 'CHANGELOG.md' `
             -Old '- Production workflow consumers SHOULD pin the full immutable target `7d15ec8be6d8c3cdca35061728901584437e4a50`. The protected `v1.2.1` annotated ref is verified to resolve correctly and may be used where protected semantic release references are the approved policy.' `
@@ -95,6 +95,9 @@ jobs:
           }
           if ($combined -notmatch 'MUST NOT be the sole production') {
             throw 'Required semantic-ref prohibition is missing.'
+          }
+          if (([regex]::Matches((Get-Content -LiteralPath 'CHANGELOG.md' -Raw), '(?im)^.*canary-(?:proven|validated).*repaired.*workflow.*$')).Count -ne 1) {
+            throw 'CHANGELOG.md must retain exactly one canary-validated repaired workflow recommendation line.'
           }
 
           pwsh -NoProfile -File scripts/Test-ReleaseConsistency.ps1 -Path .
