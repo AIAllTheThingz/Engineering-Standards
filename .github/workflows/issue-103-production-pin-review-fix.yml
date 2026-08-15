@@ -96,10 +96,9 @@ jobs:
           if ($combined -notmatch 'MUST NOT be the sole production') {
             throw 'Required semantic-ref prohibition is missing.'
           }
-          if (([regex]::Matches((Get-Content -LiteralPath 'CHANGELOG.md' -Raw), '(?im)^.*canary-(?:proven|validated).*repaired.*workflow.*$')).Count -ne 1) {
-            throw 'CHANGELOG.md must retain exactly one canary-validated repaired workflow recommendation line.'
-          }
 
+          # Test-ReleaseConsistency.ps1 is authoritative for release-scoped
+          # canary recommendation cardinality and all published-tag semantics.
           pwsh -NoProfile -File scripts/Test-ReleaseConsistency.ps1 -Path .
 
       - name: Commit guidance correction
