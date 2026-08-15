@@ -16,7 +16,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 - Publication status: Published. Annotated tag `v1.2.1` has tag-object SHA `aea6330ee3d51b3f5bb55031d878ef302ba1dbca` and resolves to immutable commit `7d15ec8be6d8c3cdca35061728901584437e4a50`.
 - GitHub Release ID `370882222` was published as non-draft and non-prerelease on 2026-08-15 using the reviewed `docs/releases/1.2.1.md` body exactly; published/reviewed notes SHA-256 is `a6598577ac6ad67d5f4b55c534a90f15505f80fed822878598c231433b29877d`.
 - Published `v1.2.0` remains immutable historical evidence and is not moved, rewritten, or deleted by this patch.
-- Published `v1.2.1` consumers requiring the canary-validated repaired workflow should pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50`; the protected annotated `v1.2.1` path is also verified by the published-ref five-scenario canary, while the full SHA remains the preferred workflow pin for maximum supply-chain integrity. Final PostRelease lifecycle validation remains pending until repository state synchronization is merged.
+- Published `v1.2.1` production consumers requiring the canary-validated repaired workflow MUST pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50` by full commit SHA. The protected annotated `v1.2.1` path remains verified as human-readable release identity and published-ref canary/lifecycle evidence, but it MUST NOT be the sole production GitHub Actions workflow identity. Final PostRelease lifecycle validation remains pending until repository state synchronization is merged.
 
 ### Fixed
 
@@ -39,7 +39,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 ### Migration Notes
 
 - Consumers may adopt the published `1.2.1` patch without new downstream governance obligations; the central workflow interface and supported project-manifest, test-evidence, and completion-result schema sets are unchanged.
-- Production workflow consumers SHOULD pin the full immutable target `7d15ec8be6d8c3cdca35061728901584437e4a50`. The protected `v1.2.1` annotated ref is verified to resolve correctly and may be used where protected semantic release references are the approved policy.
+- Production workflow consumers MUST pin the full immutable target `7d15ec8be6d8c3cdca35061728901584437e4a50`. The protected `v1.2.1` annotated ref remains verified for release, canary, and lifecycle identity only and MUST NOT be used as the sole production GitHub Actions workflow identity.
 - The known annotated-tag defect remains historical only for `v1.2.0`; do not move or rewrite that historical tag.
 - Current `master` contains PR #108 after the release target. That later work remains under `[Unreleased]` and is not validated by v1.2.1 release evidence.
 

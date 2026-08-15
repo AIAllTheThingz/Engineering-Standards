@@ -23,8 +23,8 @@ No later semantic governance version has been selected. The root `VERSION` remai
 
 ## Consumer Guidance
 
-- Production consumers should use published `v1.2.1` or, preferably for workflow supply-chain integrity, exact commit `7d15ec8be6d8c3cdca35061728901584437e4a50`.
-- Do not pin `master` or this unreleased state as release authority.
+- Production GitHub Actions workflow consumers MUST pin exact commit `7d15ec8be6d8c3cdca35061728901584437e4a50` for the published v1.2.1 governance workflow. The semantic `v1.2.1` ref remains release/canary identity and MUST NOT be the sole production workflow identity.
+- Do not pin `master`, the semantic `v1.2.1` ref, or this unreleased state as a production GitHub Actions workflow authority; production workflow identity requires the full commit SHA.
 - The published v1.2.1 five-scenario canary proves the immutable release path; it does not validate the later PR #108 master state, and final PostRelease lifecycle validation remains pending until the release-state synchronization is merged.
 - The current `unreleasedContract` therefore truthfully remains `canaryValidationStatus: NotRun` with `canaryValidatedWorkflowSha: null`.
 

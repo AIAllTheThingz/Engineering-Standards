@@ -109,7 +109,7 @@ flowchart TD
 
 ## Example Workflow
 
-The following example demonstrates the published `1.2.1` governance release. Production workflow consumers SHOULD pin the exact published target `7d15ec8be6d8c3cdca35061728901584437e4a50` by full SHA for maximum supply-chain integrity. The protected annotated `v1.2.1` ref has also passed the complete published-ref five-scenario canary and correctly separates tag-object identity from the peeled standards commit.
+The following example demonstrates the published `1.2.1` governance release. Production workflow consumers MUST pin the exact published target `7d15ec8be6d8c3cdca35061728901584437e4a50` by full commit SHA. The protected annotated `v1.2.1` ref has passed the complete published-ref five-scenario canary and correctly separates tag-object identity from the peeled standards commit, but it is release/canary identity only and MUST NOT be the sole production GitHub Actions workflow identity.
 
 ```yaml
 name: Governance
@@ -209,7 +209,7 @@ The manifest below demonstrates the published schema/governance contract `1.2.0`
 
 Schema versions `1.0.0` and `1.1.0` remain supported. Version `1.2.0` separates the semantic governance release from its immutable commit, makes workflow interface compatibility explicit, and uses structured ownership, standards consumption, evidence, and exception records. See the [Issue #21 compatibility proposal](docs/migrations/ISSUE_21_CONTRACT_COMPATIBILITY_PROPOSAL.md).
 
-The example above reflects the published `1.2.1` governance release while continuing to use project-manifest schema `1.2.0`. Consumers should use an immutable published tag/commit or another explicitly documented immutable authority.
+The example above reflects the published `1.2.1` governance release while continuing to use project-manifest schema `1.2.0`. Production GitHub Actions consumers MUST use an immutable full commit SHA; semantic release tags may identify published releases and verification paths but MUST NOT be the sole production workflow identity.
 
 ## Local Validation
 
@@ -291,7 +291,7 @@ The `python-review` and `bash-review` home labs remain isolated demonstrations a
 
 ## Release And Versioning
 
-The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Downstream CI SHOULD pin commit SHAs for maximum supply-chain integrity. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md), future changes remain under [Unreleased](CHANGELOG.md#unreleased), and release procedure is defined in [Release Process](docs/RELEASE_PROCESS.md).
+The repository uses semantic versioning. Breaking governance changes require major versions and migration guidance. Production downstream GitHub Actions workflows MUST pin immutable full commit SHAs; semantic release tags are insufficient as the sole workflow identity. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md), future changes remain under [Unreleased](CHANGELOG.md#unreleased), and release procedure is defined in [Release Process](docs/RELEASE_PROCESS.md).
 
 The latest published version is `1.2.1`. Annotated tag `v1.2.1` resolves to immutable commit `7d15ec8be6d8c3cdca35061728901584437e4a50` and has tag-object SHA `aea6330ee3d51b3f5bb55031d878ef302ba1dbca`. GitHub Release `v1.2.1` was published on 2026-08-15 as release ID `370882222` using the reviewed release-note body exactly.
 
