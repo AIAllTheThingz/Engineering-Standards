@@ -34,7 +34,7 @@ jobs:
             )
             $text = Get-Content -LiteralPath $Path -Raw
             if (-not $text.Contains($Old)) {
-              throw "Expected text was not found in $Path: $Old"
+              throw "Expected text was not found in ${Path}: $Old"
             }
             $updated = $text.Replace($Old, $New)
             [System.IO.File]::WriteAllText((Resolve-Path $Path).Path, $updated, [System.Text.UTF8Encoding]::new($false))
