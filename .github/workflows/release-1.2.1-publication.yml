@@ -1,0 +1,163 @@
+name: v1.2.1 Publication Lifecycle Validation
+
+on:
+  push:
+    branches:
+      - release/1.2.1-lifecycle-validation
+    paths:
+      - .github/workflows/release-1.2.1-publication.yml
+
+permissions:
+  contents: read
+
+jobs:
+  publication:
+    name: Exact-candidate Publication lifecycle
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout validation control branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          path: control
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Checkout frozen release candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: AIAllTheThingz/Engineering-Standards
+          ref: 7d15ec8be6d8c3cdca35061728901584437e4a50
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Prepare exact-candidate Publication lifecycle record
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $candidateSha = '7d15ec8be6d8c3cdca35061728901584437e4a50'
+          $head = (& git -C candidate rev-parse HEAD).Trim()
+          if ($head -ne $candidateSha) { throw "Candidate checkout mismatch: $head" }
+          $dirty = @(& git -C candidate status --porcelain=v1)
+          if ($dirty.Count -gt 0) { throw 'Candidate checkout is not clean before lifecycle preparation.' }
+
+          New-Item -ItemType Directory -Path candidate/.tmp/releases -Force | Out-Null
+          $record = Get-Content -LiteralPath control/release-lifecycle/1.2.1-pre-release.template.json -Raw | ConvertFrom-Json -Depth 100
+          $notesHash = (Get-FileHash -LiteralPath candidate/docs/releases/1.2.1.md -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($notesHash -ne 'a6598577ac6ad67d5f4b55c534a90f15505f80fed822878598c231433b29877d') {
+            throw "Candidate release-notes hash changed: $notesHash"
+          }
+          $record.releaseNotes.reviewedSha256 = $notesHash
+          $record.publication = [pscustomobject][ordered]@{
+            status = 'Passed'
+            reason = $null
+            tag = [pscustomobject][ordered]@{
+              status = 'Passed'
+              reason = $null
+              name = 'v1.2.1'
+              kind = 'annotated'
+              objectSha = 'aea6330ee3d51b3f5bb55031d878ef302ba1dbca'
+              targetSha = $candidateSha
+              protected = $true
+              rewritten = $false
+              verifiedAtUtc = '2026-08-15T00:16:19Z'
+            }
+            githubRelease = [pscustomobject][ordered]@{
+              status = 'Passed'
+              reason = $null
+              url = 'https://github.com/AIAllTheThingz/Engineering-Standards/releases/tag/v1.2.1'
+              targetSha = $candidateSha
+              draft = $false
+              prerelease = $false
+              notesSha256 = $notesHash
+              publishedAtUtc = '2026-08-15T00:14:42Z'
+            }
+            artifacts = @(
+              [pscustomobject][ordered]@{
+                name = 'release-lifecycle-1.2.1-31846242114'
+                sha256 = '7b6c168c1a5b7e7bec0693a0ecc6cda8e94797a51ba0c9b165f03b80b95d7e47'
+                provenance = 'GitHub Actions run 31846242114 artifact 9235993449; independently downloaded and SHA-256 verified before publication.'
+              }
+            )
+          }
+          $record.postRelease = [pscustomobject][ordered]@{
+            status = 'NotRun'
+            reason = 'PostRelease verification begins only after the Publication lifecycle gate passes and the complete canary matrix is rerun against immutable published ref v1.2.1.'
+          }
+          $record | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath candidate/.tmp/releases/1.2.1-lifecycle.json -Encoding utf8NoBOM
+
+          $dirtyAfter = @(& git -C candidate status --porcelain=v1)
+          if ($dirtyAfter.Count -gt 0) { throw 'Lifecycle preparation changed tracked candidate state.' }
+
+      - name: Validate Publication lifecycle on frozen candidate
+        id: validate
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File candidate/scripts/Test-ReleaseLifecycle.ps1 `
+            -Path candidate `
+            -EvidencePath .tmp/releases/1.2.1-lifecycle.json `
+            -Stage Publication `
+            -OutputJson candidate/.tmp/releases/1.2.1-publication-result.json
+
+      - name: Create Publication validation identity manifest
+        if: always()
+        shell: pwsh
+        env:
+          VALIDATION_OUTCOME: ${{ steps.validate.outcome }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          CONTROL_SHA: ${{ github.sha }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $recordPath = 'candidate/.tmp/releases/1.2.1-lifecycle.json'
+          $resultPath = 'candidate/.tmp/releases/1.2.1-publication-result.json'
+          [ordered]@{
+            schemaVersion = '1.0.0'
+            repository = 'AIAllTheThingz/Engineering-Standards'
+            candidateSha = '7d15ec8be6d8c3cdca35061728901584437e4a50'
+            candidateHead = (& git -C candidate rev-parse HEAD).Trim()
+            controlBranch = 'release/1.2.1-lifecycle-validation'
+            controlSha = $env:CONTROL_SHA
+            runId = [int64]$env:RUN_ID
+            runAttempt = [int]$env:RUN_ATTEMPT
+            validationOutcome = $env:VALIDATION_OUTCOME
+            tagName = 'v1.2.1'
+            tagObjectSha = 'aea6330ee3d51b3f5bb55031d878ef302ba1dbca'
+            tagTargetSha = '7d15ec8be6d8c3cdca35061728901584437e4a50'
+            releaseId = 370882222
+            releasePublishedAtUtc = '2026-08-15T00:14:42Z'
+            releaseNotesSha256 = 'a6598577ac6ad67d5f4b55c534a90f15505f80fed822878598c231433b29877d'
+            lifecycleRecordSha256 = $(if (Test-Path -LiteralPath $recordPath) { (Get-FileHash -LiteralPath $recordPath -Algorithm SHA256).Hash.ToLowerInvariant() } else { $null })
+            validationResultSha256 = $(if (Test-Path -LiteralPath $resultPath) { (Get-FileHash -LiteralPath $resultPath -Algorithm SHA256).Hash.ToLowerInvariant() } else { $null })
+            publicationAuthorization = 'https://github.com/AIAllTheThingz/Engineering-Standards/issues/103#issuecomment-5299346743'
+            preReleaseRun = 31846242114
+            preReleaseArtifactId = 9235993449
+            tagRulesetId = 20724760
+          } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath candidate/.tmp/releases/1.2.1-publication-manifest.json -Encoding utf8NoBOM
+
+      - name: Upload Publication lifecycle evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-publication-1.2.1-${{ github.run_id }}
+          path: |
+            candidate/.tmp/releases/1.2.1-lifecycle.json
+            candidate/.tmp/releases/1.2.1-publication-result.json
+            candidate/.tmp/releases/1.2.1-publication-manifest.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce Publication lifecycle result
+        if: always()
+        shell: pwsh
+        env:
+          VALIDATION_OUTCOME: ${{ steps.validate.outcome }}
+        run: |
+          if ($env:VALIDATION_OUTCOME -ne 'success') {
+            throw "Publication lifecycle validation did not pass: $env:VALIDATION_OUTCOME"
+          }
+          Write-Output 'Publication lifecycle validation passed for published v1.2.1.'
