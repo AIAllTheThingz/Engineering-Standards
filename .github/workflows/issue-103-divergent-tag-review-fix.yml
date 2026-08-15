@@ -1,0 +1,166 @@
+name: Issue 103 Divergent Tag Review Fix
+
+on:
+  push:
+    branches:
+      - release/1.2.1-postrelease-sync
+    paths:
+      - .github/workflows/issue-103-divergent-tag-review-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: release/1.2.1-postrelease-sync
+          fetch-depth: 0
+
+      - name: Tighten tag verification guard and add regression cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('tests/scripts/ReleaseConsistency.Tests.ps1')
+          text = path.read_text(encoding='utf-8-sig')
+
+          helper_marker = "        }\n    }\n\n    BeforeEach {"
+          helper_replacement = """        }
+
+        function script:Get-CurrentRepositoryReleaseValidationArguments {
+            param(
+                [Parameter(Mandatory)][string]$RepositoryRoot,
+                [Parameter(Mandatory)][string]$Validator
+            )
+
+            $version = (Get-Content -LiteralPath (Join-Path $RepositoryRoot 'VERSION') -Raw).Trim()
+            $tag = \"v$version\"
+            $arguments = @('-NoProfile', '-File', $Validator, '-Path', $RepositoryRoot)
+
+            # A missing local tag makes live tag verification unavailable. If the tag
+            # exists at all, keep verification enabled so lightweight, moved, newer,
+            # or divergent refs are rejected by Test-ReleaseConsistency.ps1.
+            & git -C $RepositoryRoot rev-parse --verify --quiet \"$tag^{}\" *> $null
+            if ($LASTEXITCODE -ne 0) {
+                $arguments += '-SkipTagVerification'
+            }
+
+            return $arguments
+        }
+    }
+
+    BeforeEach {"""
+
+          if 'function script:Get-CurrentRepositoryReleaseValidationArguments' not in text:
+              if helper_marker not in text:
+                  raise SystemExit('BeforeAll helper insertion marker was not found.')
+              text = text.replace(helper_marker, helper_replacement, 1)
+
+          block_pattern = re.compile(
+              r"    It 'validates the current repository release records' \{.*?(?=    It 'still validates repository-controlled records when tag verification is explicitly unavailable' \{)",
+              re.S,
+          )
+          block_replacement = """    It 'validates the current repository release records' {
+        $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
+        $arguments = @(Get-CurrentRepositoryReleaseValidationArguments -RepositoryRoot $repositoryRoot -Validator $script:validator)
+        $output = @(& pwsh @arguments 2>&1)
+        $LASTEXITCODE | Should -Be 0 -Because ($output -join \"`n\")
+    }
+
+    It 'uses SkipTagVerification only when the current version tag is absent' {
+        Push-Location $script:fixture
+        try {
+            git init -q
+            git config user.email 'test@example.invalid'
+            git config user.name 'Test'
+            git add .
+            git commit -qm tagless-snapshot
+
+            $arguments = @(Get-CurrentRepositoryReleaseValidationArguments -RepositoryRoot $script:fixture -Validator $script:validator)
+            $arguments | Should -Contain '-SkipTagVerification'
+        }
+        finally { Pop-Location }
+    }
+
+    It 'does not disable tag verification for a divergent visible tag' {
+        Push-Location $script:fixture
+        try {
+            git init -q
+            git config user.email 'test@example.invalid'
+            git config user.name 'Test'
+            git add .
+            git commit -qm root
+            $rootCommit = (& git rev-parse HEAD).Trim()
+
+            git checkout -qb snapshot
+            Add-Content README.md 'snapshot branch'
+            git add README.md
+            git commit -qm snapshot
+            $snapshotHead = (& git rev-parse HEAD).Trim()
+
+            git checkout -qb divergent $rootCommit
+            Set-Content divergent.txt 'divergent branch'
+            git add divergent.txt
+            git commit -qm divergent
+            git tag -a v1.1.0 -m divergent
+            git checkout -q --detach $snapshotHead
+
+            $arguments = @(Get-CurrentRepositoryReleaseValidationArguments -RepositoryRoot $script:fixture -Validator $script:validator)
+            $arguments | Should -Not -Contain '-SkipTagVerification'
+
+            $output = @(& pwsh @arguments 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join \"`n\" | Should -Match 'does not match local tag (object|target)'
+        }
+        finally { Pop-Location }
+    }
+
+"""
+
+          updated, count = block_pattern.subn(block_replacement, text, count=1)
+          if count != 1:
+              raise SystemExit(f'Expected one current-repository test block; replaced {count}.')
+
+          path.write_text(updated, encoding='utf-8', newline='')
+          PY
+
+      - name: Validate focused repair before commit
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $tokens = $null
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'tests/scripts/ReleaseConsistency.Tests.ps1').Path,
+            [ref]$tokens,
+            [ref]$parseErrors
+          )
+          if ($parseErrors.Count -gt 0) {
+            throw ('ReleaseConsistency.Tests.ps1 parser errors: ' + (($parseErrors | ForEach-Object Message) -join '; '))
+          }
+
+          $testText = Get-Content -LiteralPath tests/scripts/ReleaseConsistency.Tests.ps1 -Raw
+          if ($testText -match 'merge-base --is-ancestor') { throw 'An ancestry-based tag-verification bypass remains.' }
+          if ($testText -notmatch 'divergent visible tag') { throw 'Divergent-tag regression case is missing.' }
+          if ($testText -notmatch 'If the tag\s*# exists at all, keep verification enabled') { throw 'Fail-closed tag-verification rationale is missing.' }
+
+          pwsh -NoProfile -File scripts/Test-ReleaseConsistency.ps1 -Path .
+
+      - name: Commit review fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'AIAllTheThingz Automation'
+          git config user.email 'aiallthethingz@users.noreply.github.com'
+          git add tests/scripts/ReleaseConsistency.Tests.ps1
+          git commit -m 'test(release): reject divergent visible release tags'
+          git push origin HEAD:release/1.2.1-postrelease-sync
