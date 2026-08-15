@@ -73,7 +73,7 @@ jobs:
           set -euo pipefail
           git config user.name 'AIAllTheThingz Automation'
           git config user.email 'aiallthethingz@users.noreply.github.com'
-          git add -A -- tests/scripts/ReleaseConsistency.Tests.ps1 .github/workflows/issue-103-self-ci-bootstrap.yml
+          git add -A
           git commit -m 'test(release): decouple self-test from live tag state'
           implementation_sha="$(git rev-parse HEAD)"
           echo "sha=${implementation_sha}" >> "$GITHUB_OUTPUT"
