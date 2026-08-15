@@ -25,7 +25,7 @@ No later semantic governance version has been selected. The root `VERSION` remai
 
 - Production consumers should use published `v1.2.1` or, preferably for workflow supply-chain integrity, exact commit `7d15ec8be6d8c3cdca35061728901584437e4a50`.
 - Do not pin `master` or this unreleased state as release authority.
-- The published v1.2.1 PostRelease canary proves the immutable release path; it does not validate the later PR #108 master state.
+- The published v1.2.1 five-scenario canary proves the immutable release path; it does not validate the later PR #108 master state, and final PostRelease lifecycle validation remains pending until the release-state synchronization is merged.
 - The current `unreleasedContract` therefore truthfully remains `canaryValidationStatus: NotRun` with `canaryValidatedWorkflowSha: null`.
 
 ## Published Baseline

@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Published; PostRelease verification complete |
+| Status | Published; published-ref canary verified; final PostRelease lifecycle pending |
 | Latest published version | 1.2.1 |
 | Published v1.2.1 target | `7d15ec8be6d8c3cdca35061728901584437e4a50` |
 | Published v1.2.1 tag object | `aea6330ee3d51b3f5bb55031d878ef302ba1dbca` |
@@ -29,7 +29,7 @@ The published release-note SHA-256 is `a6598577ac6ad67d5f4b55c534a90f15505f80fed
 
 ## Consumer Authority
 
-Published `v1.2.1` consumers requiring the canary-validated repaired workflow should pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50` for maximum supply-chain integrity. The protected annotated `v1.2.1` reference is also verified through the full PostRelease matrix and may be used where protected semantic release refs are the approved policy.
+Published `v1.2.1` consumers requiring the canary-validated repaired workflow should pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50` for maximum supply-chain integrity. The protected annotated `v1.2.1` reference is verified by the full published-ref five-scenario canary. Final PostRelease lifecycle validation remains pending until this state synchronization is merged and the refreshed compatibility state is machine-checked.
 
 The v1.2.1 patch does not change downstream obligations, central workflow interface `1.0.0`, or the supported project-manifest, test-evidence, and completion-result schema sets.
 

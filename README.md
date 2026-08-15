@@ -109,7 +109,7 @@ flowchart TD
 
 ## Example Workflow
 
-The following example demonstrates the published `1.2.1` governance release. Production workflow consumers SHOULD pin the exact published target `7d15ec8be6d8c3cdca35061728901584437e4a50` by full SHA for maximum supply-chain integrity. The protected annotated `v1.2.1` ref has also passed the complete PostRelease canary and correctly separates tag-object identity from the peeled standards commit.
+The following example demonstrates the published `1.2.1` governance release. Production workflow consumers SHOULD pin the exact published target `7d15ec8be6d8c3cdca35061728901584437e4a50` by full SHA for maximum supply-chain integrity. The protected annotated `v1.2.1` ref has also passed the complete published-ref five-scenario canary and correctly separates tag-object identity from the peeled standards commit.
 
 ```yaml
 name: Governance
@@ -295,7 +295,7 @@ The repository uses semantic versioning. Breaking governance changes require maj
 
 The latest published version is `1.2.1`. Annotated tag `v1.2.1` resolves to immutable commit `7d15ec8be6d8c3cdca35061728901584437e4a50` and has tag-object SHA `aea6330ee3d51b3f5bb55031d878ef302ba1dbca`. GitHub Release `v1.2.1` was published on 2026-08-15 as release ID `370882222` using the reviewed release-note body exactly.
 
-The `1.2.1` trust-boundary repair verifies an annotated release tag as two related immutable identities: the tag object reported by GitHub and the exact peeled commit checked out for validation. The full published-ref PostRelease matrix passed through `@v1.2.1`, proving the original issue #103 annotated-tag defect no longer reproduces. Direct full-SHA pins remain exact, while branches, lightweight tags, malformed refs, wrong repositories, wrong workflow paths, mismatched tag objects, and mismatched peeled commits remain rejected.
+The `1.2.1` trust-boundary repair verifies an annotated release tag as two related immutable identities: the tag object reported by GitHub and the exact peeled commit checked out for validation. The full published-ref five-scenario matrix passed through `@v1.2.1`, proving the original issue #103 annotated-tag defect no longer reproduces. Direct full-SHA pins remain exact, while branches, lightweight tags, malformed refs, wrong repositories, wrong workflow paths, mismatched tag objects, and mismatched peeled commits remain rejected.
 
 Published `v1.2.0` remains immutable historical evidence. Current `master` includes PR #108 after the v1.2.1 release target; that later work remains `[Unreleased]` and is not covered by v1.2.1 release evidence.
 
@@ -303,7 +303,7 @@ The v1.2.0 behavior evidence is protected run `31448468682`, which evaluated beh
 
 Release candidates use the read-only lifecycle gate in `scripts/Test-ReleaseLifecycle.ps1`. Its PreRelease, Publication, and PostRelease stages bind validation, canary runs, human approvals, tag/release state, and compatibility updates to one immutable SHA. For `v1.2.1`, exact-candidate success and controlled-failure proof, PreRelease, Publication, attributable human approval, and the published-ref five-scenario canary are complete; final repository PostRelease state synchronization is tracked by issue #103.
 
-Published v1.2.1 consumers requiring the canary-validated repaired workflow should pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50`; the protected annotated `v1.2.1` reference is also PostRelease verified, while the full SHA remains preferred for workflow execution. See [Release Status](docs/RELEASE_STATUS.md) and [Downstream Compatibility](docs/DOWNSTREAM_COMPATIBILITY.md).
+Published v1.2.1 consumers requiring the canary-validated repaired workflow should pin `.github/workflows/governance-ci-reusable.yml@7d15ec8be6d8c3cdca35061728901584437e4a50`; the protected annotated `v1.2.1` reference is also verified by the published-ref canary, while the full SHA remains preferred for workflow execution. Final PostRelease lifecycle validation remains pending until the release-state synchronization is merged. See [Release Status](docs/RELEASE_STATUS.md) and [Downstream Compatibility](docs/DOWNSTREAM_COMPATIBILITY.md).
 
 The published [v1.2.1 release notes](docs/releases/1.2.1.md) are the exact reviewed GitHub Release body; the published/reviewed SHA-256 is `a6598577ac6ad67d5f4b55c534a90f15505f80fed822878598c231433b29877d`.
 

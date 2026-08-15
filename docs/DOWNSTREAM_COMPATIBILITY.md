@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Active; v1.2.1 published and PostRelease verified |
+| Status | Active; v1.2.1 published; published-ref canary verified; final PostRelease lifecycle pending |
 | Contract version | 1.2.0 |
 | Latest published governance release | 1.2.1 |
 | Published target | `7d15ec8be6d8c3cdca35061728901584437e4a50` |
@@ -35,7 +35,7 @@ Published `1.2.1` supports:
 - Test-evidence schemas `1.0.0` and `1.1.0`.
 - Completion-result schemas `1.0.0` and `1.1.0`.
 
-The full published-ref PostRelease canary used caller commit `03979bdd46e36593faf044e2206e24c7ed485d62`. Success run `31853248739` passed and all four isolated negative scenarios failed only for their intended reasons. Every artifact records the annotated workflow object `aea6330ee3d51b3f5bb55031d878ef302ba1dbca` separately from peeled standards commit `7d15ec8be6d8c3cdca35061728901584437e4a50`.
+The full published-ref five-scenario canary used caller commit `03979bdd46e36593faf044e2206e24c7ed485d62`. Success run `31853248739` passed and all four isolated negative scenarios failed only for their intended reasons. Every artifact records the annotated workflow object `aea6330ee3d51b3f5bb55031d878ef302ba1dbca` separately from peeled standards commit `7d15ec8be6d8c3cdca35061728901584437e4a50`.
 
 Published `1.2.0` and `1.1.0` remain historical supported entries in the machine-readable matrix. Their immutable tags and targets are not rewritten by this patch.
 
@@ -65,7 +65,7 @@ These SHAs are distribution authorities recorded by the corresponding workflow c
 5. When Python or Bash functional validation is required, pin the matching functional workflow `immutableSha`.
 6. Retain adoption evidence with the chosen entry and its stated limitations.
 
-Production workflow consumers SHOULD use full commit SHA `7d15ec8be6d8c3cdca35061728901584437e4a50` for the published v1.2.1 governance workflow. The protected semantic ref `v1.2.1` has also completed PostRelease annotated-tag verification and may be used where protected release refs are explicitly accepted. `master` and validation/preparation branches are not production authorities.
+Production workflow consumers SHOULD use full commit SHA `7d15ec8be6d8c3cdca35061728901584437e4a50` for the published v1.2.1 governance workflow. The protected semantic ref `v1.2.1` has completed published-ref annotated-tag canary verification and may be used where protected release refs are explicitly accepted. Final PostRelease lifecycle validation remains pending until this repository synchronization is merged. `master` and validation/preparation branches are not production authorities.
 
 ## Historical v1.2.0 Follow-Up
 

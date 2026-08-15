@@ -13,7 +13,7 @@
 
 The public downstream canary proves that the reusable governance workflow operates across a real repository boundary without copying central `scripts/`, `actions/`, `tests/`, or `examples/`. It is a release gate for reusable-workflow changes, not a template repository and not a substitute for each consumer's application-specific CI.
 
-The canary is intentionally non-production, contains no secrets, and uses only the `Contract` validation category. Its manifest classifies it as an `integration` project with `Moderate` risk and `Public` data. Candidate release proof uses exact full-SHA workflow pins; PostRelease proof intentionally invokes the protected published semantic ref so annotated-tag identity is exercised across the real repository boundary.
+The canary is intentionally non-production, contains no secrets, and uses only the `Contract` validation category. Its manifest classifies it as an `integration` project with `Moderate` risk and `Public` data. Candidate release proof uses exact full-SHA workflow pins; the published-ref canary intentionally invokes the protected published semantic ref so annotated-tag identity is exercised across the real repository boundary before the final PostRelease lifecycle gate.
 
 ## Repository Shape
 
@@ -33,7 +33,7 @@ Only the selected scenario job runs during manual dispatch. Pull requests and pu
 
 ## Verified Baseline
 
-The latest complete proof is the published `v1.2.1` PostRelease matrix from canary caller commit `03979bdd46e36593faf044e2206e24c7ed485d62`. All five isolated workflows invoked `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@v1.2.1`. GitHub resolved that ref to annotated tag object `aea6330ee3d51b3f5bb55031d878ef302ba1dbca`, and the workflow identity resolver independently peeled and validated standards commit `7d15ec8be6d8c3cdca35061728901584437e4a50`.
+The latest complete canary proof is the published `v1.2.1` five-scenario matrix from canary caller commit `03979bdd46e36593faf044e2206e24c7ed485d62`. All five isolated workflows invoked `AIAllTheThingz/Engineering-Standards/.github/workflows/governance-ci-reusable.yml@v1.2.1`. GitHub resolved that ref to annotated tag object `aea6330ee3d51b3f5bb55031d878ef302ba1dbca`, and the workflow identity resolver independently peeled and validated standards commit `7d15ec8be6d8c3cdca35061728901584437e4a50`.
 
 | Scenario | Run | Artifact ID | Artifact SHA-256 | Result |
 | --- | ---: | ---: | --- | --- |
