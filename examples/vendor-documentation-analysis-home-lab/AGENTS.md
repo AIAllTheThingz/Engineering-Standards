@@ -1,4 +1,4 @@
-# Vendor Documentation Analysis Home Lab
+# Vendor Documentation Analysis Lab
 
 This example inherits `agents/AGENTS_Base.md` and
 `agents/AGENTS_Integration.md`. Treat central `../../agents/` and

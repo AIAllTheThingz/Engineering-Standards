@@ -1,6 +1,6 @@
 ---
 name: safe-automation
-description: Design guarded, reversible automation for synthetic home-lab change requests. Use for tasks that need preconditions, approval gates, dry-run behavior, idempotency, bounded targets, rollback, observability, or a staged validation plan. Do not use to retrieve secrets, bypass approvals, target production, execute destructive defaults, or claim an unexecuted plan succeeded.
+description: Design guarded, reversible automation for synthetic lab change requests. Use for tasks that need preconditions, approval gates, dry-run behavior, idempotency, bounded targets, rollback, observability, or a staged validation plan. Do not use to retrieve secrets, bypass approvals, target production, execute destructive defaults, or claim an unexecuted plan succeeded.
 ---
 
 # Safe Automation
@@ -9,7 +9,7 @@ Design automation so that failure is bounded, visible, and recoverable.
 
 ## Demo boundary
 
-This is a portfolio-grade home-lab demonstration, not a production-certified
+This is a portfolio-grade lab demonstration, not a production-certified
 Active skill. Work only from synthetic inputs committed beneath this example.
 Produce a design and simulation record; do not connect to hosts, schedulers,
 cloud accounts, credential stores, or external services. Do not execute the

@@ -1,5 +1,5 @@
 interface:
-  display_name: "Operating Systems Home Lab"
+  display_name: "Operating Systems Lab"
   short_description: "Review synthetic operating-system scenarios"
   default_prompt: "Use $operating-systems to review this synthetic operating-system scenario without external access or writes."
 policy:

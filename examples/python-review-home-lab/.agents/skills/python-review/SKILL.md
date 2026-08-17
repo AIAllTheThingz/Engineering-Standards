@@ -10,7 +10,7 @@ Prefer a precise no-findings result over speculative defects.
 
 ## Demo Boundary
 
-This copy is a portfolio-grade home-lab demonstration, not a
+This copy is a portfolio-grade lab demonstration, not a
 production-certified Active skill. Use it only from the
 `python-review-home-lab` workspace with synthetic inputs and illustrative
 outputs. It must not access production systems, retrieve credentials, perform

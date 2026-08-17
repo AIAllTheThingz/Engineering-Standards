@@ -1,4 +1,4 @@
-# Safe Automation Home Lab
+# Safe Automation Lab
 
 This example inherits `agents/AGENTS_Base.md`, `agents/AGENTS_PowerShell.md`,
 and `agents/AGENTS_Infrastructure.md`. Treat central `../../agents/` and

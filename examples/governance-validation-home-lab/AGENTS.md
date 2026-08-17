@@ -1,4 +1,4 @@
-# Governance Validation Home Lab
+# Governance Validation Lab
 
 This example inherits `agents/AGENTS_Base.md`, `agents/AGENTS_PowerShell.md`,
 and `agents/AGENTS_Integration.md`. Treat `../../agents/`, `../../governance/`, and

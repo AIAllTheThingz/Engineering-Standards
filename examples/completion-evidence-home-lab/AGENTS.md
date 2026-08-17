@@ -1,4 +1,4 @@
-# Completion Evidence Home Lab
+# Completion Evidence Lab
 
 This example inherits `agents/AGENTS_Base.md` and
 `agents/AGENTS_Integration.md`. Treat central governance documents as read-only

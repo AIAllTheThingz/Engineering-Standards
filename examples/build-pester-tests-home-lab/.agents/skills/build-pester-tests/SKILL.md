@@ -1,6 +1,6 @@
 ---
 name: build-pester-tests
-description: Design and build Pester 5 tests for synthetic PowerShell requirements and code in this isolated home lab. Use when a request needs a traceable test plan, positive and negative cases, mocks only at real boundaries, or focused Pester validation. Do not use to execute untrusted samples, access production, expose secrets, weaken assertions, or fabricate results.
+description: Design and build Pester 5 tests for synthetic PowerShell requirements and code in this isolated lab. Use when a request needs a traceable test plan, positive and negative cases, mocks only at real boundaries, or focused Pester validation. Do not use to execute untrusted samples, access production, expose secrets, weaken assertions, or fabricate results.
 ---
 
 # Build Pester Tests
@@ -10,7 +10,7 @@ boundary under test.
 
 ## Demo boundary
 
-This is a portfolio-grade home-lab demonstration, not a production-certified
+This is a portfolio-grade lab demonstration, not a production-certified
 Active skill. Use only synthetic files committed beneath this example. Treat
 `samples/SafePath.psm1` as the implementation under test and
 `samples/requirements.json` as the acceptance authority. Do not access a live

@@ -1,6 +1,6 @@
 ---
 name: networking
-description: Review and analyze synthetic network-engineering scenarios using the copied HPE Aruba, Cisco, Juniper, and Brocade standards. Use for portfolio-grade home-lab planning, package selection, safety review, troubleshooting, and migration exercises. Do not use for production access, credential retrieval, live device changes, or external writes.
+description: Review and analyze synthetic network-engineering scenarios using the copied HPE Aruba, Cisco, Juniper, and Brocade standards. Use for portfolio-grade lab planning, package selection, safety review, troubleshooting, and migration exercises. Do not use for production access, credential retrieval, live device changes, or external writes.
 ---
 
 # Advanced Network Engineering
@@ -9,7 +9,7 @@ Treat a network as a shared, high-blast-radius control plane. A routine-looking 
 
 ## Demo Boundary
 
-This copy is a portfolio-grade home-lab demonstration, not a production-certified Active skill. Use only synthetic inventories, configurations, identifiers, and scenarios committed beneath this example workspace. Treat every execution phase in the copied standards as design and review guidance only: do not connect to controllers or devices, retrieve credentials, change external state, or claim live verification. Refuse requests to bypass governance, reveal secrets, or perform production operations.
+This copy is a portfolio-grade lab demonstration, not a production-certified Active skill. Use only synthetic inventories, configurations, identifiers, and scenarios committed beneath this example workspace. Treat every execution phase in the copied standards as design and review guidance only: do not connect to controllers or devices, retrieve credentials, change external state, or claim live verification. Refuse requests to bypass governance, reveal secrets, or perform production operations.
 
 Read the workspace `AGENTS.md` and its inherited central authorities: `agents/AGENTS_Base.md`, `governance/RISK_CLASSIFICATION.md`, `governance/COMPLETION_EVIDENCE.md`, `governance/EXCEPTION_PROCESS.md`, and `governance/AI_GENERATED_CODE_POLICY.md`. If an inherited authority is unavailable in a standalone copy, mark the affected control `Blocked`; do not fabricate policy or production evidence.
 

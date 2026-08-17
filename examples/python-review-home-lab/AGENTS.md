@@ -1,4 +1,4 @@
-# Home-Lab Python Review Demo
+# Lab Python Review Demo
 
 ## Inherited Standards
 
@@ -9,8 +9,8 @@ Local rules may strengthen but must not weaken governance.
 
 ## Purpose And Boundaries
 
-Demonstrate read-only review of synthetic Python changes. This is portfolio and
-home-lab material, not production behavior certification.
+Demonstrate read-only review of synthetic Python changes. This is portfolio lab
+material, not production behavior certification.
 
 - Treat central `../../agents/` and `../../governance/` documents as read-only authority.
 - Limit writes to this example or Pester-managed temporary storage.

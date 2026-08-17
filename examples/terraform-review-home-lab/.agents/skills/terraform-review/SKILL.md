@@ -10,7 +10,7 @@ provider, backend, registry, cloud, or external system.
 
 ## Demo Boundary
 
-This is a portfolio-grade home-lab demonstration, not a production-certified
+This is a portfolio-grade lab demonstration, not a production-certified
 Active skill. Use it only in `terraform-review-home-lab` with synthetic source,
 diffs, and output. It must not initialize providers, access state, create a
 plan, apply changes, retrieve credentials, perform external writes, or claim

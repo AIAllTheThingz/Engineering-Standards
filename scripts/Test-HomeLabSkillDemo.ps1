@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Runs deterministic validation for an isolated home-lab skill example.
+Runs deterministic validation for an isolated lab skill example.
 .DESCRIPTION
 Parses every committed PowerShell script and module before execution, validates
 one isolated skill and its synthetic prompt corpus, runs the reviewed example
@@ -40,7 +40,7 @@ $examplesRoot = (Resolve-Path -LiteralPath (Join-Path $standardsRoot 'examples')
 $projectBoundary = $examplesRoot.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 $pathComparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
 if (-not $projectRoot.StartsWith($projectBoundary, $pathComparison)) {
-    throw 'Home-lab project path must remain beneath the repository examples directory.'
+    throw 'Lab project path must remain beneath the repository examples directory.'
 }
 $relativeProjectPath = [IO.Path]::GetRelativePath($examplesRoot, $projectRoot)
 $currentPath = $examplesRoot
@@ -48,7 +48,7 @@ foreach ($segment in @($relativeProjectPath -split '[\\/]' | Where-Object { $_ -
     $currentPath = Join-Path $currentPath $segment
     $pathItem = Get-Item -LiteralPath $currentPath -Force
     if ($pathItem.LinkType -or (($pathItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)) {
-        throw "Home-lab project path must not traverse a symbolic link, junction, or other reparse point: '$currentPath'."
+        throw "Lab project path must not traverse a symbolic link, junction, or other reparse point: '$currentPath'."
     }
 }
 
@@ -64,7 +64,7 @@ if ($LASTEXITCODE -ne 0) {
 $projectItems = @(Get-ChildItem -LiteralPath $projectRoot -Recurse -Force)
 foreach ($item in $projectItems) {
     if ($item.LinkType -or (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)) {
-        throw "Home-lab content must not contain links or reparse points: '$([IO.Path]::GetRelativePath($projectRoot, $item.FullName))'."
+        throw "Lab content must not contain links or reparse points: '$([IO.Path]::GetRelativePath($projectRoot, $item.FullName))'."
     }
 }
 
@@ -94,12 +94,12 @@ if ($modelResults.Count -ne 9 -or @($modelResults | Where-Object status -ne 'Not
 
 $pesterResult = Invoke-Pester -Path (Join-Path $projectRoot 'tests') -Output Detailed -PassThru
 if ($pesterResult.FailedCount -gt 0 -or $pesterResult.NotRunCount -gt 0) {
-    throw "Home-lab Pester result was '$($pesterResult.Result)' with $($pesterResult.FailedCount) failed and $($pesterResult.NotRunCount) NotRun tests."
+    throw "Lab Pester result was '$($pesterResult.Result)' with $($pesterResult.FailedCount) failed and $($pesterResult.NotRunCount) NotRun tests."
 }
 
 & pwsh -NoProfile -File (Join-Path $standardsRoot 'actions/validate-contract/Invoke-ContractValidation.ps1') -Path $projectRoot
 if ($LASTEXITCODE -ne 0) {
-    throw "Home-lab governance contract validation failed with exit code $LASTEXITCODE."
+    throw "Lab governance contract validation failed with exit code $LASTEXITCODE."
 }
 
-Write-Output "$SkillName home-lab validation passed: $($pesterResult.PassedCount) Pester tests; live model behavior NotRun by design."
+Write-Output "$SkillName lab validation passed: $($pesterResult.PassedCount) Pester tests; live model behavior NotRun by design."

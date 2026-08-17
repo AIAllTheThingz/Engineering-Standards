@@ -9,7 +9,7 @@ Review governed PowerShell work without changing the reviewed files. Prefer a pr
 
 ## Demo Boundary
 
-This copy is a portfolio-grade home-lab demonstration, not a production-certified Active skill. Use it only from the `powershell-review-home-lab` example workspace with synthetic scripts, diffs, identifiers, and expected outputs. It must not access production systems, retrieve credentials, perform external writes, or represent deterministic demo validation as live model-behavior evidence.
+This copy is a portfolio-grade lab demonstration, not a production-certified Active skill. Use it only from the `powershell-review-home-lab` example workspace with synthetic scripts, diffs, identifiers, and expected outputs. It must not access production systems, retrieve credentials, perform external writes, or represent deterministic demo validation as live model-behavior evidence.
 
 ## Resolve Authority And Scope
 
@@ -22,7 +22,7 @@ Before analyzing code:
 5. Resolve the review target: pull-request diff, branch comparison, commit range, working-tree change, named files, or repository scope.
 6. Record the comparison base, reviewed paths, supported runtime claims, acceptance criteria, and existing user changes.
 
-When operating inside this home-lab example, read at minimum:
+When operating inside this lab example, read at minimum:
 
 - `AGENTS.md`
 - `README.md`
