@@ -388,13 +388,13 @@ A skill installed without its governing context is incomplete. If central standa
 passing unchanged-input live evaluation and attributable human approval.
 
 Issues #43 through #49 are closed as not planned and superseded by
-portfolio-grade home-lab demonstrations. Their original production Active-skill
+portfolio-grade lab demonstrations. Their original production Active-skill
 acceptance criteria were intentionally not completed. No production promotion
 is currently planned; a future promotion requires a new or reopened issue,
 passing controlled live behavior evaluation, attributable approval, and all
 other lifecycle evidence.
 
-The seven issue-resolved home-lab packages are:
+The seven issue-resolved lab packages are:
 
 - [`powershell-review`](../examples/powershell-review-home-lab/README.md)
 - [`build-pester-tests`](../examples/build-pester-tests-home-lab/README.md)
@@ -409,7 +409,7 @@ validation, and explicit `NotRun` labels for live model, hosted, external, or
 deployment behavior. They are discoverable only when their own example is
 opened as the workspace and require no model API key.
 
-Eight adjacent home-lab workspaces extend the same isolation pattern. Five use
+Eight adjacent lab workspaces extend the same isolation pattern. Five use
 source-pinned packages copied from Public-Access-Agents:
 
 - [`networking`](../examples/networking-home-lab/README.md)
