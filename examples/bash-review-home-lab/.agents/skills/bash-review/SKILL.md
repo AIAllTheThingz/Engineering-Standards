@@ -9,7 +9,7 @@ Review governed shell work without changing or executing reviewed files.
 
 ## Demo Boundary
 
-This is a portfolio-grade home-lab demonstration, not a production-certified
+This is a portfolio-grade lab demonstration, not a production-certified
 Active skill. Use it only in `bash-review-home-lab` with synthetic data. It
 must not access production, retrieve credentials, perform external writes,
 source or execute the unsafe sample, or claim deterministic output as live

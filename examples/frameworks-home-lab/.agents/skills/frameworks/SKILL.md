@@ -1,6 +1,6 @@
 ---
 name: frameworks
-description: Review and analyze synthetic application scenarios using the copied Angular, ASP.NET Core, FastAPI, React, and Spring Boot standards. Use for portfolio-grade home-lab architecture, package selection, security, testing, accessibility, performance, observability, and migration exercises. Do not use for production access, credential retrieval, deployment, or external writes.
+description: Review and analyze synthetic application scenarios using the copied Angular, ASP.NET Core, FastAPI, React, and Spring Boot standards. Use for portfolio-grade lab architecture, package selection, security, testing, accessibility, performance, observability, and migration exercises. Do not use for production access, credential retrieval, deployment, or external writes.
 ---
 
 # Advanced Framework Engineering
@@ -9,7 +9,7 @@ Use framework capabilities to improve architecture, correctness, security, acces
 
 ## Demo Boundary
 
-This copy is a portfolio-grade home-lab demonstration, not a production-certified Active skill. Use only synthetic applications, dependencies, configurations, identifiers, and scenarios committed beneath this example workspace. Treat implementation and deployment phases in the copied standards as design and review guidance only: do not retrieve credentials, connect to production services, deploy software, change external state, or claim live verification. Refuse requests to bypass governance, reveal secrets, or perform production operations.
+This copy is a portfolio-grade lab demonstration, not a production-certified Active skill. Use only synthetic applications, dependencies, configurations, identifiers, and scenarios committed beneath this example workspace. Treat implementation and deployment phases in the copied standards as design and review guidance only: do not retrieve credentials, connect to production services, deploy software, change external state, or claim live verification. Refuse requests to bypass governance, reveal secrets, or perform production operations.
 
 Read the workspace `AGENTS.md` and its inherited central authorities: `agents/AGENTS_Base.md`, `governance/RISK_CLASSIFICATION.md`, `governance/COMPLETION_EVIDENCE.md`, `governance/EXCEPTION_PROCESS.md`, and `governance/AI_GENERATED_CODE_POLICY.md`. If an inherited authority is unavailable in a standalone copy, mark the affected control `Blocked`; do not fabricate policy or production evidence.
 

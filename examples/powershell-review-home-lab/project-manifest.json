@@ -2,7 +2,7 @@
   "schemaVersion": "1.2.0",
   "projectName": "powershell-review-home-lab",
   "repository": "example-org/powershell-review-home-lab",
-  "description": "A secret-free home-lab demonstration of an evidence-backed, findings-only PowerShell review skill.",
+  "description": "A secret-free lab demonstration of an evidence-backed, findings-only PowerShell review skill.",
   "projectType": "powershell",
   "technologies": [
     "powershell",

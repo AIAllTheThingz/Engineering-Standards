@@ -1,4 +1,4 @@
-<# .SYNOPSIS Validates the python-review home-lab demo. .DESCRIPTION Delegates to the repository's deterministic, secret-free home-lab validator without importing or executing the unsafe Python sample. #>
+<# .SYNOPSIS Validates the python-review lab demo. .DESCRIPTION Delegates to the repository's deterministic, secret-free lab validator without importing or executing the unsafe Python sample. #>
 [CmdletBinding()]
 param()
 $root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../../..')).Path

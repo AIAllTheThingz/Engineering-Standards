@@ -1,4 +1,4 @@
-# Platforms Home-Lab Demo
+# Platforms Lab Demo
 
 ## Purpose
 

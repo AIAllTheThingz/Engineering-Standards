@@ -2,7 +2,7 @@
   "schemaVersion": "1.2.0",
   "projectName": "networking-home-lab",
   "repository": "example-org/networking-home-lab",
-  "description": "A secret-free home-lab demonstration of copied network-engineering standards and an isolated networking skill.",
+  "description": "A secret-free lab demonstration of copied network-engineering standards and an isolated networking skill.",
   "projectType": "integration",
   "technologies": ["networking", "github-actions"],
   "governanceVersion": "1.1.0",

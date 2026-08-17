@@ -10,7 +10,7 @@ reviewed, approved, and operationally verified.
 
 ## Demo boundary
 
-This is a portfolio-grade home-lab demonstration, not a production-certified
+This is a portfolio-grade lab demonstration, not a production-certified
 Active skill. Use only synthetic results committed beneath this example. Do not
 dispatch workflows, download artifacts, inspect secrets, update live pull
 requests, or represent illustrative records as authoritative evidence.

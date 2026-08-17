@@ -1,4 +1,4 @@
-Describe 'PowerShell review home-lab demo' {
+Describe 'PowerShell review lab demo' {
     BeforeAll {
         $script:demoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
         $script:standardsRoot = (Resolve-Path (Join-Path $script:demoRoot '../..')).Path
@@ -15,7 +15,7 @@ Describe 'PowerShell review home-lab demo' {
 
     It 'declares the demo-only, read-only, and nonproduction boundaries' {
         $skill = Get-Content -LiteralPath $script:skillPath -Raw
-        $skill | Should -Match 'portfolio-grade home-lab demonstration'
+        $skill | Should -Match 'portfolio-grade lab demonstration'
         $skill | Should -Match 'not a production-certified Active skill'
         $skill | Should -Match 'Do not edit, format, generate, delete, commit, push'
         $skill | Should -Match 'Do not reveal secrets'

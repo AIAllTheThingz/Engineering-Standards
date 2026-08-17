@@ -1,6 +1,6 @@
 ---
 name: infrastructure-automation-design
-description: Design secure infrastructure automation architectures for synthetic home-lab requirements. Use for trust boundaries, identity, state, dependency pinning, rollout, recovery, observability, failure containment, and validation planning before implementation. Do not use to access cloud accounts, retrieve secrets, deploy resources, weaken approvals, choose destructive defaults, or claim an unbuilt design is operational.
+description: Design secure infrastructure automation architectures for synthetic lab requirements. Use for trust boundaries, identity, state, dependency pinning, rollout, recovery, observability, failure containment, and validation planning before implementation. Do not use to access cloud accounts, retrieve secrets, deploy resources, weaken approvals, choose destructive defaults, or claim an unbuilt design is operational.
 ---
 
 # Infrastructure Automation Design
@@ -10,7 +10,7 @@ deployment begins.
 
 ## Demo boundary
 
-This is a portfolio-grade home-lab demonstration, not a production-certified
+This is a portfolio-grade lab demonstration, not a production-certified
 Active skill. Use only the fictional requirements committed beneath this
 example. Produce design artifacts only. Do not authenticate to platforms,
 provision resources, change DNS or networks, retrieve secrets, or run a plan

@@ -1,4 +1,4 @@
-# Frameworks Home-Lab Demo
+# Frameworks Lab Demo
 
 ## Purpose
 

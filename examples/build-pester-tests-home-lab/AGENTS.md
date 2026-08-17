@@ -1,4 +1,4 @@
-# Build Pester Tests Home Lab
+# Build Pester Tests Lab
 
 ## Inherited standards
 

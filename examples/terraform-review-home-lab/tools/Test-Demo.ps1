@@ -1,4 +1,4 @@
-<# .SYNOPSIS Validates the terraform-review home-lab demo. .DESCRIPTION Delegates to the deterministic shared validator without installing Terraform or accessing providers, backends, state, plans, or clouds. #>
+<# .SYNOPSIS Validates the terraform-review lab demo. .DESCRIPTION Delegates to the deterministic shared validator without installing Terraform or accessing providers, backends, state, plans, or clouds. #>
 [CmdletBinding()]
 param()
 $root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../../..')).Path

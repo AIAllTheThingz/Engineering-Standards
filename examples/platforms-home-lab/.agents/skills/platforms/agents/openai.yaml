@@ -1,5 +1,5 @@
 interface:
-  display_name: "Platforms Home Lab"
+  display_name: "Platforms Lab"
   short_description: "Review synthetic platform engineering scenarios"
   default_prompt: "Use $platforms to review this synthetic platform scenario without external access or writes."
 policy:

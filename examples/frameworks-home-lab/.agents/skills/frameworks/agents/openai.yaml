@@ -1,5 +1,5 @@
 interface:
-  display_name: "Frameworks Home Lab"
+  display_name: "Frameworks Lab"
   short_description: "Review synthetic application framework scenarios"
   default_prompt: "Use $frameworks to review this synthetic framework scenario without external access or writes."
 policy:

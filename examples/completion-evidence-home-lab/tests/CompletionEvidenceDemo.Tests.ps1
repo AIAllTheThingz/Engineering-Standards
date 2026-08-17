@@ -1,4 +1,4 @@
-Describe 'Completion evidence home-lab demo' {
+Describe 'Completion evidence lab demo' {
  BeforeAll{$script:r=(Resolve-Path (Join-Path $PSScriptRoot '..')).Path;$script:s=(Resolve-Path (Join-Path $script:r '../..')).Path;$script:k=Get-Content (Join-Path $script:r '.agents/skills/completion-evidence/SKILL.md') -Raw;$script:i=Get-Content (Join-Path $script:r 'samples/validation-results.json') -Raw|ConvertFrom-Json;$script:evidencePath=Join-Path $script:r 'demo-output/expected-completion.json';$script:o=Get-Content $script:evidencePath -Raw|ConvertFrom-Json;Import-Module (Join-Path $script:s 'scripts/GovernanceValidation.psm1') -Force}
  It 'keeps the skill isolated and declares honest evidence semantics'{Test-Path (Join-Path $script:s '.agents/skills/completion-evidence/SKILL.md')|Should -BeFalse;$script:k|Should -Match 'Local evidence cannot populate GitHub';$script:k|Should -Match 'Never improve a status'}
  It 'matches commitSha to validatedCommitSha'{$script:o.commitSha|Should -BeExactly $script:o.validatedCommitSha;$script:o.validatedCommitSha|Should -BeExactly $script:i.validatedCommitSha;$script:o.evidenceCommitSha|Should -BeNullOrEmpty}

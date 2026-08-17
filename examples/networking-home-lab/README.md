@@ -1,4 +1,4 @@
-# Networking Home-Lab Demo
+# Networking Lab Demo
 
 ## Purpose
 

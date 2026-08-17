@@ -1,4 +1,4 @@
-# Completion Evidence Home Lab
+# Completion Evidence Lab
 
 This lab turns synthetic validation results into an honest local completion
 record. It checks SHA equality, canonical status aggregation, exact command

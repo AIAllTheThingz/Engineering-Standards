@@ -1,4 +1,4 @@
-# Python Review Home-Lab Demo
+# Python Review Lab Demo
 
 ## Purpose
 

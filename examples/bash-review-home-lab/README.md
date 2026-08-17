@@ -1,4 +1,4 @@
-# Bash Review Home-Lab Demo
+# Bash Review Lab Demo
 
 ## Purpose
 

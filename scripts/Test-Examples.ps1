@@ -29,7 +29,7 @@ Assert-LastExitCode -Name 'PowerShell example'
 # The Python project has a dedicated hash-locked workflow because its functional
 # toolchain is intentionally absent from the immutable governance harness.
 & pwsh -NoProfile -File (Join-Path $root 'examples/powershell-review-home-lab/tools/Test-Demo.ps1')
-Assert-LastExitCode -Name 'PowerShell review home-lab demo'
+Assert-LastExitCode -Name 'PowerShell review lab demo'
 foreach ($homeLab in @(
     'bash-review',
     'build-pester-tests',
@@ -47,7 +47,7 @@ foreach ($homeLab in @(
     'virtualization'
 )) {
     & pwsh -NoProfile -File (Join-Path $root "examples/$homeLab-home-lab/tools/Test-Demo.ps1")
-    Assert-LastExitCode -Name "$homeLab home-lab demo"
+    Assert-LastExitCode -Name "$homeLab lab demo"
 }
 & pwsh -NoProfile -File (Join-Path $root 'examples/database-project/tools/Test-Migrations.ps1') -Path (Join-Path $root 'examples/database-project')
 Assert-LastExitCode -Name 'Database example'

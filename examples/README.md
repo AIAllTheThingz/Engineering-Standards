@@ -1,6 +1,6 @@
 # Examples Catalog
 
-This directory contains governed functional examples and isolated home-lab
+This directory contains governed functional examples and isolated lab
 skill demonstrations. Each example has its own manifest, governance
 configuration, instructions, documentation, validation workflow, and focused
 test entry point.
@@ -10,11 +10,11 @@ test entry point.
 | Category | Count | Authority |
 | --- | ---: | --- |
 | Governed functional examples | 10 | This file |
-| Isolated home-lab demonstrations | 15 | This file |
+| Isolated lab demonstrations | 15 | This file |
 | Suspended production skills | 1 | [`.agents/suspended-skills/README.md`](../.agents/suspended-skills/README.md) |
 | Active production skills | 0 | [Codex Skills](../docs/CODEX_SKILLS.md) |
 
-Functional examples produce technology-specific validation evidence. Home-lab
+Functional examples produce technology-specific validation evidence. Lab
 packages produce demonstration output only. A package appearing in this catalog
 does not make it an Active production skill, and the two categories must not be
 combined when reporting lifecycle status.
@@ -37,14 +37,14 @@ combined when reporting lifecycle status.
 Run the validation command documented in the selected example's README from
 the Engineering Standards repository root.
 
-## Home-Lab Skill Demonstrations
+## Lab Skill Demonstrations
 
 These demonstrations are portfolio examples, not production-certified Active
 skills. They use committed synthetic inputs, deterministic validation, and
 read-only or design-only boundaries. They require no `OPENAI_API_KEY`, retrieve
 no credentials, access no production system, and perform no external writes.
 
-| Home lab | Demonstrated capability |
+| Lab | Demonstrated capability |
 | --- | --- |
 | [`powershell-review-home-lab`](powershell-review-home-lab/README.md) | Findings-only PowerShell review and safe refusal. |
 | [`python-review-home-lab`](python-review-home-lab/README.md) | Findings-only Python review with inert unsafe source. |
@@ -62,13 +62,13 @@ no credentials, access no production system, and perform no external writes.
 | [`virtualization-home-lab`](virtualization-home-lab/README.md) | Virtualization platform selection and safety guidance. |
 | [`frameworks-home-lab`](frameworks-home-lab/README.md) | Application-framework selection and guidance. |
 
-Run any home lab from the repository root:
+Run any lab from the repository root:
 
 ```powershell
-pwsh -NoProfile -File examples/<home-lab>/tools/Test-Demo.ps1
+pwsh -NoProfile -File examples/<lab-directory>/tools/Test-Demo.ps1
 ```
 
-For an interactive demonstration, open only the selected home-lab directory as
+For an interactive demonstration, open only the selected lab directory as
 the workspace and use an existing authenticated Codex or ChatGPT session. Any
 interactive output is demonstration output, not controlled production
 behavior evidence. Live model behavior, hosted execution not actually run, and
@@ -77,7 +77,7 @@ production promotion remain explicitly `NotRun`.
 ## Reconciliation Boundary
 
 Issues #43 through #49 remain closed as not planned and are represented only by
-the applicable home-lab demonstrations above. No placeholder production skill
+the applicable lab demonstrations above. No placeholder production skill
 directory remains for those issues. A future promotion requires a new or
 reopened issue, complete controlled evidence, attributable human approval, and
 an explicit lifecycle change in the production-skill catalog.

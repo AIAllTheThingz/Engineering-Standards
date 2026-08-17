@@ -1,4 +1,4 @@
-# Infrastructure Automation Design Home Lab
+# Infrastructure Automation Design Lab
 
 This example inherits `agents/AGENTS_Base.md`,
 `agents/AGENTS_Infrastructure.md`, and `agents/AGENTS_Integration.md`. Treat

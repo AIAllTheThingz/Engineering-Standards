@@ -7,7 +7,7 @@ BeforeAll {
     $script:source = Get-Content -LiteralPath (Join-Path $script:demoRoot 'SOURCE.json') -Raw | ConvertFrom-Json
 }
 
-Describe 'Public-Access-Agents home-lab demo' {
+Describe 'Public-Access-Agents lab demo' {
     It 'keeps the copied skill outside the production discovery root' {
         Test-Path -LiteralPath (Join-Path $script:standardsRoot ".agents/skills/$script:skillName/SKILL.md") | Should -BeFalse
         Test-Path -LiteralPath $script:skillPath -PathType Leaf | Should -BeTrue
@@ -15,7 +15,7 @@ Describe 'Public-Access-Agents home-lab demo' {
 
     It 'declares demo-only and nonproduction boundaries' {
         $skill = Get-Content -LiteralPath $script:skillPath -Raw
-        $skill | Should -Match 'portfolio-grade home-lab demonstration'
+        $skill | Should -Match 'portfolio-grade lab demonstration'
         $skill | Should -Match 'not a production-certified Active skill'
         $skill | Should -Match 'do not connect|do not authenticate|do not retrieve credentials'
         $skill | Should -Match 'external state|external writes'

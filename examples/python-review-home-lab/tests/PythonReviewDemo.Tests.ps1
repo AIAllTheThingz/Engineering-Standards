@@ -1,4 +1,4 @@
-Describe 'Python review home-lab demo' {
+Describe 'Python review lab demo' {
     BeforeAll {
         $script:demoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
         $script:standardsRoot = (Resolve-Path -LiteralPath (Join-Path $script:demoRoot '../..')).Path
@@ -14,7 +14,7 @@ Describe 'Python review home-lab demo' {
 
     It 'declares demo-only read-only boundaries' {
         $skill = Get-Content -LiteralPath $script:skillPath -Raw
-        $skill | Should -Match 'portfolio-grade home-lab demonstration'
+        $skill | Should -Match 'portfolio-grade lab demonstration'
         $skill | Should -Match 'production-certified Active skill'
         $skill | Should -Match 'Do not edit, format, generate, delete, commit, push'
         $skill | Should -Match 'Do not reveal secrets'

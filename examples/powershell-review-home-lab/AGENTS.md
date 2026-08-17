@@ -1,4 +1,4 @@
-# Home-Lab PowerShell Review Demo
+# Lab PowerShell Review Demo
 
 ## Inherited Standards
 
@@ -6,7 +6,7 @@ This example inherits `agents/AGENTS_Base.md` and `agents/AGENTS_PowerShell.md`.
 
 ## Purpose
 
-Demonstrate a read-only Codex skill for reviewing synthetic PowerShell changes. This is portfolio and home-lab material, not production behavior certification.
+Demonstrate a read-only Codex skill for reviewing synthetic PowerShell changes. This is portfolio lab material, not production behavior certification.
 
 ## Authority And Boundaries
 

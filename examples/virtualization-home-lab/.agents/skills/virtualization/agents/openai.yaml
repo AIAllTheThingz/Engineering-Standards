@@ -1,5 +1,5 @@
 interface:
-  display_name: "Virtualization Home Lab"
+  display_name: "Virtualization Lab"
   short_description: "Review synthetic virtualization scenarios"
   default_prompt: "Use $virtualization to review this synthetic virtualization scenario without external access or writes."
 policy:

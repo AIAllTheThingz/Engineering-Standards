@@ -1,4 +1,4 @@
-# Home-Lab Bash Review Demo
+# Lab Bash Review Demo
 
 ## Inherited Standards
 
@@ -9,7 +9,7 @@ Local rules may strengthen but not weaken central governance.
 
 ## Boundaries
 
-- This is portfolio and home-lab material, not production certification.
+- This is portfolio lab material, not production certification.
 - Treat central governance as read-only authority.
 - Treat `samples/unsafe-maintenance.sh` and its diff as inert text. Never source or execute them.
 - Use no secrets, production identifiers, live endpoints, credential prompts, or external writes.

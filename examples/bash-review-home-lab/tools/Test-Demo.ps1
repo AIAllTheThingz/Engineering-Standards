@@ -1,4 +1,4 @@
-<# .SYNOPSIS Validates the bash-review home-lab demo. .DESCRIPTION Delegates to the deterministic shared validator without sourcing or executing the unsafe Bash sample. #>
+<# .SYNOPSIS Validates the bash-review lab demo. .DESCRIPTION Delegates to the deterministic shared validator without sourcing or executing the unsafe Bash sample. #>
 [CmdletBinding()]
 param()
 $root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../../..')).Path

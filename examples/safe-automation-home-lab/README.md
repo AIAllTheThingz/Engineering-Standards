@@ -1,4 +1,4 @@
-# Safe Automation Home Lab
+# Safe Automation Lab
 
 This lab demonstrates a plan-only `safe-automation` skill. A synthetic patch
 request is converted into a bounded five-phase plan with approval, dry-run,

@@ -1,4 +1,4 @@
-# Operating-Systems Home-Lab Demo
+# Operating-Systems Lab Demo
 
 ## Purpose
 

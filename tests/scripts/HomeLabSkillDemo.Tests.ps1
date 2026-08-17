@@ -1,4 +1,4 @@
-Describe 'Home-lab shared runner boundaries' {
+Describe 'Lab shared runner boundaries' {
     BeforeAll {
         $script:root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
         $script:runner = Join-Path $script:root 'scripts/Test-HomeLabSkillDemo.ps1'

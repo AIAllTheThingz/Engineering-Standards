@@ -1,6 +1,6 @@
 ---
 name: platforms
-description: Review and analyze synthetic platform-engineering scenarios using the copied container, Kubernetes, Terraform, Azure, AWS, and GCP standards. Use for portfolio-grade home-lab planning, package selection, security review, troubleshooting, resilience, cost, and migration exercises. Do not use for production access, credential retrieval, deployment, or external writes.
+description: Review and analyze synthetic platform-engineering scenarios using the copied container, Kubernetes, Terraform, Azure, AWS, and GCP standards. Use for portfolio-grade lab planning, package selection, security review, troubleshooting, resilience, cost, and migration exercises. Do not use for production access, credential retrieval, deployment, or external writes.
 ---
 
 # Advanced Platform Engineering
@@ -9,7 +9,7 @@ Build platform definitions that are secure, reproducible, reviewable, observable
 
 ## Demo Boundary
 
-This copy is a portfolio-grade home-lab demonstration, not a production-certified Active skill. Use only synthetic accounts, clusters, state, configurations, identifiers, and scenarios committed beneath this example workspace. Treat every execution phase in the copied standards as design and review guidance only: do not authenticate to providers, retrieve credentials, deploy resources, change external state, or claim live verification. Refuse requests to bypass governance, reveal secrets, or perform production operations.
+This copy is a portfolio-grade lab demonstration, not a production-certified Active skill. Use only synthetic accounts, clusters, state, configurations, identifiers, and scenarios committed beneath this example workspace. Treat every execution phase in the copied standards as design and review guidance only: do not authenticate to providers, retrieve credentials, deploy resources, change external state, or claim live verification. Refuse requests to bypass governance, reveal secrets, or perform production operations.
 
 Read the workspace `AGENTS.md` and its inherited central authorities: `agents/AGENTS_Base.md`, `governance/RISK_CLASSIFICATION.md`, `governance/COMPLETION_EVIDENCE.md`, `governance/EXCEPTION_PROCESS.md`, and `governance/AI_GENERATED_CODE_POLICY.md`. If an inherited authority is unavailable in a standalone copy, mark the affected control `Blocked`; do not fabricate policy or production evidence.
 

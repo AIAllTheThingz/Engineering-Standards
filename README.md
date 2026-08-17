@@ -68,7 +68,7 @@ flowchart TD
 - `.github/workflows/`: executable repository workflows and reusable workflows.
 - `workflows/`: distribution templates; GitHub does not execute reusable workflows directly from this root directory.
 - `templates/`: repository, pull-request, issue, test-plan, and threat-model templates.
-- [`examples/`](examples/README.md): functional downstream projects and isolated home-lab skill demonstrations.
+- [`examples/`](examples/README.md): functional downstream projects and isolated lab skill demonstrations.
 - `scripts/`: local validation, evidence, and workflow-verification tooling.
 - `tests/`: Pester tests and schema fixtures.
 - `docs/`: adoption, configuration, architecture, security, release, branch protection, and troubleshooting guidance.
@@ -265,9 +265,9 @@ Python and Bash have first-class central standards, mandatory trusted static val
 
 See the complete [Examples Catalog](examples/README.md) for validation commands and boundaries for every governed example.
 
-## Home-Lab Skill Demonstrations
+## Lab Skill Demonstrations
 
-Fifteen isolated, portfolio-grade home labs demonstrate skills without production discovery, secrets, external writes, or an `OPENAI_API_KEY`:
+Fifteen isolated, portfolio-grade labs demonstrate skills without production discovery, secrets, external writes, or an `OPENAI_API_KEY`:
 
 - [`powershell-review`](examples/powershell-review-home-lab/README.md)
 - [`python-review`](examples/python-review-home-lab/README.md)
@@ -285,9 +285,9 @@ Fifteen isolated, portfolio-grade home labs demonstrate skills without productio
 - [`virtualization`](examples/virtualization-home-lab/README.md)
 - [`frameworks`](examples/frameworks-home-lab/README.md)
 
-Open one home-lab directory as its own workspace to make only that example's skill discoverable. Deterministic checks validate the package and synthetic contracts; live model behavior and production certification remain `NotRun` unless separately governed evidence states otherwise.
+Open one lab directory as its own workspace to make only that example's skill discoverable. Deterministic checks validate the package and synthetic contracts; live model behavior and production certification remain `NotRun` unless separately governed evidence states otherwise.
 
-The `python-review` and `bash-review` home labs remain isolated demonstrations and are not production-certified skills. Their deterministic checks require no `OPENAI_API_KEY` or paid model evaluation.
+The `python-review` and `bash-review` labs remain isolated demonstrations and are not production-certified skills. Their deterministic checks require no `OPENAI_API_KEY` or paid model evaluation.
 
 ## Release And Versioning
 

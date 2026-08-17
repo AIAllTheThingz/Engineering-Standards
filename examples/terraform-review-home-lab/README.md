@@ -1,4 +1,4 @@
-# Terraform Review Home-Lab Demo
+# Terraform Review Lab Demo
 
 ## Purpose
 
