@@ -2,7 +2,7 @@
   "schemaVersion": "1.2.0",
   "projectName": "operating-systems-home-lab",
   "repository": "example-org/operating-systems-home-lab",
-  "description": "A secret-free home-lab demonstration of copied operating-system standards and an isolated operating-systems skill.",
+  "description": "A secret-free lab demonstration of copied operating-system standards and an isolated operating-systems skill.",
   "projectType": "integration",
   "technologies": ["operating-systems", "github-actions"],
   "governanceVersion": "1.1.0",

@@ -1,4 +1,4 @@
-Describe 'Infrastructure automation design home-lab demo' {
+Describe 'Infrastructure automation design lab demo' {
  BeforeAll{$script:r=(Resolve-Path (Join-Path $PSScriptRoot '..')).Path;$script:s=(Resolve-Path (Join-Path $script:r '../..')).Path;$script:k=Get-Content (Join-Path $script:r '.agents/skills/infrastructure-automation-design/SKILL.md') -Raw;$script:q=Get-Content (Join-Path $script:r 'samples/requirements.json') -Raw|ConvertFrom-Json;$script:d=Get-Content (Join-Path $script:r 'demo-output/expected-design.json') -Raw|ConvertFrom-Json}
  It 'keeps the skill isolated and design only'{Test-Path (Join-Path $script:s '.agents/skills/infrastructure-automation-design/SKILL.md')|Should -BeFalse;$script:k|Should -Match 'Produce design artifacts only';$script:d.deploymentStatus|Should -BeExactly 'NotRun'}
  It 'maps every requirement exactly once to a control'{@($script:q.requirements).Count|Should -Be 6;@($script:d.requirementMappings).Count|Should -Be 6;@($script:d.requirementMappings.requirementId|sort)|Should -Be @($script:q.requirements.id|sort);@($script:d.requirementMappings.control|select -Unique).Count|Should -Be 6}

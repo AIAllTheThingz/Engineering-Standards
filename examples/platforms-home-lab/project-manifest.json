@@ -2,7 +2,7 @@
   "schemaVersion": "1.2.0",
   "projectName": "platforms-home-lab",
   "repository": "example-org/platforms-home-lab",
-  "description": "A secret-free home-lab demonstration of copied platform standards and an isolated platforms skill.",
+  "description": "A secret-free lab demonstration of copied platform standards and an isolated platforms skill.",
   "projectType": "integration",
   "technologies": ["platforms", "github-actions"],
   "governanceVersion": "1.1.0",

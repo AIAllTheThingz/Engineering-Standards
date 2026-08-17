@@ -2,7 +2,7 @@
   "schemaVersion": "1.2.0",
   "projectName": "frameworks-home-lab",
   "repository": "example-org/frameworks-home-lab",
-  "description": "A secret-free home-lab demonstration of copied framework standards and an isolated frameworks skill.",
+  "description": "A secret-free lab demonstration of copied framework standards and an isolated frameworks skill.",
   "projectType": "integration",
   "technologies": ["frameworks", "github-actions"],
   "governanceVersion": "1.1.0",

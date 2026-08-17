@@ -1,4 +1,4 @@
-Describe 'Safe automation home-lab demo' {
+Describe 'Safe automation lab demo' {
     BeforeAll {
         $script:root=(Resolve-Path (Join-Path $PSScriptRoot '..')).Path
         $script:standards=(Resolve-Path (Join-Path $script:root '../..')).Path

@@ -2,7 +2,7 @@
   "schemaVersion": "1.2.0",
   "projectName": "build-pester-tests-home-lab",
   "repository": "example-org/build-pester-tests-home-lab",
-  "description": "A secret-free home-lab demonstration of traceable Pester test design for synthetic PowerShell.",
+  "description": "A secret-free lab demonstration of traceable Pester test design for synthetic PowerShell.",
   "projectType": "powershell",
   "technologies": ["powershell", "pester", "github-actions"],
   "governanceVersion": "1.1.0",

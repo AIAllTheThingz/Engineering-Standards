@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Runs deterministic validation for the PowerShell review home-lab demo.
+Runs deterministic validation for the PowerShell review lab demo.
 .DESCRIPTION
 Parses PowerShell without executing the intentionally unsafe sample, validates
 the isolated skill package and synthetic prompt corpus, runs Pester, and checks
@@ -54,4 +54,4 @@ if ($LASTEXITCODE -ne 0) {
     throw "Demo governance contract validation failed with exit code $LASTEXITCODE."
 }
 
-Write-Output "PowerShell review home-lab demo validation passed: $($pesterResult.PassedCount) Pester tests; live model behavior NotRun by design."
+Write-Output "PowerShell review lab demo validation passed: $($pesterResult.PassedCount) Pester tests; live model behavior NotRun by design."

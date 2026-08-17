@@ -65,7 +65,7 @@ Describe 'Unified diff validation' {
         { Assert-UnifiedDiff -LiteralPath $path -RepositoryRoot $TestDrive } | Should -Not -Throw
     }
 
-    It 'accepts every committed review home-lab diff' {
+    It 'accepts every committed review lab diff' {
         $paths = @(
             'examples/python-review-home-lab/samples/unsafe-maintenance.diff'
             'examples/bash-review-home-lab/samples/unsafe-maintenance.diff'

@@ -1,4 +1,4 @@
-<# .SYNOPSIS Validates the frameworks home-lab demo. .DESCRIPTION Delegates to the repository's deterministic, secret-free home-lab validator. #>
+<# .SYNOPSIS Validates the frameworks lab demo. .DESCRIPTION Delegates to the repository's deterministic, secret-free lab validator. #>
 [CmdletBinding()]
 param()
 $root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../../..')).Path
