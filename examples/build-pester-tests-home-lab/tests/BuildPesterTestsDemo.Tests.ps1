@@ -1,4 +1,4 @@
-Describe 'Build Pester tests home-lab demo' {
+Describe 'Build Pester tests lab demo' {
     BeforeAll {
         $script:demoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
         $script:standardsRoot = (Resolve-Path (Join-Path $script:demoRoot '../..')).Path
@@ -15,7 +15,7 @@ Describe 'Build Pester tests home-lab demo' {
 
     It 'declares governed nonproduction test-building boundaries' {
         $skill = Get-Content $script:skillPath -Raw
-        $skill | Should -Match 'portfolio-grade home-lab demonstration'
+        $skill | Should -Match 'portfolio-grade lab demonstration'
         $skill | Should -Match 'Pester-managed temporary storage'
         $skill | Should -Match 'do not weaken the test'
         $skill | Should -Match 'Never claim GitHub Actions'

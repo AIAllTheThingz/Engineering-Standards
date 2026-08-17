@@ -1,4 +1,4 @@
-Describe 'Terraform review home-lab demo' {
+Describe 'Terraform review lab demo' {
     BeforeAll {
         $script:demoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
         $script:standardsRoot = (Resolve-Path -LiteralPath (Join-Path $script:demoRoot '../..')).Path
@@ -12,7 +12,7 @@ Describe 'Terraform review home-lab demo' {
     }
     It 'declares demo-only read-only boundaries' {
         $skill = Get-Content -LiteralPath $script:skillPath -Raw
-        $skill | Should -Match 'portfolio-grade home-lab demonstration'
+        $skill | Should -Match 'portfolio-grade lab demonstration'
         $skill | Should -Match 'production-certified'
         $skill | Should -Match 'Do not edit, format, generate, delete, commit, push'
         $skill | Should -Match 'Do not reveal state or sensitive values'
