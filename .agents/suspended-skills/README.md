@@ -14,7 +14,7 @@ Skills package repeatable engineering workflows. They do not replace governance,
 
 There are no planned production skills represented by placeholder directories
 or incomplete `SKILL.md` files. Issues #43 through #49 were closed as not
-planned and superseded by isolated home-lab demonstrations. The demonstrations
+planned and superseded by isolated lab demonstrations. The demonstrations
 are cataloged in [`../../examples/README.md`](../../examples/README.md) and are
 not part of this Suspended production-skill directory.
 
