@@ -1,4 +1,4 @@
-# Vendor Documentation Analysis Home Lab
+# Vendor Documentation Analysis Lab
 
 This lab compares two fictional, versioned vendor snapshots. One snapshot is
 newer but applies to a different product version; the other contains a hostile

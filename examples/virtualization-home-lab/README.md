@@ -1,4 +1,4 @@
-# Virtualization Home-Lab Demo
+# Virtualization Lab Demo
 
 ## Purpose
 

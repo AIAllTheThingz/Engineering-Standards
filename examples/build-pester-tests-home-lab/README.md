@@ -1,4 +1,4 @@
-# Build Pester Tests Home Lab
+# Build Pester Tests Lab
 
 This secret-free example demonstrates an isolated `build-pester-tests` skill
 against a small synthetic PowerShell module. The lab makes requirements

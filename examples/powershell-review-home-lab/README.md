@@ -1,8 +1,8 @@
-# PowerShell Review Home-Lab Demo
+# PowerShell Review Lab Demo
 
 ## Purpose
 
-This example demonstrates how a read-only Codex skill can review existing PowerShell changes for correctness, destructive defaults, credential exposure, resilience, testing, and governance. It is designed for a portfolio or home lab and requires no GitHub Actions secret or OpenAI API key.
+This example demonstrates how a read-only Codex skill can review existing PowerShell changes for correctness, destructive defaults, credential exposure, resilience, testing, and governance. It is designed for a portfolio lab and requires no GitHub Actions secret or OpenAI API key.
 
 The demo deliberately separates two concerns:
 

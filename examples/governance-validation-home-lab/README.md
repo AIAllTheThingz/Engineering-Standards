@@ -1,4 +1,4 @@
-# Governance Validation Home Lab
+# Governance Validation Lab
 
 This secret-free lab demonstrates candidate/trusted-code separation for a
 `governance-validation` skill. Synthetic candidate records contain both valid

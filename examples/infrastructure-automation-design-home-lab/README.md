@@ -1,4 +1,4 @@
-# Infrastructure Automation Design Home Lab
+# Infrastructure Automation Design Lab
 
 This lab maps fictional multi-environment automation requirements to a secure
 design: isolated candidate validation, trusted apply, short-lived identity,
