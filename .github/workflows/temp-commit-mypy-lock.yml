@@ -48,20 +48,27 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
+          import os
           import pathlib
           import re
 
           def pins(path):
-              text = pathlib.Path(path).read_text(encoding='utf-8')
-              return dict(re.findall(r'^([A-Za-z0-9_.-]+)==([^\\\s]+)', text, re.MULTILINE))
+              result = {}
+              for line in pathlib.Path(path).read_text(encoding='utf-8').splitlines():
+                  match = re.match(r'^([A-Za-z0-9_.-]+)==([^\\\s]+)', line)
+                  if match:
+                      result[match.group(1)] = match.group(2)
+              return result
 
-          before = pins(pathlib.Path(__import__('os').environ['RUNNER_TEMP']) / 'requirements-ci.before.lock')
+          before = pins(pathlib.Path(os.environ['RUNNER_TEMP']) / 'requirements-ci.before.lock')
           after = pins('examples/python-project/requirements-ci.lock')
-          assert before.get('mypy') == '2.3.0', before.get('mypy')
-          assert after.get('mypy') == '2.3.1', after.get('mypy')
-          before.pop('mypy')
-          after.pop('mypy')
-          assert before == after, 'Resolved package versions changed beyond mypy.'
+          differences = {
+              name: (before.get(name), after.get(name))
+              for name in sorted(set(before) | set(after))
+              if before.get(name) != after.get(name)
+          }
+          print(f'Resolved version differences: {differences}')
+          assert differences == {'mypy': ('2.3.0', '2.3.1')}, differences
           PY
 
       - name: Commit generated lock only
