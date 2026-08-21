@@ -1,0 +1,83 @@
+name: Temporary commit mypy lock
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  commit-lock:
+    name: Commit verified mypy 2.3.1 lock
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'dependabot/pip/examples/python-project/mypy-2.3.1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.head_ref }}
+          persist-credentials: true
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.13'
+
+      - name: Install reviewed generator versions
+        run: |
+          python -m pip install --disable-pip-version-check --no-input pip==26.1.2
+          python -m pip install --disable-pip-version-check --no-input pip-tools==7.6.0
+
+      - name: Preserve current resolved versions
+        run: cp examples/python-project/requirements-ci.lock "$RUNNER_TEMP/requirements-ci.before.lock"
+
+      - name: Regenerate hash-locked dependencies
+        run: >-
+          pip-compile
+          --allow-unsafe
+          --generate-hashes
+          --output-file=examples/python-project/requirements-ci.lock
+          --strip-extras
+          examples/python-project/requirements-ci.in
+
+      - name: Verify only mypy version changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import pathlib
+          import re
+
+          def pins(path):
+              text = pathlib.Path(path).read_text(encoding='utf-8')
+              return dict(re.findall(r'^([A-Za-z0-9_.-]+)==([^\\\s]+)', text, re.MULTILINE))
+
+          before = pins(pathlib.Path(__import__('os').environ['RUNNER_TEMP']) / 'requirements-ci.before.lock')
+          after = pins('examples/python-project/requirements-ci.lock')
+          assert before.get('mypy') == '2.3.0', before.get('mypy')
+          assert after.get('mypy') == '2.3.1', after.get('mypy')
+          before.pop('mypy')
+          after.pop('mypy')
+          assert before == after, 'Resolved package versions changed beyond mypy.'
+          PY
+
+      - name: Commit generated lock only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- examples/python-project/requirements-ci.lock
+          if git diff --cached --quiet; then
+            echo 'Generated lock is already synchronized.'
+            exit 0
+          fi
+          if [ "$(git diff --cached --name-only)" != 'examples/python-project/requirements-ci.lock' ]; then
+            echo 'Unexpected staged path.' >&2
+            exit 1
+          fi
+          git commit -m 'chore(deps): refresh mypy 2.3.1 lock'
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
