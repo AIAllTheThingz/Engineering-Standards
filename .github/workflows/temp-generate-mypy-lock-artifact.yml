@@ -1,0 +1,53 @@
+name: Temporary mypy lock artifact
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    name: Generate mypy 2.3.1 lock artifact
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out pull request without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.13'
+
+      - name: Install pinned pip-tools
+        run: python -m pip install --disable-pip-version-check --no-input pip-tools==7.6.0
+
+      - name: Regenerate hash-locked dependencies
+        run: >-
+          pip-compile
+          --allow-unsafe
+          --generate-hashes
+          --output-file=examples/python-project/requirements-ci.lock
+          --strip-extras
+          examples/python-project/requirements-ci.in
+
+      - name: Verify requested mypy version
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q '^mypy==2\.3\.1' examples/python-project/requirements-ci.lock
+          if grep -q '^mypy==2\.3\.0' examples/python-project/requirements-ci.lock; then
+            echo 'Stale mypy 2.3.0 pin remains.' >&2
+            exit 1
+          fi
+
+      - name: Upload regenerated lock
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: mypy-2.3.1-lock-${{ github.run_id }}
+          path: examples/python-project/requirements-ci.lock
+          if-no-files-found: error
+          retention-days: 1
