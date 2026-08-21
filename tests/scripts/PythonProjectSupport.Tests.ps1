@@ -21,7 +21,7 @@ Describe 'Governed Python project support' {
 
     It 'pins every functional requirement and supplies hashes' {
         $lock = Get-Content -LiteralPath (Join-Path $script:example 'requirements-ci.lock') -Raw
-        foreach ($package in @('pytest==9.1.1','mypy==2.3.0','pip-audit==2.10.1','build==1.5.0','hatchling==1.32.0','ruff==0.15.22','cyclonedx-bom==7.3.0')) {
+        foreach ($package in @('pytest==9.1.1','mypy==2.3.1','pip-audit==2.10.1','build==1.5.0','hatchling==1.32.0','ruff==0.15.22','cyclonedx-bom==7.3.0')) {
             $lock | Should -Match ([regex]::Escape($package))
         }
         $lock | Should -Match '(?m)^\s+--hash=sha256:[0-9a-f]{64}'
