@@ -182,6 +182,98 @@ Describe 'Validate evidence action' {
             $LASTEXITCODE | Should -Be 0
         }
 
+        It 'accepts a truthfully failed hosted outcome when its artifact is independently verified' {
+            & $script:NewTempEvidence -Status Blocked -TestStatus Passed
+            $evidencePath = Join-Path $script:tempRoot 'completion-result.json'
+            $evidence = Get-Content $evidencePath -Raw | ConvertFrom-Json -AsHashtable
+            $evidence.executionContext = 'Local'
+            $evidence.status = 'Failed'
+            $evidence.blockedReason = $null
+            $evidence.tests = @(
+                $evidence.tests[0],
+                [ordered]@{
+                    schemaVersion = '1.1.0'; name = 'GitHub-hosted workflow execution'; category = 'workflow'; status = 'Failed'; requiredValidation = $true
+                    evidenceSource = 'GitHubArtifact'; command = 'Governance CI run 456'; workingDirectory = '.'
+                    startedAtUtc = '2026-06-19T00:00:00Z'; completedAtUtc = '2026-06-19T00:00:01Z'; durationSeconds = 1
+                    runtime = 'GitHub Actions'; toolVersion = '7.x'; exitCode = 1
+                    summary = 'Hosted governance validation failed at a mandatory check.'; warnings = @()
+                    failureReason = 'Documentation completeness failed.'; blockedReason = $null; notApplicableRationale = $null
+                    details = [ordered]@{ runId = 456; artifactName = 'governance-evidence-456'; artifactSha256 = ('a' * 64) }
+                }
+            )
+            $evidence | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $evidencePath
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Be 0
+        }
+
+        It 'rejects a failed hosted outcome without independently verified artifact details' {
+            & $script:NewTempEvidence -Status Failed -TestStatus Passed
+            $evidencePath = Join-Path $script:tempRoot 'completion-result.json'
+            $evidence = Get-Content $evidencePath -Raw | ConvertFrom-Json -AsHashtable
+            $evidence.executionContext = 'Local'
+            $evidence.status = 'Failed'
+            $evidence.blockedReason = $null
+            $evidence.tests[0].name = 'GitHub-hosted workflow execution'
+            $evidence.tests[0].status = 'Failed'
+            $evidence.tests[0].evidenceSource = 'local-summary'
+            $evidence.tests[0].exitCode = 1
+            $evidence.tests[0].failureReason = 'Hosted enforcement failed.'
+            $evidence | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $evidencePath
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Not -Be 0
+        }
+
+        It 'uses the configured evidencePath for artifact verification' {
+            & $script:NewTempEvidence -ArtifactPath 'GovernanceEvidence/report.json'
+            @{ evidencePath = 'GovernanceEvidence' } |
+                ConvertTo-Json -Depth 10 |
+                Set-Content -LiteralPath (Join-Path $script:tempRoot 'governance.config.json')
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Be 0
+        }
+
+        It 'accepts a repository-root evidencePath' {
+            & $script:NewTempEvidence -ArtifactPath 'report.json'
+            @{ evidencePath = '.' } |
+                ConvertTo-Json -Depth 10 |
+                Set-Content -LiteralPath (Join-Path $script:tempRoot 'governance.config.json')
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Be 0
+        }
+
+        It 'rejects a blocked overall status with a failed required hosted outcome' {
+            & $script:NewTempEvidence -Status Blocked -TestStatus Passed
+            $evidencePath = Join-Path $script:tempRoot 'completion-result.json'
+            $evidence = Get-Content $evidencePath -Raw | ConvertFrom-Json -AsHashtable
+            $evidence.executionContext = 'Local'
+            $evidence.status = 'Blocked'
+            $evidence.blockedReason = 'Human acceptance remains pending.'
+            $evidence.tests[0].name = 'GitHub-hosted workflow execution'
+            $evidence.tests[0].status = 'Failed'
+            $evidence.tests[0].evidenceSource = 'GitHubArtifact'
+            $evidence.tests[0].details = [ordered]@{ runId = 789; artifactName = 'governance-evidence-789'; artifactSha256 = ('b' * 64) }
+            $evidence.tests[0].failureReason = 'Hosted enforcement failed.'
+            $evidence.tests[0].exitCode = 1
+            $evidence | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $evidencePath
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Not -Be 0
+        }
+
+        It 'rejects traversal in configured evidencePath' {
+            & $script:NewTempEvidence
+            @{ evidencePath = 'sub/../evidence' } |
+                ConvertTo-Json -Depth 10 |
+                Set-Content -LiteralPath (Join-Path $script:tempRoot 'governance.config.json')
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Not -Be 0
+        }
+
         It 'rejects an artifact hash mismatch' {
             & $script:NewTempEvidence
             $evidence = Get-Content "$PSScriptRoot/../fixtures/valid/completion-result.json" -Raw | ConvertFrom-Json -AsHashtable

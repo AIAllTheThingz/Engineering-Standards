@@ -196,7 +196,7 @@ Evidence MUST remain honest:
 - `evidenceCommitSha` identifies the commit containing checked-in evidence when intentionally used.
 - `latest-verified-run.json` records downloaded and independently verified GitHub run metadata.
 - GitHub artifact evidence MUST use actual run ID, run attempt, branch, artifact name, and artifact hashes.
-- Local evidence MUST use `executionContext: Local` and keep GitHub-hosted execution as `NotRun`.
+- Local evidence MUST use `executionContext: Local`; unverified local runs MUST keep GitHub-hosted execution as `NotRun`, while independently verified `GitHubArtifact` outcomes MAY record `Passed` or `Failed`.
 
 Do not modify `evidence/latest-verified-run.json` unless a new GitHub run actually ran and its artifact was independently verified.
 

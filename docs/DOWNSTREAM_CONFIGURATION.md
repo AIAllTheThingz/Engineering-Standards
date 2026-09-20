@@ -70,6 +70,11 @@ The governance config MUST NOT be used to remove mandatory controls silently. If
 | `controls` | Yes | Control toggles. | Disabled mandatory controls require `GOV-*` exceptions. |
 | `exceptions` | No | Active governance exceptions. | Must match exception records and evidence. |
 
+The documentation validator applies the central authoritative-document set to
+the standards-maintainer profile. A downstream profile evaluates the documents
+listed by `requiredDocumentationPaths`, which lets central-reference consumers
+keep their local documentation set without copying central policy files.
+
 ## Allowed Values
 
 Risk classifications are `Low`, `Moderate`, `High`, and `Critical`. Data classifications are defined in `governance/RISK_CLASSIFICATION.md` and the organization contract. Status values in governance evidence are `Passed`, `Failed`, `Blocked`, `NotRun`, and `NotApplicable`.

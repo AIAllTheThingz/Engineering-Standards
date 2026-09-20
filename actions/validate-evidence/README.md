@@ -41,6 +41,11 @@ The action rejects:
 - Artifact hash mismatches.
 - Artifacts referencing unknown tests.
 - Paths that escape the repository.
+- Local GitHub-hosted workflow records with `Passed` or `Failed` status must carry
+  independently verified `GitHubArtifact` details; `NotRun` remains valid when
+  hosted execution was not performed.
+- Artifact paths must remain under the configured `governance.config.json`
+  `evidencePath` directory, falling back to `evidence/` when no config is present.
 
 ## Security Boundaries
 

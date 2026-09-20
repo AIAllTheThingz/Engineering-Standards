@@ -425,6 +425,7 @@ foreach ($disabledControl in @($disabledMandatoryControls)) {
 }
 
 $workflowArchitectureSha = if ($ExpectedReusableWorkflowSha) { $ExpectedReusableWorkflowSha } else { $StandardsWorkflowSha }
+$completionEvidencePath = if ($manifest.schemaVersion -eq '1.2.0') { [string]$manifest.evidence.local.completion } else { 'evidence/local-completion-result.json' }
 $toolArguments = @{
     Contract = @('-Path',$projectRoot,'-ExpectedRepository',$CallerRepository,'-ExpectedStandardsRepository',$StandardsRepository,'-RepositoryOwnerType',$RepositoryOwnerType,'-ExpectedWorkflowInterfaceVersion','1.0.0','-ExpectedWorkflowProfile',$validationProfile) + $(if ($StandardsWorkflowSha) { @('-ExpectedGovernanceCommitSha',$StandardsWorkflowSha) } else { @() }) + $(if ($isMaintainerProfile) { @('-ExpectedRequiredCheckName','Governance / Governance validation') } else { @() })
     AgentStandards = @('-Path',$projectRoot)
@@ -436,7 +437,7 @@ $toolArguments = @{
     DocumentationCompleteness = @('-Path',$projectRoot)
     ForbiddenPatterns = @('-Path',$projectRoot)
     RepositoryHealth = @('-Path',$projectRoot,'-RepositoryOwnerType',$RepositoryOwnerType)
-    Evidence = @('-Path',$projectRoot,'-EvidencePath','evidence/local-completion-result.json')
+    Evidence = @('-Path',$projectRoot,'-EvidencePath',$completionEvidencePath)
     PythonStaticAnalysis = @('-Path',$projectRoot,'-Profile',$validationProfile,'-OutputJson',(Join-Path $evidenceFull 'python-static-analysis.json'),'-AllowedOutputRoot',$evidenceFull)
     BashStaticAnalysis = @('-Path',$projectRoot,'-Profile',$validationProfile,'-OutputJson',(Join-Path $evidenceFull 'bash-static-analysis.json'),'-AllowedOutputRoot',$evidenceFull)
     Pester = @('-EvidenceRoot',$evidenceFull)

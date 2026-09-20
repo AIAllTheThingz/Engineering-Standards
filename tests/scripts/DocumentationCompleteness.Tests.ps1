@@ -6,6 +6,37 @@ Describe 'Documentation completeness' {
         }
     }
 
+    Context 'downstream configured documentation' {
+        BeforeAll {
+            $script:downstreamTempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("downstream-doc-tests-" + [guid]::NewGuid())
+            New-Item -ItemType Directory -Path $script:downstreamTempRoot -Force | Out-Null
+            Copy-Item -LiteralPath "$PSScriptRoot/../../README.md" -Destination (Join-Path $script:downstreamTempRoot 'README.md')
+            @{ workflowProfile = 'downstream'; requiredDocumentationPaths = @('README.md') } |
+                ConvertTo-Json -Depth 10 |
+                Set-Content -LiteralPath (Join-Path $script:downstreamTempRoot 'governance.config.json')
+        }
+
+        AfterAll {
+            if ($script:downstreamTempRoot -and (Test-Path -LiteralPath $script:downstreamTempRoot)) {
+                Remove-Item -LiteralPath $script:downstreamTempRoot -Recurse -Force
+            }
+        }
+
+        It 'uses downstream requiredDocumentationPaths instead of central-only documents' {
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot
+            $LASTEXITCODE | Should -Be 0
+        }
+
+        It 'fails when a configured downstream document is missing' {
+            $config = Get-Content -LiteralPath (Join-Path $script:downstreamTempRoot 'governance.config.json') -Raw | ConvertFrom-Json
+            $config.requiredDocumentationPaths = @('README.md', 'MISSING.md')
+            $config | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $script:downstreamTempRoot 'governance.config.json')
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'MISSING\.md.*missing'
+        }
+    }
+
     Context 'invalid documentation' {
         BeforeAll {
             $script:tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("doc-tests-" + [guid]::NewGuid())

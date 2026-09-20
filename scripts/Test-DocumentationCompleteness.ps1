@@ -50,6 +50,24 @@ $authoritative = @(
     'docs/BRANCH_PROTECTION.md',
     'docs/TROUBLESHOOTING.md'
 )
+$isDownstream = $false
+
+$configPath = Join-Path $root 'governance.config.json'
+if (Test-Path -LiteralPath $configPath -PathType Leaf) {
+    try {
+        $config = Read-JsonFile -Path $configPath
+        if ([string]$config.workflowProfile -ceq 'downstream') {
+            $isDownstream = $true
+            $configuredDocumentation = @($config.requiredDocumentationPaths)
+            if ($configuredDocumentation.Count -gt 0) {
+                $authoritative = $configuredDocumentation
+            }
+        }
+    }
+    catch {
+        $results.Add((New-ValidationResult -Status Failed -Message "Unable to read governance configuration: $($_.Exception.Message)" -Path 'governance.config.json'))
+    }
+}
 
 function Get-WordCount {
     param([Parameter(Mandatory)][string]$Text)
@@ -127,7 +145,20 @@ function Test-AuthoritativeDocument {
 }
 
 foreach ($rel in $authoritative) {
-    foreach ($item in @(Test-AuthoritativeDocument -RelativePath $rel -FullPath (Join-Path $root $rel))) { $results.Add($item) }
+    try {
+        $fullPath = Resolve-SafePath -Root $root -ChildPath $rel -AllowMissingLeaf
+        if ($isDownstream) {
+            if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Required documentation is missing.' -Path $rel))
+            }
+        }
+        else {
+            foreach ($item in @(Test-AuthoritativeDocument -RelativePath $rel -FullPath $fullPath)) { $results.Add($item) }
+        }
+    }
+    catch {
+        $results.Add((New-ValidationResult -Status Failed -Message $_.Exception.Message -Path $rel))
+    }
 }
 
 $allMarkdown = Get-ChildItem -LiteralPath $root -Filter '*.md' -Recurse -File | Where-Object { $_.FullName -notmatch '\\.git\\' }
