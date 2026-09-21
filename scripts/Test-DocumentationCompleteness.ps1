@@ -89,6 +89,29 @@ function Get-WordCount {
     @($Text -split '\s+' | Where-Object { $_ }).Count
 }
 
+function Get-MarkdownVisibleText {
+    param([AllowEmptyString()][string]$Text)
+    $document = [Markdig.Markdown]::Parse($Text, $markdownPipeline, $null)
+    $htmlBlocks = [Markdig.Syntax.MarkdownObjectExtensions]::Descendants($document) | Where-Object {
+        $_ -is [Markdig.Syntax.HtmlBlock]
+    } | Sort-Object { $_.Span.Start } -Descending
+    $htmlText = foreach ($block in $htmlBlocks) {
+        $source = $Text.Substring($block.Span.Start, $block.Span.Length)
+        if ($block.Type -ne [Markdig.Syntax.HtmlBlockType]::Comment) {
+            # Strip actual HTML markup before decoding; code literals never enter this path.
+            $source = [regex]::Replace($source, '(?is)<!--.*?(?:-->|\z)|<(script|style)\b(?:[^>"'']|"[^"]*"|''[^'']*'')*>.*?(?:</\1\s*>|\z)|<(?:[^>"'']|"[^"]*"|''[^'']*'')*>', {
+                param($tag)
+                if ($tag.Value -match '(?i)^</?(?:address|article|aside|blockquote|br|dd|details|div|dl|dt|fieldset|figcaption|figure|footer|form|h[1-6]|header|hr|li|main|nav|ol|p|pre|section|summary|table|tbody|td|tfoot|th|thead|tr|ul)\b') { "`n" }
+                else { '' }
+            })
+            [System.Net.WebUtility]::HtmlDecode($source)
+        }
+        $Text = $Text.Remove($block.Span.Start, $block.Span.Length).Insert($block.Span.Start, "`n")
+    }
+    $plainText = [Markdig.Markdown]::ToPlainText($Text, $markdownPipeline, $null)
+    (($plainText, ($htmlText -join "`n")) -join "`n") -replace '[\p{Cf}\p{Cc}-[\r\n\t]]', ''
+}
+
 function Hide-FencedMarkdownHeadings {
     param([AllowEmptyString()][string]$Text)
     $Text = $Text -replace '\r\n?', "`n"
@@ -171,6 +194,7 @@ function Test-EmptyMarkdownHeading {
                 break
             }
             $hasBody = $false
+            $bodyLines = [System.Collections.Generic.List[string]]::new()
             for ($j = $i + 1; $j -lt $lines.Count; $j++) {
                 if ($lines[$j] -match '^ {0,3}(#{1,3})(?:[ \t]+.*)?$') {
                     $nextLevel = $Matches[1].Length
@@ -178,11 +202,9 @@ function Test-EmptyMarkdownHeading {
                     $hasBody = $true
                     break
                 }
-                if (-not [string]::IsNullOrWhiteSpace($lines[$j])) {
-                    $hasBody = $true
-                    break
-                }
+                $bodyLines.Add($lines[$j])
             }
+            if (-not $hasBody) { $hasBody = -not [string]::IsNullOrWhiteSpace((Get-MarkdownVisibleText -Text ($bodyLines -join "`n"))) }
             if (-not $hasBody) {
                 $localResults.Add((New-ValidationResult -Status Failed -Message 'Document contains an empty heading.' -Path $RelativePath))
                 break
@@ -210,7 +232,7 @@ function Test-AuthoritativeDocument {
         $localResults.Add((New-ValidationResult -Status Failed -Message 'Required document is empty.' -Path $RelativePath))
         return @($localResults)
     }
-    $words = Get-WordCount -Text (Hide-FencedMarkdownHeadings -Text $text)
+    $words = Get-WordCount -Text (Get-MarkdownVisibleText -Text $text)
     if ($text -match $placeholderPattern) {
         $localResults.Add((New-ValidationResult -Status Failed -Message 'Unresolved placeholder or fake command found.' -Path $RelativePath))
     }

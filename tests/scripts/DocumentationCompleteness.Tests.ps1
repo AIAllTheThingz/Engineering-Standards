@@ -167,6 +167,49 @@ Describe 'Documentation completeness' {
             $output -join "`n" | Should -Match 'too few meaningful sections \(0 headings\)'
         }
 
+        It 'rejects invisible prose in word counts and section bodies: <Name>' -ForEach @(
+            @{ Name = 'space entities'; Body = '&nbsp; ' * 110 }
+            @{ Name = 'format entities'; Body = '&#8203; ' * 110 }
+            @{ Name = 'empty inline markup'; Body = '<span></span> ' * 110 }
+            @{ Name = 'HTML attributes'; Body = '<div title="' + ('invisible ' * 110) + '"></div>' }
+            @{ Name = 'script content'; Body = '<script>' + ('invisible ' * 110) + '</script>' }
+            @{ Name = 'style content'; Body = '<style>' + ('invisible ' * 110) + '</style>' }
+        ) {
+            $path = Join-Path $script:downstreamTempRoot 'README.md'
+            Set-Content $path -Value "# Project`n$Body`n`n## Usage`n$Body`n`n## Checks`n$Body"
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 1
+            $output -join "`n" | Should -Match 'too shallow'
+            $output -join "`n" | Should -Match 'empty heading'
+            $prose = 'Documented operational instructions and verification steps. ' * 25
+            Set-Content $path -Value "# Project`n$prose`n`n## Usage`n$Body`n`n## Checks`nVerify results."
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 1
+            $output -join "`n" | Should -Match 'empty heading'
+            $output -join "`n" | Should -Not -Match 'too shallow'
+        }
+
+        It 'preserves visible prose and code literals: <Name>' -ForEach @(
+            @{ Name = 'inline code'; Body = '`&nbsp;` ' * 110 }
+            @{ Name = 'fenced code'; Body = "```````n" + ('&nbsp; ' * 110) + "`n``````" }
+            @{ Name = 'HTML text'; Body = '<div>' + ('Visible prose ' * 60) + '</div>' }
+            @{ Name = 'adjacent HTML blocks'; Body = '<div>word</div>' * 110 }
+            @{ Name = 'entity text'; Body = '&amp; ' * 110 }
+        ) {
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value "# Project`n$Body`n`n## Usage`n$Body`n`n## Checks`n$Body"
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
+        }
+
+        It 'does not split words at inline HTML tags' {
+            $body = '<div>' + ('<span>w</span>' * 110) + '</div>'
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value "# Project`n$body`n`n## Usage`n$body`n`n## Checks`n$body"
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 1
+            $output -join "`n" | Should -Match 'too shallow'
+            $output -join "`n" | Should -Not -Match 'empty heading'
+        }
+
         It 'rejects invisible-only <Style> titles: <Name>' -ForEach @(
             foreach ($style in @('ATX','Setext')) {
                 @{ Style = $style; Name = 'format entity'; Title = '&#8203;' }
