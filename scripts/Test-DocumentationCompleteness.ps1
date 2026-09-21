@@ -84,17 +84,21 @@ function Get-WordCount {
 function Hide-FencedMarkdownHeadings {
     param([AllowEmptyString()][string]$Text)
     $document = [Markdig.Markdown]::Parse($Text, $markdownPipeline, $null)
-    $comments = [Markdig.Syntax.MarkdownObjectExtensions]::Descendants($document) | Where-Object {
+    $htmlNodes = [Markdig.Syntax.MarkdownObjectExtensions]::Descendants($document) | Where-Object {
         ($_ -is [Markdig.Syntax.Inlines.HtmlInline] -and $_.Tag.StartsWith('<!--')) -or
-        ($_ -is [Markdig.Syntax.HtmlBlock] -and $_.Type -eq [Markdig.Syntax.HtmlBlockType]::Comment)
+        ($_ -is [Markdig.Syntax.HtmlBlock])
     } | Sort-Object { $_.Span.Start } -Descending
-    foreach ($comment in $comments) {
-        $source = $Text.Substring($comment.Span.Start, $comment.Span.Length)
-        $visible = [regex]::Replace($source, '(?s)<!--.*?(?:-->|\z)', {
+    foreach ($node in $htmlNodes) {
+        $source = $Text.Substring($node.Span.Start, $node.Span.Length)
+        $visible = if ($node -is [Markdig.Syntax.HtmlBlock] -and $node.Type -ne [Markdig.Syntax.HtmlBlockType]::Comment) {
+            # Raw HTML remains section content, but cannot open Markdown headings or fences.
+            $source -replace '(?m)^( {0,3})(?=[#`~])', '$1\'
+        }
+        else { [regex]::Replace($source, '(?s)<!--.*?(?:-->|\z)', {
             param($match)
             $match.Value -replace '[^\r\n]', ' '
-        })
-        $Text = $Text.Remove($comment.Span.Start, $comment.Span.Length).Insert($comment.Span.Start, $visible)
+        }) }
+        $Text = $Text.Remove($node.Span.Start, $node.Span.Length).Insert($node.Span.Start, $visible)
     }
     $fence = $null
     $lines = foreach ($line in ($Text -split "`r?`n")) {

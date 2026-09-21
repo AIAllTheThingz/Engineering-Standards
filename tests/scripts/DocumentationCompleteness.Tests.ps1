@@ -114,6 +114,20 @@ Describe 'Documentation completeness' {
             Remove-Item -LiteralPath (Join-Path $script:downstreamTempRoot 'NOTES.md')
         }
 
+        It 'does not treat raw HTML as Markdown headings: <Tag>' -ForEach @(
+            @{ Tag = 'pre' }, @{ Tag = 'div' }
+        ) {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            $path = Join-Path $script:downstreamTempRoot 'README.md'
+            Set-Content $path -Value "# Project`n$body`n`n<$Tag>`n## Hidden one`n## Hidden two`n</$Tag>`n"
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'too few meaningful sections'
+            Set-Content $path -Value "# Project`n$body`n`n## Usage`n<$Tag>`n##`n~~~`n</$Tag>`n`n## Checks`nVerify the result."
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot
+            $LASTEXITCODE | Should -Be 0
+        }
+
         It 'preserves inline comment syntax literals: <Name>' -ForEach @(
             @{ Name = 'single backticks'; Literal = 'Use `<!--` to start a comment.' }
             @{ Name = 'multiple backticks'; Literal = 'Use ``<!-- `literal` `` to describe syntax.' }
