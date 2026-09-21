@@ -60,6 +60,7 @@ Describe 'Agent standards validation' {
         }
 
         It 'fails Bash mutation: <Name>' -ForEach @(
+            @{ Name='local NotRun qualification removed'; Old='Unverified local runs MUST record hosted execution as `NotRun`'; New='Local runs MUST record hosted execution as `NotRun`' },
             @{ Name='verified failed outcome removed'; Old='hosted `Passed` or `Failed` claim'; New='hosted `Passed` claim' },
             @{ Name='artifact metadata removed'; Old='run ID, run attempt, branch, artifact ID, artifact name, and artifact SHA-256'; New='arbitrary details' },
             @{ Name='required failure hidden'; Old='A failed required hosted check MUST retain overall `Failed`'; New='A failed required hosted check MAY be Blocked' },
