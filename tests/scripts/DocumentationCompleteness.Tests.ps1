@@ -101,6 +101,18 @@ Describe 'Documentation completeness' {
             $LASTEXITCODE | Should -Be 0
         }
 
+        It 'preserves inline comment syntax literals: <Name>' -ForEach @(
+            @{ Name = 'single backticks'; Literal = 'Use `<!--` to start a comment.' }
+            @{ Name = 'multiple backticks'; Literal = 'Use ``<!-- `literal` `` to describe syntax.' }
+            @{ Name = 'multiline span'; Literal = 'Use ``<!--' + "`n" + 'literal`` to describe syntax.' }
+            @{ Name = 'mixed real comment'; Literal = 'Use `<!--` to start. <!-- real comment --> Continue here.' }
+        ) {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value "# Project`n$Literal`n`n## Usage`n$body`n## Checks`nVerify the result."
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot
+            $LASTEXITCODE | Should -Be 0
+        }
+
         It 'accepts headings indented by <Spaces> spaces and rejects empty indented sections' -ForEach @(
             @{ Spaces = 1 }, @{ Spaces = 2 }, @{ Spaces = 3 }
         ) {

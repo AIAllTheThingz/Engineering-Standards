@@ -14,6 +14,12 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'GovernanceValidation.psm1') -Force
 
+# Load PowerShell's bundled Markdown parser; precise spans distinguish comments from code literals.
+$null = ConvertFrom-Markdown -InputObject 'Markdown parser initialization.'
+$markdownPipelineBuilder = [Markdig.MarkdownPipelineBuilder]::new()
+$markdownPipelineBuilder.PreciseSourceLocation = $true
+$markdownPipeline = $markdownPipelineBuilder.Build()
+
 $root = (Resolve-Path -LiteralPath $Path).Path
 $results = [System.Collections.Generic.List[object]]::new()
 
@@ -76,25 +82,22 @@ function Get-WordCount {
 
 function Hide-FencedMarkdownHeadings {
     param([AllowEmptyString()][string]$Text)
+    $document = [Markdig.Markdown]::Parse($Text, $markdownPipeline, $null)
+    $comments = [Markdig.Syntax.MarkdownObjectExtensions]::Descendants($document) | Where-Object {
+        ($_ -is [Markdig.Syntax.Inlines.HtmlInline] -and $_.Tag.StartsWith('<!--')) -or
+        ($_ -is [Markdig.Syntax.HtmlBlock] -and $_.Type -eq [Markdig.Syntax.HtmlBlockType]::Comment)
+    } | Sort-Object { $_.Span.Start } -Descending
+    foreach ($comment in $comments) {
+        $source = $Text.Substring($comment.Span.Start, $comment.Span.Length)
+        $visible = [regex]::Replace($source, '(?s)<!--.*?(?:-->|\z)', {
+            param($match)
+            $match.Value -replace '[^\r\n]', ' '
+        })
+        $Text = $Text.Remove($comment.Span.Start, $comment.Span.Length).Insert($comment.Span.Start, $visible)
+    }
     $fence = $null
-    $inComment = $false
     $lines = foreach ($line in ($Text -split "`r?`n")) {
         if ($null -eq $fence) {
-            if ($inComment) {
-                $end = $line.IndexOf('-->')
-                if ($end -lt 0) { ''; continue }
-                $line = $line.Substring($end + 3)
-                $inComment = $false
-            }
-            while (($start = $line.IndexOf('<!--')) -ge 0) {
-                $end = $line.IndexOf('-->', $start + 4)
-                if ($end -lt 0) {
-                    $inComment = $true
-                    $line = $line.Substring(0, $start)
-                    break
-                }
-                $line = $line.Remove($start, $end + 3 - $start)
-            }
             if ($line -match '^ {0,3}(`{3,}|~{3,})') { $fence = $Matches[1] }
             $line
         }
