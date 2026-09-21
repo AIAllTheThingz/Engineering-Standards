@@ -157,15 +157,16 @@ Describe 'Documentation completeness' {
         ) {
             $template = Join-Path $script:downstreamTempRoot $TemplatePath
             New-Item -ItemType Directory -Path (Split-Path $template) -Force | Out-Null
-            Set-Content $template -Value "## Summary`n<!-- Fill in the summary. -->"
+            Set-Content $template -Value "## Summary`n<!-- Fill in REPLACE-ME. -->"
             try {
                 & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot
                 $LASTEXITCODE | Should -Be 0
-                @{ workflowProfile = 'downstream'; requiredDocumentationPaths = @('README.md', $TemplatePath) } |
+                @{ workflowProfile = 'downstream'; requiredDocumentationPaths = @('README.md', $TemplatePath.Replace('/','\')) } |
                     ConvertTo-Json | Set-Content (Join-Path $script:downstreamTempRoot 'governance.config.json')
                 $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
                 $LASTEXITCODE | Should -Not -Be 0
                 $output -join "`n" | Should -Match 'empty heading'
+                $output -join "`n" | Should -Match 'Unresolved placeholder'
             }
             finally { Remove-Item -LiteralPath $template }
         }
@@ -180,10 +181,10 @@ Describe 'Documentation completeness' {
             $gitMetadata = Join-Path $script:downstreamTempRoot '.git'
             New-Item -ItemType Directory -Path $gitMetadata -Force | Out-Null
             Set-Content (Join-Path $gitMetadata 'internal.md') -Value '# Internal metadata is not repository documentation'
-            Set-Content (Join-Path $github 'pull_request_template.md') -Value "## Summary`n<!-- Fill in the summary. -->"
+            Set-Content (Join-Path $github 'pull_request_template.md') -Value "## Summary`n<!-- Fill in REPLACE-ME. -->"
             $issueTemplates = Join-Path $github 'ISSUE_TEMPLATE'
             New-Item -ItemType Directory -Path $issueTemplates -Force | Out-Null
-            Set-Content (Join-Path $issueTemplates 'bug_report.md') -Value "## Steps to reproduce`n<!-- Fill in the steps. -->"
+            Set-Content (Join-Path $issueTemplates 'bug_report.md') -Value "## Steps to reproduce`n<!-- Fill in REPLACE-ME. -->"
             & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot
             $LASTEXITCODE | Should -Be 0
             Set-Content (Join-Path $github 'GUIDE.md') -Value "## Usage`n<!-- hidden body -->"

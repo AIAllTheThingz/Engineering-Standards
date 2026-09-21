@@ -53,7 +53,7 @@ If a repository still emits `1.0.0` evidence while the central generators now em
 
 Documentation completeness fails when required documents are too shallow, missing required concepts, contain empty headings, include unresolved placeholders outside templates, or use fake validation commands.
 
-Unfilled pull request templates are exempt from the general empty-heading scan in the root, `docs/`, and `.github/`, either as `pull_request_template.md` or Markdown files directly inside `PULL_REQUEST_TEMPLATE/`. A template explicitly listed in `requiredDocumentationPaths` still receives the full required-document checks.
+Unfilled pull request templates are exempt from the general empty-heading and placeholder scans in the root, `docs/`, and `.github/`, either as `pull_request_template.md` or Markdown files directly inside `PULL_REQUEST_TEMPLATE/`. Markdown issue templates under `.github/ISSUE_TEMPLATE/` share these exemptions. A template explicitly listed in `requiredDocumentationPaths` still receives the full required-document and placeholder checks.
 
 Author the missing content. Do not pad documents with repeated boilerplate. The document should explain requirements, validation, evidence, exception handling, failure behavior, and related references.
 

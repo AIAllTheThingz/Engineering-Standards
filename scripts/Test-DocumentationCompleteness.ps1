@@ -22,6 +22,7 @@ $markdownPipeline = $markdownPipelineBuilder.Build()
 
 $root = (Resolve-Path -LiteralPath $Path).Path
 $results = [System.Collections.Generic.List[object]]::new()
+$placeholderPattern = '(?i)template only|echo tests configured|echo lint configured|REPLACE-ME|placeholder-only'
 
 $authoritative = @(
     'README.md',
@@ -174,6 +175,9 @@ function Test-AuthoritativeDocument {
         return @($localResults)
     }
     $words = Get-WordCount -Text (Hide-FencedMarkdownHeadings -Text $text)
+    if ($text -match $placeholderPattern) {
+        $localResults.Add((New-ValidationResult -Status Failed -Message 'Unresolved placeholder or fake command found.' -Path $RelativePath))
+    }
     $headings = Get-MarkdownHeadingCount -Text $text
     $requiredTerms = @('MUST','Validation','Evidence','Exception','Related')
     $minimumWords = if ($Downstream) { 100 } else { 300 }
@@ -209,11 +213,12 @@ $allMarkdown = Get-ChildItem -LiteralPath $root -Filter '*.md' -Recurse -File -F
 foreach ($file in $allMarkdown) {
     $rel = [System.IO.Path]::GetRelativePath($root, $file.FullName).Replace('\','/')
     $text = Get-Content -LiteralPath $file.FullName -Raw
-    if ($rel -notlike 'templates/*' -and $text -match '(?i)template only|echo tests configured|echo lint configured|REPLACE-ME|placeholder-only') {
+    $isTemplate = -not ($rel -notlike 'templates/*' -and $rel -notmatch '^(?:(?:\.github|docs)/)?pull_request_template(?:\.md$|/[^/]+\.md$)' -and $rel -notlike '.github/ISSUE_TEMPLATE/*')
+    if (-not $isTemplate -and $text -match $placeholderPattern) {
         $results.Add((New-ValidationResult -Status Failed -Message 'Unresolved placeholder or fake command found.' -Path $rel))
     }
     # GitHub forms intentionally have unfilled sections; required authoritative documents are checked above.
-    if ($rel -notlike 'templates/*' -and $rel -notmatch '^(?:(?:\.github|docs)/)?pull_request_template(?:\.md$|/[^/]+\.md$)' -and $rel -notlike '.github/ISSUE_TEMPLATE/*') {
+    if (-not $isTemplate) {
         foreach ($item in @(Test-EmptyMarkdownHeading -Text $text -RelativePath $rel)) { $results.Add($item) }
     }
 }

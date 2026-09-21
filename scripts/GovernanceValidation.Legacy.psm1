@@ -236,6 +236,26 @@ function Resolve-GovernanceValidationPlan {
     @($plan)
 }
 
+function Test-VerifiedRunBranchName {
+    [CmdletBinding()]
+    param([AllowNull()][object]$Value)
+
+    if ($Value -isnot [string]) { return $false }
+    $branch = [string]$Value
+    if ([string]::IsNullOrEmpty($branch)) { return $false }
+    if ($branch -ceq 'HEAD' -or
+        $branch -cmatch '^refs/' -or
+        $branch -cmatch '^[-/]' -or
+        $branch -cmatch '(^|/)\.' -or
+        $branch -cmatch '\.lock($|/)' -or
+        $branch -cmatch '\.\.|//|@\{' -or
+        $branch -cmatch '[/.]$' -or
+        $branch -cmatch '[\x00-\x20\x7F~^:?*\[\\]') {
+        return $false
+    }
+    return $true
+}
+
 function Get-GovernanceAggregateStatus {
     <#
     .SYNOPSIS
@@ -850,6 +870,7 @@ function Test-GovernanceJsonDocument {
                     foreach ($field in @('branch','artifactName','artifactSha256')) {
                         $value = Get-JsonMemberValue -InputObject $details -Name $field
                         if ($value -isnot [string] -or [string]::IsNullOrWhiteSpace($value) -or
+                            ($field -eq 'branch' -and -not (Test-VerifiedRunBranchName -Value $value)) -or
                             ($field -eq 'artifactSha256' -and $value -notmatch '\A[a-fA-F0-9]{64}\z')) {
                             $results.Add((New-ValidationResult -Status Failed -Message "GitHubArtifact details.$field is missing or invalid." -Path $Path))
                         }
@@ -1949,6 +1970,7 @@ function Test-GovernanceContractSemantics {
 }
 
 Export-ModuleMember -Function @(
+    'Test-VerifiedRunBranchName',
     'Get-GovernanceValidationRegistry',
     'Get-GovernanceValidationCategoryRegistry',
     'Get-GovernanceValidationProfile',

@@ -295,6 +295,9 @@ Describe 'Validate evidence action' {
             @{ Name = 'empty'; Details = @{} }
             @{ Name = 'arbitrary'; Details = @{ note = 'verified' } }
             @{ Name = 'array'; Details = @('verified') }
+            foreach ($branch in @('bad..ref','HEAD','refs/heads/main','topic.lock','bad ref')) {
+                @{ Name = "branch $branch"; Details = @{ runId = 123; runAttempt = 1; artifactId = 456; branch = $branch; artifactName = 'governance-evidence-123'; artifactSha256 = ('a' * 64) } }
+            }
             foreach ($field in @('runId','runAttempt','artifactId')) {
                 $details = @{ runId = 123; runAttempt = 1; artifactId = 456; branch = '1/merge'; artifactName = 'governance-evidence-123'; artifactSha256 = ('a' * 64) }
                 $details[$field] = [string]$details[$field]

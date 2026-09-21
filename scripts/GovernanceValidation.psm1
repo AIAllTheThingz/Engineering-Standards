@@ -22,6 +22,7 @@ $script:ForwardedCommands = [ordered]@{
     'Get-GovernanceValidationCategoryRegistry' = 'Get-LegacyGovernanceValidationCategoryRegistry'
     'Get-GovernanceValidationProfile' = 'Get-LegacyGovernanceValidationProfile'
     'Resolve-GovernanceValidationPlan' = 'Resolve-LegacyGovernanceValidationPlan'
+    'Test-VerifiedRunBranchName' = 'Test-LegacyVerifiedRunBranchName'
     'Get-GovernanceAggregateStatus' = 'Get-LegacyGovernanceAggregateStatus'
     'Get-GovernanceMissingValidationPrerequisite' = 'Get-LegacyGovernanceMissingValidationPrerequisite'
     'New-ValidationResult' = 'New-LegacyValidationResult'
@@ -43,26 +44,6 @@ $script:ForwardedCommands = [ordered]@{
 }
 foreach ($publicName in $script:ForwardedCommands.Keys) {
     Set-Alias -Name $publicName -Value $script:ForwardedCommands[$publicName] -Scope Script -Force
-}
-
-function Test-VerifiedRunBranchName {
-    [CmdletBinding()]
-    param([AllowNull()][object]$Value)
-
-    if ($Value -isnot [string]) { return $false }
-    $branch = [string]$Value
-    if ([string]::IsNullOrEmpty($branch)) { return $false }
-    if ($branch -ceq 'HEAD' -or
-        $branch -cmatch '^refs/' -or
-        $branch -cmatch '^[-/]' -or
-        $branch -cmatch '(^|/)\.' -or
-        $branch -cmatch '\.lock($|/)' -or
-        $branch -cmatch '\.\.|//|@\{' -or
-        $branch -cmatch '[/.]$' -or
-        $branch -cmatch '[\x00-\x20\x7F~^:?*\[\\]') {
-        return $false
-    }
-    return $true
 }
 
 function Test-VerifiedRunObject {
