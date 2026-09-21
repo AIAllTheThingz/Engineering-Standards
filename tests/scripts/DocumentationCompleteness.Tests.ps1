@@ -185,6 +185,50 @@ Describe 'Documentation completeness' {
             finally { Remove-Item -LiteralPath $template }
         }
 
+        It 'ignores untracked dependencies but retains tracked and unignored hidden documents' {
+            $fixture = Join-Path $TestDrive 'ignored-dependencies'
+            New-Item -ItemType Directory -Path $fixture | Out-Null
+            Copy-Item (Join-Path $script:downstreamTempRoot 'README.md') $fixture
+            Copy-Item (Join-Path $script:downstreamTempRoot 'governance.config.json') $fixture
+            & git init -q $fixture
+            $LASTEXITCODE | Should -Be 0
+            Set-Content (Join-Path $fixture '.gitignore') -Value ".venv/`n.smoke-venv/`n.agents/"
+            foreach ($directory in @('.venv','.smoke-venv')) {
+                New-Item -ItemType Directory -Path (Join-Path $fixture $directory) | Out-Null
+                Set-Content (Join-Path $fixture "$directory/README.md") -Value 'REPLACE-ME'
+            }
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $fixture
+            $LASTEXITCODE | Should -Be 0
+            foreach ($directory in @('.github','.agents')) {
+                New-Item -ItemType Directory -Path (Join-Path $fixture $directory) -Force | Out-Null
+                $document = Join-Path $fixture "$directory/GUIDE.md"
+                Set-Content $document -Value 'REPLACE-ME'
+                if ($directory -eq '.agents') { & git -C $fixture add -f -- '.agents/GUIDE.md' }
+                $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $fixture 2>&1)
+                $LASTEXITCODE | Should -Not -Be 0
+                $output -join "`n" | Should -Match 'GUIDE\.md.*Unresolved placeholder'
+                Set-Content $document -Value "# Guide`nMaintained content."
+            }
+        }
+
+        It 'checks both Git documents whose names differ only by case' {
+            $fixture = Join-Path $TestDrive 'case-distinct-docs'
+            New-Item -ItemType Directory -Path $fixture | Out-Null
+            Set-Content (Join-Path $fixture 'Guide.md') -Value "# Guide`nMaintained content."
+            if (Test-Path (Join-Path $fixture 'guide.md')) {
+                Set-ItResult -Skipped -Because 'The fixture filesystem is case-insensitive.'
+                return
+            }
+            Copy-Item (Join-Path $script:downstreamTempRoot 'README.md') $fixture
+            Copy-Item (Join-Path $script:downstreamTempRoot 'governance.config.json') $fixture
+            Set-Content (Join-Path $fixture 'guide.md') -Value 'REPLACE-ME'
+            & git init -q $fixture
+            & git -C $fixture add -- Guide.md guide.md
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $fixture 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'guide\.md.*Unresolved placeholder'
+        }
+
         It 'allows unfilled GitHub templates but still checks other GitHub documents' {
             $github = Join-Path $script:downstreamTempRoot '.github'
             New-Item -ItemType Directory -Path $github -Force | Out-Null

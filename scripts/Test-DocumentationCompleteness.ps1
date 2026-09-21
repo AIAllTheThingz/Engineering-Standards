@@ -213,7 +213,24 @@ foreach ($rel in $authoritative) {
     }
 }
 
-$allMarkdown = Get-ChildItem -LiteralPath $root -Filter '*.md' -Recurse -File -Force | Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
+$inGit = $false
+if (Get-Command git -ErrorAction SilentlyContinue) {
+    $null = & git -C $root rev-parse --is-inside-work-tree 2>$null
+    $inGit = $LASTEXITCODE -eq 0
+}
+if ($inGit) {
+    $paths = @(& git -C $root ls-files --cached --others --exclude-standard -z) -join "`n"
+    if ($LASTEXITCODE -ne 0) { throw 'Unable to enumerate repository documentation with Git.' }
+    $allMarkdown = foreach ($relativePath in ($paths -split "`0")) {
+        if ($relativePath -match '\.md$') {
+            $fullPath = Join-Path $root $relativePath
+            if (Test-Path -LiteralPath $fullPath -PathType Leaf) { Get-Item -LiteralPath $fullPath -Force }
+        }
+    }
+}
+else {
+    $allMarkdown = Get-ChildItem -LiteralPath $root -Filter '*.md' -Recurse -File -Force | Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
+}
 foreach ($file in $allMarkdown) {
     $rel = [System.IO.Path]::GetRelativePath($root, $file.FullName).Replace('\','/')
     $text = Get-Content -LiteralPath $file.FullName -Raw

@@ -126,6 +126,24 @@ function script:Invoke-DownstreamValidation {
 }
 
 Describe 'Reusable governance workflow trust boundaries' {
+    It 'reports malformed manifest evidence through Contract: <Member> <Shape>' -ForEach @(
+        foreach ($member in @('evidence','local','completion')) {
+            foreach ($shape in @('missing','wrong type')) { @{ Member = $member; Shape = $shape } }
+        }
+    ) {
+        $caller = New-StructuredDownstreamFixture -Name ([guid]::NewGuid().ToString())
+        $path = Join-Path $caller 'project-manifest.json'
+        $manifest = Get-Content $path -Raw | ConvertFrom-Json -AsHashtable
+        $parent = switch ($Member) { evidence { $manifest }; local { $manifest.evidence }; completion { $manifest.evidence.local } }
+        if ($Shape -eq 'missing') { $parent.Remove($Member) } else { $parent[$Member] = 42 }
+        $manifest | ConvertTo-Json -Depth 30 | Set-Content $path
+        $result = Invoke-DownstreamValidation -CallerRoot $caller -RepositoryOwnerType User
+        $result.ExitCode | Should -Not -Be 0
+        $report = Get-Content (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
+        @($report.results | Where-Object name -eq 'BootstrapValidation').Count | Should -Be 0
+        ($report.results | Where-Object name -eq 'Contract').status | Should -Be 'Failed'
+    }
+
     It 'accepts trusted User owner type for schema version 1.2.0' {
         $caller = New-StructuredDownstreamFixture -Name 'structured-user-owner'
         $result = Invoke-DownstreamValidation -CallerRoot $caller -RepositoryOwnerType User

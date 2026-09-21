@@ -53,6 +53,10 @@ If a repository still emits `1.0.0` evidence while the central generators now em
 
 Documentation completeness fails when required documents are too shallow, missing required concepts, contain empty headings, include unresolved placeholders outside templates, or use fake validation commands.
 
+In a Git worktree, general Markdown discovery includes tracked and unignored files, including hidden repository content. Ignored dependency directories are excluded unless their documents are tracked. Explicitly required documents are checked regardless of ignore rules. Outside Git, discovery scans the directory tree except Git metadata.
+
+A malformed manifest evidence path is reported by Contract validation in the aggregate report. Missing or incorrectly typed evidence members do not prevent the orchestrator from starting Contract validation.
+
 Heading-like lines inside raw HTML blocks such as `<pre>` and `<div>` are not Markdown sections. Their content remains available as section body text, and literal fence markers inside the HTML do not hide subsequent Markdown sections.
 
 Unfilled pull request templates are exempt from the general empty-heading and placeholder scans in the root, `docs/`, and `.github/`, either as `pull_request_template.md` or Markdown files directly inside `PULL_REQUEST_TEMPLATE/`. Markdown issue templates under `.github/ISSUE_TEMPLATE/` share these exemptions. A template explicitly listed in `requiredDocumentationPaths` still receives the full required-document and placeholder checks.

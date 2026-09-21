@@ -425,7 +425,15 @@ foreach ($disabledControl in @($disabledMandatoryControls)) {
 }
 
 $workflowArchitectureSha = if ($ExpectedReusableWorkflowSha) { $ExpectedReusableWorkflowSha } else { $StandardsWorkflowSha }
-$completionEvidencePath = if ($manifest.schemaVersion -eq '1.2.0') { [string]$manifest.evidence.local.completion } else { 'evidence/local-completion-result.json' }
+$completionEvidencePath = 'evidence/local-completion-result.json'
+if ($manifest.schemaVersion -eq '1.2.0') {
+    $candidate = $manifest
+    foreach ($member in @('evidence','local','completion')) {
+        $candidate = if ($candidate -is [System.Collections.IDictionary]) { Get-JsonMemberValue -InputObject $candidate -Name $member } else { $null }
+    }
+    # Contract reports malformed manifest members; bootstrap must still produce the aggregate.
+    if ($candidate -is [string] -and -not [string]::IsNullOrWhiteSpace($candidate)) { $completionEvidencePath = $candidate }
+}
 $toolArguments = @{
     Contract = @('-Path',$projectRoot,'-ExpectedRepository',$CallerRepository,'-ExpectedStandardsRepository',$StandardsRepository,'-RepositoryOwnerType',$RepositoryOwnerType,'-ExpectedWorkflowInterfaceVersion','1.0.0','-ExpectedWorkflowProfile',$validationProfile) + $(if ($StandardsWorkflowSha) { @('-ExpectedGovernanceCommitSha',$StandardsWorkflowSha) } else { @() }) + $(if ($isMaintainerProfile) { @('-ExpectedRequiredCheckName','Governance / Governance validation') } else { @() })
     AgentStandards = @('-Path',$projectRoot)
