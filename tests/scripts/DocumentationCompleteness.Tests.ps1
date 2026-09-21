@@ -1,4 +1,15 @@
 Describe 'Documentation completeness' {
+    Context 'maintained downstream examples' {
+        It 'validates configured documentation for <ExampleName>' -ForEach @(
+            Get-ChildItem "$PSScriptRoot/../../examples" -Filter governance.config.json -Recurse | ForEach-Object {
+                @{ ExampleName = $_.Directory.Name; ExamplePath = $_.Directory.FullName }
+            }
+        ) {
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $ExamplePath 2>&1)
+            $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
+        }
+    }
+
     Context 'repository documents' {
         It 'passes for the rebuilt repository' {
             & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path "$PSScriptRoot/../.."
