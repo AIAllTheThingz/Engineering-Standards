@@ -841,7 +841,7 @@ function Test-GovernanceJsonDocument {
                 else {
                     foreach ($field in @('runId','runAttempt','artifactId')) {
                         $value = Get-JsonMemberValue -InputObject $details -Name $field
-                        if ($value -is [bool] -or $value -is [array] -or [string]$value -cnotmatch '\A[1-9][0-9]*\z') {
+                        if (($value -isnot [int] -and $value -isnot [long] -and $value -isnot [bigint]) -or $value -le 0) {
                             $results.Add((New-ValidationResult -Status Failed -Message "GitHubArtifact details.$field must be a positive integer." -Path $Path))
                         }
                     }

@@ -242,6 +242,11 @@ Describe 'Validate evidence action' {
             @{ Name = 'empty'; Details = @{} }
             @{ Name = 'arbitrary'; Details = @{ note = 'verified' } }
             @{ Name = 'array'; Details = @('verified') }
+            foreach ($field in @('runId','runAttempt','artifactId')) {
+                $details = @{ runId = 123; runAttempt = 1; artifactId = 456; branch = '1/merge'; artifactName = 'governance-evidence-123'; artifactSha256 = ('a' * 64) }
+                $details[$field] = [string]$details[$field]
+                @{ Name = "string $field"; Details = $details }
+            }
             foreach ($field in @('runId','runAttempt','artifactId','branch','artifactName','artifactSha256')) {
                 $details = @{ runId = 123; runAttempt = 1; artifactId = 456; branch = '1/merge'; artifactName = 'governance-evidence-123'; artifactSha256 = ('a' * 64) }
                 $details.Remove($field)

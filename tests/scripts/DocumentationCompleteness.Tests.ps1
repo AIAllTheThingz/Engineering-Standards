@@ -101,7 +101,31 @@ Describe 'Documentation completeness' {
             $LASTEXITCODE | Should -Be 0
         }
 
-        It 'allows the unfilled PR template but still checks other GitHub documents' {
+        It 'accepts headings indented by <Spaces> spaces and rejects empty indented sections' -ForEach @(
+            @{ Spaces = 1 }, @{ Spaces = 2 }, @{ Spaces = 3 }
+        ) {
+            $indent = ' ' * $Spaces
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            $path = Join-Path $script:downstreamTempRoot 'README.md'
+            Set-Content $path -Value "${indent}# Project`n$body`n${indent}## Usage`nRun the command.`n${indent}## Checks`nVerify the result."
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot
+            $LASTEXITCODE | Should -Be 0
+            Add-Content $path -Value "${indent}## Empty`n<!-- instructions -->"
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'README\.md.*empty heading'
+        }
+
+        It 'does not count indented code-sample headings as sections' {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            $content = '# Project', $body, '```', ' ## Example one', 'commands', '   ## Example two', 'commands', '```'
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value ($content -join "`n")
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'README\.md.*too few meaningful sections'
+        }
+
+        It 'allows unfilled GitHub templates but still checks other GitHub documents' {
             $github = Join-Path $script:downstreamTempRoot '.github'
             New-Item -ItemType Directory -Path $github -Force | Out-Null
             if ($IsWindows) {
@@ -112,6 +136,9 @@ Describe 'Documentation completeness' {
             New-Item -ItemType Directory -Path $gitMetadata -Force | Out-Null
             Set-Content (Join-Path $gitMetadata 'internal.md') -Value '# Internal metadata is not repository documentation'
             Set-Content (Join-Path $github 'pull_request_template.md') -Value "## Summary`n<!-- Fill in the summary. -->"
+            $issueTemplates = Join-Path $github 'ISSUE_TEMPLATE'
+            New-Item -ItemType Directory -Path $issueTemplates -Force | Out-Null
+            Set-Content (Join-Path $issueTemplates 'bug_report.md') -Value "## Steps to reproduce`n<!-- Fill in the steps. -->"
             & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot
             $LASTEXITCODE | Should -Be 0
             Set-Content (Join-Path $github 'GUIDE.md') -Value "## Usage`n<!-- hidden body -->"

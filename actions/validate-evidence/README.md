@@ -29,7 +29,7 @@ This action validates completion evidence. It checks schema-required fields, sem
 - `0`: evidence validation passed.
 - `1`: evidence is missing, malformed, contradictory, unsafe, or inconsistent with artifacts.
 
-Local hosted outcomes marked `Passed` or `Failed` require `GitHubArtifact` details with positive integer `runId`, `runAttempt`, and `artifactId`; nonblank `branch` and `artifactName`; and a 64-character hexadecimal `artifactSha256`. The producer must independently download and verify the artifact. These offline metadata checks do not authenticate a GitHub run or replace artifact verification.
+Local hosted outcomes marked `Passed` or `Failed` require `GitHubArtifact` details with positive JSON integer `runId`, `runAttempt`, and `artifactId` (numeric strings are rejected); nonblank `branch` and `artifactName`; and a 64-character hexadecimal `artifactSha256`. The producer must independently download and verify the artifact. These offline metadata checks do not authenticate a GitHub run or replace artifact verification.
 
 ## Evidence Rules
 

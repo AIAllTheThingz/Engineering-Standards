@@ -103,7 +103,7 @@ function Hide-FencedMarkdownHeadings {
             if ($line -match ('^ {0,3}' + [regex]::Escape($fence[0]) + '{' + $fence.Length + ',}\s*$')) {
                 $fence = $null
             }
-            $line -replace '^#', 'code #'
+            $line -replace '^ {0,3}#', 'code #'
         }
     }
     $lines -join "`n"
@@ -111,7 +111,7 @@ function Hide-FencedMarkdownHeadings {
 
 function Get-MarkdownHeadingCount {
     param([Parameter(Mandatory)][string]$Text)
-    ([regex]::Matches((Hide-FencedMarkdownHeadings -Text $Text), '(?m)^#{1,3}\s+\S')).Count
+    ([regex]::Matches((Hide-FencedMarkdownHeadings -Text $Text), '(?m)^ {0,3}#{1,3}[ \t]+\S')).Count
 }
 
 function Test-EmptyMarkdownHeading {
@@ -123,11 +123,11 @@ function Test-EmptyMarkdownHeading {
     $localResults = [System.Collections.Generic.List[object]]::new()
     $lines = (Hide-FencedMarkdownHeadings -Text $Text) -split "`r?`n"
     for ($i = 0; $i -lt $lines.Count; $i++) {
-        if ($lines[$i] -match '^(#{1,3})\s+\S') {
+        if ($lines[$i] -match '^ {0,3}(#{1,3})[ \t]+\S') {
             $level = $Matches[1].Length
             $hasBody = $false
             for ($j = $i + 1; $j -lt $lines.Count; $j++) {
-                if ($lines[$j] -match '^(#{1,3})\s+\S') {
+                if ($lines[$j] -match '^ {0,3}(#{1,3})[ \t]+\S') {
                     $nextLevel = $Matches[1].Length
                     if ($nextLevel -le $level) { break }
                     $hasBody = $true
@@ -204,8 +204,8 @@ foreach ($file in $allMarkdown) {
     if ($rel -notlike 'templates/*' -and $text -match '(?i)template only|echo tests configured|echo lint configured|REPLACE-ME|placeholder-only') {
         $results.Add((New-ValidationResult -Status Failed -Message 'Unresolved placeholder or fake command found.' -Path $rel))
     }
-    # The PR form intentionally has unfilled sections; submitted bodies have a dedicated validator.
-    if ($rel -notlike 'templates/*' -and $rel -ne '.github/pull_request_template.md') {
+    # GitHub forms intentionally have unfilled sections; required authoritative documents are checked above.
+    if ($rel -notlike 'templates/*' -and $rel -ne '.github/pull_request_template.md' -and $rel -notlike '.github/ISSUE_TEMPLATE/*') {
         foreach ($item in @(Test-EmptyMarkdownHeading -Text $text -RelativePath $rel)) { $results.Add($item) }
     }
 }
