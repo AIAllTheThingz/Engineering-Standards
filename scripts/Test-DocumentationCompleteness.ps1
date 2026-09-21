@@ -81,7 +81,7 @@ function Get-MarkdownHeadingCount {
 
 function Test-EmptyMarkdownHeading {
     param(
-        [Parameter(Mandatory)][string]$Text,
+        [Parameter(Mandatory)][AllowEmptyString()][string]$Text,
         [Parameter(Mandatory)][string]$RelativePath
     )
 
@@ -115,7 +115,8 @@ function Test-EmptyMarkdownHeading {
 function Test-AuthoritativeDocument {
     param(
         [Parameter(Mandatory)][string]$RelativePath,
-        [Parameter(Mandatory)][string]$FullPath
+        [Parameter(Mandatory)][string]$FullPath,
+        [switch]$Downstream
     )
 
     $localResults = [System.Collections.Generic.List[object]]::new()
@@ -125,14 +126,21 @@ function Test-AuthoritativeDocument {
     }
 
     $text = Get-Content -LiteralPath $FullPath -Raw
+    if ([string]::IsNullOrWhiteSpace($text)) {
+        $localResults.Add((New-ValidationResult -Status Failed -Message 'Required document is empty.' -Path $RelativePath))
+        return @($localResults)
+    }
     $words = Get-WordCount -Text $text
     $headings = Get-MarkdownHeadingCount -Text $text
     $requiredTerms = @('MUST','Validation','Evidence','Exception','Related')
+    $minimumWords = if ($Downstream) { 100 } else { 300 }
+    $minimumHeadings = if ($Downstream) { 3 } elseif ($RelativePath -eq 'README.md') { 0 } else { 5 }
+    if ($Downstream) { $requiredTerms = @() }
 
-    if ($words -lt 300) {
+    if ($words -lt $minimumWords) {
         $localResults.Add((New-ValidationResult -Status Failed -Message "Document is too shallow for an authoritative file ($words words)." -Path $RelativePath))
     }
-    if ($headings -lt 5 -and $RelativePath -ne 'README.md') {
+    if ($headings -lt $minimumHeadings) {
         $localResults.Add((New-ValidationResult -Status Failed -Message "Document has too few meaningful sections ($headings headings)." -Path $RelativePath))
     }
     foreach ($term in $requiredTerms) {
@@ -147,14 +155,7 @@ function Test-AuthoritativeDocument {
 foreach ($rel in $authoritative) {
     try {
         $fullPath = Resolve-SafePath -Root $root -ChildPath $rel -AllowMissingLeaf
-        if ($isDownstream) {
-            if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
-                $results.Add((New-ValidationResult -Status Failed -Message 'Required documentation is missing.' -Path $rel))
-            }
-        }
-        else {
-            foreach ($item in @(Test-AuthoritativeDocument -RelativePath $rel -FullPath $fullPath)) { $results.Add($item) }
-        }
+        foreach ($item in @(Test-AuthoritativeDocument -RelativePath $rel -FullPath $fullPath -Downstream:$isDownstream)) { $results.Add($item) }
     }
     catch {
         $results.Add((New-ValidationResult -Status Failed -Message $_.Exception.Message -Path $rel))

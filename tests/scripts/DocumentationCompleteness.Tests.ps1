@@ -10,6 +10,9 @@ Describe 'Documentation completeness' {
         BeforeAll {
             $script:downstreamTempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("downstream-doc-tests-" + [guid]::NewGuid())
             New-Item -ItemType Directory -Path $script:downstreamTempRoot -Force | Out-Null
+        }
+
+        BeforeEach {
             Copy-Item -LiteralPath "$PSScriptRoot/../../README.md" -Destination (Join-Path $script:downstreamTempRoot 'README.md')
             @{ workflowProfile = 'downstream'; requiredDocumentationPaths = @('README.md') } |
                 ConvertTo-Json -Depth 10 |
@@ -34,6 +37,25 @@ Describe 'Documentation completeness' {
             $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
             $LASTEXITCODE | Should -Not -Be 0
             $output -join "`n" | Should -Match 'MISSING\.md.*missing'
+        }
+
+        It 'rejects downstream <Name> content' -ForEach @(
+            @{ Name = 'empty'; Content = '' }
+            @{ Name = 'whitespace'; Content = '   ' }
+            @{ Name = 'one-line'; Content = 'See the administrator.' }
+            @{ Name = 'headings-only'; Content = "# Project`n## Usage`n## Checks" }
+        ) {
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value $Content
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'README\.md.*(empty|shallow)'
+        }
+
+        It 'accepts substantive downstream documentation without central policy vocabulary' {
+            $body = 'Install the application and configure its settings before running the documented command. Check the output and contact the maintainer if execution fails. ' * 2
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value "# Project`n$body`n## Usage`n$body`n## Checks`n$body"
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot
+            $LASTEXITCODE | Should -Be 0
         }
     }
 

@@ -49,6 +49,8 @@ The manifest is intentionally concise. It should identify the project clearly wi
 
 The governance config MUST NOT be used to remove mandatory controls silently. If a mandatory control is disabled, the change requires an approved exception and compensating control.
 
+For the downstream profile, each required document must contain at least 100 words and three headings (levels 1–3), with meaningful section bodies. Empty files, shallow stubs, and unresolved placeholders fail. Central authoritative documents retain their stricter depth and required-concept checks.
+
 ## Governance Config Fields
 
 | Field | Required | Meaning | Review expectation |

@@ -149,7 +149,10 @@ Describe 'Validate evidence action' {
                     blockedReason = $null
                     notApplicableRationale = $null
                     details = [ordered]@{
-                        successRunId = 123
+                        runId = 123
+                        runAttempt = 1
+                        branch = '1/merge'
+                        artifactId = 1234
                         artifactName = 'governance-evidence-123'
                         artifactSha256 = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
                     }
@@ -198,7 +201,7 @@ Describe 'Validate evidence action' {
                     runtime = 'GitHub Actions'; toolVersion = '7.x'; exitCode = 1
                     summary = 'Hosted governance validation failed at a mandatory check.'; warnings = @()
                     failureReason = 'Documentation completeness failed.'; blockedReason = $null; notApplicableRationale = $null
-                    details = [ordered]@{ runId = 456; artifactName = 'governance-evidence-456'; artifactSha256 = ('a' * 64) }
+                    details = [ordered]@{ runId = 456; runAttempt = 1; branch = '1/merge'; artifactId = 4567; artifactName = 'governance-evidence-456'; artifactSha256 = ('a' * 64) }
                 }
             )
             $evidence | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $evidencePath
@@ -235,6 +238,43 @@ Describe 'Validate evidence action' {
             $LASTEXITCODE | Should -Be 0
         }
 
+        It 'rejects malformed hosted artifact metadata: <Name>' -ForEach @(
+            @{ Name = 'empty'; Details = @{} }
+            @{ Name = 'arbitrary'; Details = @{ note = 'verified' } }
+            @{ Name = 'array'; Details = @('verified') }
+            foreach ($field in @('runId','runAttempt','artifactId','branch','artifactName','artifactSha256')) {
+                $details = @{ runId = 123; runAttempt = 1; artifactId = 456; branch = '1/merge'; artifactName = 'governance-evidence-123'; artifactSha256 = ('a' * 64) }
+                $details.Remove($field)
+                @{ Name = "missing $field"; Details = $details }
+            }
+            foreach ($invalid in @(@{ field = 'runId'; value = $true }, @{ field = 'runAttempt'; value = 0 }, @{ field = 'artifactId'; value = 1.5 }, @{ field = 'branch'; value = ' ' }, @{ field = 'artifactSha256'; value = 'invalid' })) {
+                $details = @{ runId = 123; runAttempt = 1; artifactId = 456; branch = '1/merge'; artifactName = 'governance-evidence-123'; artifactSha256 = ('a' * 64) }
+                $details[$invalid.field] = $invalid.value
+                @{ Name = "invalid $($invalid.field)"; Details = $details }
+            }
+        ) {
+            Import-Module "$PSScriptRoot/../../scripts/GovernanceValidation.psm1" -Force
+            foreach ($hostedStatus in @('Passed','Failed')) {
+                & $script:NewTempEvidence -Status Failed -TestStatus Passed
+                $evidencePath = Join-Path $script:tempRoot 'completion-result.json'
+                $evidence = Get-Content $evidencePath -Raw | ConvertFrom-Json -AsHashtable
+                $evidence.executionContext = 'Local'
+                $evidence.tests[0].name = 'GitHub-hosted workflow execution'
+                $evidence.tests[0].status = $hostedStatus
+                $evidence.tests[0].evidenceSource = 'GitHubArtifact'
+                $evidence.tests[0].details = $Details
+                if ($hostedStatus -eq 'Failed') {
+                    $evidence.tests[0].exitCode = 1
+                    $evidence.tests[0].failureReason = 'Hosted enforcement failed.'
+                }
+                $evidence | ConvertTo-Json -Depth 30 | Set-Content $evidencePath
+                $results = @(Test-GovernanceJsonDocument -Path $evidencePath -Kind completion-result)
+                @($results | Where-Object { $_.status -eq 'Failed' -and $_.message -match 'GitHubArtifact' }).Count | Should -BeGreaterThan 0
+                & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+                $LASTEXITCODE | Should -Not -Be 0
+            }
+        }
+
         It 'accepts a repository-root evidencePath' {
             & $script:NewTempEvidence -ArtifactPath 'report.json'
             @{ evidencePath = '.' } |
@@ -255,7 +295,7 @@ Describe 'Validate evidence action' {
             $evidence.tests[0].name = 'GitHub-hosted workflow execution'
             $evidence.tests[0].status = 'Failed'
             $evidence.tests[0].evidenceSource = 'GitHubArtifact'
-            $evidence.tests[0].details = [ordered]@{ runId = 789; artifactName = 'governance-evidence-789'; artifactSha256 = ('b' * 64) }
+            $evidence.tests[0].details = [ordered]@{ runId = 789; runAttempt = 1; branch = '1/merge'; artifactId = 7890; artifactName = 'governance-evidence-789'; artifactSha256 = ('b' * 64) }
             $evidence.tests[0].failureReason = 'Hosted enforcement failed.'
             $evidence.tests[0].exitCode = 1
             $evidence | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $evidencePath

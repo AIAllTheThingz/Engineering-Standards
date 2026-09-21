@@ -119,13 +119,6 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
         elseif ($githubExecution[0].status -notin @('NotRun','Passed','Failed')) {
             $results.Add((New-ValidationResult -Status Failed -Message 'Local evidence must record GitHub-hosted workflow execution as NotRun or externally verified Passed or Failed.' -Path $EvidencePath))
         }
-        elseif ($githubExecution[0].status -in @('Passed','Failed')) {
-            $evidenceSource = Get-JsonMemberValue -InputObject $githubExecution[0] -Name 'evidenceSource'
-            $details = Get-JsonMemberValue -InputObject $githubExecution[0] -Name 'details'
-            if ($evidenceSource -ne 'GitHubArtifact' -or $null -eq $details) {
-                $results.Add((New-ValidationResult -Status Failed -Message 'Local evidence may mark GitHub-hosted workflow execution Passed or Failed only when backed by GitHubArtifact details.' -Path $EvidencePath))
-            }
-        }
         if ($evidence.status -eq 'Passed') {
             $results.Add((New-ValidationResult -Status Failed -Message 'Local evidence cannot be overall Passed when GitHub-hosted execution is mandatory.' -Path $EvidencePath))
         }

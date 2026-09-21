@@ -835,8 +835,23 @@ function Test-GovernanceJsonDocument {
             elseif ($githubExecution[0].status -in @('Passed','Failed')) {
                 $evidenceSource = Get-JsonMemberValue -InputObject $githubExecution[0] -Name 'evidenceSource'
                 $details = Get-JsonMemberValue -InputObject $githubExecution[0] -Name 'details'
-                if ($evidenceSource -ne 'GitHubArtifact' -or $null -eq $details) {
+                if ($evidenceSource -ne 'GitHubArtifact' -or $details -isnot [System.Collections.IDictionary]) {
                     $results.Add((New-ValidationResult -Status Failed -Message 'Local evidence may mark GitHub-hosted workflow execution Passed or Failed only when backed by GitHubArtifact details.' -Path $Path))
+                }
+                else {
+                    foreach ($field in @('runId','runAttempt','artifactId')) {
+                        $value = Get-JsonMemberValue -InputObject $details -Name $field
+                        if ($value -is [bool] -or $value -is [array] -or [string]$value -cnotmatch '\A[1-9][0-9]*\z') {
+                            $results.Add((New-ValidationResult -Status Failed -Message "GitHubArtifact details.$field must be a positive integer." -Path $Path))
+                        }
+                    }
+                    foreach ($field in @('branch','artifactName','artifactSha256')) {
+                        $value = Get-JsonMemberValue -InputObject $details -Name $field
+                        if ($value -isnot [string] -or [string]::IsNullOrWhiteSpace($value) -or
+                            ($field -eq 'artifactSha256' -and $value -notmatch '\A[a-fA-F0-9]{64}\z')) {
+                            $results.Add((New-ValidationResult -Status Failed -Message "GitHubArtifact details.$field is missing or invalid." -Path $Path))
+                        }
+                    }
                 }
             }
             if ($json.status -eq 'Passed') {
