@@ -57,6 +57,18 @@ Describe 'Documentation completeness' {
             & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot
             $LASTEXITCODE | Should -Be 0
         }
+
+        It 'does not count code-sample headings as downstream sections: <Fence>' -ForEach @(
+            @{ Fence = '```'; Close = '```' }
+            @{ Fence = '~~~'; Close = '~~~~' }
+            @{ Fence = '````'; Close = '' }
+        ) {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value "# Project`n$body`n$Fence`n## Example one`ncommands`n## Example two`ncommands`n$Close"
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'README\.md.*too few meaningful sections'
+        }
     }
 
     Context 'invalid documentation' {

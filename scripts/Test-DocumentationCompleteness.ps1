@@ -74,9 +74,28 @@ function Get-WordCount {
     @($Text -split '\s+' | Where-Object { $_ }).Count
 }
 
+function Hide-FencedMarkdownHeadings {
+    param([AllowEmptyString()][string]$Text)
+    $fence = $null
+    $lines = foreach ($line in ($Text -split "`r?`n")) {
+        if ($null -eq $fence) {
+            if ($line -match '^ {0,3}(`{3,}|~{3,})') { $fence = $Matches[1] }
+            $line
+        }
+        else {
+            # Code remains section content, but its headings are not document sections.
+            if ($line -match ('^ {0,3}' + [regex]::Escape($fence[0]) + '{' + $fence.Length + ',}\s*$')) {
+                $fence = $null
+            }
+            $line -replace '^#', 'code #'
+        }
+    }
+    $lines -join "`n"
+}
+
 function Get-MarkdownHeadingCount {
     param([Parameter(Mandatory)][string]$Text)
-    ([regex]::Matches($Text, '(?m)^#{1,3}\s+\S')).Count
+    ([regex]::Matches((Hide-FencedMarkdownHeadings -Text $Text), '(?m)^#{1,3}\s+\S')).Count
 }
 
 function Test-EmptyMarkdownHeading {
@@ -86,7 +105,7 @@ function Test-EmptyMarkdownHeading {
     )
 
     $localResults = [System.Collections.Generic.List[object]]::new()
-    $lines = $Text -split "`r?`n"
+    $lines = (Hide-FencedMarkdownHeadings -Text $Text) -split "`r?`n"
     for ($i = 0; $i -lt $lines.Count; $i++) {
         if ($lines[$i] -match '^(#{1,3})\s+\S') {
             $level = $Matches[1].Length
