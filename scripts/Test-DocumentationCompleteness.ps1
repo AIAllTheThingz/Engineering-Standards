@@ -118,12 +118,23 @@ function Hide-FencedMarkdownHeadings {
     $document = [Markdig.Markdown]::Parse($Text, $markdownPipeline, $null)
     $markupNodes = [Markdig.Syntax.MarkdownObjectExtensions]::Descendants($document) | Where-Object {
         ($_ -is [Markdig.Syntax.Inlines.HtmlInline] -and $_.Tag.StartsWith('<!--')) -or
-        ($_ -is [Markdig.Syntax.HtmlBlock]) -or ($_ -is [Markdig.Extensions.Yaml.YamlFrontMatterBlock])
+        ($_ -is [Markdig.Syntax.HtmlBlock]) -or ($_ -is [Markdig.Extensions.Yaml.YamlFrontMatterBlock]) -or
+        ($_ -is [Markdig.Syntax.CodeBlock])
     } | Sort-Object { $_.Span.Start } -Descending
     foreach ($node in $markupNodes) {
-        $source = $Text.Substring($node.Span.Start, $node.Span.Length)
+        $end = $node.Span.End
+        if ($node -is [Markdig.Syntax.CodeBlock] -and $node.Lines.Count -gt 0) {
+            # Unclosed fences may have only their opener in Span; parsed lines retain their source ends.
+            $end = [Math]::Max($end, $node.Lines.Lines[$node.Lines.Count - 1].Slice.End)
+        }
+        $length = $end - $node.Span.Start + 1
+        $source = $Text.Substring($node.Span.Start, $length)
         $visible = if ($node -is [Markdig.Extensions.Yaml.YamlFrontMatterBlock]) {
             $source -replace '[^\r\n]', ' '
+        }
+        elseif ($node -is [Markdig.Syntax.CodeBlock]) {
+            # Parsed spans include fenced code inside lists; code remains section content.
+            $source -replace '(?m)^( {0,3})#', '$1code #'
         }
         elseif ($node -is [Markdig.Syntax.HtmlBlock] -and $node.Type -ne [Markdig.Syntax.HtmlBlockType]::Comment) {
             # Raw HTML remains section content, but cannot open Markdown headings or fences.
@@ -133,7 +144,7 @@ function Hide-FencedMarkdownHeadings {
             param($match)
             $match.Value -replace '[^\r\n]', ' '
         }) }
-        $Text = $Text.Remove($node.Span.Start, $node.Span.Length).Insert($node.Span.Start, $visible)
+        $Text = $Text.Remove($node.Span.Start, $length).Insert($node.Span.Start, $visible)
     }
     # Normalize titles from parsed text so both section counting and empty-title checks agree.
     $document = [Markdig.Markdown]::Parse($Text, $markdownPipeline, $null)
@@ -155,21 +166,7 @@ function Hide-FencedMarkdownHeadings {
             $Text = $Text.Remove($heading.Span.Start, $heading.Span.Length).Insert($heading.Span.Start, ('#' * $heading.Level) + ' ' + $visibleTitle)
         }
     }
-    $fence = $null
-    $lines = foreach ($line in ($Text -split "`r?`n")) {
-        if ($null -eq $fence) {
-            if ($line -match '^ {0,3}(`{3,}|~{3,})') { $fence = $Matches[1] }
-            $line
-        }
-        else {
-            # Code remains section content, but its headings are not document sections.
-            if ($line -match ('^ {0,3}' + [regex]::Escape($fence[0]) + '{' + $fence.Length + ',}\s*$')) {
-                $fence = $null
-            }
-            $line -replace '^ {0,3}#', 'code #'
-        }
-    }
-    $lines -join "`n"
+    $Text
 }
 
 function Get-MarkdownHeadingCount {

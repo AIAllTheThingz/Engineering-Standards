@@ -118,6 +118,23 @@ Describe 'Documentation completeness' {
             $output -join "`n" | Should -Match 'README\.md.*too few meaningful sections'
         }
 
+        It 'masks parsed code headings nested in <Name> lists' -ForEach @(
+            @{ Name = 'unordered'; Opener = '- ```'; Indent = '  '; Close = '```' }
+            @{ Name = 'ordered'; Opener = '1. ~~~'; Indent = '   '; Close = '~~~' }
+        ) {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            $path = Join-Path $script:downstreamTempRoot 'README.md'
+            $sample = "$Opener`n${Indent}## Example one`n${Indent}commands`n${Indent}## Example two`n${Indent}commands`n$Indent$Close"
+            Set-Content $path -Value "# Project`n$body`n`n$sample"
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 1
+            $output -join "`n" | Should -Match 'too few meaningful sections \(1 headings\)'
+            $sample = "$Opener`n${Indent}##`n$Indent$Close"
+            Set-Content $path -Value "# Project`n$body`n`n## Usage`n$sample`n`n## Checks`nVerify results."
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
+        }
+
         It 'rejects hidden section structure in HTML comments: <Name>' -ForEach @(
             @{ Name = 'multiline'; Content = "<!--`n## Hidden one`ntext`n## Hidden two`ntext`n-->" }
             @{ Name = 'unclosed'; Content = "<!--`n## Hidden one`ntext`n## Hidden two`ntext" }
