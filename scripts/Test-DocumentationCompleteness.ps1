@@ -126,11 +126,16 @@ function Test-EmptyMarkdownHeading {
     $localResults = [System.Collections.Generic.List[object]]::new()
     $lines = (Hide-FencedMarkdownHeadings -Text $Text) -split "`r?`n"
     for ($i = 0; $i -lt $lines.Count; $i++) {
-        if ($lines[$i] -match '^ {0,3}(#{1,3})[ \t]+\S') {
+        if ($lines[$i] -match '^ {0,3}(#{1,3})(?:[ \t]+(.*))?$') {
             $level = $Matches[1].Length
+            $title = if ($Matches.ContainsKey(2)) { $Matches[2] -replace '(?:^|[ \t]+)#+[ \t]*$', '' } else { '' }
+            if ([string]::IsNullOrWhiteSpace($title)) {
+                $localResults.Add((New-ValidationResult -Status Failed -Message 'Document contains an empty heading title.' -Path $RelativePath))
+                break
+            }
             $hasBody = $false
             for ($j = $i + 1; $j -lt $lines.Count; $j++) {
-                if ($lines[$j] -match '^ {0,3}(#{1,3})[ \t]+\S') {
+                if ($lines[$j] -match '^ {0,3}(#{1,3})(?:[ \t]+.*)?$') {
                     $nextLevel = $Matches[1].Length
                     if ($nextLevel -le $level) { break }
                     $hasBody = $true

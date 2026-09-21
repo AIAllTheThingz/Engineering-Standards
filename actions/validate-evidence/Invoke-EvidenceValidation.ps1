@@ -21,6 +21,24 @@ Import-Module (Join-Path $PSScriptRoot '../../scripts/GovernanceValidation.psm1'
 $root = (Resolve-Path -LiteralPath $Path).Path
 $results = [System.Collections.Generic.List[object]]::new()
 
+function Resolve-ExistingEvidencePathCasing {
+    param([string]$RelativePath)
+    $current = $root
+    foreach ($segment in @($RelativePath -split '[\\/]' | Where-Object { $_ -and $_ -ne '.' })) {
+        # Ask the filesystem whether this spelling exists before resolving its stored name.
+        # Exact matches distinguish case-sensitive siblings; a unique alias supports insensitive volumes.
+        if (-not (Test-Path -LiteralPath (Join-Path $current $segment))) {
+            throw "Evidence path '$RelativePath' does not exist."
+        }
+        $entries = @(Get-ChildItem -LiteralPath $current -Force)
+        $match = @($entries | Where-Object { $_.Name -ceq $segment })
+        if ($match.Count -eq 0) { $match = @($entries | Where-Object { $_.Name -ieq $segment }) }
+        if ($match.Count -ne 1) { throw "Evidence path '$RelativePath' has ambiguous filesystem casing." }
+        $current = $match[0].FullName
+    }
+    $current
+}
+
 try {
     $full = Resolve-SafePath -Root $root -ChildPath $EvidencePath
 }
@@ -162,9 +180,9 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
                 throw "Artifact path '$($artifact.path)' must be repository-relative and must not traverse outside the repository."
             }
             $artifactPath = Resolve-SafePath -Root $root -ChildPath $artifact.path
-            $artifactFullPath = [System.IO.Path]::GetFullPath($artifactPath)
-            $artifactRootFullPath = [System.IO.Path]::GetFullPath($resolvedArtifactRoot).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
-            $pathComparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+            $artifactFullPath = Resolve-ExistingEvidencePathCasing -RelativePath $artifact.path
+            $artifactRootFullPath = (Resolve-ExistingEvidencePathCasing -RelativePath $artifactRoot).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+            $pathComparison = [StringComparison]::Ordinal
             $artifactRootBoundary = $artifactRootFullPath + [System.IO.Path]::DirectorySeparatorChar
             if (-not ($artifactFullPath.Equals($artifactRootFullPath, $pathComparison) -or $artifactFullPath.StartsWith($artifactRootBoundary, $pathComparison))) {
                 throw "Artifact path '$($artifact.path)' must be under the configured evidence directory '$artifactRoot'."

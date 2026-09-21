@@ -238,6 +238,37 @@ Describe 'Validate evidence action' {
             $LASTEXITCODE | Should -Be 0
         }
 
+        It 'accepts filesystem-supported case aliases for the configured evidence directory' {
+            & $script:NewTempEvidence -ArtifactPath 'Evidence/report.json'
+            if (-not (Test-Path -LiteralPath (Join-Path $script:tempRoot 'EVIDENCE/report.json'))) {
+                Set-ItResult -Skipped -Because 'This fixture filesystem is case-sensitive.'
+                return
+            }
+            @{ evidencePath = 'EVIDENCE' } | ConvertTo-Json | Set-Content (Join-Path $script:tempRoot 'governance.config.json')
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Be 0
+        }
+
+        It 'rejects a distinct case-sensitive sibling of the configured evidence directory' {
+            & $script:NewTempEvidence
+            if ($IsWindows) {
+                & fsutil.exe file setCaseSensitiveInfo $script:tempRoot enable 2>&1 | Out-Null
+                if ($LASTEXITCODE -ne 0) {
+                    Set-ItResult -Skipped -Because 'NTFS per-directory case sensitivity cannot be enabled in this environment.'
+                    return
+                }
+            }
+            if (Test-Path -LiteralPath (Join-Path $script:tempRoot 'Evidence')) {
+                Set-ItResult -Skipped -Because 'This fixture filesystem does not provide distinct case-sensitive siblings.'
+                return
+            }
+            New-Item -ItemType Directory -Path (Join-Path $script:tempRoot 'Evidence') | Out-Null
+            @{ evidencePath = 'Evidence' } | ConvertTo-Json | Set-Content (Join-Path $script:tempRoot 'governance.config.json')
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json' 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'must be under the configured evidence directory'
+        }
+
         It 'rejects malformed hosted artifact metadata: <Name>' -ForEach @(
             @{ Name = 'empty'; Details = @{} }
             @{ Name = 'arbitrary'; Details = @{ note = 'verified' } }

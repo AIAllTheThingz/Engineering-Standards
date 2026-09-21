@@ -101,6 +101,19 @@ Describe 'Documentation completeness' {
             $LASTEXITCODE | Should -Be 0
         }
 
+        It 'rejects a rendered-empty heading title: <Name>' -ForEach @(
+            @{ Name = 'comment only'; Heading = '## <!-- TODO -->' }
+            @{ Name = 'indented comment'; Heading = '  ### <!-- TODO -->' }
+            @{ Name = 'closing hashes'; Heading = '## <!-- TODO --> ##' }
+            @{ Name = 'marker only'; Heading = '##' }
+        ) {
+            Set-Content (Join-Path $script:downstreamTempRoot 'NOTES.md') -Value "$Heading`nVisible section body."
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'NOTES\.md.*empty heading title'
+            Remove-Item -LiteralPath (Join-Path $script:downstreamTempRoot 'NOTES.md')
+        }
+
         It 'preserves inline comment syntax literals: <Name>' -ForEach @(
             @{ Name = 'single backticks'; Literal = 'Use `<!--` to start a comment.' }
             @{ Name = 'multiple backticks'; Literal = 'Use ``<!-- `literal` `` to describe syntax.' }
