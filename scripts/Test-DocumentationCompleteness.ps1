@@ -18,6 +18,7 @@ Import-Module (Join-Path $PSScriptRoot 'GovernanceValidation.psm1') -Force
 $null = ConvertFrom-Markdown -InputObject 'Markdown parser initialization.'
 $markdownPipelineBuilder = [Markdig.MarkdownPipelineBuilder]::new()
 $markdownPipelineBuilder.PreciseSourceLocation = $true
+$null = [Markdig.MarkdownExtensions]::UseYamlFrontMatter($markdownPipelineBuilder)
 $markdownPipeline = $markdownPipelineBuilder.Build()
 
 $root = (Resolve-Path -LiteralPath $Path).Path
@@ -63,7 +64,14 @@ $configPath = Join-Path $root 'governance.config.json'
 if (Test-Path -LiteralPath $configPath -PathType Leaf) {
     try {
         $config = Read-JsonFile -Path $configPath
-        if ([string]$config.workflowProfile -ceq 'downstream') {
+        $profile = [string]$config['workflowProfile']
+        if ($config['schemaVersion'] -in @('1.0.0','1.1.0')) {
+            # Match the aggregate's canonical manifest and identity rule for legacy configs.
+            $manifestPath = Resolve-SafePath -Root $root -ChildPath 'project-manifest.json'
+            $manifest = Read-JsonFile -Path $manifestPath
+            $profile = if ($manifest.projectType -eq 'governance' -and $manifest.repository -eq 'AIAllTheThingz/Engineering-Standards') { 'standards-maintainer' } else { 'downstream' }
+        }
+        if ($profile -ceq 'downstream') {
             $isDownstream = $true
             $configuredDocumentation = @($config.requiredDocumentationPaths)
             if ($configuredDocumentation.Count -gt 0) {
@@ -83,14 +91,18 @@ function Get-WordCount {
 
 function Hide-FencedMarkdownHeadings {
     param([AllowEmptyString()][string]$Text)
+    $Text = $Text -replace '\r\n?', "`n"
     $document = [Markdig.Markdown]::Parse($Text, $markdownPipeline, $null)
-    $htmlNodes = [Markdig.Syntax.MarkdownObjectExtensions]::Descendants($document) | Where-Object {
+    $markupNodes = [Markdig.Syntax.MarkdownObjectExtensions]::Descendants($document) | Where-Object {
         ($_ -is [Markdig.Syntax.Inlines.HtmlInline] -and $_.Tag.StartsWith('<!--')) -or
-        ($_ -is [Markdig.Syntax.HtmlBlock])
+        ($_ -is [Markdig.Syntax.HtmlBlock]) -or ($_ -is [Markdig.Extensions.Yaml.YamlFrontMatterBlock])
     } | Sort-Object { $_.Span.Start } -Descending
-    foreach ($node in $htmlNodes) {
+    foreach ($node in $markupNodes) {
         $source = $Text.Substring($node.Span.Start, $node.Span.Length)
-        $visible = if ($node -is [Markdig.Syntax.HtmlBlock] -and $node.Type -ne [Markdig.Syntax.HtmlBlockType]::Comment) {
+        $visible = if ($node -is [Markdig.Extensions.Yaml.YamlFrontMatterBlock]) {
+            $source -replace '[^\r\n]', ' '
+        }
+        elseif ($node -is [Markdig.Syntax.HtmlBlock] -and $node.Type -ne [Markdig.Syntax.HtmlBlockType]::Comment) {
             # Raw HTML remains section content, but cannot open Markdown headings or fences.
             $source -replace '(?m)^( {0,3})(?=[#`~])', '$1\'
         }
@@ -103,7 +115,7 @@ function Hide-FencedMarkdownHeadings {
     # Normalize titles from parsed text so both section counting and empty-title checks agree.
     $document = [Markdig.Markdown]::Parse($Text, $markdownPipeline, $null)
     $headings = [Markdig.Syntax.MarkdownObjectExtensions]::Descendants($document) | Where-Object {
-        $_ -is [Markdig.Syntax.HeadingBlock] -and -not $_.IsSetext -and $_.Level -le 3
+        $_ -is [Markdig.Syntax.HeadingBlock] -and $_.Level -le 3
     } | Sort-Object { $_.Span.Start } -Descending
     foreach ($heading in $headings) {
         $title = foreach ($inline in [Markdig.Syntax.MarkdownObjectExtensions]::Descendants($heading.Inline)) {
@@ -113,6 +125,11 @@ function Hide-FencedMarkdownHeadings {
         }
         if ([string]::IsNullOrWhiteSpace($title -join '')) {
             $Text = $Text.Remove($heading.Span.Start, $heading.Span.Length).Insert($heading.Span.Start, ('#' * $heading.Level))
+        }
+        elseif ($heading.IsSetext) {
+            # Give underline-style headings the same checks; keep literal hashes from becoming closing markers.
+            $visibleTitle = ($title -join '') -replace '\r?\n', ' ' -replace '#', '\#'
+            $Text = $Text.Remove($heading.Span.Start, $heading.Span.Length).Insert($heading.Span.Start, ('#' * $heading.Level) + ' ' + $visibleTitle)
         }
     }
     $fence = $null

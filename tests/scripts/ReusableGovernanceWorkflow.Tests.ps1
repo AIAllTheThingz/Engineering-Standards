@@ -193,6 +193,26 @@ Describe 'Reusable governance workflow trust boundaries' {
         $report.results[0].target | Should -Be 'caller'
     }
 
+    It 'validates legacy <SchemaVersion> configured documentation through the aggregate' -ForEach @(
+        @{ SchemaVersion = '1.0.0' }
+        @{ SchemaVersion = '1.1.0' }
+    ) {
+        $caller = New-DownstreamFixture -Name "legacy-documentation-$SchemaVersion"
+        $configPath = Join-Path $caller 'governance.config.json'
+        $config = Get-Content $configPath -Raw | ConvertFrom-Json -AsHashtable
+        $config.schemaVersion = $SchemaVersion
+        $config.requiredDocumentationPaths = @('README.md')
+        $config.validationCategories += 'DocumentationCompleteness'
+        $config | ConvertTo-Json -Depth 20 | Set-Content $configPath
+        $body = 'Documented operational instructions and verification steps. ' * 25
+        Set-Content (Join-Path $caller 'README.md') -Value "# Project`n$body`n## Usage`n$body`n## Checks`n$body"
+        $result = Invoke-DownstreamValidation -CallerRoot $caller
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $report = Get-Content (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
+        $report.validationProfile | Should -Be 'downstream'
+        ($report.results | Where-Object name -eq 'DocumentationCompleteness').status | Should -Be 'Passed'
+    }
+
     It 'accepts empty downstream scanner configuration arrays' {
         $caller = New-DownstreamFixture -Name 'empty-scanner-configuration'
         $result = Invoke-DownstreamValidation -CallerRoot $caller

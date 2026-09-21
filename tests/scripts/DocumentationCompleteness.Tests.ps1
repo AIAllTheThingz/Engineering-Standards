@@ -50,6 +50,43 @@ Describe 'Documentation completeness' {
             $output -join "`n" | Should -Match 'MISSING\.md.*missing'
         }
 
+        It 'resolves legacy <SchemaVersion> documentation with maintainer identity <Maintainer>' -ForEach @(
+            foreach ($version in @('1.0.0','1.1.0')) {
+                foreach ($maintainer in @($false,$true)) { @{ SchemaVersion = $version; Maintainer = $maintainer } }
+            }
+        ) {
+            $config = Get-Content "$PSScriptRoot/../fixtures/valid/governance-config.json" -Raw | ConvertFrom-Json -AsHashtable
+            $config.schemaVersion = $SchemaVersion
+            $config.requiredDocumentationPaths = @('README.md')
+            $config | ConvertTo-Json -Depth 20 | Set-Content (Join-Path $script:downstreamTempRoot 'governance.config.json')
+            $manifest = Get-Content "$PSScriptRoot/../fixtures/valid/project-manifest.json" -Raw | ConvertFrom-Json -AsHashtable
+            $manifest.schemaVersion = $SchemaVersion
+            if ($Maintainer) { $manifest.repository = 'AIAllTheThingz/Engineering-Standards' }
+            $manifestPath = Join-Path $script:downstreamTempRoot 'project-manifest.json'
+            $manifest | ConvertTo-Json -Depth 20 | Set-Content $manifestPath
+            try {
+                $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+                if ($Maintainer) {
+                    $LASTEXITCODE | Should -Be 1
+                    $output -join "`n" | Should -Match 'governance/ORGANIZATION_CONTRACT\.md.*missing'
+                    $config.workflowProfile = 'downstream'
+                    $config.manifestPath = 'alternate-manifest.json'
+                    $config | ConvertTo-Json -Depth 20 | Set-Content (Join-Path $script:downstreamTempRoot 'governance.config.json')
+                    $manifest.repository = 'example-org/fixture'
+                    $manifest | ConvertTo-Json -Depth 20 | Set-Content (Join-Path $script:downstreamTempRoot 'alternate-manifest.json')
+                    $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+                    $LASTEXITCODE | Should -Be 1
+                    $output -join "`n" | Should -Match 'governance/ORGANIZATION_CONTRACT\.md.*missing'
+                }
+                else { $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n") }
+            }
+            finally {
+                Remove-Item -LiteralPath $manifestPath
+                $alternate = Join-Path $script:downstreamTempRoot 'alternate-manifest.json'
+                if (Test-Path -LiteralPath $alternate) { Remove-Item -LiteralPath $alternate }
+            }
+        }
+
         It 'rejects downstream <Name> content' -ForEach @(
             @{ Name = 'empty'; Content = '' }
             @{ Name = 'whitespace'; Content = '   ' }
@@ -144,6 +181,80 @@ Describe 'Documentation completeness' {
             Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value "# $Title`n$body`n## $Title`n$body`n### $Title`n$body"
             $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
             $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
+        }
+
+        It 'excludes YAML front matter from Setext headings and document words: <ClosingMarker>' -ForEach @(
+            @{ ClosingMarker = '---' }
+            @{ ClosingMarker = '...' }
+        ) {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            $metadata = "---`n# Metadata`n## More metadata`n### Further metadata`nsummary: $body`n$ClosingMarker`n"
+            $path = Join-Path $script:downstreamTempRoot 'README.md'
+            Set-Content $path -Value "$metadata`n# Project`nShort body."
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 1
+            $output -join "`n" | Should -Match 'too shallow'
+            $output -join "`n" | Should -Match 'too few meaningful sections \(1 headings\)'
+            Set-Content $path -Value "$metadata`nProject`n===`n$body`n`nUsage`n---`n$body`n`nChecks`n---`n$body"
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
+        }
+
+        It 'accepts substantive Setext sections: <Title>' -ForEach @(
+            @{ Title = 'Usage' }
+            @{ Title = "Multi`nline title" }
+            @{ Title = '`#`' }
+        ) {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value "$Title`n===`n$body`n`n$Title`n---`n$body`n`n$Title`n---`n$body"
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
+        }
+
+        It 'accepts mixed heading styles with <Ending> line endings' -ForEach @(
+            @{ Ending = 'LF'; Newline = "`n" }
+            @{ Ending = 'CRLF'; Newline = "`r`n" }
+            @{ Ending = 'CR'; Newline = "`r" }
+        ) {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            $lines = '# Project', $body, '', 'Usage', '---', $body, '', '### Checks', $body
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -NoNewline -Value ($lines -join $Newline)
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
+        }
+
+        It 'preserves word boundaries in multiline Setext titles' {
+            $title = (@('word  ') * 95) -join "`n"
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value "$title`n===`nBody.`n`nUsage`n---`nRun.`n`nChecks`n---`nVerify."
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
+        }
+
+        It 'rejects empty Setext section bodies' {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value "Project`n===`n$body`n`nUsage`n---`n`nChecks`n---`n$body"
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 1
+            $output -join "`n" | Should -Match 'README\.md.*empty heading'
+            $output -join "`n" | Should -Not -Match 'too few meaningful sections'
+        }
+
+        It 'rejects markup-only Setext titles' {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value "**<span></span>**`n===`n$body`n`n&nbsp;`n---`n$body`n`n**<span></span>**`n---`n$body"
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 1
+            $output -join "`n" | Should -Match 'README\.md.*empty heading title'
+            $output -join "`n" | Should -Match 'too few meaningful sections \(0 headings\)'
+        }
+
+        It 'does not count fenced Setext samples or thematic breaks as sections' {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            $sample = '# Project', $body, '', '---', '', '```', 'Usage', '===', '', 'Checks', '---', '```'
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value ($sample -join "`n")
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 1
+            $output -join "`n" | Should -Match 'too few meaningful sections \(1 headings\)'
         }
 
         It 'does not treat raw HTML as Markdown headings: <Tag>' -ForEach @(
