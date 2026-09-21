@@ -100,6 +100,21 @@ function Hide-FencedMarkdownHeadings {
         }) }
         $Text = $Text.Remove($node.Span.Start, $node.Span.Length).Insert($node.Span.Start, $visible)
     }
+    # Normalize titles from parsed text so both section counting and empty-title checks agree.
+    $document = [Markdig.Markdown]::Parse($Text, $markdownPipeline, $null)
+    $headings = [Markdig.Syntax.MarkdownObjectExtensions]::Descendants($document) | Where-Object {
+        $_ -is [Markdig.Syntax.HeadingBlock] -and -not $_.IsSetext -and $_.Level -le 3
+    } | Sort-Object { $_.Span.Start } -Descending
+    foreach ($heading in $headings) {
+        $title = foreach ($inline in [Markdig.Syntax.MarkdownObjectExtensions]::Descendants($heading.Inline)) {
+            if ($inline -is [Markdig.Syntax.Inlines.LiteralInline] -or $inline -is [Markdig.Syntax.Inlines.CodeInline]) { $inline.Content.ToString() }
+            elseif ($inline -is [Markdig.Syntax.Inlines.HtmlEntityInline]) { $inline.Transcoded.ToString() }
+            elseif ($inline -is [Markdig.Syntax.Inlines.AutolinkInline]) { $inline.Url }
+        }
+        if ([string]::IsNullOrWhiteSpace($title -join '')) {
+            $Text = $Text.Remove($heading.Span.Start, $heading.Span.Length).Insert($heading.Span.Start, ('#' * $heading.Level))
+        }
+    }
     $fence = $null
     $lines = foreach ($line in ($Text -split "`r?`n")) {
         if ($null -eq $fence) {

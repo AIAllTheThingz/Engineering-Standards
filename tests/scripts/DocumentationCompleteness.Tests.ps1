@@ -114,6 +114,38 @@ Describe 'Documentation completeness' {
             Remove-Item -LiteralPath (Join-Path $script:downstreamTempRoot 'NOTES.md')
         }
 
+        It 'rejects markup-only titles without counting them as sections: <Title>' -ForEach @(
+            @{ Title = '<span></span>' }
+            @{ Title = '*<span></span>*' }
+            @{ Title = '[<span></span>](https://example.invalid)' }
+            @{ Title = '&nbsp;' }
+            @{ Title = '&#32;' }
+            @{ Title = '` `' }
+        ) {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value "# $Title`n$body`n## $Title`n$body`n### $Title`n$body"
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 1
+            $output -join "`n" | Should -Match 'README\.md.*empty heading title'
+            $output -join "`n" | Should -Match 'too few meaningful sections \(0 headings\)'
+        }
+
+        It 'preserves visible inline title content: <Title>' -ForEach @(
+            @{ Title = '** **' }
+            @{ Title = '**Usage**' }
+            @{ Title = '<span>Usage</span>' }
+            @{ Title = '`<span></span>`' }
+            @{ Title = '[Usage](https://example.invalid)' }
+            @{ Title = '<https://example.invalid>' }
+            @{ Title = '&amp;' }
+            @{ Title = '![Usage](image.png)' }
+        ) {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value "# $Title`n$body`n## $Title`n$body`n### $Title`n$body"
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")
+        }
+
         It 'does not treat raw HTML as Markdown headings: <Tag>' -ForEach @(
             @{ Tag = 'pre' }, @{ Tag = 'div' }
         ) {
