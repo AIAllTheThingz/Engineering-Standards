@@ -70,15 +70,31 @@ if (Test-Path -LiteralPath $configPath -PathType Leaf) {
 }
 
 function Get-WordCount {
-    param([Parameter(Mandatory)][string]$Text)
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Text)
     @($Text -split '\s+' | Where-Object { $_ }).Count
 }
 
 function Hide-FencedMarkdownHeadings {
     param([AllowEmptyString()][string]$Text)
     $fence = $null
+    $inComment = $false
     $lines = foreach ($line in ($Text -split "`r?`n")) {
         if ($null -eq $fence) {
+            if ($inComment) {
+                $end = $line.IndexOf('-->')
+                if ($end -lt 0) { ''; continue }
+                $line = $line.Substring($end + 3)
+                $inComment = $false
+            }
+            while (($start = $line.IndexOf('<!--')) -ge 0) {
+                $end = $line.IndexOf('-->', $start + 4)
+                if ($end -lt 0) {
+                    $inComment = $true
+                    $line = $line.Substring(0, $start)
+                    break
+                }
+                $line = $line.Remove($start, $end + 3 - $start)
+            }
             if ($line -match '^ {0,3}(`{3,}|~{3,})') { $fence = $Matches[1] }
             $line
         }
@@ -149,7 +165,7 @@ function Test-AuthoritativeDocument {
         $localResults.Add((New-ValidationResult -Status Failed -Message 'Required document is empty.' -Path $RelativePath))
         return @($localResults)
     }
-    $words = Get-WordCount -Text $text
+    $words = Get-WordCount -Text (Hide-FencedMarkdownHeadings -Text $text)
     $headings = Get-MarkdownHeadingCount -Text $text
     $requiredTerms = @('MUST','Validation','Evidence','Exception','Related')
     $minimumWords = if ($Downstream) { 100 } else { 300 }
@@ -188,7 +204,8 @@ foreach ($file in $allMarkdown) {
     if ($rel -notlike 'templates/*' -and $text -match '(?i)template only|echo tests configured|echo lint configured|REPLACE-ME|placeholder-only') {
         $results.Add((New-ValidationResult -Status Failed -Message 'Unresolved placeholder or fake command found.' -Path $rel))
     }
-    if ($rel -notlike 'templates/*') {
+    # The PR form intentionally has unfilled sections; submitted bodies have a dedicated validator.
+    if ($rel -notlike 'templates/*' -and $rel -ne '.github/pull_request_template.md') {
         foreach ($item in @(Test-EmptyMarkdownHeading -Text $text -RelativePath $rel)) { $results.Add($item) }
     }
 }

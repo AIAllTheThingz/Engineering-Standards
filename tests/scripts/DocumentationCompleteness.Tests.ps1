@@ -80,6 +80,38 @@ Describe 'Documentation completeness' {
             $LASTEXITCODE | Should -Not -Be 0
             $output -join "`n" | Should -Match 'README\.md.*too few meaningful sections'
         }
+
+        It 'rejects hidden section structure in HTML comments: <Name>' -ForEach @(
+            @{ Name = 'multiline'; Content = "<!--`n## Hidden one`ntext`n## Hidden two`ntext`n-->" }
+            @{ Name = 'unclosed'; Content = "<!--`n## Hidden one`ntext`n## Hidden two`ntext" }
+            @{ Name = 'empty body'; Content = "## Visible one`n<!-- hidden body -->`n## Visible two`nvisible body" }
+        ) {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value "# Project`n$body`n$Content"
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'README\.md.*(too few meaningful sections|empty heading)'
+        }
+
+        It 'preserves code literals and ignores commented fences before visible sections' {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            $content = '# Project', $body, '<!--', '```', '-->', '## Usage', '```html', '<!-- example literal', '```', '## Checks', 'Verify the result.'
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value ($content -join "`n")
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot
+            $LASTEXITCODE | Should -Be 0
+        }
+
+        It 'allows the unfilled PR template but still checks other GitHub documents' {
+            $github = Join-Path $script:downstreamTempRoot '.github'
+            New-Item -ItemType Directory -Path $github -Force | Out-Null
+            Set-Content (Join-Path $github 'pull_request_template.md') -Value "## Summary`n<!-- Fill in the summary. -->"
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot
+            $LASTEXITCODE | Should -Be 0
+            Set-Content (Join-Path $github 'GUIDE.md') -Value "## Usage`n<!-- hidden body -->"
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'GUIDE\.md.*empty heading'
+        }
     }
 
     Context 'invalid documentation' {
