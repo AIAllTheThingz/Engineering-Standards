@@ -35,6 +35,8 @@ Artifact containment uses the stored filesystem entry names, including case-sens
 
 ## Evidence Rules
 
+The resolved evidence root must be an existing directory. A configured file cannot serve as an evidence root; `.` remains valid for the repository directory.
+
 Verified hosted artifact metadata uses the same branch-name grammar as verified-run records: branch names may include paths such as `feature/change`, but cannot be `HEAD`, full `refs/...` names, or malformed Git ref names.
 
 Tests explicitly marked `requiredValidation: false` do not determine the aggregate status or conflict with its value. An omitted or non-Boolean marker is treated as required; test-record and evidence integrity checks still apply to optional tests.

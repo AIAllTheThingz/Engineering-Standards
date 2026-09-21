@@ -346,6 +346,14 @@ Describe 'Validate evidence action' {
             $LASTEXITCODE | Should -Be 0
         }
 
+        It 'rejects a file-valued configured evidence root' {
+            & $script:NewTempEvidence -ArtifactPath 'README.md'
+            @{ evidencePath = 'README.md' } | ConvertTo-Json | Set-Content (Join-Path $script:tempRoot 'governance.config.json')
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json' 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'evidencePath must resolve to a directory'
+        }
+
         It 'rejects a blocked overall status with a failed required hosted outcome' {
             & $script:NewTempEvidence -Status Blocked -TestStatus Passed
             $evidencePath = Join-Path $script:tempRoot 'completion-result.json'

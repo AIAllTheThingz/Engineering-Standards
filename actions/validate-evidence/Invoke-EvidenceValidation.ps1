@@ -82,6 +82,9 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
             $results.Add((New-ValidationResult -Status Failed -Message "Unable to resolve configured evidencePath: $($_.Exception.Message)" -Path 'governance.config.json'))
         }
     }
+    if (-not (Test-Path -LiteralPath $resolvedArtifactRoot -PathType Container)) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'evidencePath must resolve to a directory.' -Path 'governance.config.json'))
+    }
     $validatedSha = if ($evidence.validatedCommitSha) { [string]$evidence.validatedCommitSha } else { [string]$evidence.commitSha }
     $evidenceSha = if ($evidence.evidenceCommitSha) { [string]$evidence.evidenceCommitSha } else { $null }
     if ($ExpectedCommitSha -and $validatedSha -ne $ExpectedCommitSha) {
