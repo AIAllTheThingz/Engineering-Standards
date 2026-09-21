@@ -167,6 +167,23 @@ Describe 'Documentation completeness' {
             $output -join "`n" | Should -Match 'too few meaningful sections \(0 headings\)'
         }
 
+        It 'rejects invisible-only <Style> titles: <Name>' -ForEach @(
+            foreach ($style in @('ATX','Setext')) {
+                @{ Style = $style; Name = 'format entity'; Title = '&#8203;' }
+                @{ Style = $style; Name = 'literal format'; Title = [string][char]0x200D }
+                @{ Style = $style; Name = 'literal control'; Title = [string][char]0x0007 }
+            }
+        ) {
+            $body = 'Documented operational instructions and verification steps. ' * 25
+            $text = if ($Style -eq 'ATX') { "# $Title`n$body`n## $Title`n$body`n### $Title`n$body" }
+            else { "$Title`n===`n$body`n`n$Title`n---`n$body`n`n$Title`n---`n$body" }
+            Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value $text
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+            $LASTEXITCODE | Should -Be 1
+            $output -join "`n" | Should -Match 'README\.md.*empty heading title'
+            $output -join "`n" | Should -Match 'too few meaningful sections \(0 headings\)'
+        }
+
         It 'preserves visible inline title content: <Title>' -ForEach @(
             @{ Title = '** **' }
             @{ Title = '**Usage**' }
@@ -176,6 +193,8 @@ Describe 'Documentation completeness' {
             @{ Title = '<https://example.invalid>' }
             @{ Title = '&amp;' }
             @{ Title = '![Usage](image.png)' }
+            @{ Title = 'Use&#8203;age' }
+            @{ Title = "Use$([char]0x200D)age" }
         ) {
             $body = 'Documented operational instructions and verification steps. ' * 25
             Set-Content (Join-Path $script:downstreamTempRoot 'README.md') -Value "# $Title`n$body`n## $Title`n$body`n### $Title`n$body"

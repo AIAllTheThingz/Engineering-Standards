@@ -123,7 +123,7 @@ function Hide-FencedMarkdownHeadings {
             elseif ($inline -is [Markdig.Syntax.Inlines.HtmlEntityInline]) { $inline.Transcoded.ToString() }
             elseif ($inline -is [Markdig.Syntax.Inlines.AutolinkInline]) { $inline.Url }
         }
-        if ([string]::IsNullOrWhiteSpace($title -join '')) {
+        if ([string]::IsNullOrWhiteSpace((($title -join '') -replace '[\p{Cf}\p{Cc}]', ''))) {
             $Text = $Text.Remove($heading.Span.Start, $heading.Span.Length).Insert($heading.Span.Start, ('#' * $heading.Level))
         }
         elseif ($heading.IsSetext) {
