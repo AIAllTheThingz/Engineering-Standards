@@ -197,7 +197,7 @@ foreach ($rel in $authoritative) {
     }
 }
 
-$allMarkdown = Get-ChildItem -LiteralPath $root -Filter '*.md' -Recurse -File | Where-Object { $_.FullName -notmatch '\\.git\\' }
+$allMarkdown = Get-ChildItem -LiteralPath $root -Filter '*.md' -Recurse -File -Force | Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
 foreach ($file in $allMarkdown) {
     $rel = [System.IO.Path]::GetRelativePath($root, $file.FullName).Replace('\','/')
     $text = Get-Content -LiteralPath $file.FullName -Raw

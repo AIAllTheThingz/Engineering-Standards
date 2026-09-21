@@ -104,6 +104,13 @@ Describe 'Documentation completeness' {
         It 'allows the unfilled PR template but still checks other GitHub documents' {
             $github = Join-Path $script:downstreamTempRoot '.github'
             New-Item -ItemType Directory -Path $github -Force | Out-Null
+            if ($IsWindows) {
+                $directory = Get-Item -LiteralPath $github -Force
+                $directory.Attributes = $directory.Attributes -bor [IO.FileAttributes]::Hidden
+            }
+            $gitMetadata = Join-Path $script:downstreamTempRoot '.git'
+            New-Item -ItemType Directory -Path $gitMetadata -Force | Out-Null
+            Set-Content (Join-Path $gitMetadata 'internal.md') -Value '# Internal metadata is not repository documentation'
             Set-Content (Join-Path $github 'pull_request_template.md') -Value "## Summary`n<!-- Fill in the summary. -->"
             & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot
             $LASTEXITCODE | Should -Be 0
