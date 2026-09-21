@@ -213,7 +213,7 @@ foreach ($file in $allMarkdown) {
         $results.Add((New-ValidationResult -Status Failed -Message 'Unresolved placeholder or fake command found.' -Path $rel))
     }
     # GitHub forms intentionally have unfilled sections; required authoritative documents are checked above.
-    if ($rel -notlike 'templates/*' -and $rel -ne '.github/pull_request_template.md' -and $rel -notlike '.github/ISSUE_TEMPLATE/*') {
+    if ($rel -notlike 'templates/*' -and $rel -notmatch '^(?:(?:\.github|docs)/)?pull_request_template(?:\.md$|/[^/]+\.md$)' -and $rel -notlike '.github/ISSUE_TEMPLATE/*') {
         foreach ($item in @(Test-EmptyMarkdownHeading -Text $text -RelativePath $rel)) { $results.Add($item) }
     }
 }

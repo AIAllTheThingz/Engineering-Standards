@@ -62,6 +62,28 @@ Describe 'Validate evidence action' {
     }
 
     Context 'contradictory status' {
+        It 'honors optional failed tests with overall <Overall>' -ForEach @('Passed','Blocked','NotRun','NotApplicable' | ForEach-Object { @{ Overall = $_ } }) {
+            & $script:NewTempEvidence -Status $Overall -TestStatus Failed
+            $evidencePath = Join-Path $script:tempRoot 'completion-result.json'
+            $evidence = Get-Content $evidencePath -Raw | ConvertFrom-Json -AsHashtable
+            $evidence.tests[0].requiredValidation = $false
+            $evidence.blockedReason = 'Required prerequisite unavailable.'
+            $evidence.notRunReason = 'Required validation has not run.'
+            $evidence.commandsNotExecuted = @('required-validation')
+            $evidence.notApplicableRationale = 'No required validation applies.'
+            $evidence | ConvertTo-Json -Depth 30 | Set-Content $evidencePath
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Be 0
+            $evidence.tests[0].requiredValidation = 0
+            $evidence | ConvertTo-Json -Depth 30 | Set-Content $evidencePath
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Not -Be 0
+            $evidence.tests[0].Remove('requiredValidation')
+            $evidence | ConvertTo-Json -Depth 30 | Set-Content $evidencePath
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Not -Be 0
+        }
+
         It 'rejects Passed evidence with NotRun tests' {
             & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path "$PSScriptRoot/../.." -EvidencePath 'tests/fixtures/invalid/completion-result.json'
             $LASTEXITCODE | Should -Not -Be 0

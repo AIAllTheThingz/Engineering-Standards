@@ -249,7 +249,7 @@ function Get-GovernanceAggregateStatus {
     [CmdletBinding()]
     param([Parameter(Mandatory)][object[]]$Results)
 
-    $required = @($Results | Where-Object { -not $_.PSObject.Properties['requiredValidation'] -or $_.requiredValidation })
+    $required = @($Results | Where-Object { $flag = Get-JsonMemberValue -InputObject $_ -Name 'requiredValidation'; -not ($flag -is [bool] -and -not $flag) })
     if (@($required | Where-Object status -eq 'Failed').Count -gt 0) { return 'Failed' }
     if (@($required | Where-Object status -eq 'Blocked').Count -gt 0) { return 'Blocked' }
     if (@($required | Where-Object status -eq 'NotRun').Count -gt 0) { return 'NotRun' }
@@ -798,8 +798,9 @@ function Test-GovernanceJsonDocument {
         if ($json.status -eq 'Passed') {
             foreach ($test in @($json.tests)) {
                 $requiredValidation = $true
-                if ($test.PSObject.Properties.Name -contains 'requiredValidation') {
-                    $requiredValidation = ($test.requiredValidation -ne $false)
+                if (Test-JsonMember -InputObject $test -Name 'requiredValidation') {
+                    $flag = Get-JsonMemberValue -InputObject $test -Name 'requiredValidation'
+                    $requiredValidation = -not ($flag -is [bool] -and -not $flag)
                 }
                 if ($requiredValidation -and $test.status -in @('Failed','NotRun','Blocked')) {
                     $results.Add((New-ValidationResult -Status Failed -Message "Overall Passed conflicts with test '$($test.name)' status '$($test.status)'." -Path $Path))
@@ -816,8 +817,9 @@ function Test-GovernanceJsonDocument {
         elseif ($json.status -in @('Blocked','NotRun','NotApplicable')) {
             foreach ($test in @($json.tests)) {
                 $requiredValidation = $true
-                if ($test.PSObject.Properties.Name -contains 'requiredValidation') {
-                    $requiredValidation = ($test.requiredValidation -ne $false)
+                if (Test-JsonMember -InputObject $test -Name 'requiredValidation') {
+                    $flag = Get-JsonMemberValue -InputObject $test -Name 'requiredValidation'
+                    $requiredValidation = -not ($flag -is [bool] -and -not $flag)
                 }
                 if ($requiredValidation -and $test.status -eq 'Failed') {
                     $results.Add((New-ValidationResult -Status Failed -Message "Overall $($json.status) conflicts with failed required test '$($test.name)'; use overall Failed." -Path $Path))

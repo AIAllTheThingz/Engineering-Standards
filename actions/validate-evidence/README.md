@@ -35,6 +35,8 @@ Artifact containment uses the stored filesystem entry names, including case-sens
 
 ## Evidence Rules
 
+Tests explicitly marked `requiredValidation: false` do not determine the aggregate status or conflict with its value. An omitted or non-Boolean marker is treated as required; test-record and evidence integrity checks still apply to optional tests.
+
 The action rejects:
 
 - Overall `Passed` with `Failed`, `Blocked`, or `NotRun` mandatory tests.

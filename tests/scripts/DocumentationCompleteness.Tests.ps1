@@ -150,6 +150,26 @@ Describe 'Documentation completeness' {
             $output -join "`n" | Should -Match 'README\.md.*too few meaningful sections'
         }
 
+        It 'allows supported PR templates but checks them when explicitly required: <TemplatePath>' -ForEach @(
+            'pull_request_template.md', 'docs/pull_request_template.md', '.github/pull_request_template.md',
+            'PULL_REQUEST_TEMPLATE/change.md', 'docs/PULL_REQUEST_TEMPLATE/change.md', '.github/PULL_REQUEST_TEMPLATE/change.md' |
+                ForEach-Object { @{ TemplatePath = $_ } }
+        ) {
+            $template = Join-Path $script:downstreamTempRoot $TemplatePath
+            New-Item -ItemType Directory -Path (Split-Path $template) -Force | Out-Null
+            Set-Content $template -Value "## Summary`n<!-- Fill in the summary. -->"
+            try {
+                & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot
+                $LASTEXITCODE | Should -Be 0
+                @{ workflowProfile = 'downstream'; requiredDocumentationPaths = @('README.md', $TemplatePath) } |
+                    ConvertTo-Json | Set-Content (Join-Path $script:downstreamTempRoot 'governance.config.json')
+                $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/Test-DocumentationCompleteness.ps1" -Path $script:downstreamTempRoot 2>&1)
+                $LASTEXITCODE | Should -Not -Be 0
+                $output -join "`n" | Should -Match 'empty heading'
+            }
+            finally { Remove-Item -LiteralPath $template }
+        }
+
         It 'allows unfilled GitHub templates but still checks other GitHub documents' {
             $github = Join-Path $script:downstreamTempRoot '.github'
             New-Item -ItemType Directory -Path $github -Force | Out-Null
