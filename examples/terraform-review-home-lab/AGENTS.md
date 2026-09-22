@@ -23,3 +23,6 @@ pwsh -NoProfile -File examples/terraform-review-home-lab/tools/Test-Demo.ps1
 ```
 
 Use only `Passed`, `Failed`, `Blocked`, `NotRun`, or `NotApplicable`.
+
+Record the reviewed sample path and supporting line numbers for each finding
+so another reviewer can verify the conclusion without executing infrastructure.

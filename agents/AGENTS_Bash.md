@@ -129,7 +129,7 @@ The reusable hosted entry point is `.github/workflows/bash-ci-reusable.yml`, cal
 
 Evidence MUST comply with [../governance/COMPLETION_EVIDENCE.md](../governance/COMPLETION_EVIDENCE.md), record exact commands, working directory, shell and utility versions, exit codes, limitations, and artifacts, and distinguish local from hosted execution. Agents MUST NOT fabricate shell compatibility, analysis, tests, workflow runs, approvals, or production behavior.
 
-Functional artifacts MUST contain normalized syntax, ShellCheck, shfmt, Bats, toolchain-bootstrap, toolchain, CycloneDX SBOM, aggregate test, completion, evidence-validation, and step-outcome records. Records MUST contain only sanitized repository-relative identities and MUST NOT contain workstation paths, credentials, startup variables, or token-like values. Local runs MUST record hosted execution as `NotRun`; only a downloaded, identity-verified GitHub artifact may support a hosted `Passed` claim.
+Functional artifacts MUST contain normalized syntax, ShellCheck, shfmt, Bats, toolchain-bootstrap, toolchain, CycloneDX SBOM, aggregate test, completion, evidence-validation, and step-outcome records. Records MUST contain only sanitized repository-relative identities and MUST NOT contain workstation paths, credentials, startup variables, or token-like values. Unverified local runs MUST record hosted execution as `NotRun`; only a downloaded, identity-verified GitHub artifact may support a hosted `Passed` or `Failed` claim. Such a record MUST use `GitHubArtifact` and include run ID, run attempt, branch, artifact ID, artifact name, and artifact SHA-256. A failed required hosted check MUST retain overall `Failed`; local completion MUST NOT claim overall `Passed`.
 
 ## Rollback Requirements
 

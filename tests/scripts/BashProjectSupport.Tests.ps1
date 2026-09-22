@@ -346,6 +346,8 @@ Describe 'Governed Bash project support' {
             'evidence/latest-verified-run.json',
             'examples/README.md',
             'examples/bash-project/.github/workflows/governance.yml',
+            # Reviewed documentation-only additions; the recorded Bash source and toolchain are unchanged.
+            'examples/bash-project/AGENTS.md',
             'governance/downstream-compatibility.json',
             'governance/standards-consistency.json',
             'governance.config.json',

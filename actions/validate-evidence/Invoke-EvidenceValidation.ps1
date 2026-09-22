@@ -21,6 +21,24 @@ Import-Module (Join-Path $PSScriptRoot '../../scripts/GovernanceValidation.psm1'
 $root = (Resolve-Path -LiteralPath $Path).Path
 $results = [System.Collections.Generic.List[object]]::new()
 
+function Resolve-ExistingEvidencePathCasing {
+    param([string]$RelativePath)
+    $current = $root
+    foreach ($segment in @($RelativePath -split '[\\/]' | Where-Object { $_ -and $_ -ne '.' })) {
+        # Ask the filesystem whether this spelling exists before resolving its stored name.
+        # Exact matches distinguish case-sensitive siblings; a unique alias supports insensitive volumes.
+        if (-not (Test-Path -LiteralPath (Join-Path $current $segment))) {
+            throw "Evidence path '$RelativePath' does not exist."
+        }
+        $entries = @(Get-ChildItem -LiteralPath $current -Force)
+        $match = @($entries | Where-Object { $_.Name -ceq $segment })
+        if ($match.Count -eq 0) { $match = @($entries | Where-Object { $_.Name -ieq $segment }) }
+        if ($match.Count -ne 1) { throw "Evidence path '$RelativePath' has ambiguous filesystem casing." }
+        $current = $match[0].FullName
+    }
+    $current
+}
+
 try {
     $full = Resolve-SafePath -Root $root -ChildPath $EvidencePath
 }
@@ -44,6 +62,29 @@ if ($results.Count -eq 0) {
 
 if (-not @($results | Where-Object status -eq 'Failed')) {
     $evidence = Read-JsonFile -Path $full
+    $artifactRoot = 'evidence'
+    $resolvedArtifactRoot = Resolve-SafePath -Root $root -ChildPath $artifactRoot -AllowMissingLeaf
+    $configPath = Join-Path $root 'governance.config.json'
+    if (Test-Path -LiteralPath $configPath -PathType Leaf) {
+        try {
+            $config = Read-JsonFile -Path $configPath
+            $configuredArtifactRoot = [string]$config.evidencePath
+            if ([string]::IsNullOrWhiteSpace($configuredArtifactRoot)) {
+                throw 'Governance configuration evidencePath is missing.'
+            }
+            if ([System.IO.Path]::IsPathRooted($configuredArtifactRoot) -or $configuredArtifactRoot -match '(^|[\\/])\.\.([\\/]|$)') {
+                throw 'Governance configuration evidencePath must be repository-relative and must not contain parent-directory segments.'
+            }
+            $resolvedArtifactRoot = Resolve-SafePath -Root $root -ChildPath $configuredArtifactRoot -AllowMissingLeaf
+            $artifactRoot = [System.IO.Path]::GetRelativePath($root, $resolvedArtifactRoot).Replace('\','/')
+        }
+        catch {
+            $results.Add((New-ValidationResult -Status Failed -Message "Unable to resolve configured evidencePath: $($_.Exception.Message)" -Path 'governance.config.json'))
+        }
+    }
+    if (-not (Test-Path -LiteralPath $resolvedArtifactRoot -PathType Container)) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'evidencePath must resolve to a directory.' -Path 'governance.config.json'))
+    }
     $validatedSha = if ($evidence.validatedCommitSha) { [string]$evidence.validatedCommitSha } else { [string]$evidence.commitSha }
     $evidenceSha = if ($evidence.evidenceCommitSha) { [string]$evidence.evidenceCommitSha } else { $null }
     if ($ExpectedCommitSha -and $validatedSha -ne $ExpectedCommitSha) {
@@ -96,15 +137,8 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
         if ($githubExecution.Count -eq 0) {
             $results.Add((New-ValidationResult -Status Failed -Message 'Local evidence must record GitHub-hosted workflow execution.' -Path $EvidencePath))
         }
-        elseif ($githubExecution[0].status -notin @('NotRun','Passed')) {
-            $results.Add((New-ValidationResult -Status Failed -Message 'Local evidence must record GitHub-hosted workflow execution as NotRun or externally verified Passed.' -Path $EvidencePath))
-        }
-        elseif ($githubExecution[0].status -eq 'Passed') {
-            $evidenceSource = Get-JsonMemberValue -InputObject $githubExecution[0] -Name 'evidenceSource'
-            $details = Get-JsonMemberValue -InputObject $githubExecution[0] -Name 'details'
-            if ($evidenceSource -ne 'GitHubArtifact' -or $null -eq $details) {
-                $results.Add((New-ValidationResult -Status Failed -Message 'Local evidence may mark GitHub-hosted workflow execution Passed only when backed by GitHubArtifact details.' -Path $EvidencePath))
-            }
+        elseif ($githubExecution[0].status -notin @('NotRun','Passed','Failed')) {
+            $results.Add((New-ValidationResult -Status Failed -Message 'Local evidence must record GitHub-hosted workflow execution as NotRun or externally verified Passed or Failed.' -Path $EvidencePath))
         }
         if ($evidence.status -eq 'Passed') {
             $results.Add((New-ValidationResult -Status Failed -Message 'Local evidence cannot be overall Passed when GitHub-hosted execution is mandatory.' -Path $EvidencePath))
@@ -148,10 +182,14 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
             if ([System.IO.Path]::IsPathRooted([string]$artifact.path) -or [string]$artifact.path -match '(^|[\\/])\.\.([\\/]|$)') {
                 throw "Artifact path '$($artifact.path)' must be repository-relative and must not traverse outside the repository."
             }
-            if ([string]$artifact.path -notmatch '^evidence/') {
-                throw "Artifact path '$($artifact.path)' must be under the evidence directory."
-            }
             $artifactPath = Resolve-SafePath -Root $root -ChildPath $artifact.path
+            $artifactFullPath = Resolve-ExistingEvidencePathCasing -RelativePath $artifact.path
+            $artifactRootFullPath = (Resolve-ExistingEvidencePathCasing -RelativePath $artifactRoot).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+            $pathComparison = [StringComparison]::Ordinal
+            $artifactRootBoundary = $artifactRootFullPath + [System.IO.Path]::DirectorySeparatorChar
+            if (-not ($artifactFullPath.Equals($artifactRootFullPath, $pathComparison) -or $artifactFullPath.StartsWith($artifactRootBoundary, $pathComparison))) {
+                throw "Artifact path '$($artifact.path)' must be under the configured evidence directory '$artifactRoot'."
+            }
             if (Test-Path -LiteralPath $artifactPath -PathType Leaf) {
                 $actualSize = (Get-Item -LiteralPath $artifactPath).Length
                 if ([int64]$artifact.sizeBytes -ne [int64]$actualSize) {

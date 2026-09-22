@@ -62,6 +62,28 @@ Describe 'Validate evidence action' {
     }
 
     Context 'contradictory status' {
+        It 'honors optional failed tests with overall <Overall>' -ForEach @('Passed','Blocked','NotRun','NotApplicable' | ForEach-Object { @{ Overall = $_ } }) {
+            & $script:NewTempEvidence -Status $Overall -TestStatus Failed
+            $evidencePath = Join-Path $script:tempRoot 'completion-result.json'
+            $evidence = Get-Content $evidencePath -Raw | ConvertFrom-Json -AsHashtable
+            $evidence.tests[0].requiredValidation = $false
+            $evidence.blockedReason = 'Required prerequisite unavailable.'
+            $evidence.notRunReason = 'Required validation has not run.'
+            $evidence.commandsNotExecuted = @('required-validation')
+            $evidence.notApplicableRationale = 'No required validation applies.'
+            $evidence | ConvertTo-Json -Depth 30 | Set-Content $evidencePath
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Be 0
+            $evidence.tests[0].requiredValidation = 0
+            $evidence | ConvertTo-Json -Depth 30 | Set-Content $evidencePath
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Not -Be 0
+            $evidence.tests[0].Remove('requiredValidation')
+            $evidence | ConvertTo-Json -Depth 30 | Set-Content $evidencePath
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Not -Be 0
+        }
+
         It 'rejects Passed evidence with NotRun tests' {
             & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path "$PSScriptRoot/../.." -EvidencePath 'tests/fixtures/invalid/completion-result.json'
             $LASTEXITCODE | Should -Not -Be 0
@@ -149,7 +171,10 @@ Describe 'Validate evidence action' {
                     blockedReason = $null
                     notApplicableRationale = $null
                     details = [ordered]@{
-                        successRunId = 123
+                        runId = 123
+                        runAttempt = 1
+                        branch = '1/merge'
+                        artifactId = 1234
                         artifactName = 'governance-evidence-123'
                         artifactSha256 = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
                     }
@@ -180,6 +205,182 @@ Describe 'Validate evidence action' {
 
             & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
             $LASTEXITCODE | Should -Be 0
+        }
+
+        It 'accepts a truthfully failed hosted outcome when its artifact is independently verified' {
+            & $script:NewTempEvidence -Status Blocked -TestStatus Passed
+            $evidencePath = Join-Path $script:tempRoot 'completion-result.json'
+            $evidence = Get-Content $evidencePath -Raw | ConvertFrom-Json -AsHashtable
+            $evidence.executionContext = 'Local'
+            $evidence.status = 'Failed'
+            $evidence.blockedReason = $null
+            $evidence.tests = @(
+                $evidence.tests[0],
+                [ordered]@{
+                    schemaVersion = '1.1.0'; name = 'GitHub-hosted workflow execution'; category = 'workflow'; status = 'Failed'; requiredValidation = $true
+                    evidenceSource = 'GitHubArtifact'; command = 'Governance CI run 456'; workingDirectory = '.'
+                    startedAtUtc = '2026-06-19T00:00:00Z'; completedAtUtc = '2026-06-19T00:00:01Z'; durationSeconds = 1
+                    runtime = 'GitHub Actions'; toolVersion = '7.x'; exitCode = 1
+                    summary = 'Hosted governance validation failed at a mandatory check.'; warnings = @()
+                    failureReason = 'Documentation completeness failed.'; blockedReason = $null; notApplicableRationale = $null
+                    details = [ordered]@{ runId = 456; runAttempt = 1; branch = '1/merge'; artifactId = 4567; artifactName = 'governance-evidence-456'; artifactSha256 = ('a' * 64) }
+                }
+            )
+            $evidence | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $evidencePath
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Be 0
+        }
+
+        It 'rejects a failed hosted outcome without independently verified artifact details' {
+            & $script:NewTempEvidence -Status Failed -TestStatus Passed
+            $evidencePath = Join-Path $script:tempRoot 'completion-result.json'
+            $evidence = Get-Content $evidencePath -Raw | ConvertFrom-Json -AsHashtable
+            $evidence.executionContext = 'Local'
+            $evidence.status = 'Failed'
+            $evidence.blockedReason = $null
+            $evidence.tests[0].name = 'GitHub-hosted workflow execution'
+            $evidence.tests[0].status = 'Failed'
+            $evidence.tests[0].evidenceSource = 'local-summary'
+            $evidence.tests[0].exitCode = 1
+            $evidence.tests[0].failureReason = 'Hosted enforcement failed.'
+            $evidence | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $evidencePath
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Not -Be 0
+        }
+
+        It 'uses the configured evidencePath for artifact verification' {
+            & $script:NewTempEvidence -ArtifactPath 'GovernanceEvidence/report.json'
+            @{ evidencePath = 'GovernanceEvidence' } |
+                ConvertTo-Json -Depth 10 |
+                Set-Content -LiteralPath (Join-Path $script:tempRoot 'governance.config.json')
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Be 0
+        }
+
+        It 'accepts filesystem-supported case aliases for the configured evidence directory' {
+            & $script:NewTempEvidence -ArtifactPath 'Evidence/report.json'
+            if (-not (Test-Path -LiteralPath (Join-Path $script:tempRoot 'EVIDENCE/report.json'))) {
+                Set-ItResult -Skipped -Because 'This fixture filesystem is case-sensitive.'
+                return
+            }
+            @{ evidencePath = 'EVIDENCE' } | ConvertTo-Json | Set-Content (Join-Path $script:tempRoot 'governance.config.json')
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Be 0
+        }
+
+        It 'rejects a distinct case-sensitive sibling of the configured evidence directory' {
+            & $script:NewTempEvidence
+            if ($IsWindows) {
+                & fsutil.exe file setCaseSensitiveInfo $script:tempRoot enable 2>&1 | Out-Null
+                if ($LASTEXITCODE -ne 0) {
+                    Set-ItResult -Skipped -Because 'NTFS per-directory case sensitivity cannot be enabled in this environment.'
+                    return
+                }
+            }
+            if (Test-Path -LiteralPath (Join-Path $script:tempRoot 'Evidence')) {
+                Set-ItResult -Skipped -Because 'This fixture filesystem does not provide distinct case-sensitive siblings.'
+                return
+            }
+            New-Item -ItemType Directory -Path (Join-Path $script:tempRoot 'Evidence') | Out-Null
+            @{ evidencePath = 'Evidence' } | ConvertTo-Json | Set-Content (Join-Path $script:tempRoot 'governance.config.json')
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json' 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'must be under the configured evidence directory'
+        }
+
+        It 'rejects malformed hosted artifact metadata: <Name>' -ForEach @(
+            @{ Name = 'empty'; Details = @{} }
+            @{ Name = 'arbitrary'; Details = @{ note = 'verified' } }
+            @{ Name = 'array'; Details = @('verified') }
+            foreach ($branch in @('bad..ref','HEAD','refs/heads/main','topic.lock','bad ref')) {
+                @{ Name = "branch $branch"; Details = @{ runId = 123; runAttempt = 1; artifactId = 456; branch = $branch; artifactName = 'governance-evidence-123'; artifactSha256 = ('a' * 64) } }
+            }
+            foreach ($field in @('runId','runAttempt','artifactId')) {
+                $details = @{ runId = 123; runAttempt = 1; artifactId = 456; branch = '1/merge'; artifactName = 'governance-evidence-123'; artifactSha256 = ('a' * 64) }
+                $details[$field] = [string]$details[$field]
+                @{ Name = "string $field"; Details = $details }
+            }
+            foreach ($field in @('runId','runAttempt','artifactId','branch','artifactName','artifactSha256')) {
+                $details = @{ runId = 123; runAttempt = 1; artifactId = 456; branch = '1/merge'; artifactName = 'governance-evidence-123'; artifactSha256 = ('a' * 64) }
+                $details.Remove($field)
+                @{ Name = "missing $field"; Details = $details }
+            }
+            foreach ($invalid in @(@{ field = 'runId'; value = $true }, @{ field = 'runAttempt'; value = 0 }, @{ field = 'artifactId'; value = 1.5 }, @{ field = 'branch'; value = ' ' }, @{ field = 'artifactSha256'; value = 'invalid' })) {
+                $details = @{ runId = 123; runAttempt = 1; artifactId = 456; branch = '1/merge'; artifactName = 'governance-evidence-123'; artifactSha256 = ('a' * 64) }
+                $details[$invalid.field] = $invalid.value
+                @{ Name = "invalid $($invalid.field)"; Details = $details }
+            }
+        ) {
+            Import-Module "$PSScriptRoot/../../scripts/GovernanceValidation.psm1" -Force
+            foreach ($hostedStatus in @('Passed','Failed')) {
+                & $script:NewTempEvidence -Status Failed -TestStatus Passed
+                $evidencePath = Join-Path $script:tempRoot 'completion-result.json'
+                $evidence = Get-Content $evidencePath -Raw | ConvertFrom-Json -AsHashtable
+                $evidence.executionContext = 'Local'
+                $evidence.tests[0].name = 'GitHub-hosted workflow execution'
+                $evidence.tests[0].status = $hostedStatus
+                $evidence.tests[0].evidenceSource = 'GitHubArtifact'
+                $evidence.tests[0].details = $Details
+                if ($hostedStatus -eq 'Failed') {
+                    $evidence.tests[0].exitCode = 1
+                    $evidence.tests[0].failureReason = 'Hosted enforcement failed.'
+                }
+                $evidence | ConvertTo-Json -Depth 30 | Set-Content $evidencePath
+                $results = @(Test-GovernanceJsonDocument -Path $evidencePath -Kind completion-result)
+                @($results | Where-Object { $_.status -eq 'Failed' -and $_.message -match 'GitHubArtifact' }).Count | Should -BeGreaterThan 0
+                & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+                $LASTEXITCODE | Should -Not -Be 0
+            }
+        }
+
+        It 'accepts a repository-root evidencePath' {
+            & $script:NewTempEvidence -ArtifactPath 'report.json'
+            @{ evidencePath = '.' } |
+                ConvertTo-Json -Depth 10 |
+                Set-Content -LiteralPath (Join-Path $script:tempRoot 'governance.config.json')
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Be 0
+        }
+
+        It 'rejects a file-valued configured evidence root' {
+            & $script:NewTempEvidence -ArtifactPath 'README.md'
+            @{ evidencePath = 'README.md' } | ConvertTo-Json | Set-Content (Join-Path $script:tempRoot 'governance.config.json')
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json' 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            $output -join "`n" | Should -Match 'evidencePath must resolve to a directory'
+        }
+
+        It 'rejects a blocked overall status with a failed required hosted outcome' {
+            & $script:NewTempEvidence -Status Blocked -TestStatus Passed
+            $evidencePath = Join-Path $script:tempRoot 'completion-result.json'
+            $evidence = Get-Content $evidencePath -Raw | ConvertFrom-Json -AsHashtable
+            $evidence.executionContext = 'Local'
+            $evidence.status = 'Blocked'
+            $evidence.blockedReason = 'Human acceptance remains pending.'
+            $evidence.tests[0].name = 'GitHub-hosted workflow execution'
+            $evidence.tests[0].status = 'Failed'
+            $evidence.tests[0].evidenceSource = 'GitHubArtifact'
+            $evidence.tests[0].details = [ordered]@{ runId = 789; runAttempt = 1; branch = '1/merge'; artifactId = 7890; artifactName = 'governance-evidence-789'; artifactSha256 = ('b' * 64) }
+            $evidence.tests[0].failureReason = 'Hosted enforcement failed.'
+            $evidence.tests[0].exitCode = 1
+            $evidence | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $evidencePath
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Not -Be 0
+        }
+
+        It 'rejects traversal in configured evidencePath' {
+            & $script:NewTempEvidence
+            @{ evidencePath = 'sub/../evidence' } |
+                ConvertTo-Json -Depth 10 |
+                Set-Content -LiteralPath (Join-Path $script:tempRoot 'governance.config.json')
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Not -Be 0
         }
 
         It 'rejects an artifact hash mismatch' {

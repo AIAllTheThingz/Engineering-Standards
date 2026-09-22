@@ -60,6 +60,10 @@ Describe 'Agent standards validation' {
         }
 
         It 'fails Bash mutation: <Name>' -ForEach @(
+            @{ Name='local NotRun qualification removed'; Old='Unverified local runs MUST record hosted execution as `NotRun`'; New='Local runs MUST record hosted execution as `NotRun`' },
+            @{ Name='verified failed outcome removed'; Old='hosted `Passed` or `Failed` claim'; New='hosted `Passed` claim' },
+            @{ Name='artifact metadata removed'; Old='run ID, run attempt, branch, artifact ID, artifact name, and artifact SHA-256'; New='arbitrary details' },
+            @{ Name='required failure hidden'; Old='A failed required hosted check MUST retain overall `Failed`'; New='A failed required hosted check MAY be Blocked' },
             @{ Name='Bash versus POSIX declaration removed'; Old='declare whether it requires Bash or portable POSIX `sh`'; New='declare a generic shell' },
             @{ Name='quoting requirement weakened'; Old='Variable expansions MUST be quoted'; New='Variable expansions MAY be quoted' },
             @{ Name='unsafe destructive targets allowed'; Old='reject empty, root, home, wildcard, traversal, or unbounded destructive targets'; New='accept empty or root destructive targets' },

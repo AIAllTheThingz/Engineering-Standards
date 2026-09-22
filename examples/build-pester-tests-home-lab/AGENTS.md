@@ -18,3 +18,6 @@ This example inherits `agents/AGENTS_Base.md` and
 
 Run `pwsh -NoProfile -File tools/Test-Demo.ps1` from this example, or run the
 same path from the repository root. Live model behavior remains `NotRun`.
+
+Record the command, exit code, and failed assertions so another reviewer can
+reproduce the result using the same synthetic inputs.

@@ -126,6 +126,24 @@ function script:Invoke-DownstreamValidation {
 }
 
 Describe 'Reusable governance workflow trust boundaries' {
+    It 'reports malformed manifest evidence through Contract: <Member> <Shape>' -ForEach @(
+        foreach ($member in @('evidence','local','completion')) {
+            foreach ($shape in @('missing','wrong type')) { @{ Member = $member; Shape = $shape } }
+        }
+    ) {
+        $caller = New-StructuredDownstreamFixture -Name ([guid]::NewGuid().ToString())
+        $path = Join-Path $caller 'project-manifest.json'
+        $manifest = Get-Content $path -Raw | ConvertFrom-Json -AsHashtable
+        $parent = switch ($Member) { evidence { $manifest }; local { $manifest.evidence }; completion { $manifest.evidence.local } }
+        if ($Shape -eq 'missing') { $parent.Remove($Member) } else { $parent[$Member] = 42 }
+        $manifest | ConvertTo-Json -Depth 30 | Set-Content $path
+        $result = Invoke-DownstreamValidation -CallerRoot $caller -RepositoryOwnerType User
+        $result.ExitCode | Should -Not -Be 0
+        $report = Get-Content (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
+        @($report.results | Where-Object name -eq 'BootstrapValidation').Count | Should -Be 0
+        ($report.results | Where-Object name -eq 'Contract').status | Should -Be 'Failed'
+    }
+
     It 'accepts trusted User owner type for schema version 1.2.0' {
         $caller = New-StructuredDownstreamFixture -Name 'structured-user-owner'
         $result = Invoke-DownstreamValidation -CallerRoot $caller -RepositoryOwnerType User
@@ -173,6 +191,26 @@ Describe 'Reusable governance workflow trust boundaries' {
         @($report.results).Count | Should -Be 3
         $report.results[0].toolPath | Should -Be 'standards/actions/validate-contract/Invoke-ContractValidation.ps1'
         $report.results[0].target | Should -Be 'caller'
+    }
+
+    It 'validates legacy <SchemaVersion> configured documentation through the aggregate' -ForEach @(
+        @{ SchemaVersion = '1.0.0' }
+        @{ SchemaVersion = '1.1.0' }
+    ) {
+        $caller = New-DownstreamFixture -Name "legacy-documentation-$SchemaVersion"
+        $configPath = Join-Path $caller 'governance.config.json'
+        $config = Get-Content $configPath -Raw | ConvertFrom-Json -AsHashtable
+        $config.schemaVersion = $SchemaVersion
+        $config.requiredDocumentationPaths = @('README.md')
+        $config.validationCategories += 'DocumentationCompleteness'
+        $config | ConvertTo-Json -Depth 20 | Set-Content $configPath
+        $body = 'Documented operational instructions and verification steps. ' * 25
+        Set-Content (Join-Path $caller 'README.md') -Value "# Project`n$body`n## Usage`n$body`n## Checks`n$body"
+        $result = Invoke-DownstreamValidation -CallerRoot $caller
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        $report = Get-Content (Join-Path $result.EvidenceRoot 'governance-validation.json') -Raw | ConvertFrom-Json
+        $report.validationProfile | Should -Be 'downstream'
+        ($report.results | Where-Object name -eq 'DocumentationCompleteness').status | Should -Be 'Passed'
     }
 
     It 'accepts empty downstream scanner configuration arrays' {

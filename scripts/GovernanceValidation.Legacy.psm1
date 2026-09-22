@@ -236,6 +236,26 @@ function Resolve-GovernanceValidationPlan {
     @($plan)
 }
 
+function Test-VerifiedRunBranchName {
+    [CmdletBinding()]
+    param([AllowNull()][object]$Value)
+
+    if ($Value -isnot [string]) { return $false }
+    $branch = [string]$Value
+    if ([string]::IsNullOrEmpty($branch)) { return $false }
+    if ($branch -ceq 'HEAD' -or
+        $branch -cmatch '^refs/' -or
+        $branch -cmatch '^[-/]' -or
+        $branch -cmatch '(^|/)\.' -or
+        $branch -cmatch '\.lock($|/)' -or
+        $branch -cmatch '\.\.|//|@\{' -or
+        $branch -cmatch '[/.]$' -or
+        $branch -cmatch '[\x00-\x20\x7F~^:?*\[\\]') {
+        return $false
+    }
+    return $true
+}
+
 function Get-GovernanceAggregateStatus {
     <#
     .SYNOPSIS
@@ -249,7 +269,7 @@ function Get-GovernanceAggregateStatus {
     [CmdletBinding()]
     param([Parameter(Mandatory)][object[]]$Results)
 
-    $required = @($Results | Where-Object { -not $_.PSObject.Properties['requiredValidation'] -or $_.requiredValidation })
+    $required = @($Results | Where-Object { $flag = Get-JsonMemberValue -InputObject $_ -Name 'requiredValidation'; -not ($flag -is [bool] -and -not $flag) })
     if (@($required | Where-Object status -eq 'Failed').Count -gt 0) { return 'Failed' }
     if (@($required | Where-Object status -eq 'Blocked').Count -gt 0) { return 'Blocked' }
     if (@($required | Where-Object status -eq 'NotRun').Count -gt 0) { return 'NotRun' }
@@ -798,8 +818,9 @@ function Test-GovernanceJsonDocument {
         if ($json.status -eq 'Passed') {
             foreach ($test in @($json.tests)) {
                 $requiredValidation = $true
-                if ($test.PSObject.Properties.Name -contains 'requiredValidation') {
-                    $requiredValidation = ($test.requiredValidation -ne $false)
+                if (Test-JsonMember -InputObject $test -Name 'requiredValidation') {
+                    $flag = Get-JsonMemberValue -InputObject $test -Name 'requiredValidation'
+                    $requiredValidation = -not ($flag -is [bool] -and -not $flag)
                 }
                 if ($requiredValidation -and $test.status -in @('Failed','NotRun','Blocked')) {
                     $results.Add((New-ValidationResult -Status Failed -Message "Overall Passed conflicts with test '$($test.name)' status '$($test.status)'." -Path $Path))
@@ -813,19 +834,47 @@ function Test-GovernanceJsonDocument {
                 $results.Add((New-ValidationResult -Status Failed -Message 'Overall Passed evidence requiring approval must include at least one approval record.' -Path $Path))
             }
         }
+        elseif ($json.status -in @('Blocked','NotRun','NotApplicable')) {
+            foreach ($test in @($json.tests)) {
+                $requiredValidation = $true
+                if (Test-JsonMember -InputObject $test -Name 'requiredValidation') {
+                    $flag = Get-JsonMemberValue -InputObject $test -Name 'requiredValidation'
+                    $requiredValidation = -not ($flag -is [bool] -and -not $flag)
+                }
+                if ($requiredValidation -and $test.status -eq 'Failed') {
+                    $results.Add((New-ValidationResult -Status Failed -Message "Overall $($json.status) conflicts with failed required test '$($test.name)'; use overall Failed." -Path $Path))
+                }
+            }
+        }
         $githubExecution = @($json.tests | Where-Object name -eq 'GitHub-hosted workflow execution' | Select-Object -First 1)
         if ($json.executionContext -eq 'Local') {
             if ($githubExecution.Count -eq 0) {
                 $results.Add((New-ValidationResult -Status Failed -Message 'Local completion evidence must record GitHub-hosted workflow execution.' -Path $Path))
             }
-            elseif ($githubExecution[0].status -notin @('NotRun','Passed')) {
-                $results.Add((New-ValidationResult -Status Failed -Message 'Local completion evidence must record GitHub-hosted workflow execution as NotRun or externally verified Passed.' -Path $Path))
+            elseif ($githubExecution[0].status -notin @('NotRun','Passed','Failed')) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'Local completion evidence must record GitHub-hosted workflow execution as NotRun or externally verified Passed or Failed.' -Path $Path))
             }
-            elseif ($githubExecution[0].status -eq 'Passed') {
+            elseif ($githubExecution[0].status -in @('Passed','Failed')) {
                 $evidenceSource = Get-JsonMemberValue -InputObject $githubExecution[0] -Name 'evidenceSource'
                 $details = Get-JsonMemberValue -InputObject $githubExecution[0] -Name 'details'
-                if ($evidenceSource -ne 'GitHubArtifact' -or $null -eq $details) {
-                    $results.Add((New-ValidationResult -Status Failed -Message 'Local evidence may mark GitHub-hosted workflow execution Passed only when backed by GitHubArtifact details.' -Path $Path))
+                if ($evidenceSource -ne 'GitHubArtifact' -or $details -isnot [System.Collections.IDictionary]) {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'Local evidence may mark GitHub-hosted workflow execution Passed or Failed only when backed by GitHubArtifact details.' -Path $Path))
+                }
+                else {
+                    foreach ($field in @('runId','runAttempt','artifactId')) {
+                        $value = Get-JsonMemberValue -InputObject $details -Name $field
+                        if (($value -isnot [int] -and $value -isnot [long] -and $value -isnot [bigint]) -or $value -le 0) {
+                            $results.Add((New-ValidationResult -Status Failed -Message "GitHubArtifact details.$field must be a positive integer." -Path $Path))
+                        }
+                    }
+                    foreach ($field in @('branch','artifactName','artifactSha256')) {
+                        $value = Get-JsonMemberValue -InputObject $details -Name $field
+                        if ($value -isnot [string] -or [string]::IsNullOrWhiteSpace($value) -or
+                            ($field -eq 'branch' -and -not (Test-VerifiedRunBranchName -Value $value)) -or
+                            ($field -eq 'artifactSha256' -and $value -notmatch '\A[a-fA-F0-9]{64}\z')) {
+                            $results.Add((New-ValidationResult -Status Failed -Message "GitHubArtifact details.$field is missing or invalid." -Path $Path))
+                        }
+                    }
                 }
             }
             if ($json.status -eq 'Passed') {
@@ -1921,6 +1970,7 @@ function Test-GovernanceContractSemantics {
 }
 
 Export-ModuleMember -Function @(
+    'Test-VerifiedRunBranchName',
     'Get-GovernanceValidationRegistry',
     'Get-GovernanceValidationCategoryRegistry',
     'Get-GovernanceValidationProfile',

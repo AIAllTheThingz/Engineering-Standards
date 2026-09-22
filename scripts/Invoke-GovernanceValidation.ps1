@@ -425,6 +425,15 @@ foreach ($disabledControl in @($disabledMandatoryControls)) {
 }
 
 $workflowArchitectureSha = if ($ExpectedReusableWorkflowSha) { $ExpectedReusableWorkflowSha } else { $StandardsWorkflowSha }
+$completionEvidencePath = 'evidence/local-completion-result.json'
+if ($manifest.schemaVersion -eq '1.2.0') {
+    $candidate = $manifest
+    foreach ($member in @('evidence','local','completion')) {
+        $candidate = if ($candidate -is [System.Collections.IDictionary]) { Get-JsonMemberValue -InputObject $candidate -Name $member } else { $null }
+    }
+    # Contract reports malformed manifest members; bootstrap must still produce the aggregate.
+    if ($candidate -is [string] -and -not [string]::IsNullOrWhiteSpace($candidate)) { $completionEvidencePath = $candidate }
+}
 $toolArguments = @{
     Contract = @('-Path',$projectRoot,'-ExpectedRepository',$CallerRepository,'-ExpectedStandardsRepository',$StandardsRepository,'-RepositoryOwnerType',$RepositoryOwnerType,'-ExpectedWorkflowInterfaceVersion','1.0.0','-ExpectedWorkflowProfile',$validationProfile) + $(if ($StandardsWorkflowSha) { @('-ExpectedGovernanceCommitSha',$StandardsWorkflowSha) } else { @() }) + $(if ($isMaintainerProfile) { @('-ExpectedRequiredCheckName','Governance / Governance validation') } else { @() })
     AgentStandards = @('-Path',$projectRoot)
@@ -436,7 +445,7 @@ $toolArguments = @{
     DocumentationCompleteness = @('-Path',$projectRoot)
     ForbiddenPatterns = @('-Path',$projectRoot)
     RepositoryHealth = @('-Path',$projectRoot,'-RepositoryOwnerType',$RepositoryOwnerType)
-    Evidence = @('-Path',$projectRoot,'-EvidencePath','evidence/local-completion-result.json')
+    Evidence = @('-Path',$projectRoot,'-EvidencePath',$completionEvidencePath)
     PythonStaticAnalysis = @('-Path',$projectRoot,'-Profile',$validationProfile,'-OutputJson',(Join-Path $evidenceFull 'python-static-analysis.json'),'-AllowedOutputRoot',$evidenceFull)
     BashStaticAnalysis = @('-Path',$projectRoot,'-Profile',$validationProfile,'-OutputJson',(Join-Path $evidenceFull 'bash-static-analysis.json'),'-AllowedOutputRoot',$evidenceFull)
     Pester = @('-EvidenceRoot',$evidenceFull)

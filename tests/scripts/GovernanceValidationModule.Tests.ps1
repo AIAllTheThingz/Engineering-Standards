@@ -12,6 +12,14 @@ AfterAll {
 
 Describe 'GovernanceValidation module' {
     Context 'authoritative validation registry and profiles' {
+        It 'excludes optional dictionary records when aggregating status' {
+            Get-GovernanceAggregateStatus -Results @(
+                @{ status = 'Passed' }, @{ status = 'Failed'; requiredValidation = $false }
+            ) | Should -BeExactly 'Passed'
+            Get-GovernanceAggregateStatus -Results @(@{ status = 'Failed' }) | Should -BeExactly 'Failed'
+            Get-GovernanceAggregateStatus -Results @(@{ status = 'Failed'; requiredValidation = 0 }) | Should -BeExactly 'Failed'
+        }
+
         It 'defines unique ordered categories with valid trusted runner paths' {
             $repoRoot = (Resolve-Path "$PSScriptRoot/../..").Path
             $registry = @(Get-GovernanceValidationCategoryRegistry)
