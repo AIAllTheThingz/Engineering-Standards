@@ -588,7 +588,7 @@ Describe 'Validate evidence action' {
             $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../..')).Path
             $completionPath = Join-Path $repositoryRoot 'examples/python-project/evidence/local-completion-result.json'
             $completion = Get-Content -LiteralPath $completionPath -Raw | ConvertFrom-Json
-            @($completion.artifacts).Count | Should -Be 8
+            @($completion.artifacts).Count | Should -Be 9
 
             foreach ($artifact in @($completion.artifacts)) {
                 $repositoryRelativePath = "examples/python-project/$($artifact.path)"
