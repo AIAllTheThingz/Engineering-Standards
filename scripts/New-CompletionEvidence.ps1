@@ -178,6 +178,11 @@ function Convert-RepositoryLfFile {
     if ($relativePath -eq '.' -or $relativePath -match '^(?:[A-Za-z]:|/|\.\.(?:/|$))') { return }
 
     $attribute = @(& git -C $RepositoryRoot check-attr eol -- $relativePath 2>$null)
+    $attributeExitCode = $LASTEXITCODE
+    if ($attributeExitCode -ne 0) {
+        $global:LASTEXITCODE = 0
+        return
+    }
     if ($LASTEXITCODE -ne 0 -or ($attribute -join "`n") -notmatch '(?m):\s*eol:\s*lf\s*$') { return }
 
     $bytes = [System.IO.File]::ReadAllBytes($Path)

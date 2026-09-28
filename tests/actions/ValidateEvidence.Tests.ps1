@@ -452,6 +452,7 @@ Describe 'Validate evidence action' {
             }
             & "$PSScriptRoot/../../scripts/New-WorkflowTestEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/local-tests.json' -Outcomes $outcomes -Reports $reports -RunPester -RunDocumentation -RunExamples -Runtime 'Local PowerShell validation' -ToolVersion 'test'
             & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/local-completion-result.json' -ExecutionContext Local -Summary 'Local evidence must not claim GitHub-hosted workflow execution succeeded.' -TestResultPath 'evidence/local-tests.json' -ArtifactPath @('evidence/report.json','evidence/local-tests.json') -CommandsExecuted @('local test command') -CommandsNotExecuted @('GitHub-hosted Governance CI workflow execution')
+            $LASTEXITCODE | Should -Be 0
             $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/local-completion-result.json') -Raw | ConvertFrom-Json
             $generated.status | Should -Be 'NotRun'
             ($generated.tests | Where-Object name -eq 'GitHub-hosted workflow execution').status | Should -Be 'NotRun'
