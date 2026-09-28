@@ -58,6 +58,10 @@ TOOL_DISTRIBUTIONS = {
     "pip": "pip",
 }
 
+PLATFORM_LOCK_EXCEPTIONS = {
+    "colorama": "0.4.6",  # build/pytest Windows-only dependency retained by the universal lock
+}
+
 
 def utc() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
@@ -420,7 +424,9 @@ def validate_resolved_requirements_lock(requirements_input: Path, lock: Path, re
     locked = locked_requirements(lock)
     resolved = resolved_requirements(report)
     unexpected = sorted(
-        f"{name}=={locked[name]}" for name in locked if name not in resolved
+        f"{name}=={locked[name]}"
+        for name in locked
+        if name not in resolved and PLATFORM_LOCK_EXCEPTIONS.get(name) != locked[name]
     )
     missing = sorted(
         f"{name}=={resolved[name]}" for name in resolved if name not in locked

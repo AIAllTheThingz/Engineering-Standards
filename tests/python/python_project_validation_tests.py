@@ -171,6 +171,27 @@ def test_requirements_lock_rejects_unresolved_transitive_pin(tmp_path: Path) -> 
         raise AssertionError("injected transitive lock entry was accepted")
 
 
+def test_requirements_lock_accepts_reviewed_platform_only_pin(tmp_path: Path) -> None:
+    requirements_input = tmp_path / "requirements-ci.in"
+    requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "build==1.6.1 \\\n"
+        "    --hash=sha256:" + "0" * 64 + "\n"
+        "    # via -r requirements-ci.in\n"
+        "colorama==0.4.6 \\\n"
+        "    --hash=sha256:" + "1" * 64 + "\n"
+        "    # via build\n",
+        encoding="utf-8",
+    )
+    report = tmp_path / "resolution.json"
+    report.write_text(
+        json.dumps({"install": [{"metadata": {"name": "build", "version": "1.6.1"}}]}),
+        encoding="utf-8",
+    )
+    validator.validate_resolved_requirements_lock(requirements_input, lock, report)
+
+
 def test_python_evidence_normalizer_explains_notrun_status() -> None:
     """Local evidence must retain an honest, actionable reason for NotRun."""
     root = Path(__file__).resolve().parents[2]
