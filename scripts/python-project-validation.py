@@ -341,17 +341,27 @@ def locked_requirements(path: Path) -> dict[str, str]:
 def direct_locked_requirements(path: Path, requirements_input: Path) -> dict[str, str]:
     requirements: dict[str, str] = {}
     current: tuple[str, str] | None = None
-    direct_marker = re.compile(rf"^\s*# via -r .*{re.escape(requirements_input.name)}\s*$")
+    inline_direct_marker = re.compile(rf"^\s*# via -r .*{re.escape(requirements_input.name)}\s*$")
+    multiline_provenance_marker = re.compile(r"^\s*# via\s*$")
+    multiline_direct_marker = re.compile(rf"^\s*#\s+-r\s+.*{re.escape(requirements_input.name)}\s*$")
+    in_multiline_provenance = False
     for raw_line in path.read_text(encoding="utf-8").splitlines():
         match = re.match(r"^([A-Za-z0-9_.-]+)==([^\s\\]+)", raw_line.strip())
         if match:
             current = (normalized_requirement_name(match.group(1)), match.group(2))
+            in_multiline_provenance = False
             continue
-        if current is not None and direct_marker.fullmatch(raw_line):
+        if current is None:
+            continue
+        if inline_direct_marker.fullmatch(raw_line) or (
+            in_multiline_provenance and multiline_direct_marker.fullmatch(raw_line)
+        ):
             name, version = current
             if name in requirements:
                 raise ValueError(f"{path.name} contains duplicate direct requirement '{name}'")
             requirements[name] = version
+        if multiline_provenance_marker.fullmatch(raw_line):
+            in_multiline_provenance = True
     return requirements
 
 
