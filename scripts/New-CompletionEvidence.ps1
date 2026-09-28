@@ -34,6 +34,9 @@ Summary of work.
 Optional JSON array of test evidence records.
 .PARAMETER ArtifactPath
 Artifacts to hash and include.
+.PARAMETER ChangedFile
+Optional explicit repository-relative change inventory. When supplied, this
+takes precedence over Git working-tree and commit change detection.
 .PARAMETER CommandsExecuted
 Exact commands that ran.
 .PARAMETER CommandsNotExecuted
@@ -66,6 +69,7 @@ param(
     [string]$EvidenceExecutionContext = $(if ($env:GITHUB_ACTIONS -eq 'true') { 'GitHubActions' } else { 'Local' }),
     [string]$ArtifactName,
     [string]$ValidatedCommitSha,
+    [string]$ValidatedCommitTag,
     [AllowNull()][string]$EvidenceCommitSha = $null,
     [string]$ChangeCategory = 'mixed',
     [switch]$ApprovalRequired,
@@ -77,6 +81,7 @@ param(
     [string]$StandardsWorkflowSha,
     [string]$ValidationProfile,
     [string[]]$ChecksExecuted = @(),
+    [string[]]$ChangedFile = @(),
     [string]$SourceRepositoryPath
 )
 Set-StrictMode -Version Latest
@@ -118,6 +123,33 @@ if (-not $commit) {
     if ($LASTEXITCODE -ne 0 -or -not $commit) { $commit = 'unknown' }
 }
 $validatedCommit = if ($ValidatedCommitSha) { $ValidatedCommitSha } else { $commit }
+
+function Resolve-ValidatedCommitTag {
+    param(
+        [AllowNull()][string]$TagName,
+        [Parameter(Mandatory)][string]$RepositoryRoot,
+        [Parameter(Mandatory)][string]$CommitSha
+    )
+
+    if ([string]::IsNullOrWhiteSpace($TagName)) { return $null }
+    $tag = $TagName.Trim()
+    $reference = "refs/tags/$tag"
+    & git -C $RepositoryRoot check-ref-format $reference 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        throw "ValidatedCommitTag '$tag' is not a valid tag name."
+    }
+    $tagType = @(& git -C $RepositoryRoot cat-file -t $reference 2>$null)
+    if ($LASTEXITCODE -ne 0 -or ($tagType -join '').Trim() -cne 'tag') {
+        throw "ValidatedCommitTag '$tag' must resolve to an annotated tag object."
+    }
+    $peeledCommit = @(& git -C $RepositoryRoot rev-parse --verify "$reference^{}" 2>$null)
+    if ($LASTEXITCODE -ne 0 -or -not $peeledCommit -or ($peeledCommit -join '').Trim() -ine $CommitSha.Trim()) {
+        throw "ValidatedCommitTag '$tag' must resolve to validated commit '$CommitSha'."
+    }
+    return $tag
+}
+
+$validatedCommitTag = Resolve-ValidatedCommitTag -TagName $ValidatedCommitTag -RepositoryRoot $sourceRoot -CommitSha $validatedCommit
 $effectiveBranch = $env:GITHUB_REF_NAME
 if ($Branch) {
     $effectiveBranch = $Branch
@@ -129,11 +161,53 @@ elseif (-not $effectiveBranch) {
 $githubRunId = if ($EvidenceExecutionContext -eq 'GitHubActions' -and $env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID } else { $null }
 $githubRunAttempt = if ($EvidenceExecutionContext -eq 'GitHubActions' -and $env:GITHUB_RUN_ATTEMPT) { $env:GITHUB_RUN_ATTEMPT } else { $null }
 $githubWorkflow = if ($EvidenceExecutionContext -eq 'GitHubActions' -and $env:GITHUB_WORKFLOW) { $env:GITHUB_WORKFLOW } else { $null }
+
+function Convert-RepositoryLfFile {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][string]$RepositoryRoot
+    )
+
+    # Git's text=auto attribute can still report eol=lf for arbitrary binary
+    # files. Only normalize the explicit textual evidence formats this script
+    # emits; every other artifact must be hashed without mutation.
+    $extension = [System.IO.Path]::GetExtension($Path).ToLowerInvariant()
+    if ($extension -notin @('.json', '.xml')) { return }
+
+    $relativePath = [System.IO.Path]::GetRelativePath($RepositoryRoot, $Path).Replace('\', '/')
+    if ($relativePath -eq '.' -or $relativePath -match '^(?:[A-Za-z]:|/|\.\.(?:/|$))') { return }
+
+    $attribute = @(& git -C $RepositoryRoot check-attr eol -- $relativePath 2>$null)
+    if ($LASTEXITCODE -ne 0 -or ($attribute -join "`n") -notmatch '(?m):\s*eol:\s*lf\s*$') { return }
+
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    $normalized = [System.IO.MemoryStream]::new()
+    $changed = $false
+    try {
+        for ($index = 0; $index -lt $bytes.Length; $index++) {
+            if ($bytes[$index] -eq 13 -and $index + 1 -lt $bytes.Length -and $bytes[$index + 1] -eq 10) {
+                $normalized.WriteByte(10)
+                $index++
+                $changed = $true
+                continue
+            }
+            $normalized.WriteByte($bytes[$index])
+        }
+        if ($changed) {
+            [System.IO.File]::WriteAllBytes($Path, $normalized.ToArray())
+        }
+    }
+    finally {
+        $normalized.Dispose()
+    }
+}
+
 $artifacts = @()
 foreach ($artifact in $ArtifactPath) {
     if ($artifact -eq $OutputPath) { continue }
     $resolved = Resolve-SafePath -Root $root -ChildPath $artifact
     if (Test-Path -LiteralPath $resolved -PathType Leaf) {
+        Convert-RepositoryLfFile -Path $resolved -RepositoryRoot $root
         $item = Get-Item -LiteralPath $resolved
         $mediaType = if ($item.Extension -eq '.json') { 'application/json' } elseif ($item.Extension -eq '.xml') { 'application/xml' } else { 'application/octet-stream' }
         $related = switch -Regex ($artifact) {
@@ -204,6 +278,19 @@ function Test-GeneratedBuildOutputPath {
     $normalized -match '(^|/)(bin|obj|dist)(/|$)' -or $normalized -match '^(coverage|TestResults)(/|$)'
 }
 
+function Convert-ChangedFilePath {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $normalized = $Path.Trim().Replace('\', '/')
+    while ($normalized.StartsWith('./', [StringComparison]::Ordinal)) {
+        $normalized = $normalized.Substring(2)
+    }
+    if ([string]::IsNullOrWhiteSpace($normalized) -or $normalized -eq 'unknown' -or $normalized -match '^(?:[A-Za-z]:|/|//)' -or $normalized -match '(?:^|/)\.\.(?:/|$)') {
+        throw "ChangedFile '$Path' must be a non-empty repository-relative path without traversal."
+    }
+    return $normalized
+}
+
 function Get-ChangedFileCategories {
     param([string[]]$Files)
     $categories = [ordered]@{
@@ -228,7 +315,14 @@ function Get-ChangedFileCategories {
     $categories
 }
 
-$changedFiles = @(& git -C $sourceRoot status --short 2>$null | ForEach-Object { $_.Substring(3).Replace('\','/') })
+$changedFiles = @(
+    if (@($ChangedFile).Count -gt 0) {
+        $ChangedFile | ForEach-Object { Convert-ChangedFilePath -Path $_ }
+    }
+    else {
+        & git -C $sourceRoot status --short 2>$null | ForEach-Object { $_.Substring(3).Replace('\','/') }
+    }
+)
 if ($changedFiles.Count -eq 0 -and $commit -ne 'unknown') {
     $changedFiles = @(& git -C $sourceRoot diff-tree --no-commit-id --name-only -r $commit 2>$null | ForEach-Object { $_.Replace('\','/') })
 }
@@ -246,6 +340,7 @@ $evidence = [ordered]@{
     repository = $(if ($Repository) { $Repository } elseif ($env:GITHUB_REPOSITORY) { $env:GITHUB_REPOSITORY } else { Get-OriginRepositoryName -RepositoryRoot $sourceRoot })
     commitSha = $validatedCommit.Trim()
     validatedCommitSha = $validatedCommit.Trim()
+    validatedCommitTag = $validatedCommitTag
     evidenceCommitSha = $(if ($EvidenceCommitSha) { $EvidenceCommitSha.Trim() } else { $null })
     branch = $effectiveBranch.Trim()
     pullRequest = $null
@@ -323,4 +418,5 @@ $evidence = [ordered]@{
 $out = Resolve-SafePath -Root $root -ChildPath $OutputPath -AllowMissingLeaf
 New-Item -ItemType Directory -Path (Split-Path -Parent $out) -Force | Out-Null
 $evidence | ConvertTo-OrderedJson | Set-Content -LiteralPath $out -Encoding utf8
+Convert-RepositoryLfFile -Path $out -RepositoryRoot $root
 Write-Output "Completion evidence written to $out"

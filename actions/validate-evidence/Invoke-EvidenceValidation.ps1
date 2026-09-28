@@ -86,6 +86,18 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
         $results.Add((New-ValidationResult -Status Failed -Message 'evidencePath must resolve to a directory.' -Path 'governance.config.json'))
     }
     $validatedSha = if ($evidence.validatedCommitSha) { [string]$evidence.validatedCommitSha } else { [string]$evidence.commitSha }
+    $validatedTag = $null
+    if ($evidence -is [System.Collections.IDictionary]) {
+        if ($evidence.Contains('validatedCommitTag') -and $evidence['validatedCommitTag']) {
+            $validatedTag = [string]$evidence['validatedCommitTag']
+        }
+    }
+    else {
+        $validatedTagProperty = $evidence.PSObject.Properties['validatedCommitTag']
+        if ($validatedTagProperty -and $validatedTagProperty.Value) {
+            $validatedTag = [string]$validatedTagProperty.Value
+        }
+    }
     $evidenceSha = if ($evidence.evidenceCommitSha) { [string]$evidence.evidenceCommitSha } else { $null }
     if ($ExpectedCommitSha -and $validatedSha -ne $ExpectedCommitSha) {
         $results.Add((New-ValidationResult -Status Failed -Message 'Commit SHA mismatch.' -Path $EvidencePath))
@@ -100,12 +112,34 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
                 $results.Add((New-ValidationResult -Status Failed -Message "$($shaCheck.name) does not exist in this repository." -Path $EvidencePath))
             }
         }
+        if ($validatedTag) {
+            $tagReference = "refs/tags/$validatedTag"
+            & git -C $root check-ref-format $tagReference 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitTag is not a valid tag name.' -Path $EvidencePath))
+            }
+            else {
+                $tagType = @(& git -C $root cat-file -t $tagReference 2>$null)
+                if ($LASTEXITCODE -ne 0 -or ($tagType -join '').Trim() -cne 'tag') {
+                    $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitTag must resolve to an annotated tag object.' -Path $EvidencePath))
+                }
+                else {
+                    $peeledTagCommit = @(& git -C $root rev-parse --verify "$tagReference^{}" 2>$null)
+                    if ($LASTEXITCODE -ne 0 -or -not $peeledTagCommit -or ($peeledTagCommit -join '').Trim() -ine $validatedSha) {
+                        $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitTag does not resolve to validatedCommitSha.' -Path $EvidencePath))
+                    }
+                }
+            }
+        }
         if ($validatedSha -and $evidenceSha) {
             & git -C $root merge-base --is-ancestor $validatedSha $evidenceSha 2>$null
             if ($LASTEXITCODE -ne 0) {
                 $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitSha must be an ancestor of or equal to evidenceCommitSha.' -Path $EvidencePath))
             }
         }
+    }
+    elseif ($validatedTag) {
+        $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitTag cannot be verified outside a Git repository.' -Path $EvidencePath))
     }
     $repositoryToCheck = if ($ExpectedRepository) {
         $ExpectedRepository

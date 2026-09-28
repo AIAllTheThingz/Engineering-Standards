@@ -21,6 +21,12 @@ def normalize_record(record: dict[str, Any]) -> dict[str, Any]:
         record["exitCode"] = None
         record["failureReason"] = None
         record["blockedReason"] = None
+    elif record.get("status") == "NotRun":
+        reason = details.get("sanitizedOutput") or "This validation was not run."
+        record["notApplicableRationale"] = None
+        record["exitCode"] = None
+        record["failureReason"] = str(reason)[:2000]
+        record["blockedReason"] = None
     return record
 
 

@@ -171,7 +171,8 @@ def test_requirements_lock_rejects_unresolved_transitive_pin(tmp_path: Path) -> 
         raise AssertionError("injected transitive lock entry was accepted")
 
 
-def test_requirements_lock_accepts_reviewed_platform_only_pin(tmp_path: Path) -> None:
+def test_requirements_lock_accepts_inactive_platform_transitive_pin(tmp_path: Path) -> None:
+    """A universal lock can retain a package that only another platform needs."""
     requirements_input = tmp_path / "requirements-ci.in"
     requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
     lock = tmp_path / "requirements-ci.lock"
@@ -186,10 +187,66 @@ def test_requirements_lock_accepts_reviewed_platform_only_pin(tmp_path: Path) ->
     )
     report = tmp_path / "resolution.json"
     report.write_text(
-        json.dumps({"install": [{"metadata": {"name": "build", "version": "1.6.1"}}]}),
+        json.dumps(
+            {
+                "install": [
+                    {
+                        "metadata": {
+                            "name": "build",
+                            "version": "1.6.1",
+                            "requires_dist": [
+                                "colorama==0.4.6; os_name == 'not-a-real-os'"
+                            ],
+                        }
+                    },
+                ]
+            }
+        ),
         encoding="utf-8",
     )
+
     validator.validate_resolved_requirements_lock(requirements_input, lock, report)
+
+
+def test_requirements_lock_rejects_unrequested_extra_transitive_pin(tmp_path: Path) -> None:
+    """An inactive optional extra cannot be used to smuggle a lock package in."""
+    requirements_input = tmp_path / "requirements-ci.in"
+    requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "build==1.6.1 \\\n"
+        "    --hash=sha256:" + "0" * 64 + "\n"
+        "    # via -r requirements-ci.in\n"
+        "keyring==1.0 \\\n"
+        "    --hash=sha256:" + "1" * 64 + "\n"
+        "    # via build\n",
+        encoding="utf-8",
+    )
+    report = tmp_path / "resolution.json"
+    report.write_text(
+        json.dumps(
+            {
+                "install": [
+                    {
+                        "metadata": {
+                            "name": "build",
+                            "version": "1.6.1",
+                            "requires_dist": ["keyring==1.0; extra == 'keyring'"],
+                        }
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    try:
+        validator.validate_resolved_requirements_lock(requirements_input, lock, report)
+    except ValueError as exc:
+        require("unexpected locked packages" in str(exc), "extra-only lock package was not identified")
+        require("keyring==1.0" in str(exc), "extra-only package was omitted from the diagnostic")
+    else:
+        raise AssertionError("unrequested extra dependency was accepted into the lock")
 
 
 def test_python_evidence_normalizer_explains_notrun_status() -> None:

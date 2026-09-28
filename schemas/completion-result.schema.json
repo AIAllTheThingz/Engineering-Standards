@@ -96,6 +96,15 @@
       "type": "string",
       "pattern": "^[A-Fa-f0-9]{40}$"
     },
+    "validatedCommitTag": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 241,
+      "pattern": "^(?!.*\\.\\.)(?!.*//)(?!.*@\\{)(?!.*\\.$)[A-Za-z0-9][A-Za-z0-9._/-]*$"
+    },
     "evidenceCommitSha": {
       "type": [
         "string",
