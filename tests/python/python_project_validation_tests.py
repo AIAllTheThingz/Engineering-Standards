@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import re
 import stat
 import sys
 import zipfile
@@ -96,6 +98,22 @@ def test_requirements_lock_accepts_current_input_and_lock() -> None:
     )
 
 
+def test_requirements_lock_accepts_multiline_direct_provenance(tmp_path: Path) -> None:
+    """A pip-compile multiline ``# via`` block still identifies a direct pin."""
+    requirements_input = tmp_path / "requirements-ci.in"
+    requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "build==1.6.1 \\\n"
+        "    --hash=sha256:" + "0" * 64 + "\n"
+        "    # via\n"
+        "    #   -r requirements-ci.in\n",
+        encoding="utf-8",
+    )
+
+    validator.validate_requirements_lock(requirements_input, lock)
+
+
 def test_requirements_lock_rejects_stale_input(tmp_path: Path) -> None:
     requirements_input = tmp_path / "requirements-ci.in"
     requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
@@ -115,6 +133,38 @@ def test_requirements_lock_rejects_stale_input(tmp_path: Path) -> None:
         require("build==1.6.1" in message, "stale lock error omitted the input version")
     else:
         raise AssertionError("stale requirements lock was accepted")
+
+
+def test_toolchain_sbom_matches_governed_build_requirements() -> None:
+    """A stale inventory must not report prior build-backend versions or hashes."""
+    root = Path(__file__).resolve().parents[2]
+    lock_text = (root / "examples" / "python-project" / "requirements-ci.lock").read_text(encoding="utf-8")
+    sbom = json.loads(
+        (root / "examples" / "python-project" / "evidence" / "python-project-sbom.cdx.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    components = {
+        validator.normalized_requirement_name(component["name"]): component
+        for component in sbom["components"]
+    }
+
+    for package in ("build", "hatchling"):
+        lock_match = re.search(
+            rf"(?ms)^{re.escape(package)}==([^\s\\]+)(.*?)(?=^[A-Za-z0-9_.-]+==|\Z)", lock_text
+        )
+        require(lock_match is not None, f"{package} is missing from the governed lock")
+        component = components.get(package)
+        require(component is not None, f"{package} is missing from the checked-in SBOM")
+        require(component["version"] == lock_match.group(1), f"{package} SBOM version is stale")
+        expected_hashes = set(re.findall(r"--hash=sha256:([0-9a-f]{64})", lock_match.group(0)))
+        actual_hashes = {
+            item["content"]
+            for reference in component.get("externalReferences", [])
+            for item in reference.get("hashes", [])
+            if item.get("alg") == "SHA-256"
+        }
+        require(actual_hashes == expected_hashes, f"{package} SBOM hashes are stale")
 
 
 def test_project_metadata_requires_governed_hatchling_version(tmp_path: Path) -> None:

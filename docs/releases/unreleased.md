@@ -17,6 +17,7 @@ This document is the migration guide for the current `unreleasedContract` in `go
 
 - PR #108 updated the governed Python example build backend from Hatchling `1.31.0` to `1.32.0`.
 - The synchronized toolchain adds exact `tomlkit==0.15.1` runtime locking and updates the owned validator/regression expectation.
+- PR #121 updates the governed Python example's hash-locked CI toolchain from build `1.5.0` to `1.6.1` and Hatchling `1.32.0` to `1.32.4`, refreshes its SBOM and local evidence, and recognizes pip-compile multiline direct-provenance blocks.
 - This work merged after the frozen v1.2.1 target and therefore remains `[Unreleased]`.
 
 No later semantic governance version has been selected. The root `VERSION` remains `1.2.1` until maintainers deliberately start another release-preparation cycle.
