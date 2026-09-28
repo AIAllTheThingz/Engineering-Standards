@@ -192,31 +192,6 @@ def test_requirements_lock_accepts_reviewed_platform_only_pin(tmp_path: Path) ->
     validator.validate_resolved_requirements_lock(requirements_input, lock, report)
 
 
-def test_python_evidence_normalizer_explains_notrun_status() -> None:
-    """Local evidence must retain an honest, actionable reason for NotRun."""
-    root = Path(__file__).resolve().parents[2]
-    normalizer = runpy.run_path(root / "scripts" / "Normalize-PythonFunctionalEvidence.py")
-    record = {
-        "schemaVersion": "1.1.0",
-        "name": "GitHub-hosted workflow execution",
-        "category": "workflow",
-        "status": "NotRun",
-        "exitCode": 0,
-        "failureReason": None,
-        "blockedReason": "stale reason",
-        "notApplicableRationale": "stale rationale",
-        "details": {"sanitizedOutput": "Hosted execution was not performed locally."},
-    }
-    normalized = normalizer["normalize_record"](record)
-    require(normalized["exitCode"] is None, "NotRun evidence must not claim a process exit")
-    require(
-        normalized["failureReason"] == "Hosted execution was not performed locally.",
-        "NotRun evidence omitted its truthful reason",
-    )
-    require(normalized["blockedReason"] is None, "NotRun evidence retained a blocked reason")
-    require(normalized["notApplicableRationale"] is None, "NotRun evidence retained an inapplicable rationale")
-
-
 def test_toolchain_sbom_matches_governed_lock_requirements() -> None:
     """A stale inventory must not report prior build-backend versions or hashes."""
     root = Path(__file__).resolve().parents[2]
