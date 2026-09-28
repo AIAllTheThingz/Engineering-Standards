@@ -35,7 +35,7 @@ try {
                 $item.code -eq 'S603' -and
                 $item.message -eq '`subprocess` call: check for execution of untrusted input' -and
                 "${rel}:$($item.location.row)" -in @(
-                    'scripts/python-project-validation.py:132',
+                    'scripts/python-project-validation.py:126',
                     'scripts/Install-BashProjectToolchain.py:234',
                     'scripts/bash-project-validation.py:433'
                 )

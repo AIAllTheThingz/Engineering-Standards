@@ -515,9 +515,10 @@ Describe 'Validate evidence action' {
                 -RepositoryPath $script:tempRoot -SourceRepositoryPath $script:tempRoot `
                 -OutputPath 'evidence/generated.json' -Summary 'Annotated validation-tag fixture.' `
                 -ArtifactPath 'evidence/report.json' -ValidatedCommitSha $validatedCommit `
-                -ValidatedCommitTag 'evidence/validated-source'
+                -ValidatedCommitTag 'evidence/validated-source' -ExecutionContext Local
             $LASTEXITCODE | Should -Be 0
             $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/generated.json') -Raw | ConvertFrom-Json
+            $generated.commitSha | Should -BeExactly $validatedCommit
             $generated.validatedCommitTag | Should -BeExactly 'evidence/validated-source'
 
             $evidencePath = Join-Path $script:tempRoot 'completion-result.json'
@@ -707,7 +708,7 @@ Describe 'Validate evidence action' {
             $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
             @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
 
-            $completion.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v6'
+            $completion.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v7'
             $tagReference = "refs/tags/$($completion.validatedCommitTag)"
             ((& git -C $repositoryRoot cat-file -t $tagReference) -join '').Trim() | Should -BeExactly 'tag'
             ((& git -C $repositoryRoot rev-parse "$tagReference^{}") -join '').Trim() | Should -BeExactly $completion.validatedCommitSha

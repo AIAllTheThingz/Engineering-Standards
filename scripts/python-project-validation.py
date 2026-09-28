@@ -121,12 +121,6 @@ def run(
     env: dict[str, str],
     timeout: int = 300,
 ) -> tuple[int, str, float]:
-    """Run a validator-constructed argv list without invoking a shell.
-
-    Callers in this module assemble the command from validated tool paths and
-    fixed arguments.  Keep this wrapper as the sole subprocess boundary so
-    that command execution remains auditable.
-    """
     started = time.monotonic()
     try:
         result = subprocess.run(

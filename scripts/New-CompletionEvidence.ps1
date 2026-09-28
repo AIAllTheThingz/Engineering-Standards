@@ -117,7 +117,7 @@ if ($Status -ne $computedStatus) {
         throw "Caller status '$Status' contradicts computed test-record status '$computedStatus'."
     }
 }
-$commit = $env:GITHUB_SHA
+$commit = if ($EvidenceExecutionContext -eq 'GitHubActions') { $env:GITHUB_SHA } else { $null }
 if (-not $commit) {
     $commit = (& git -C $sourceRoot rev-parse HEAD 2>$null)
     if ($LASTEXITCODE -ne 0 -or -not $commit) { $commit = 'unknown' }
