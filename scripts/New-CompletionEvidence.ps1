@@ -129,48 +129,12 @@ elseif (-not $effectiveBranch) {
 $githubRunId = if ($EvidenceExecutionContext -eq 'GitHubActions' -and $env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID } else { $null }
 $githubRunAttempt = if ($EvidenceExecutionContext -eq 'GitHubActions' -and $env:GITHUB_RUN_ATTEMPT) { $env:GITHUB_RUN_ATTEMPT } else { $null }
 $githubWorkflow = if ($EvidenceExecutionContext -eq 'GitHubActions' -and $env:GITHUB_WORKFLOW) { $env:GITHUB_WORKFLOW } else { $null }
-
-function Get-RepositoryNormalizedArtifactIntegrity {
-    param(
-        [Parameter(Mandatory)][string]$RepositoryRoot,
-        [Parameter(Mandatory)][string]$ArtifactPath,
-        [Parameter(Mandatory)][string]$ResolvedPath
-    )
-
-    $bytes = [System.IO.File]::ReadAllBytes($ResolvedPath)
-    $gitPath = $ArtifactPath.Replace('\', '/')
-    $attributes = @(& git -C $RepositoryRoot check-attr eol -- $gitPath 2>$null)
-    if ($LASTEXITCODE -eq 0 -and (($attributes -join "`n") -match '(?m):\s*eol:\s*lf\s*$')) {
-        $normalized = [System.IO.MemoryStream]::new()
-        try {
-            for ($index = 0; $index -lt $bytes.Length; $index++) {
-                if ($bytes[$index] -eq 13 -and $index + 1 -lt $bytes.Length -and $bytes[$index + 1] -eq 10) {
-                    $normalized.WriteByte(10)
-                    $index++
-                    continue
-                }
-                $normalized.WriteByte($bytes[$index])
-            }
-            $bytes = $normalized.ToArray()
-        }
-        finally {
-            $normalized.Dispose()
-        }
-    }
-
-    [ordered]@{
-        sizeBytes = [int64]$bytes.Length
-        sha256 = [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
-    }
-}
-
 $artifacts = @()
 foreach ($artifact in $ArtifactPath) {
     if ($artifact -eq $OutputPath) { continue }
     $resolved = Resolve-SafePath -Root $root -ChildPath $artifact
     if (Test-Path -LiteralPath $resolved -PathType Leaf) {
         $item = Get-Item -LiteralPath $resolved
-        $integrity = Get-RepositoryNormalizedArtifactIntegrity -RepositoryRoot $root -ArtifactPath $artifact -ResolvedPath $resolved
         $mediaType = if ($item.Extension -eq '.json') { 'application/json' } elseif ($item.Extension -eq '.xml') { 'application/xml' } else { 'application/octet-stream' }
         $related = switch -Regex ($artifact) {
             'yaml-syntax' { 'YAML syntax validation'; break }
@@ -196,9 +160,9 @@ foreach ($artifact in $ArtifactPath) {
             artifactType = 'report'
             path = $artifact
             mediaType = $mediaType
-            sizeBytes = $integrity.sizeBytes
+            sizeBytes = $item.Length
             hashAlgorithm = 'SHA-256'
-            sha256 = $integrity.sha256
+            sha256 = (Get-FileHash -LiteralPath $resolved -Algorithm SHA256).Hash.ToLowerInvariant()
             createdAtUtc = (Get-Date).ToUniversalTime().ToString('o')
             publishedAtUtc = $null
             producer = 'New-CompletionEvidence.ps1'

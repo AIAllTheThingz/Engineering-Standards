@@ -457,25 +457,38 @@ Describe 'Validate evidence action' {
             ($generated.tests | Where-Object name -eq 'GitHub-hosted workflow execution').status | Should -Be 'NotRun'
         }
 
-        It 'records LF-normalized JSON artifact integrity when Git attributes require LF' {
-            & $script:NewTempEvidence
-            & git -C $script:tempRoot init -q
-            $LASTEXITCODE | Should -Be 0
-            Set-Content -LiteralPath (Join-Path $script:tempRoot '.gitattributes') -Value '*.json text eol=lf' -NoNewline
-            $reportPath = Join-Path $script:tempRoot 'evidence/report.json'
-            $crlfContent = "{`r`n  `"result`": `"passed`"`r`n}"
-            [System.IO.File]::WriteAllText($reportPath, $crlfContent, [System.Text.UTF8Encoding]::new($false))
+        It 'keeps checked-in Python artifact records aligned with canonical LF bytes' {
+            $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../..')).Path
+            $completionPath = Join-Path $repositoryRoot 'examples/python-project/evidence/local-completion-result.json'
+            $completion = Get-Content -LiteralPath $completionPath -Raw | ConvertFrom-Json
+            @($completion.artifacts).Count | Should -Be 8
 
-            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/local-completion-result.json' -ExecutionContext Local -Summary 'Local evidence must preserve Git-normalized artifact integrity.' -TestResultPath 'evidence/test-results.json' -ArtifactPath @('evidence/report.json') -CommandsExecuted @('local test command')
-            $LASTEXITCODE | Should -Be 0
+            foreach ($artifact in @($completion.artifacts)) {
+                $repositoryRelativePath = "examples/python-project/$($artifact.path)"
+                $attribute = @(& git -C $repositoryRoot check-attr eol -- $repositoryRelativePath)
+                $LASTEXITCODE | Should -Be 0
+                ($attribute -join "`n") | Should -Match '(?m):\s*eol:\s*lf\s*$'
 
-            $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/local-completion-result.json') -Raw | ConvertFrom-Json
-            $artifact = @($generated.artifacts | Where-Object path -eq 'evidence/report.json')[0]
-            $expectedBytes = [System.Text.UTF8Encoding]::new($false).GetBytes($crlfContent.Replace("`r`n", "`n"))
-            $expectedHash = [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($expectedBytes)).ToLowerInvariant()
+                $bytes = [System.IO.File]::ReadAllBytes((Join-Path $repositoryRoot $repositoryRelativePath))
+                $normalized = [System.IO.MemoryStream]::new()
+                try {
+                    for ($index = 0; $index -lt $bytes.Length; $index++) {
+                        if ($bytes[$index] -eq 13 -and $index + 1 -lt $bytes.Length -and $bytes[$index + 1] -eq 10) {
+                            $normalized.WriteByte(10)
+                            $index++
+                            continue
+                        }
+                        $normalized.WriteByte($bytes[$index])
+                    }
+                    $canonicalBytes = $normalized.ToArray()
+                }
+                finally {
+                    $normalized.Dispose()
+                }
 
-            $artifact.sizeBytes | Should -Be $expectedBytes.Length
-            $artifact.sha256 | Should -Be $expectedHash
+                $artifact.sizeBytes | Should -Be $canonicalBytes.Length
+                $artifact.sha256 | Should -Be ([Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($canonicalBytes)).ToLowerInvariant())
+            }
         }
 
         It 'computes Failed when a mandatory test failed' {
