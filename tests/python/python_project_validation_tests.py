@@ -135,7 +135,7 @@ def test_requirements_lock_rejects_stale_input(tmp_path: Path) -> None:
         raise AssertionError("stale requirements lock was accepted")
 
 
-def test_toolchain_sbom_matches_governed_build_requirements() -> None:
+def test_toolchain_sbom_matches_governed_lock_requirements() -> None:
     """A stale inventory must not report prior build-backend versions or hashes."""
     root = Path(__file__).resolve().parents[2]
     lock_text = (root / "examples" / "python-project" / "requirements-ci.lock").read_text(encoding="utf-8")
@@ -149,7 +149,7 @@ def test_toolchain_sbom_matches_governed_build_requirements() -> None:
         for component in sbom["components"]
     }
 
-    for package in ("build", "hatchling"):
+    for package in ("build", "hatchling", "pip"):
         lock_match = re.search(
             rf"(?ms)^{re.escape(package)}==([^\s\\]+)(.*?)(?=^[A-Za-z0-9_.-]+==|\Z)", lock_text
         )

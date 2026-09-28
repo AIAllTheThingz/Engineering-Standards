@@ -7,7 +7,7 @@ All notable changes to the Engineering Standards repository are recorded here. T
 ### Changed
 
 - Updated the governed Python example build backend from Hatchling `1.31.0` to `1.32.0`, including the synchronized hash lock, `tomlkit==0.15.1`, validator expectation, and regression contract from PR #108. This work merged after the frozen `v1.2.1` target and is not part of the published patch.
-- PR #121 updates the governed Python example's hash-locked CI toolchain from build `1.5.0` to `1.6.1` and Hatchling `1.32.0` to `1.32.4`, refreshes its SBOM and local evidence, and recognizes pip-compile multiline direct-provenance blocks.
+- PR #121 updates the governed Python example's hash-locked CI toolchain from build `1.5.0` to `1.6.1` and Hatchling `1.32.0` to `1.32.4`, patches the unsafe resolver dependency to pip `26.2.1`, refreshes its SBOM and local evidence, and recognizes pip-compile multiline direct-provenance blocks.
 
 ## [1.2.1] - 2026-08-15
 

@@ -2688,18 +2688,18 @@
     },
     {
       "bom-ref": "requirements-L934",
-      "description": "requirements line 934: pip==26.1.2     --hash=sha256:382ff9f685ee3bc25864f820aa50505825f10f5458ffff07e30a6d96e5715cab     --hash=sha256:f49cd134c61cf2fd75e0ce2676db03e4054504a5a4986d00f8299ae632dc4605",
+      "description": "requirements line 934: pip==26.2.1     --hash=sha256:71138adf1f4ca900cdb7d289c21b7494329f2332b6d85f0e1c42108c0384ed3e     --hash=sha256:f6ad667e89a1fe78046c8f13232b247200f5258d7828f3f7883d660878e0813f",
       "externalReferences": [
         {
           "comment": "implicit dist url",
           "hashes": [
             {
               "alg": "SHA-256",
-              "content": "382ff9f685ee3bc25864f820aa50505825f10f5458ffff07e30a6d96e5715cab"
+              "content": "71138adf1f4ca900cdb7d289c21b7494329f2332b6d85f0e1c42108c0384ed3e"
             },
             {
               "alg": "SHA-256",
-              "content": "f49cd134c61cf2fd75e0ce2676db03e4054504a5a4986d00f8299ae632dc4605"
+              "content": "f6ad667e89a1fe78046c8f13232b247200f5258d7828f3f7883d660878e0813f"
             }
           ],
           "type": "distribution",
@@ -2707,9 +2707,9 @@
         }
       ],
       "name": "pip",
-      "purl": "pkg:pypi/pip@26.1.2",
+      "purl": "pkg:pypi/pip@26.2.1",
       "type": "library",
-      "version": "26.1.2"
+      "version": "26.2.1"
     },
     {
       "bom-ref": "requirements-L622",
@@ -4360,7 +4360,7 @@
     }
   ],
   "metadata": {
-    "timestamp": "2026-09-28T12:57:35.629626+00:00",
+    "timestamp": "2026-09-28T13:05:53.738367+00:00",
     "tools": {
       "components": [
         {
@@ -4464,7 +4464,7 @@
       ]
     }
   },
-  "serialNumber": "urn:uuid:1a015851-d166-470f-a429-40628520f08e",
+  "serialNumber": "urn:uuid:5bd2dc1b-d0ae-4fb0-89bb-f6e42464e99a",
   "version": 1,
   "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
   "bomFormat": "CycloneDX",
