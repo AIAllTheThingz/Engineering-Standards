@@ -457,6 +457,27 @@ Describe 'Validate evidence action' {
             ($generated.tests | Where-Object name -eq 'GitHub-hosted workflow execution').status | Should -Be 'NotRun'
         }
 
+        It 'records LF-normalized JSON artifact integrity when Git attributes require LF' {
+            & $script:NewTempEvidence
+            & git -C $script:tempRoot init -q
+            $LASTEXITCODE | Should -Be 0
+            Set-Content -LiteralPath (Join-Path $script:tempRoot '.gitattributes') -Value '*.json text eol=lf' -NoNewline
+            $reportPath = Join-Path $script:tempRoot 'evidence/report.json'
+            $crlfContent = "{`r`n  `"result`": `"passed`"`r`n}"
+            [System.IO.File]::WriteAllText($reportPath, $crlfContent, [System.Text.UTF8Encoding]::new($false))
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/local-completion-result.json' -ExecutionContext Local -Summary 'Local evidence must preserve Git-normalized artifact integrity.' -TestResultPath 'evidence/test-results.json' -ArtifactPath @('evidence/report.json') -CommandsExecuted @('local test command')
+            $LASTEXITCODE | Should -Be 0
+
+            $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/local-completion-result.json') -Raw | ConvertFrom-Json
+            $artifact = @($generated.artifacts | Where-Object path -eq 'evidence/report.json')[0]
+            $expectedBytes = [System.Text.UTF8Encoding]::new($false).GetBytes($crlfContent.Replace("`r`n", "`n"))
+            $expectedHash = [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($expectedBytes)).ToLowerInvariant()
+
+            $artifact.sizeBytes | Should -Be $expectedBytes.Length
+            $artifact.sha256 | Should -Be $expectedHash
+        }
+
         It 'computes Failed when a mandatory test failed' {
             & $script:NewTempEvidence -Status Failed -TestStatus Failed
             & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'Generated evidence should preserve failed mandatory test status.' -TestResultPath 'evidence/test-results.json' -ArtifactPath @('evidence/report.json') -CommandsExecuted @('test command')
