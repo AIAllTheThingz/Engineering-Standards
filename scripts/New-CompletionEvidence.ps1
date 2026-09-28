@@ -69,6 +69,7 @@ param(
     [string]$EvidenceExecutionContext = $(if ($env:GITHUB_ACTIONS -eq 'true') { 'GitHubActions' } else { 'Local' }),
     [string]$ArtifactName,
     [string]$ValidatedCommitSha,
+    [string]$ValidatedCommitTag,
     [AllowNull()][string]$EvidenceCommitSha = $null,
     [string]$ChangeCategory = 'mixed',
     [switch]$ApprovalRequired,
@@ -122,6 +123,33 @@ if (-not $commit) {
     if ($LASTEXITCODE -ne 0 -or -not $commit) { $commit = 'unknown' }
 }
 $validatedCommit = if ($ValidatedCommitSha) { $ValidatedCommitSha } else { $commit }
+
+function Resolve-ValidatedCommitTag {
+    param(
+        [AllowNull()][string]$TagName,
+        [Parameter(Mandatory)][string]$RepositoryRoot,
+        [Parameter(Mandatory)][string]$CommitSha
+    )
+
+    if ([string]::IsNullOrWhiteSpace($TagName)) { return $null }
+    $tag = $TagName.Trim()
+    $reference = "refs/tags/$tag"
+    & git -C $RepositoryRoot check-ref-format $reference 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        throw "ValidatedCommitTag '$tag' is not a valid tag name."
+    }
+    $tagType = @(& git -C $RepositoryRoot cat-file -t $reference 2>$null)
+    if ($LASTEXITCODE -ne 0 -or ($tagType -join '').Trim() -cne 'tag') {
+        throw "ValidatedCommitTag '$tag' must resolve to an annotated tag object."
+    }
+    $peeledCommit = @(& git -C $RepositoryRoot rev-parse --verify "$reference^{}" 2>$null)
+    if ($LASTEXITCODE -ne 0 -or -not $peeledCommit -or ($peeledCommit -join '').Trim() -ine $CommitSha.Trim()) {
+        throw "ValidatedCommitTag '$tag' must resolve to validated commit '$CommitSha'."
+    }
+    return $tag
+}
+
+$validatedCommitTag = Resolve-ValidatedCommitTag -TagName $ValidatedCommitTag -RepositoryRoot $sourceRoot -CommitSha $validatedCommit
 $effectiveBranch = $env:GITHUB_REF_NAME
 if ($Branch) {
     $effectiveBranch = $Branch
@@ -312,6 +340,7 @@ $evidence = [ordered]@{
     repository = $(if ($Repository) { $Repository } elseif ($env:GITHUB_REPOSITORY) { $env:GITHUB_REPOSITORY } else { Get-OriginRepositoryName -RepositoryRoot $sourceRoot })
     commitSha = $validatedCommit.Trim()
     validatedCommitSha = $validatedCommit.Trim()
+    validatedCommitTag = $validatedCommitTag
     evidenceCommitSha = $(if ($EvidenceCommitSha) { $EvidenceCommitSha.Trim() } else { $null })
     branch = $effectiveBranch.Trim()
     pullRequest = $null

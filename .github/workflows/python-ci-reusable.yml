@@ -52,10 +52,27 @@ jobs:
           $project = $projectItem.FullName
           if (-not ($project -eq $root -or $project.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal))) { throw 'project-path escaped the caller checkout.' }
 
+      - name: Set up Python 3.13 lock resolver
+        id: lock_resolver
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.13
+
       - name: Set up exact Python runtime
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: 3.12.11
+
+      - name: Verify complete hash-locked toolchain closure before installation
+        shell: pwsh
+        run: |
+          $resolverPython = '${{ steps.lock_resolver.outputs.python-path }}'
+          & $resolverPython -I standards/scripts/python-project-validation.py `
+            --verify-tool-lock `
+            --work-root (Join-Path $env:RUNNER_TEMP 'python-lock-resolution') `
+            --tool-lock standards/examples/python-project/requirements-ci.lock `
+            --resolver-python $resolverPython
+          if ($LASTEXITCODE -ne 0) { throw 'The governed Python toolchain lock does not match its complete resolved closure.' }
 
       - name: Install standards-owned hash-locked toolchain
         shell: pwsh

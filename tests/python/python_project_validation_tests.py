@@ -135,6 +135,41 @@ def test_requirements_lock_rejects_stale_input(tmp_path: Path) -> None:
         raise AssertionError("stale requirements lock was accepted")
 
 
+def test_requirements_lock_rejects_unresolved_transitive_pin(tmp_path: Path) -> None:
+    """A forged ``# via`` comment cannot authorize an unrelated lock entry."""
+    requirements_input = tmp_path / "requirements-ci.in"
+    requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "build==1.6.1 \\\n"
+        "    --hash=sha256:" + "0" * 64 + "\n"
+        "    # via -r requirements-ci.in\n"
+        "evil==1.0 \\\n"
+        "    --hash=sha256:" + "1" * 64 + "\n"
+        "    # via build\n",
+        encoding="utf-8",
+    )
+    report = tmp_path / "resolution.json"
+    report.write_text(
+        json.dumps(
+            {
+                "install": [
+                    {"metadata": {"name": "build", "version": "1.6.1"}},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    try:
+        validator.validate_resolved_requirements_lock(requirements_input, lock, report)
+    except ValueError as exc:
+        require("unexpected locked packages" in str(exc), "injected lock package was not identified")
+        require("evil==1.0" in str(exc), "injected package was omitted from the diagnostic")
+    else:
+        raise AssertionError("injected transitive lock entry was accepted")
+
+
 def test_toolchain_sbom_matches_governed_lock_requirements() -> None:
     """A stale inventory must not report prior build-backend versions or hashes."""
     root = Path(__file__).resolve().parents[2]

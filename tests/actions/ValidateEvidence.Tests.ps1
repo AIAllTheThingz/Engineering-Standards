@@ -497,6 +497,54 @@ Describe 'Validate evidence action' {
             $artifact[0].sha256 | Should -Be ((Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant())
         }
 
+        It 'requires an annotated validation tag to resolve to the recorded commit' {
+            & $script:NewTempEvidence
+            Set-Content -LiteralPath (Join-Path $script:tempRoot 'source.txt') -Value 'validated source' -NoNewline
+            & git -C $script:tempRoot init --quiet
+            $LASTEXITCODE | Should -Be 0
+            & git -C $script:tempRoot config user.email 'evidence-test@example.invalid'
+            & git -C $script:tempRoot config user.name 'Evidence Test'
+            & git -C $script:tempRoot add --all
+            & git -C $script:tempRoot commit --quiet -m 'validated source'
+            $LASTEXITCODE | Should -Be 0
+            $validatedCommit = (& git -C $script:tempRoot rev-parse HEAD).Trim()
+            & git -C $script:tempRoot tag -a evidence/validated-source -m 'Durable validation source' $validatedCommit
+            $LASTEXITCODE | Should -Be 0
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" `
+                -RepositoryPath $script:tempRoot -SourceRepositoryPath $script:tempRoot `
+                -OutputPath 'evidence/generated.json' -Summary 'Annotated validation-tag fixture.' `
+                -ArtifactPath 'evidence/report.json' -ValidatedCommitSha $validatedCommit `
+                -ValidatedCommitTag 'evidence/validated-source'
+            $LASTEXITCODE | Should -Be 0
+            $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/generated.json') -Raw | ConvertFrom-Json
+            $generated.validatedCommitTag | Should -BeExactly 'evidence/validated-source'
+
+            $evidencePath = Join-Path $script:tempRoot 'completion-result.json'
+            $evidence = Get-Content -LiteralPath $evidencePath -Raw | ConvertFrom-Json -AsHashtable
+            $evidence.commitSha = $validatedCommit
+            $evidence.validatedCommitSha = $validatedCommit
+            $evidence.validatedCommitTag = 'evidence/validated-source'
+            $evidence | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $evidencePath
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Be 0
+
+            Set-Content -LiteralPath (Join-Path $script:tempRoot 'source.txt') -Value 'other source' -NoNewline
+            & git -C $script:tempRoot add source.txt
+            & git -C $script:tempRoot commit --quiet -m 'other source'
+            $LASTEXITCODE | Should -Be 0
+            & git -C $script:tempRoot tag -d evidence/validated-source
+            $LASTEXITCODE | Should -Be 0
+            & git -C $script:tempRoot tag -a evidence/validated-source -m 'Wrong target' HEAD
+            $LASTEXITCODE | Should -Be 0
+            $movedTagCommit = (& git -C $script:tempRoot rev-parse 'refs/tags/evidence/validated-source^{}').Trim()
+            $movedTagCommit | Should -Not -BeExactly $validatedCommit
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json' 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            ($output -join "`n") | Should -Match 'validatedCommitTag does not resolve to validatedCommitSha'
+        }
+
         It 'uses an explicit complete change inventory when supplied' {
             & $script:NewTempEvidence
             $changedFiles = @(
