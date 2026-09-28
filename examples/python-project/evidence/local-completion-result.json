@@ -19,28 +19,57 @@
   "startedAtUtc": "2026-09-28T13:16:40.1533186Z",
   "completedAtUtc": "2026-09-28T13:16:40.1534526Z",
   "durationSeconds": 0,
-  "summary": "Local governed Python CI toolchain and functional validation completed; GitHub-hosted execution remains NotRun until the correction branch is pushed.",
+  "summary": "Local governed Python CI toolchain and functional validation completed for the dependency correction; this inventory records the complete corrective PR scope. GitHub-hosted execution was NotRun when this local evidence was generated.",
   "changedFiles": [
     "CHANGELOG.md",
     "docs/releases/unreleased.md",
+    "examples/python-project/evidence/local-completion-result.json",
+    "examples/python-project/evidence/local-test-results.json",
+    "examples/python-project/evidence/python-build.json",
+    "examples/python-project/evidence/python-dependency-audit.json",
+    "examples/python-project/evidence/python-formatting.json",
     "examples/python-project/evidence/python-project-sbom.cdx.json",
+    "examples/python-project/evidence/python-ruff.json",
+    "examples/python-project/evidence/python-tests.json",
+    "examples/python-project/evidence/python-type-check.json",
+    "examples/python-project/pyproject.toml",
+    "examples/python-project/requirements-ci.in",
     "examples/python-project/requirements-ci.lock",
-    "tests/python/python_project_validation_tests.py"
+    "scripts/New-CompletionEvidence.ps1",
+    "scripts/python-project-validation.py",
+    "tests/actions/ValidateEvidence.Tests.ps1",
+    "tests/python/python_project_validation_tests.py",
+    "tests/scripts/PythonProjectSupport.Tests.ps1"
   ],
   "changedFileCategories": {
     "source": [
+      "examples/python-project/pyproject.toml",
+      "examples/python-project/requirements-ci.in",
       "examples/python-project/requirements-ci.lock"
     ],
     "documentation": [
       "CHANGELOG.md",
       "docs/releases/unreleased.md"
     ],
-    "configuration": [],
+    "configuration": [
+      "scripts/New-CompletionEvidence.ps1",
+      "scripts/python-project-validation.py"
+    ],
     "tests": [
-      "tests/python/python_project_validation_tests.py"
+      "tests/actions/ValidateEvidence.Tests.ps1",
+      "tests/python/python_project_validation_tests.py",
+      "tests/scripts/PythonProjectSupport.Tests.ps1"
     ],
     "generatedEvidence": [
-      "examples/python-project/evidence/python-project-sbom.cdx.json"
+      "examples/python-project/evidence/local-completion-result.json",
+      "examples/python-project/evidence/local-test-results.json",
+      "examples/python-project/evidence/python-build.json",
+      "examples/python-project/evidence/python-dependency-audit.json",
+      "examples/python-project/evidence/python-formatting.json",
+      "examples/python-project/evidence/python-project-sbom.cdx.json",
+      "examples/python-project/evidence/python-ruff.json",
+      "examples/python-project/evidence/python-tests.json",
+      "examples/python-project/evidence/python-type-check.json"
     ],
     "generatedBuildOutput": []
   },
@@ -68,7 +97,7 @@
   "dataClassification": "Internal",
   "identityUsed": "Local maintainer context",
   "credentialMode": "Local workstation credentials",
-  "notRunReason": "GitHub Actions PR validation was not run locally and must execute after the correction branch is pushed.",
+  "notRunReason": "GitHub Actions PR validation was not run locally; it had to execute after the correction branch was pushed.",
   "blockedReason": null,
   "notApplicableRationale": null,
   "commandsExecuted": [
@@ -637,7 +666,7 @@
   "warnings": [],
   "knownLimitations": [],
   "remainingRisks": [
-    "Hosted GitHub Actions validation and required human review remain pending."
+    "At local evidence generation, hosted GitHub Actions validation and required human review remained pending."
   ],
   "exceptions": [],
   "approvals": [],

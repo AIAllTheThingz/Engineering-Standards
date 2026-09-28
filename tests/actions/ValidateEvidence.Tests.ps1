@@ -457,6 +457,58 @@ Describe 'Validate evidence action' {
             ($generated.tests | Where-Object name -eq 'GitHub-hosted workflow execution').status | Should -Be 'NotRun'
         }
 
+        It 'normalizes LF-governed artifacts before recording their integrity' {
+            & $script:NewTempEvidence
+            & git -C $script:tempRoot init --quiet
+            $LASTEXITCODE | Should -Be 0
+            Set-Content -LiteralPath (Join-Path $script:tempRoot '.gitattributes') -Value 'evidence/report.json text eol=lf' -NoNewline
+            $artifactPath = Join-Path $script:tempRoot 'evidence/report.json'
+            [System.IO.File]::WriteAllText($artifactPath, "{`r`n  `"status`": `"passed`"`r`n}`r`n", [System.Text.UTF8Encoding]::new($false))
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'LF-governed artifact integrity fixture.' -ArtifactPath 'evidence/report.json'
+            $LASTEXITCODE | Should -Be 0
+
+            $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/generated.json') -Raw | ConvertFrom-Json
+            $artifact = @($generated.artifacts | Where-Object path -eq 'evidence/report.json')
+            $artifact.Count | Should -Be 1
+            $bytes = [System.IO.File]::ReadAllBytes($artifactPath)
+            ($bytes -contains 13) | Should -BeFalse
+            $artifact[0].sizeBytes | Should -Be $bytes.Length
+            $artifact[0].sha256 | Should -Be ((Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant())
+        }
+
+        It 'uses an explicit complete change inventory when supplied' {
+            & $script:NewTempEvidence
+            $changedFiles = @(
+                'docs/README.md'
+                'evidence/report.json'
+                'scripts/validator.ps1'
+                'src/app.py'
+                'tests/app.Tests.ps1'
+            )
+
+            & "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'Explicit change inventory fixture.' -ArtifactPath 'evidence/report.json' -ChangedFile $changedFiles
+            $? | Should -BeTrue
+
+            $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/generated.json') -Raw | ConvertFrom-Json
+            $actualChangedFiles = @($generated.changedFiles | Sort-Object)
+            $expectedChangedFiles = @($changedFiles | Sort-Object)
+            $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
+            @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
+            $generated.changedFileCategories.documentation | Should -Contain 'docs/README.md'
+            $generated.changedFileCategories.generatedEvidence | Should -Contain 'evidence/report.json'
+            $generated.changedFileCategories.configuration | Should -Contain 'scripts/validator.ps1'
+            $generated.changedFileCategories.source | Should -Contain 'src/app.py'
+            $generated.changedFileCategories.tests | Should -Contain 'tests/app.Tests.ps1'
+        }
+
+        It 'rejects unsafe explicit change inventory paths' {
+            & $script:NewTempEvidence
+            $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'Unsafe change inventory fixture.' -ChangedFile '../outside.json' 2>&1)
+            $LASTEXITCODE | Should -Not -Be 0
+            ($output -join "`n") | Should -Match 'must be a non-empty repository-relative path without traversal'
+        }
+
         It 'keeps checked-in Python artifact records aligned with canonical LF bytes' {
             $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../..')).Path
             $completionPath = Join-Path $repositoryRoot 'examples/python-project/evidence/local-completion-result.json'
@@ -489,6 +541,90 @@ Describe 'Validate evidence action' {
                 $artifact.sizeBytes | Should -Be $canonicalBytes.Length
                 $artifact.sha256 | Should -Be ([Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($canonicalBytes)).ToLowerInvariant())
             }
+        }
+
+        It 'records the complete Python dependency correction scope and categories' {
+            $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../..')).Path
+            $completionPath = Join-Path $repositoryRoot 'examples/python-project/evidence/local-completion-result.json'
+            $completion = Get-Content -LiteralPath $completionPath -Raw | ConvertFrom-Json
+            $expectedChangedFiles = @(
+                'CHANGELOG.md'
+                'docs/releases/unreleased.md'
+                'examples/python-project/evidence/local-completion-result.json'
+                'examples/python-project/evidence/local-test-results.json'
+                'examples/python-project/evidence/python-build.json'
+                'examples/python-project/evidence/python-dependency-audit.json'
+                'examples/python-project/evidence/python-formatting.json'
+                'examples/python-project/evidence/python-project-sbom.cdx.json'
+                'examples/python-project/evidence/python-ruff.json'
+                'examples/python-project/evidence/python-tests.json'
+                'examples/python-project/evidence/python-type-check.json'
+                'examples/python-project/pyproject.toml'
+                'examples/python-project/requirements-ci.in'
+                'examples/python-project/requirements-ci.lock'
+                'scripts/New-CompletionEvidence.ps1'
+                'scripts/python-project-validation.py'
+                'tests/actions/ValidateEvidence.Tests.ps1'
+                'tests/python/python_project_validation_tests.py'
+                'tests/scripts/PythonProjectSupport.Tests.ps1'
+            )
+            $expectedCategories = [ordered]@{
+                source = @(
+                    'examples/python-project/pyproject.toml'
+                    'examples/python-project/requirements-ci.in'
+                    'examples/python-project/requirements-ci.lock'
+                )
+                documentation = @(
+                    'CHANGELOG.md'
+                    'docs/releases/unreleased.md'
+                )
+                configuration = @(
+                    'scripts/New-CompletionEvidence.ps1'
+                    'scripts/python-project-validation.py'
+                )
+                tests = @(
+                    'tests/actions/ValidateEvidence.Tests.ps1'
+                    'tests/python/python_project_validation_tests.py'
+                    'tests/scripts/PythonProjectSupport.Tests.ps1'
+                )
+                generatedEvidence = @(
+                    'examples/python-project/evidence/local-completion-result.json'
+                    'examples/python-project/evidence/local-test-results.json'
+                    'examples/python-project/evidence/python-build.json'
+                    'examples/python-project/evidence/python-dependency-audit.json'
+                    'examples/python-project/evidence/python-formatting.json'
+                    'examples/python-project/evidence/python-project-sbom.cdx.json'
+                    'examples/python-project/evidence/python-ruff.json'
+                    'examples/python-project/evidence/python-tests.json'
+                    'examples/python-project/evidence/python-type-check.json'
+                )
+                generatedBuildOutput = @()
+            }
+
+            $actualChangedFiles = @($completion.changedFiles | Sort-Object)
+            $expectedChangedFiles = @($expectedChangedFiles | Sort-Object)
+            $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
+            @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
+
+            $actualCategoryNames = @($completion.changedFileCategories.PSObject.Properties.Name | Sort-Object)
+            $expectedCategoryNames = @($expectedCategories.Keys | Sort-Object)
+            $actualCategoryNames.Count | Should -Be $expectedCategoryNames.Count
+            @(Compare-Object -ReferenceObject $expectedCategoryNames -DifferenceObject $actualCategoryNames).Count | Should -Be 0
+
+            foreach ($categoryName in $expectedCategories.Keys) {
+                $actualCategoryFiles = @($completion.changedFileCategories.$categoryName | Sort-Object)
+                $expectedCategoryFiles = @($expectedCategories[$categoryName] | Sort-Object)
+                $actualCategoryFiles.Count | Should -Be $expectedCategoryFiles.Count
+                @(Compare-Object -ReferenceObject $expectedCategoryFiles -DifferenceObject $actualCategoryFiles).Count | Should -Be 0
+            }
+
+            $categorizedFiles = @(
+                foreach ($category in $completion.changedFileCategories.PSObject.Properties) {
+                    @($category.Value)
+                }
+            ) | Sort-Object
+            $categorizedFiles.Count | Should -Be $expectedChangedFiles.Count
+            @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $categorizedFiles).Count | Should -Be 0
         }
 
         It 'computes Failed when a mandatory test failed' {

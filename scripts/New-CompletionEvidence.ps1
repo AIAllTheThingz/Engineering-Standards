@@ -34,6 +34,9 @@ Summary of work.
 Optional JSON array of test evidence records.
 .PARAMETER ArtifactPath
 Artifacts to hash and include.
+.PARAMETER ChangedFile
+Optional explicit repository-relative change inventory. When supplied, this
+takes precedence over Git working-tree and commit change detection.
 .PARAMETER CommandsExecuted
 Exact commands that ran.
 .PARAMETER CommandsNotExecuted
@@ -77,6 +80,7 @@ param(
     [string]$StandardsWorkflowSha,
     [string]$ValidationProfile,
     [string[]]$ChecksExecuted = @(),
+    [string[]]$ChangedFile = @(),
     [string]$SourceRepositoryPath
 )
 Set-StrictMode -Version Latest
@@ -129,11 +133,47 @@ elseif (-not $effectiveBranch) {
 $githubRunId = if ($EvidenceExecutionContext -eq 'GitHubActions' -and $env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID } else { $null }
 $githubRunAttempt = if ($EvidenceExecutionContext -eq 'GitHubActions' -and $env:GITHUB_RUN_ATTEMPT) { $env:GITHUB_RUN_ATTEMPT } else { $null }
 $githubWorkflow = if ($EvidenceExecutionContext -eq 'GitHubActions' -and $env:GITHUB_WORKFLOW) { $env:GITHUB_WORKFLOW } else { $null }
+
+function Convert-RepositoryLfFile {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][string]$RepositoryRoot
+    )
+
+    $relativePath = [System.IO.Path]::GetRelativePath($RepositoryRoot, $Path).Replace('\', '/')
+    if ($relativePath -eq '.' -or $relativePath -match '^(?:[A-Za-z]:|/|\.\.(?:/|$))') { return }
+
+    $attribute = @(& git -C $RepositoryRoot check-attr eol -- $relativePath 2>$null)
+    if ($LASTEXITCODE -ne 0 -or ($attribute -join "`n") -notmatch '(?m):\s*eol:\s*lf\s*$') { return }
+
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    $normalized = [System.IO.MemoryStream]::new()
+    $changed = $false
+    try {
+        for ($index = 0; $index -lt $bytes.Length; $index++) {
+            if ($bytes[$index] -eq 13 -and $index + 1 -lt $bytes.Length -and $bytes[$index + 1] -eq 10) {
+                $normalized.WriteByte(10)
+                $index++
+                $changed = $true
+                continue
+            }
+            $normalized.WriteByte($bytes[$index])
+        }
+        if ($changed) {
+            [System.IO.File]::WriteAllBytes($Path, $normalized.ToArray())
+        }
+    }
+    finally {
+        $normalized.Dispose()
+    }
+}
+
 $artifacts = @()
 foreach ($artifact in $ArtifactPath) {
     if ($artifact -eq $OutputPath) { continue }
     $resolved = Resolve-SafePath -Root $root -ChildPath $artifact
     if (Test-Path -LiteralPath $resolved -PathType Leaf) {
+        Convert-RepositoryLfFile -Path $resolved -RepositoryRoot $root
         $item = Get-Item -LiteralPath $resolved
         $mediaType = if ($item.Extension -eq '.json') { 'application/json' } elseif ($item.Extension -eq '.xml') { 'application/xml' } else { 'application/octet-stream' }
         $related = switch -Regex ($artifact) {
@@ -204,6 +244,19 @@ function Test-GeneratedBuildOutputPath {
     $normalized -match '(^|/)(bin|obj|dist)(/|$)' -or $normalized -match '^(coverage|TestResults)(/|$)'
 }
 
+function Convert-ChangedFilePath {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $normalized = $Path.Trim().Replace('\', '/')
+    while ($normalized.StartsWith('./', [StringComparison]::Ordinal)) {
+        $normalized = $normalized.Substring(2)
+    }
+    if ([string]::IsNullOrWhiteSpace($normalized) -or $normalized -eq 'unknown' -or $normalized -match '^(?:[A-Za-z]:|/|//)' -or $normalized -match '(?:^|/)\.\.(?:/|$)') {
+        throw "ChangedFile '$Path' must be a non-empty repository-relative path without traversal."
+    }
+    return $normalized
+}
+
 function Get-ChangedFileCategories {
     param([string[]]$Files)
     $categories = [ordered]@{
@@ -228,7 +281,14 @@ function Get-ChangedFileCategories {
     $categories
 }
 
-$changedFiles = @(& git -C $sourceRoot status --short 2>$null | ForEach-Object { $_.Substring(3).Replace('\','/') })
+$changedFiles = @(
+    if (@($ChangedFile).Count -gt 0) {
+        $ChangedFile | ForEach-Object { Convert-ChangedFilePath -Path $_ }
+    }
+    else {
+        & git -C $sourceRoot status --short 2>$null | ForEach-Object { $_.Substring(3).Replace('\','/') }
+    }
+)
 if ($changedFiles.Count -eq 0 -and $commit -ne 'unknown') {
     $changedFiles = @(& git -C $sourceRoot diff-tree --no-commit-id --name-only -r $commit 2>$null | ForEach-Object { $_.Replace('\','/') })
 }
@@ -323,4 +383,5 @@ $evidence = [ordered]@{
 $out = Resolve-SafePath -Root $root -ChildPath $OutputPath -AllowMissingLeaf
 New-Item -ItemType Directory -Path (Split-Path -Parent $out) -Force | Out-Null
 $evidence | ConvertTo-OrderedJson | Set-Content -LiteralPath $out -Encoding utf8
+Convert-RepositoryLfFile -Path $out -RepositoryRoot $root
 Write-Output "Completion evidence written to $out"
