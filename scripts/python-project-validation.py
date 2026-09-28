@@ -391,7 +391,7 @@ def validate_requirements_lock(requirements_input: Path, lock: Path) -> None:
         )
 
 
-def resolved_requirements(report: Path) -> dict[str, str]:
+def resolution_install_records(report: Path) -> list[dict[str, Any]]:
     try:
         document = json.loads(report.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -399,9 +399,15 @@ def resolved_requirements(report: Path) -> dict[str, str]:
     installs = document.get("install")
     if not isinstance(installs, list) or not installs:
         raise ValueError("pip resolution report does not contain a non-empty install closure")
+    if any(not isinstance(item, dict) for item in installs):
+        raise ValueError("pip resolution report contains an invalid install record")
+    return installs
+
+
+def resolved_requirements(install_records: list[dict[str, Any]]) -> dict[str, str]:
     requirements: dict[str, str] = {}
-    for item in installs:
-        if not isinstance(item, dict) or not isinstance(item.get("metadata"), dict):
+    for item in install_records:
+        if not isinstance(item.get("metadata"), dict):
             raise ValueError("pip resolution report contains an invalid install record")
         name = item["metadata"].get("name")
         version = item["metadata"].get("version")
@@ -414,13 +420,73 @@ def resolved_requirements(report: Path) -> dict[str, str]:
     return requirements
 
 
+def conditionally_inapplicable_lock_requirements(
+    install_records: list[dict[str, Any]],
+    locked: dict[str, str],
+    resolved: dict[str, str],
+) -> set[str]:
+    """Return alternate-environment pins justified by resolved package metadata.
+
+    A universal lock can include a platform- or interpreter-gated dependency that
+    the current resolver correctly omits.  It remains valid only when a package
+    in the current closure declares that exact dependency behind an inactive
+    non-extra marker.  This deliberately does not trust ``# via`` comments.
+    """
+    try:
+        # This pre-install validator can rely only on pip, so use pip's bundled
+        # PEP 508 parser instead of an independently installed dependency.
+        from pip._vendor.packaging.markers import default_environment
+        from pip._vendor.packaging.requirements import InvalidRequirement, Requirement
+    except ImportError as exc:
+        raise ValueError("pip's bundled PEP 508 requirement parser is unavailable") from exc
+
+    environment = default_environment()
+    conditionally_inapplicable: set[str] = set()
+    for item in install_records:
+        metadata = item.get("metadata")
+        if not isinstance(metadata, dict):
+            raise ValueError("pip resolution report contains an invalid install record")
+        requires_dist = metadata.get("requires_dist")
+        if requires_dist is None:
+            continue
+        if not isinstance(requires_dist, list) or any(
+            not isinstance(requirement, str) for requirement in requires_dist
+        ):
+            raise ValueError("pip resolution report contains an invalid requires_dist record")
+        for raw_requirement in requires_dist:
+            try:
+                requirement = Requirement(raw_requirement)
+            except InvalidRequirement as exc:
+                raise ValueError(
+                    f"pip resolution report contains an invalid dependency declaration: {raw_requirement!r}"
+                ) from exc
+            name = normalized_requirement_name(requirement.name)
+            if name not in locked or name in resolved or requirement.marker is None:
+                continue
+            # Dependencies enabled only by an unrequested extra must never
+            # justify a lock entry.  Pip would otherwise have resolved it.
+            if "extra" in str(requirement.marker).lower() or requirement.marker.evaluate(environment):
+                continue
+            if requirement.specifier.contains(locked[name], prereleases=True):
+                conditionally_inapplicable.add(name)
+    return conditionally_inapplicable
+
+
 def validate_resolved_requirements_lock(requirements_input: Path, lock: Path, report: Path) -> None:
-    """Require the lock to be exactly the constrained resolver closure."""
+    """Require the lock to match the resolver closure on every applicable platform."""
     validate_requirements_lock(requirements_input, lock)
     locked = locked_requirements(lock)
-    resolved = resolved_requirements(report)
+    install_records = resolution_install_records(report)
+    resolved = resolved_requirements(install_records)
+    conditionally_inapplicable = conditionally_inapplicable_lock_requirements(
+        install_records,
+        locked,
+        resolved,
+    )
     unexpected = sorted(
-        f"{name}=={locked[name]}" for name in locked if name not in resolved
+        f"{name}=={locked[name]}"
+        for name in locked
+        if name not in resolved and name not in conditionally_inapplicable
     )
     missing = sorted(
         f"{name}=={resolved[name]}" for name in resolved if name not in locked
