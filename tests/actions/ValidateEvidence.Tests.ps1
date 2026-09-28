@@ -707,7 +707,7 @@ Describe 'Validate evidence action' {
             $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
             @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
 
-            $completion.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v5'
+            $completion.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v6'
             $tagReference = "refs/tags/$($completion.validatedCommitTag)"
             ((& git -C $repositoryRoot cat-file -t $tagReference) -join '').Trim() | Should -BeExactly 'tag'
             ((& git -C $repositoryRoot rev-parse "$tagReference^{}") -join '').Trim() | Should -BeExactly $completion.validatedCommitSha

@@ -626,41 +626,6 @@ def write_record(evidence_dir: Path, filename: str, record: Any) -> None:
     (evidence_dir / filename).write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
 
 
-def build_sbom(
-    metadata: dict[str, Any], wheel: Path, sdist: Path, runtime_lock: Path, generator_version: str
-) -> dict[str, Any]:
-    root_ref = f"pkg:pypi/{metadata['distribution']}@{metadata['version']}"
-    components = []
-    dependencies = []
-    for name, version in package_lines(runtime_lock):
-        ref = f"pkg:pypi/{name.lower().replace('_', '-')}@{version}"
-        components.append({"type": "library", "name": name, "version": version, "purl": ref, "bom-ref": ref})
-        dependencies.append(ref)
-    return {
-        "bomFormat": "CycloneDX",
-        "specVersion": "1.5",
-        "serialNumber": f"urn:uuid:{hashlib.sha256((root_ref + sha256(wheel)).encode()).hexdigest()[:32]}",
-        "version": 1,
-        "metadata": {
-            "timestamp": utc(),
-            "tools": {"components": [{"type": "application", "name": "cyclonedx-bom", "version": generator_version}]},
-            "component": {
-                "type": "application",
-                "name": metadata["distribution"],
-                "version": metadata["version"],
-                "purl": root_ref,
-                "bom-ref": root_ref,
-                "hashes": [
-                    {"alg": "SHA-256", "content": sha256(wheel)},
-                    {"alg": "SHA-256", "content": sha256(sdist)},
-                ],
-            },
-        },
-        "components": components,
-        "dependencies": [{"ref": root_ref, "dependsOn": dependencies}],
-    }
-
-
 def validate(args: argparse.Namespace) -> int:
     original_project = args.project.absolute()
     if not original_project.exists() or not (original_project / "project-manifest.json").is_file():
@@ -788,10 +753,35 @@ def validate(args: argparse.Namespace) -> int:
             build_records.append(smoke_record)
             failed |= smoke_code != 0
 
-        sbom = build_sbom(metadata, wheel, sdist, runtime_lock, versions["cyclonedx_py"])
-        write_record(evidence_dir, "python-project-sbom.cdx.json", sbom)
-        sbom_record = make_evidence("Python project SBOM", "security", ["trusted-cyclonedx-generation"], 0, "CycloneDX application SBOM generated.", 0, "cyclonedx-bom", versions["cyclonedx_py"], roots, {"rootComponent": sbom["metadata"]["component"]["purl"]})
+        sbom_path = evidence_dir / "python-project-sbom.cdx.json"
+        sbom_command = module_command(
+            tool_python,
+            "cyclonedx_py",
+            "requirements",
+            str(tool_lock),
+            "--pyproject",
+            str(project / "pyproject.toml"),
+            "--sv",
+            "1.5",
+            "--output-reproducible",
+            "--output-file",
+            str(sbom_path),
+        )
+        sbom_code, sbom_output, sbom_duration = run(sbom_command, args.work_root, env)
+        sbom_record = make_evidence(
+            "Python toolchain SBOM",
+            "security",
+            sbom_command,
+            sbom_code,
+            sbom_output,
+            sbom_duration,
+            "cyclonedx-bom",
+            versions["cyclonedx_py"],
+            roots,
+            {"sourceLock": str(tool_lock), "specVersion": "1.5"},
+        )
         records.append(sbom_record)
+        failed |= sbom_code != 0
 
     write_record(evidence_dir, "python-build.json", build_records)
     records.extend(build_records)
