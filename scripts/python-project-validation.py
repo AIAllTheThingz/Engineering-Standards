@@ -18,6 +18,7 @@ import stat
 import subprocess
 import sys
 import tarfile
+import tempfile
 import time
 import tomllib
 import venv
@@ -390,6 +391,114 @@ def validate_requirements_lock(requirements_input: Path, lock: Path) -> None:
         )
 
 
+def resolved_requirements(report: Path) -> dict[str, str]:
+    try:
+        document = json.loads(report.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"could not read the pip resolution report: {exc}") from exc
+    installs = document.get("install")
+    if not isinstance(installs, list) or not installs:
+        raise ValueError("pip resolution report does not contain a non-empty install closure")
+    requirements: dict[str, str] = {}
+    for item in installs:
+        if not isinstance(item, dict) or not isinstance(item.get("metadata"), dict):
+            raise ValueError("pip resolution report contains an invalid install record")
+        name = item["metadata"].get("name")
+        version = item["metadata"].get("version")
+        if not isinstance(name, str) or not isinstance(version, str) or not name or not version:
+            raise ValueError("pip resolution report contains a package without a name and version")
+        normalized_name = normalized_requirement_name(name)
+        if normalized_name in requirements:
+            raise ValueError(f"pip resolution report contains duplicate package '{name}'")
+        requirements[normalized_name] = version
+    return requirements
+
+
+def validate_resolved_requirements_lock(requirements_input: Path, lock: Path, report: Path) -> None:
+    """Require the lock to be exactly the constrained resolver closure."""
+    validate_requirements_lock(requirements_input, lock)
+    locked = locked_requirements(lock)
+    resolved = resolved_requirements(report)
+    unexpected = sorted(
+        f"{name}=={locked[name]}" for name in locked if name not in resolved
+    )
+    missing = sorted(
+        f"{name}=={resolved[name]}" for name in resolved if name not in locked
+    )
+    mismatched = sorted(
+        f"{name}=={resolved[name]} (lock has {locked[name]})"
+        for name in resolved
+        if name in locked and resolved[name] != locked[name]
+    )
+    if unexpected or missing or mismatched:
+        details: list[str] = []
+        if unexpected:
+            details.append(f"unexpected locked packages: {', '.join(unexpected)}")
+        if missing:
+            details.append(f"missing resolved packages: {', '.join(missing)}")
+        if mismatched:
+            details.append(f"resolution version mismatch: {', '.join(mismatched)}")
+        raise ValueError(
+            f"requirements lock does not match the complete constrained resolver closure ({'; '.join(details)}). "
+            "Regenerate the lock with the documented pip-compile command."
+        )
+
+
+def validate_requirements_lock_closure(
+    requirements_input: Path,
+    lock: Path,
+    resolver_python: Path,
+    work_root: Path,
+) -> None:
+    """Resolve the declared input under the lock before any lock package is installed."""
+    requirements_input = requirements_input.resolve(strict=True)
+    lock = lock.resolve(strict=True)
+    resolver_python = resolver_python.resolve(strict=True)
+    resolver_root = work_root.absolute() / "lock-resolution"
+    resolver_root.mkdir(parents=True, exist_ok=True)
+    env = trusted_env(resolver_root / "home")
+    version_command = [
+        str(resolver_python),
+        "-I",
+        "-c",
+        "import sys; print(f'{sys.implementation.name} {sys.version_info.major}.{sys.version_info.minor}')",
+    ]
+    version_code, version_output, _ = run(version_command, resolver_root, env, 60)
+    if version_code != 0 or version_output.strip() != "cpython 3.13":
+        raise ValueError("requirements lock closure must be resolved with CPython 3.13")
+    with tempfile.TemporaryDirectory(prefix="lock-resolution-", dir=resolver_root) as directory:
+        report = Path(directory) / "pip-resolution.json"
+        command = [
+            str(resolver_python),
+            "-I",
+            "-m",
+            "pip",
+            "--isolated",
+            "install",
+            "--disable-pip-version-check",
+            "--no-input",
+            "--only-binary=:all:",
+            "--no-cache-dir",
+            "--dry-run",
+            "--ignore-installed",
+            "--report",
+            str(report),
+            "--index-url",
+            "https://pypi.org/simple",
+            "-r",
+            str(requirements_input),
+            "-c",
+            str(lock),
+        ]
+        code, output, _ = run(command, resolver_root, env, 300)
+        if code != 0:
+            sanitized = sanitize(output, [requirements_input.parent, lock.parent, resolver_root, resolver_python.parent])
+            raise ValueError(f"could not resolve the requirements lock closure: {sanitized}")
+        if not report.is_file():
+            raise ValueError("pip did not produce the required requirements lock resolution report")
+        validate_resolved_requirements_lock(requirements_input, lock, report)
+
+
 def tool_versions(tool_python: Path, env: dict[str, str], cwd: Path) -> dict[str, str]:
     code = "import importlib.metadata,json; print(json.dumps({" + ",".join(
         f"{module!r}:importlib.metadata.version({distribution!r})"
@@ -643,13 +752,36 @@ def validate(args: argparse.Namespace) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--project", type=Path, required=True)
-    parser.add_argument("--work-root", type=Path, required=True)
-    parser.add_argument("--tool-python", type=Path, required=True)
+    parser.add_argument("--verify-tool-lock", action="store_true")
+    parser.add_argument("--project", type=Path)
+    parser.add_argument("--work-root", type=Path)
+    parser.add_argument("--tool-python", type=Path)
     parser.add_argument("--tool-lock", type=Path, required=True)
     parser.add_argument("--runtime-lock", default="requirements-runtime.lock")
-    parser.add_argument("--mypy-config", type=Path, required=True)
+    parser.add_argument("--mypy-config", type=Path)
+    parser.add_argument("--resolver-python", type=Path)
     args = parser.parse_args()
+    if args.verify_tool_lock:
+        if args.work_root is None or args.resolver_python is None:
+            parser.error("--verify-tool-lock requires --work-root and --resolver-python")
+        try:
+            validate_requirements_lock_closure(
+                args.tool_lock.with_suffix(".in"),
+                args.tool_lock,
+                args.resolver_python,
+                args.work_root,
+            )
+            return 0
+        except Exception as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+    missing = [
+        name
+        for name, value in (("--project", args.project), ("--work-root", args.work_root), ("--tool-python", args.tool_python), ("--mypy-config", args.mypy_config))
+        if value is None
+    ]
+    if missing:
+        parser.error(f"{' '.join(missing)} required unless --verify-tool-lock is supplied")
     try:
         return validate(args)
     except Exception as exc:

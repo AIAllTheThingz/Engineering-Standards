@@ -52,12 +52,40 @@ jobs:
           $project = $projectItem.FullName
           if (-not ($project -eq $root -or $project.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal))) { throw 'project-path escaped the caller checkout.' }
 
+      - name: Set up Python 3.13 lock resolver
+        id: lock_resolver
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.13
+
       - name: Set up exact Python runtime
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: 3.12.11
 
+      - name: Initialize Python evidence workspace
+        shell: pwsh
+        run: |
+          $workRoot = Join-Path $env:RUNNER_TEMP 'python-functional'
+          New-Item -ItemType Directory -Path (Join-Path $workRoot 'evidence') -Force | Out-Null
+          "PYTHON_WORK_ROOT=$workRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Verify complete hash-locked toolchain closure before installation
+        id: lock_verification
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $resolverPython = '${{ steps.lock_resolver.outputs.python-path }}'
+          $logPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/lock-verification.log'
+          & $resolverPython -I standards/scripts/python-project-validation.py `
+            --verify-tool-lock `
+            --work-root (Join-Path $env:RUNNER_TEMP 'python-lock-resolution') `
+            --tool-lock standards/examples/python-project/requirements-ci.lock `
+            --resolver-python $resolverPython 2>&1 | Tee-Object -FilePath $logPath
+          if ($LASTEXITCODE -ne 0) { throw 'The governed Python toolchain lock does not match its complete resolved closure.' }
+
       - name: Install standards-owned hash-locked toolchain
+        if: steps.lock_verification.outcome == 'success'
         shell: pwsh
         run: |
           $toolRoot = Join-Path $env:RUNNER_TEMP 'python-tools'
@@ -69,10 +97,10 @@ jobs:
           Copy-Item -LiteralPath $venvPython -Destination $toolPython
           & $toolPython -I -c "import sys; assert sys.prefix == '$toolRoot'"
           "TOOL_PYTHON=$toolPython" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "PYTHON_WORK_ROOT=$(Join-Path $env:RUNNER_TEMP 'python-functional')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Run governed functional validation
         id: functional
+        if: steps.lock_verification.outcome == 'success'
         continue-on-error: true
         run: >-
           "$TOOL_PYTHON" -I standards/scripts/python-project-validation.py
@@ -85,7 +113,7 @@ jobs:
 
       - name: Run trusted validator regression tests
         id: regression
-        if: always()
+        if: always() && steps.lock_verification.outcome == 'success'
         continue-on-error: true
         shell: bash
         run: |
@@ -97,7 +125,7 @@ jobs:
 
       - name: Normalize Python evidence schema
         id: normalization
-        if: always()
+        if: always() && steps.lock_verification.outcome == 'success'
         continue-on-error: true
         run: >-
           "$TOOL_PYTHON" -I standards/scripts/Normalize-PythonFunctionalEvidence.py
@@ -105,7 +133,7 @@ jobs:
 
       - name: Create completion evidence in trusted workspace
         id: completion
-        if: always()
+        if: always() && steps.lock_verification.outcome == 'success'
         continue-on-error: true
         shell: pwsh
         run: |
@@ -116,7 +144,7 @@ jobs:
 
       - name: Validate Python completion evidence
         id: evidence
-        if: always()
+        if: always() && steps.lock_verification.outcome == 'success'
         continue-on-error: true
         shell: pwsh
         run: ./standards/actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path $env:PYTHON_WORK_ROOT -EvidencePath 'evidence/completion-result.json' -OutputJson "$env:PYTHON_WORK_ROOT/evidence/evidence-validation.json"
@@ -126,6 +154,7 @@ jobs:
         shell: pwsh
         run: |
           $outcomes = [ordered]@{
+            lock_verification = '${{ steps.lock_verification.outcome }}'
             regression = '${{ steps.regression.outcome }}'
             functional = '${{ steps.functional.outcome }}'
             normalization = '${{ steps.normalization.outcome }}'
@@ -148,6 +177,7 @@ jobs:
         shell: pwsh
         run: |
           $outcomes = [ordered]@{
+            lock_verification = '${{ steps.lock_verification.outcome }}'
             regression = '${{ steps.regression.outcome }}'
             functional = '${{ steps.functional.outcome }}'
             normalization = '${{ steps.normalization.outcome }}'
