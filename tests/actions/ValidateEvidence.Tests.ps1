@@ -477,6 +477,26 @@ Describe 'Validate evidence action' {
             $artifact[0].sha256 | Should -Be ((Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant())
         }
 
+        It 'does not rewrite binary artifacts when Git attributes declare LF' {
+            & $script:NewTempEvidence
+            & git -C $script:tempRoot init --quiet
+            $LASTEXITCODE | Should -Be 0
+            Set-Content -LiteralPath (Join-Path $script:tempRoot '.gitattributes') -Value 'evidence/report.bin text=auto eol=lf' -NoNewline
+            $artifactPath = Join-Path $script:tempRoot 'evidence/report.bin'
+            [byte[]]$originalBytes = @(0, 13, 10, 255, 0, 13, 10, 1)
+            [System.IO.File]::WriteAllBytes($artifactPath, $originalBytes)
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'Binary artifact integrity fixture.' -ArtifactPath 'evidence/report.bin'
+            $LASTEXITCODE | Should -Be 0
+
+            $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/generated.json') -Raw | ConvertFrom-Json
+            $artifact = @($generated.artifacts | Where-Object path -eq 'evidence/report.bin')
+            $artifact.Count | Should -Be 1
+            [Convert]::ToHexString([System.IO.File]::ReadAllBytes($artifactPath)) | Should -Be ([Convert]::ToHexString($originalBytes))
+            $artifact[0].sizeBytes | Should -Be $originalBytes.Length
+            $artifact[0].sha256 | Should -Be ((Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant())
+        }
+
         It 'uses an explicit complete change inventory when supplied' {
             & $script:NewTempEvidence
             $changedFiles = @(
@@ -551,6 +571,15 @@ Describe 'Validate evidence action' {
             $expectedChangedFiles = @(
                 'CHANGELOG.md'
                 'docs/releases/unreleased.md'
+                'examples/bash-project/evidence/bash-formatting.json'
+                'examples/bash-project/evidence/bash-project-sbom.cdx.json'
+                'examples/bash-project/evidence/bash-shellcheck.json'
+                'examples/bash-project/evidence/bash-syntax.json'
+                'examples/bash-project/evidence/bash-tests.json'
+                'examples/bash-project/evidence/bash-toolchain-bootstrap.json'
+                'examples/bash-project/evidence/bash-toolchain.json'
+                'examples/bash-project/evidence/local-completion-result.json'
+                'examples/bash-project/evidence/local-test-results.json'
                 'examples/python-project/evidence/local-completion-result.json'
                 'examples/python-project/evidence/local-test-results.json'
                 'examples/python-project/evidence/python-build.json'
@@ -589,6 +618,15 @@ Describe 'Validate evidence action' {
                     'tests/scripts/PythonProjectSupport.Tests.ps1'
                 )
                 generatedEvidence = @(
+                    'examples/bash-project/evidence/bash-formatting.json'
+                    'examples/bash-project/evidence/bash-project-sbom.cdx.json'
+                    'examples/bash-project/evidence/bash-shellcheck.json'
+                    'examples/bash-project/evidence/bash-syntax.json'
+                    'examples/bash-project/evidence/bash-tests.json'
+                    'examples/bash-project/evidence/bash-toolchain-bootstrap.json'
+                    'examples/bash-project/evidence/bash-toolchain.json'
+                    'examples/bash-project/evidence/local-completion-result.json'
+                    'examples/bash-project/evidence/local-test-results.json'
                     'examples/python-project/evidence/local-completion-result.json'
                     'examples/python-project/evidence/local-test-results.json'
                     'examples/python-project/evidence/python-build.json'

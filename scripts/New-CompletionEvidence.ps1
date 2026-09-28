@@ -140,6 +140,12 @@ function Convert-RepositoryLfFile {
         [Parameter(Mandatory)][string]$RepositoryRoot
     )
 
+    # Git's text=auto attribute can still report eol=lf for arbitrary binary
+    # files. Only normalize the explicit textual evidence formats this script
+    # emits; every other artifact must be hashed without mutation.
+    $extension = [System.IO.Path]::GetExtension($Path).ToLowerInvariant()
+    if ($extension -notin @('.json', '.xml')) { return }
+
     $relativePath = [System.IO.Path]::GetRelativePath($RepositoryRoot, $Path).Replace('\', '/')
     if ($relativePath -eq '.' -or $relativePath -match '^(?:[A-Za-z]:|/|\.\.(?:/|$))') { return }
 
