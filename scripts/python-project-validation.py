@@ -189,14 +189,18 @@ def prepare_work_root(project: Path, work_root: Path) -> tuple[Path, Path, Path]
     return caller, evidence_dir, dist_dir
 
 
+GOVERNED_HATCHLING_VERSION = "1.32.4"
+
+
 def parse_project_metadata(project: Path) -> dict[str, Any]:
     pyproject = project / "pyproject.toml"
     data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
     build_system = data.get("build-system", {})
     if build_system.get("build-backend") != "hatchling.build":
         raise ValueError("only the reviewed hatchling.build backend is supported")
-    if build_system.get("requires") != ["hatchling==1.32.0"]:
-        raise ValueError("build-system requirements must be exactly hatchling==1.32.0")
+    expected_hatchling = f"hatchling=={GOVERNED_HATCHLING_VERSION}"
+    if build_system.get("requires") != [expected_hatchling]:
+        raise ValueError(f"build-system requirements must be exactly {expected_hatchling}")
     if "backend-path" in build_system:
         raise ValueError("build-system backend-path is not permitted")
     project_table = data.get("project", {})
@@ -300,6 +304,82 @@ def package_lines(lock: Path) -> list[tuple[str, str]]:
     return packages
 
 
+def normalized_requirement_name(name: str) -> str:
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def pinned_requirements(path: Path) -> dict[str, str]:
+    requirements: dict[str, str] = {}
+    for line_number, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        line = raw_line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        match = re.fullmatch(r"([A-Za-z0-9][A-Za-z0-9_.-]*)==([^\s]+)", line)
+        if not match:
+            raise ValueError(f"{path.name} line {line_number} must contain an exact name==version pin")
+        name = normalized_requirement_name(match.group(1))
+        if name in requirements:
+            raise ValueError(f"{path.name} contains duplicate requirement '{match.group(1)}'")
+        requirements[name] = match.group(2)
+    if not requirements:
+        raise ValueError(f"{path.name} does not contain any requirements")
+    return requirements
+
+
+def locked_requirements(path: Path) -> dict[str, str]:
+    requirements: dict[str, str] = {}
+    for name, version in package_lines(path):
+        normalized_name = normalized_requirement_name(name)
+        if normalized_name in requirements:
+            raise ValueError(f"{path.name} contains duplicate locked requirement '{name}'")
+        requirements[normalized_name] = version
+    if not requirements:
+        raise ValueError(f"{path.name} does not contain any locked requirements")
+    return requirements
+
+
+def direct_locked_requirements(path: Path, requirements_input: Path) -> dict[str, str]:
+    requirements: dict[str, str] = {}
+    current: tuple[str, str] | None = None
+    direct_marker = re.compile(rf"^\s*# via -r .*{re.escape(requirements_input.name)}\s*$")
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        match = re.match(r"^([A-Za-z0-9_.-]+)==([^\s\\]+)", raw_line.strip())
+        if match:
+            current = (normalized_requirement_name(match.group(1)), match.group(2))
+            continue
+        if current is not None and direct_marker.fullmatch(raw_line):
+            name, version = current
+            if name in requirements:
+                raise ValueError(f"{path.name} contains duplicate direct requirement '{name}'")
+            requirements[name] = version
+    return requirements
+
+
+def validate_requirements_lock(requirements_input: Path, lock: Path) -> None:
+    requested = pinned_requirements(requirements_input)
+    locked = locked_requirements(lock)
+    direct_locked = direct_locked_requirements(lock, requirements_input)
+    missing = sorted(name for name in requested if name not in locked or name not in direct_locked)
+    extra = sorted(name for name in direct_locked if name not in requested)
+    mismatched = sorted(
+        f"{name}=={requested[name]} (lock has {direct_locked[name]})"
+        for name in requested
+        if name in direct_locked and requested[name] != direct_locked[name]
+    )
+    if missing or extra or mismatched:
+        details: list[str] = []
+        if missing:
+            details.append(f"missing from lock: {', '.join(missing)}")
+        if extra:
+            details.append(f"extra direct pins in lock: {', '.join(extra)}")
+        if mismatched:
+            details.append(f"version mismatch: {', '.join(mismatched)}")
+        raise ValueError(
+            f"requirements input and lock are out of sync ({'; '.join(details)}). "
+            "Regenerate the lock with the documented pip-compile command."
+        )
+
+
 def tool_versions(tool_python: Path, env: dict[str, str], cwd: Path) -> dict[str, str]:
     code = "import importlib.metadata,json; print(json.dumps({" + ",".join(
         f"{module!r}:importlib.metadata.version({distribution!r})"
@@ -395,10 +475,12 @@ def validate(args: argparse.Namespace) -> int:
     if not original_project.exists() or not (original_project / "project-manifest.json").is_file():
         raise ValueError("project must be a governed Python project root")
     inspect_project_tree(original_project)
-    project, evidence_dir, dist_dir = prepare_work_root(original_project, args.work_root)
-    roots = [original_project.resolve(), args.work_root.resolve(), args.tool_python.resolve()]
     tool_python = args.tool_python.resolve(strict=True)
     tool_lock = args.tool_lock.resolve(strict=True)
+    tool_input = tool_lock.with_suffix(".in")
+    validate_requirements_lock(tool_input, tool_lock)
+    project, evidence_dir, dist_dir = prepare_work_root(original_project, args.work_root)
+    roots = [original_project.resolve(), args.work_root.resolve(), tool_python]
     if is_within(tool_python, original_project.resolve()) or is_within(tool_lock, original_project.resolve()):
         raise ValueError("trusted tools and locks must be outside the caller project")
     runtime_lock = project / args.runtime_lock

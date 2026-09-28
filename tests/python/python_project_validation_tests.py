@@ -83,5 +83,63 @@ def test_project_tree_rejects_nested_symlink(tmp_path: Path) -> None:
 
 
 def test_module_command_always_uses_isolated_mode() -> None:
-    command = validator.module_command(Path("/trusted/python"), "pytest", "tests")
-    require(command[:4] == ["/trusted/python", "-I", "-m", "pytest"], "trusted tool command omitted isolated mode")
+    python = Path("/trusted/python")
+    command = validator.module_command(python, "pytest", "tests")
+    require(command[:4] == [str(python), "-I", "-m", "pytest"], "trusted tool command omitted isolated mode")
+
+
+def test_requirements_lock_accepts_current_input_and_lock() -> None:
+    root = Path(__file__).resolve().parents[2]
+    validator.validate_requirements_lock(
+        root / "examples" / "python-project" / "requirements-ci.in",
+        root / "examples" / "python-project" / "requirements-ci.lock",
+    )
+
+
+def test_requirements_lock_rejects_stale_input(tmp_path: Path) -> None:
+    requirements_input = tmp_path / "requirements-ci.in"
+    requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "build==1.5.0 \\\n"
+        "    --hash=sha256:" + "0" * 64 + "\n"
+        "    # via -r requirements-ci.in\n",
+        encoding="utf-8",
+    )
+
+    try:
+        validator.validate_requirements_lock(requirements_input, lock)
+    except ValueError as exc:
+        message = str(exc)
+        require("version mismatch" in message, "stale lock did not report a version mismatch")
+        require("build==1.6.1" in message, "stale lock error omitted the input version")
+    else:
+        raise AssertionError("stale requirements lock was accepted")
+
+
+def test_project_metadata_requires_governed_hatchling_version(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    package = project / "src" / "example_package"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (project / "pyproject.toml").write_text(
+        "[build-system]\n"
+        "requires = [\"hatchling==1.32.4\"]\n"
+        "build-backend = \"hatchling.build\"\n\n"
+        "[project]\n"
+        "name = \"example-package\"\n"
+        "version = \"1.0.0\"\n",
+        encoding="utf-8",
+    )
+    validator.parse_project_metadata(project)
+
+    (project / "pyproject.toml").write_text(
+        (project / "pyproject.toml").read_text(encoding="utf-8").replace("1.32.4", "1.32.0"),
+        encoding="utf-8",
+    )
+    try:
+        validator.parse_project_metadata(project)
+    except ValueError as exc:
+        require("hatchling==1.32.4" in str(exc), "old Hatchling error omitted governed version")
+    else:
+        raise AssertionError("ungoverned Hatchling version was accepted")

@@ -21,11 +21,22 @@ Describe 'Governed Python project support' {
 
     It 'pins every functional requirement and supplies hashes' {
         $lock = Get-Content -LiteralPath (Join-Path $script:example 'requirements-ci.lock') -Raw
-        foreach ($package in @('pytest==9.1.1','mypy==2.3.1','pip-audit==2.10.1','build==1.5.0','hatchling==1.32.0','ruff==0.15.22','cyclonedx-bom==7.3.0')) {
+        foreach ($package in @('pytest==9.1.1','mypy==2.3.1','pip-audit==2.10.1','build==1.6.1','hatchling==1.32.4','ruff==0.15.22','cyclonedx-bom==7.3.0')) {
             $lock | Should -Match ([regex]::Escape($package))
         }
         $lock | Should -Match '(?m)^\s+--hash=sha256:[0-9a-f]{64}'
         $lock | Should -Not -Match '(?m)^[A-Za-z0-9_.-]+(?:>=|~=|>)'
+    }
+
+    It 'keeps every direct input pin synchronized with the generated lock' {
+        $lock = Get-Content -LiteralPath (Join-Path $script:example 'requirements-ci.lock') -Raw
+        $inputPins = @(Get-Content -LiteralPath (Join-Path $script:example 'requirements-ci.in') |
+            Where-Object { $_ -match '^\s*[A-Za-z0-9_.-]+==[^\s#]+' } |
+            ForEach-Object { ([regex]::Match($_, '^\s*([A-Za-z0-9_.-]+==[^\s#]+)')).Groups[1].Value })
+        $inputPins.Count | Should -BeGreaterThan 0
+        foreach ($pin in $inputPins) {
+            $lock | Should -Match (([regex]::Escape($pin)) + '\s*\\')
+        }
     }
 
     It 'keeps functional tools outside the central static validator lock' {
