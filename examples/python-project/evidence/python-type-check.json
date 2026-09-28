@@ -5,19 +5,21 @@
   "status": "Passed",
   "requiredValidation": true,
   "evidenceSource": "Automated",
-  "command": "python -m mypy --config-file ./scripts/python-mypy.ini src",
+  "command": "python -I -m mypy --config-file scripts/python-mypy.ini src",
   "workingDirectory": "examples/python-project",
-  "startedAtUtc": "2026-07-20T22:08:33.684284Z",
-  "completedAtUtc": "2026-07-20T22:08:33.684297Z",
-  "durationSeconds": 0.547,
+  "startedAtUtc": "2026-09-28T13:06:21.995354Z",
+  "completedAtUtc": "2026-09-28T13:06:21.995368Z",
+  "durationSeconds": 2.743,
   "runtime": "CPython 3.13.2",
-  "toolVersion": "governed-python-validator/1.0.0",
+  "toolVersion": "mypy/2.3.1",
   "exitCode": 0,
   "summary": "Python type check completed successfully.",
   "warnings": [],
   "failureReason": null,
   "blockedReason": null,
   "details": {
-    "sanitizedOutput": "Success: no issues found in 3 source files\n"
+    "sanitizedOutput": "Success: no issues found in 3 source files\n",
+    "toolName": "mypy",
+    "toolVersion": "2.3.1"
   }
 }
