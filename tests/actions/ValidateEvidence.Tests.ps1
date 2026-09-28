@@ -612,7 +612,7 @@ Describe 'Validate evidence action' {
             }
         }
 
-        It 'records the complete Python dependency correction scope and categories' {
+        It 'records the complete dependency-correction and governance-fix scope and categories' {
             $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../..')).Path
             $completionPath = Join-Path $repositoryRoot 'examples/python-project/evidence/local-completion-result.json'
             $completion = Get-Content -LiteralPath $completionPath -Raw | ConvertFrom-Json
@@ -645,10 +645,13 @@ Describe 'Validate evidence action' {
                 'schemas/completion-result.schema.json'
                 'scripts/New-CompletionEvidence.ps1'
                 'scripts/Normalize-PythonFunctionalEvidence.py'
+                'scripts/Test-PythonStaticAnalysis.ps1'
                 'scripts/python-project-validation.py'
                 'tests/actions/ValidateEvidence.Tests.ps1'
                 'tests/python/python_project_validation_tests.py'
+                'tests/scripts/BashProjectSupport.Tests.ps1'
                 'tests/scripts/PythonProjectSupport.Tests.ps1'
+                'tests/scripts/StaticAnalysis.Tests.ps1'
             )
             $expectedCategories = [ordered]@{
                 source = @(
@@ -666,12 +669,15 @@ Describe 'Validate evidence action' {
                     'schemas/completion-result.schema.json'
                     'scripts/New-CompletionEvidence.ps1'
                     'scripts/Normalize-PythonFunctionalEvidence.py'
+                    'scripts/Test-PythonStaticAnalysis.ps1'
                     'scripts/python-project-validation.py'
                 )
                 tests = @(
                     'tests/actions/ValidateEvidence.Tests.ps1'
                     'tests/python/python_project_validation_tests.py'
+                    'tests/scripts/BashProjectSupport.Tests.ps1'
                     'tests/scripts/PythonProjectSupport.Tests.ps1'
+                    'tests/scripts/StaticAnalysis.Tests.ps1'
                 )
                 generatedEvidence = @(
                     'examples/bash-project/evidence/bash-formatting.json'
@@ -701,7 +707,7 @@ Describe 'Validate evidence action' {
             $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
             @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
 
-            $completion.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v3'
+            $completion.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v4'
             $tagReference = "refs/tags/$($completion.validatedCommitTag)"
             ((& git -C $repositoryRoot cat-file -t $tagReference) -join '').Trim() | Should -BeExactly 'tag'
             ((& git -C $repositoryRoot rev-parse "$tagReference^{}") -join '').Trim() | Should -BeExactly $completion.validatedCommitSha
