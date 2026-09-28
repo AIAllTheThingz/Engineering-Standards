@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import re
+import runpy
 import stat
 import sys
 import zipfile
@@ -168,6 +169,31 @@ def test_requirements_lock_rejects_unresolved_transitive_pin(tmp_path: Path) -> 
         require("evil==1.0" in str(exc), "injected package was omitted from the diagnostic")
     else:
         raise AssertionError("injected transitive lock entry was accepted")
+
+
+def test_python_evidence_normalizer_explains_notrun_status() -> None:
+    """Local evidence must retain an honest, actionable reason for NotRun."""
+    root = Path(__file__).resolve().parents[2]
+    normalizer = runpy.run_path(root / "scripts" / "Normalize-PythonFunctionalEvidence.py")
+    record = {
+        "schemaVersion": "1.1.0",
+        "name": "GitHub-hosted workflow execution",
+        "category": "workflow",
+        "status": "NotRun",
+        "exitCode": 0,
+        "failureReason": None,
+        "blockedReason": "stale reason",
+        "notApplicableRationale": "stale rationale",
+        "details": {"sanitizedOutput": "Hosted execution was not performed locally."},
+    }
+    normalized = normalizer["normalize_record"](record)
+    require(normalized["exitCode"] is None, "NotRun evidence must not claim a process exit")
+    require(
+        normalized["failureReason"] == "Hosted execution was not performed locally.",
+        "NotRun evidence omitted its truthful reason",
+    )
+    require(normalized["blockedReason"] is None, "NotRun evidence retained a blocked reason")
+    require(normalized["notApplicableRationale"] is None, "NotRun evidence retained an inapplicable rationale")
 
 
 def test_toolchain_sbom_matches_governed_lock_requirements() -> None:
