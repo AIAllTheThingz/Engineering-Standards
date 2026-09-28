@@ -4357,10 +4357,32 @@
     },
     {
       "ref": "requirements-L934"
+    },
+    {
+      "ref": "root-component"
     }
   ],
   "metadata": {
-    "timestamp": "2026-09-28T13:16:34.570017+00:00",
+    "component": {
+      "bom-ref": "root-component",
+      "description": "Deterministic path-segment validation example",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "governed-paths-example",
+      "type": "application",
+      "version": "1.0.0"
+    },
+    "properties": [
+      {
+        "name": "cdx:reproducible",
+        "value": "true"
+      }
+    ],
     "tools": {
       "components": [
         {
@@ -4403,7 +4425,6 @@
           "licenses": [
             {
               "license": {
-                "acknowledgement": "declared",
                 "id": "Apache-2.0"
               }
             }
@@ -4452,7 +4473,6 @@
           "licenses": [
             {
               "license": {
-                "acknowledgement": "declared",
                 "id": "Apache-2.0"
               }
             }
@@ -4464,9 +4484,8 @@
       ]
     }
   },
-  "serialNumber": "urn:uuid:d435aaa9-8ef9-4cf8-b5a3-e40cbee9d68b",
   "version": 1,
-  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",
-  "specVersion": "1.6"
+  "specVersion": "1.5"
 }

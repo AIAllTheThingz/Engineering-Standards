@@ -5,19 +5,21 @@
   "status": "Passed",
   "requiredValidation": true,
   "evidenceSource": "Automated",
-  "command": "python -m mypy --config-file ./scripts/python-mypy.ini src",
-  "workingDirectory": "examples/python-project",
-  "startedAtUtc": "2026-07-20T22:08:33.684284Z",
-  "completedAtUtc": "2026-07-20T22:08:33.684297Z",
-  "durationSeconds": 0.547,
+  "command": ". -I -m mypy --config-file C:\\Users\\MZucc\\Documents\\Codex\\2026-09-27\\referenced-chatgpt-conversation-this-is-an\\work\\pr121-evidence-v6\\source\\scripts\\python-mypy.ini .\\caller\\src",
+  "workingDirectory": "trusted-isolated-workspace",
+  "startedAtUtc": "2026-09-28T20:52:40.923385Z",
+  "completedAtUtc": "2026-09-28T20:52:40.923399Z",
+  "durationSeconds": 2.135,
   "runtime": "CPython 3.13.2",
-  "toolVersion": "governed-python-validator/1.0.0",
+  "toolVersion": "mypy/2.3.1",
   "exitCode": 0,
   "summary": "Python type check completed successfully.",
   "warnings": [],
   "failureReason": null,
   "blockedReason": null,
   "details": {
-    "sanitizedOutput": "Success: no issues found in 3 source files\n"
+    "sanitizedOutput": "Success: no issues found in 3 source files\n",
+    "toolName": "mypy",
+    "toolVersion": "2.3.1"
   }
 }
