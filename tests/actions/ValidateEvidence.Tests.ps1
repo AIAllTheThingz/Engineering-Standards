@@ -506,7 +506,8 @@ Describe 'Validate evidence action' {
             & $script:NewTempEvidence
             $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'Unsafe change inventory fixture.' -ChangedFile '../outside.json' 2>&1)
             $LASTEXITCODE | Should -Not -Be 0
-            ($output -join "`n") | Should -Match 'must be a non-empty repository-relative path without traversal'
+            $plainOutput = ($output -join "`n") -replace '\x1b\[[0-?]*[ -/]*[@-~]', ''
+            $plainOutput | Should -Match 'must be a non-empty repository-relative(?:\s*\|\s*)?\s*path without traversal'
         }
 
         It 'keeps checked-in Python artifact records aligned with canonical LF bytes' {
