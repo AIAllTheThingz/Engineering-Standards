@@ -321,6 +321,10 @@ Describe 'Governed Bash project support' {
         $completion = Get-Content -LiteralPath $completionPath -Raw | ConvertFrom-Json
         $completion.commitSha | Should -Match '^[0-9a-f]{40}$'
         $completion.validatedCommitSha | Should -BeExactly $completion.commitSha
+        $completion.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v2'
+        $tagReference = "refs/tags/$($completion.validatedCommitTag)"
+        ((& git -C $script:root cat-file -t $tagReference) -join '').Trim() | Should -BeExactly 'tag'
+        ((& git -C $script:root rev-parse "$tagReference^{}") -join '').Trim() | Should -BeExactly $completion.validatedCommitSha
         $completion.status | Should -BeExactly 'NotRun'
         @($completion.commandsNotExecuted) | Should -Contain 'GitHub-hosted Bash workflow execution'
         @($completion.artifacts.path) | Should -Contain 'evidence/bash-toolchain-bootstrap.json'

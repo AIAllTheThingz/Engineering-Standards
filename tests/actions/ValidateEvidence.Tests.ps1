@@ -617,6 +617,8 @@ Describe 'Validate evidence action' {
             $completionPath = Join-Path $repositoryRoot 'examples/python-project/evidence/local-completion-result.json'
             $completion = Get-Content -LiteralPath $completionPath -Raw | ConvertFrom-Json
             $expectedChangedFiles = @(
+                '.github/workflows/python-ci-reusable.yml'
+                'actions/validate-evidence/Invoke-EvidenceValidation.ps1'
                 'CHANGELOG.md'
                 'docs/releases/unreleased.md'
                 'examples/bash-project/evidence/bash-formatting.json'
@@ -640,7 +642,9 @@ Describe 'Validate evidence action' {
                 'examples/python-project/pyproject.toml'
                 'examples/python-project/requirements-ci.in'
                 'examples/python-project/requirements-ci.lock'
+                'schemas/completion-result.schema.json'
                 'scripts/New-CompletionEvidence.ps1'
+                'scripts/Normalize-PythonFunctionalEvidence.py'
                 'scripts/python-project-validation.py'
                 'tests/actions/ValidateEvidence.Tests.ps1'
                 'tests/python/python_project_validation_tests.py'
@@ -657,7 +661,11 @@ Describe 'Validate evidence action' {
                     'docs/releases/unreleased.md'
                 )
                 configuration = @(
+                    '.github/workflows/python-ci-reusable.yml'
+                    'actions/validate-evidence/Invoke-EvidenceValidation.ps1'
+                    'schemas/completion-result.schema.json'
                     'scripts/New-CompletionEvidence.ps1'
+                    'scripts/Normalize-PythonFunctionalEvidence.py'
                     'scripts/python-project-validation.py'
                 )
                 tests = @(
@@ -692,6 +700,11 @@ Describe 'Validate evidence action' {
             $expectedChangedFiles = @($expectedChangedFiles | Sort-Object)
             $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
             @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
+
+            $completion.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v2'
+            $tagReference = "refs/tags/$($completion.validatedCommitTag)"
+            ((& git -C $repositoryRoot cat-file -t $tagReference) -join '').Trim() | Should -BeExactly 'tag'
+            ((& git -C $repositoryRoot rev-parse "$tagReference^{}") -join '').Trim() | Should -BeExactly $completion.validatedCommitSha
 
             $actualCategoryNames = @($completion.changedFileCategories.PSObject.Properties.Name | Sort-Object)
             $expectedCategoryNames = @($expectedCategories.Keys | Sort-Object)
