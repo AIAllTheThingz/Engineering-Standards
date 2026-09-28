@@ -39,17 +39,18 @@ Describe 'Governed Python project support' {
         }
     }
 
-    It 'resolves the complete Python 3.13 toolchain closure before installing the lock' {
+    It 'resolves the complete CPython 3.13.2 toolchain closure before installing the lock' {
         $resolverIndex = $script:workflow.IndexOf('Verify complete hash-locked toolchain closure before installation')
         $installIndex = $script:workflow.IndexOf('Install standards-owned hash-locked toolchain')
         $resolverIndex | Should -BeGreaterThan -1
         $resolverIndex | Should -BeLessThan $installIndex
-        $script:workflow | Should -Match 'python-version:\s*3\.13'
+        $script:workflow | Should -Match 'python-version:\s*3\.13\.2'
         $script:workflow | Should -Match '--verify-tool-lock'
         $script:workflow | Should -Match '--resolver-python'
         $script:driver | Should -Match '"--dry-run"'
         $script:driver | Should -Match '"--ignore-installed"'
         $script:driver | Should -Match '"-c"'
+        $script:driver | Should -Match 'cpython 3\.13\.2'
         $script:driver | Should -Match 'validate_resolved_requirements_lock'
     }
 

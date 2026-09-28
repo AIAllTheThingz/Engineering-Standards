@@ -274,12 +274,37 @@ def test_python_evidence_normalizer_explains_notrun_status() -> None:
     require(normalized["notApplicableRationale"] is None, "NotRun evidence retained an inapplicable rationale")
 
 
+def test_project_sbom_contains_runtime_dependencies_only() -> None:
+    """The project inventory must not mislabel validation tools as runtime dependencies."""
+    root = Path(__file__).resolve().parents[2]
+    runtime_lock = (root / "examples" / "python-project" / "requirements-runtime.lock").read_text(encoding="utf-8")
+    sbom = json.loads(
+        (root / "examples" / "python-project" / "evidence" / "python-project-sbom.cdx.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    expected_runtime_packages = {
+        validator.normalized_requirement_name(package)
+        for package in re.findall(r"(?m)^([A-Za-z0-9_.-]+)==", runtime_lock)
+    }
+    component_names = {
+        validator.normalized_requirement_name(component["name"])
+        for component in sbom.get("components", [])
+        if component.get("name")
+    }
+
+    require(
+        component_names == expected_runtime_packages,
+        "project SBOM must contain only the dependencies declared by requirements-runtime.lock",
+    )
+
+
 def test_toolchain_sbom_matches_governed_lock_requirements() -> None:
     """A stale inventory must not report prior build-backend versions or hashes."""
     root = Path(__file__).resolve().parents[2]
     lock_text = (root / "examples" / "python-project" / "requirements-ci.lock").read_text(encoding="utf-8")
     sbom = json.loads(
-        (root / "examples" / "python-project" / "evidence" / "python-project-sbom.cdx.json").read_text(
+        (root / "examples" / "python-project" / "evidence" / "python-toolchain-sbom.cdx.json").read_text(
             encoding="utf-8"
         )
     )
@@ -304,6 +329,39 @@ def test_toolchain_sbom_matches_governed_lock_requirements() -> None:
             if item.get("alg") == "SHA-256"
         }
         require(actual_hashes == expected_hashes, f"{package} SBOM hashes are stale")
+
+
+def test_evidence_sanitizes_nested_detail_paths(tmp_path: Path) -> None:
+    """Generated evidence must never serialize workstation paths in nested details."""
+    private_path = tmp_path / "trusted-tools" / "requirements-ci.lock"
+    record = validator.make_evidence(
+        "Evidence path sanitization",
+        "security",
+        ["python", "-c", f"assert {str(private_path)!r} not in value"],
+        0,
+        str(private_path),
+        0,
+        "test-tool",
+        "1.0",
+        [tmp_path],
+        {
+            "sourceLock": str(private_path),
+            "nested": {"paths": [str(private_path)]},
+            "pathsByLocation": {str(private_path): "trusted"},
+        },
+    )
+
+    serialized = json.dumps(record)
+    require(str(tmp_path) not in serialized, "nested evidence details leaked an absolute path")
+    require(record["details"]["sourceLock"].startswith("."), "source lock detail was not sanitized")
+    require(
+        str(private_path).replace("\\", "\\\\") not in record["command"],
+        "escaped command literal leaked an absolute path",
+    )
+    require(
+        all(str(tmp_path) not in key for key in record["details"]["pathsByLocation"]),
+        "nested evidence detail key leaked an absolute path",
+    )
 
 
 def test_project_metadata_requires_governed_hatchling_version(tmp_path: Path) -> None:

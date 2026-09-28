@@ -11,7 +11,7 @@ pwsh -NoProfile -File tools/Test-Example.ps1
 
 The trusted functional validator disables ambient pytest plugins and user site packages, supplies strict mypy and pytest arguments, builds without PEP 517 dependency isolation, inspects wheel/sdist paths, installs the wheel into a fresh environment, smoke-tests outside source imports, and writes reports under `evidence/`. Audit service failure is `Blocked`; a vulnerability or validation defect is `Failed`. Static governance continues to parse source as untrusted text without importing it.
 
-Downstream workflows must use `contents: read`, an exact 40-character standards commit, exact Python 3.12.11, and the reusable `python-ci-reusable.yml` interface. Do not pass secrets. Inspect `python-tests.json`, `python-type-check.json`, `python-dependency-audit.json`, `python-build.json`, `python-project-sbom.cdx.json`, and completion evidence in the uploaded artifact.
+Downstream workflows must use `contents: read`, an exact 40-character standards commit, exact Python 3.12.11, and the reusable `python-ci-reusable.yml` interface. The lock closure is independently resolved with exact CPython 3.13.2. Do not pass secrets. Inspect `python-tests.json`, `python-type-check.json`, `python-dependency-audit.json`, `python-build.json`, `python-project-sbom.cdx.json` for runtime dependencies, `python-toolchain-sbom.cdx.json` for validation tools, and completion evidence in the uploaded artifact.
 
 ## Documentation check
 

@@ -41,6 +41,8 @@ Verified hosted artifact metadata uses the same branch-name grammar as verified-
 
 Tests explicitly marked `requiredValidation: false` do not determine the aggregate status or conflict with its value. An omitted or non-Boolean marker is treated as required; test-record and evidence integrity checks still apply to optional tests.
 
+`validatedCommitSha` is the required commit identity. `validatedCommitTag` is optional audit metadata: validation must remain usable in a commit-only or no-tags checkout without fetching tags. If the named tag is available locally, it must be an annotated tag that resolves to `validatedCommitSha`.
+
 The action rejects:
 
 - Overall `Passed` with `Failed`, `Blocked`, or `NotRun` mandatory tests.

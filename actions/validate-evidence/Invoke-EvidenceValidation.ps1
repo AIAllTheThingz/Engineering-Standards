@@ -119,14 +119,17 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
                 $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitTag is not a valid tag name.' -Path $EvidencePath))
             }
             else {
-                $tagType = @(& git -C $root cat-file -t $tagReference 2>$null)
-                if ($LASTEXITCODE -ne 0 -or ($tagType -join '').Trim() -cne 'tag') {
-                    $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitTag must resolve to an annotated tag object.' -Path $EvidencePath))
-                }
-                else {
-                    $peeledTagCommit = @(& git -C $root rev-parse --verify "$tagReference^{}" 2>$null)
-                    if ($LASTEXITCODE -ne 0 -or -not $peeledTagCommit -or ($peeledTagCommit -join '').Trim() -ine $validatedSha) {
-                        $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitTag does not resolve to validatedCommitSha.' -Path $EvidencePath))
+                & git -C $root show-ref --verify --quiet $tagReference
+                if ($LASTEXITCODE -eq 0) {
+                    $tagType = @(& git -C $root cat-file -t $tagReference 2>$null)
+                    if ($LASTEXITCODE -ne 0 -or ($tagType -join '').Trim() -cne 'tag') {
+                        $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitTag must resolve to an annotated tag object.' -Path $EvidencePath))
+                    }
+                    else {
+                        $peeledTagCommit = @(& git -C $root rev-parse --verify "$tagReference^{}" 2>$null)
+                        if ($LASTEXITCODE -ne 0 -or -not $peeledTagCommit -or ($peeledTagCommit -join '').Trim() -ine $validatedSha) {
+                            $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitTag does not resolve to validatedCommitSha.' -Path $EvidencePath))
+                        }
                     }
                 }
             }
@@ -137,9 +140,6 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
                 $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitSha must be an ancestor of or equal to evidenceCommitSha.' -Path $EvidencePath))
             }
         }
-    }
-    elseif ($validatedTag) {
-        $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitTag cannot be verified outside a Git repository.' -Path $EvidencePath))
     }
     $repositoryToCheck = if ($ExpectedRepository) {
         $ExpectedRepository

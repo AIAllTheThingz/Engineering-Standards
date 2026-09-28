@@ -71,7 +71,7 @@ Engineering Standards maintainer Pester results include structured discovered, p
 
 Generated evidence, build output, package directories, coverage, and test result folders are excluded from ordinary forbidden-pattern scans. `-IncludeGeneratedEvidence` exists for explicit diagnostic scans.
 
-Completion evidence uses `validatedCommitSha` for the validated repository content and `evidenceCommitSha` for checked-in evidence files when supplied. GitHub artifact evidence leaves `evidenceCommitSha` null and is tied to `githubRunId` plus `githubRunAttempt`.
+Completion evidence uses `validatedCommitSha` for the validated repository content and `evidenceCommitSha` for checked-in evidence files when supplied. `validatedCommitTag` is optional audit metadata: validation remains portable in a no-tags checkout, while any locally available tag must be annotated and resolve to `validatedCommitSha`. GitHub artifact evidence leaves `evidenceCommitSha` null and is tied to `githubRunId` plus `githubRunAttempt`.
 
 ## Governance Operating Requirements
 

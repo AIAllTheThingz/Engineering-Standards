@@ -498,7 +498,7 @@ Describe 'Validate evidence action' {
             $artifact[0].sha256 | Should -Be ((Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant())
         }
 
-        It 'requires an annotated validation tag to resolve to the recorded commit' {
+        It 'allows an unavailable validation tag but verifies an available tag against the recorded commit' {
             & $script:NewTempEvidence
             Set-Content -LiteralPath (Join-Path $script:tempRoot 'source.txt') -Value 'validated source' -NoNewline
             & git -C $script:tempRoot init --quiet
@@ -538,6 +538,10 @@ Describe 'Validate evidence action' {
             $LASTEXITCODE | Should -Be 0
             & git -C $script:tempRoot tag -d evidence/validated-source
             $LASTEXITCODE | Should -Be 0
+
+            & pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $script:tempRoot -EvidencePath 'completion-result.json'
+            $LASTEXITCODE | Should -Be 0
+
             & git -C $script:tempRoot tag -a evidence/validated-source -m 'Wrong target' HEAD
             $LASTEXITCODE | Should -Be 0
             $movedTagCommit = (& git -C $script:tempRoot rev-parse 'refs/tags/evidence/validated-source^{}').Trim()
@@ -620,9 +624,15 @@ Describe 'Validate evidence action' {
             $completion = Get-Content -LiteralPath $completionPath -Raw | ConvertFrom-Json
             $expectedChangedFiles = @(
                 '.github/workflows/python-ci-reusable.yml'
+                'README.md'
                 'actions/validate-evidence/Invoke-EvidenceValidation.ps1'
+                'actions/validate-evidence/README.md'
                 'CHANGELOG.md'
+                'docs/ADOPTION_GUIDE.md'
+                'docs/GOVERNANCE_ARCHITECTURE.md'
+                'docs/MAINTAINER_GUIDE.md'
                 'docs/releases/unreleased.md'
+                'docs/TROUBLESHOOTING.md'
                 'examples/bash-project/evidence/bash-formatting.json'
                 'examples/bash-project/evidence/bash-project-sbom.cdx.json'
                 'examples/bash-project/evidence/bash-shellcheck.json'
@@ -638,12 +648,15 @@ Describe 'Validate evidence action' {
                 'examples/python-project/evidence/python-dependency-audit.json'
                 'examples/python-project/evidence/python-formatting.json'
                 'examples/python-project/evidence/python-project-sbom.cdx.json'
+                'examples/python-project/evidence/python-toolchain-sbom.cdx.json'
                 'examples/python-project/evidence/python-ruff.json'
                 'examples/python-project/evidence/python-tests.json'
                 'examples/python-project/evidence/python-type-check.json'
                 'examples/python-project/pyproject.toml'
+                'examples/python-project/README.md'
                 'examples/python-project/requirements-ci.in'
                 'examples/python-project/requirements-ci.lock'
+                'governance/COMPLETION_EVIDENCE.md'
                 'schemas/completion-result.schema.json'
                 'scripts/New-CompletionEvidence.ps1'
                 'scripts/Normalize-PythonFunctionalEvidence.py'
@@ -662,7 +675,15 @@ Describe 'Validate evidence action' {
                 )
                 documentation = @(
                     'CHANGELOG.md'
+                    'README.md'
+                    'actions/validate-evidence/README.md'
+                    'docs/ADOPTION_GUIDE.md'
+                    'docs/GOVERNANCE_ARCHITECTURE.md'
+                    'docs/MAINTAINER_GUIDE.md'
                     'docs/releases/unreleased.md'
+                    'docs/TROUBLESHOOTING.md'
+                    'examples/python-project/README.md'
+                    'governance/COMPLETION_EVIDENCE.md'
                 )
                 configuration = @(
                     '.github/workflows/python-ci-reusable.yml'
@@ -695,6 +716,7 @@ Describe 'Validate evidence action' {
                     'examples/python-project/evidence/python-dependency-audit.json'
                     'examples/python-project/evidence/python-formatting.json'
                     'examples/python-project/evidence/python-project-sbom.cdx.json'
+                    'examples/python-project/evidence/python-toolchain-sbom.cdx.json'
                     'examples/python-project/evidence/python-ruff.json'
                     'examples/python-project/evidence/python-tests.json'
                     'examples/python-project/evidence/python-type-check.json'
@@ -707,10 +729,13 @@ Describe 'Validate evidence action' {
             $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
             @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
 
-            $completion.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v7'
+            $completion.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v8'
             $tagReference = "refs/tags/$($completion.validatedCommitTag)"
-            ((& git -C $repositoryRoot cat-file -t $tagReference) -join '').Trim() | Should -BeExactly 'tag'
-            ((& git -C $repositoryRoot rev-parse "$tagReference^{}") -join '').Trim() | Should -BeExactly $completion.validatedCommitSha
+            & git -C $repositoryRoot show-ref --verify --quiet $tagReference
+            if ($LASTEXITCODE -eq 0) {
+                ((& git -C $repositoryRoot cat-file -t $tagReference) -join '').Trim() | Should -BeExactly 'tag'
+                ((& git -C $repositoryRoot rev-parse "$tagReference^{}") -join '').Trim() | Should -BeExactly $completion.validatedCommitSha
+            }
 
             $actualCategoryNames = @($completion.changedFileCategories.PSObject.Properties.Name | Sort-Object)
             $expectedCategoryNames = @($expectedCategories.Keys | Sort-Object)

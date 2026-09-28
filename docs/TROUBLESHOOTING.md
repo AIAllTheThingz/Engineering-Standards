@@ -299,8 +299,9 @@ Use exact CPython 3.12.11 and install `requirements-ci.lock` with
 artifact is `Blocked`; a pytest, mypy, vulnerability, build, archive, install,
 or smoke-test defect is `Failed`. Advisory-service or network unavailability
 must remain `Blocked`, never Passed. Inspect the individual `python-*.json`
-reports and `python-project-sbom.cdx.json` before retrying. Caller pytest/mypy/
-Ruff configuration is intentionally ignored by the trusted baseline.
+reports, `python-project-sbom.cdx.json` for runtime dependencies, and
+`python-toolchain-sbom.cdx.json` for validation tools before retrying. Caller
+pytest/mypy/Ruff configuration is intentionally ignored by the trusted baseline.
 
 ## Related
 

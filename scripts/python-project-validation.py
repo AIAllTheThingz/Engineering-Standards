@@ -82,7 +82,7 @@ def sanitize(value: str, roots: list[Path]) -> str:
     result = value
     for root in sorted(roots, key=lambda item: len(str(item)), reverse=True):
         text = str(root)
-        result = result.replace(text, ".").replace(text.replace("\\", "/"), ".")
+        result = sanitize_path_variants(result, text)
     return result.replace(str(sys.executable), "python")
 
 
@@ -137,6 +137,27 @@ def run(
         return result.returncode, result.stdout[-12000:], time.monotonic() - started
     except subprocess.TimeoutExpired as exc:
         return 124, f"Command exceeded {timeout} seconds: {exc}", time.monotonic() - started
+
+
+def sanitize_path_variants(value: str, path: str) -> str:
+    for candidate in (path, path.replace("\\", "/"), path.replace("\\", "\\\\")):
+        value = value.replace(candidate, ".")
+    return value
+
+
+def sanitize_evidence_value(value: Any, roots: list[Path]) -> Any:
+    if isinstance(value, str):
+        return sanitize(value, roots)
+    if isinstance(value, Path):
+        return sanitize(str(value), roots)
+    if isinstance(value, list):
+        return [sanitize_evidence_value(item, roots) for item in value]
+    if isinstance(value, dict):
+        return {
+            sanitize(key, roots) if isinstance(key, str) else str(key): sanitize_evidence_value(item, roots)
+            for key, item in value.items()
+        }
+    return value
 
 
 def module_command(python: Path, module: str, *args: str) -> list[str]:
@@ -527,11 +548,11 @@ def validate_requirements_lock_closure(
         str(resolver_python),
         "-I",
         "-c",
-        "import sys; print(f'{sys.implementation.name} {sys.version_info.major}.{sys.version_info.minor}')",
+        "import sys; print(f'{sys.implementation.name} {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')",
     ]
     version_code, version_output, _ = run(version_command, resolver_root, env, 60)
-    if version_code != 0 or version_output.strip() != "cpython 3.13":
-        raise ValueError("requirements lock closure must be resolved with CPython 3.13")
+    if version_code != 0 or version_output.strip() != "cpython 3.13.2":
+        raise ValueError("requirements lock closure must be resolved with CPython 3.13.2")
     with tempfile.TemporaryDirectory(prefix="lock-resolution-", dir=resolver_root) as directory:
         report = Path(directory) / "pip-resolution.json"
         command = [
@@ -612,7 +633,10 @@ def make_evidence(
         "warnings": [],
         "failureReason": reason if effective == "Failed" else None,
         "blockedReason": reason if effective == "Blocked" else None,
-        "details": {"sanitizedOutput": sanitized or "No command output.", **(details or {})},
+        "details": {
+            "sanitizedOutput": sanitized or "No command output.",
+            **sanitize_evidence_value(details or {}, roots),
+        },
     }
 
 
@@ -630,7 +654,18 @@ def validate(args: argparse.Namespace) -> int:
     tool_input = tool_lock.with_suffix(".in")
     validate_requirements_lock(tool_input, tool_lock)
     project, evidence_dir, dist_dir = prepare_work_root(original_project, args.work_root)
-    roots = [original_project.resolve(), args.work_root.resolve(), tool_python]
+    mypy_config = args.mypy_config.resolve(strict=True)
+    roots = [
+        original_project.resolve(),
+        args.work_root.resolve(),
+        tool_python,
+        tool_python.parent,
+        tool_python.parent.parent,
+        tool_lock,
+        tool_lock.parent,
+        mypy_config,
+        mypy_config.parent,
+    ]
     if is_within(tool_python, original_project.resolve()) or is_within(tool_lock, original_project.resolve()):
         raise ValueError("trusted tools and locks must be outside the caller project")
     runtime_lock = project / args.runtime_lock
@@ -661,7 +696,7 @@ def validate(args: argparse.Namespace) -> int:
             "lint",
             "python-type-check.json",
             "mypy",
-            module_command(tool_python, "mypy", "--config-file", str(args.mypy_config.resolve(strict=True)), str(project / "src")),
+            module_command(tool_python, "mypy", "--config-file", str(mypy_config), str(project / "src")),
         ),
     ]
     failed = False
@@ -747,35 +782,39 @@ def validate(args: argparse.Namespace) -> int:
             build_records.append(smoke_record)
             failed |= smoke_code != 0
 
-        sbom_path = evidence_dir / "python-project-sbom.cdx.json"
-        sbom_command = module_command(
-            tool_python,
-            "cyclonedx_py",
-            "requirements",
-            str(tool_lock),
-            "--pyproject",
-            str(project / "pyproject.toml"),
-            "--sv",
-            "1.5",
-            "--output-reproducible",
-            "--output-file",
-            str(sbom_path),
-        )
-        sbom_code, sbom_output, sbom_duration = run(sbom_command, args.work_root, env)
-        sbom_record = make_evidence(
-            "Python toolchain SBOM",
-            "security",
-            sbom_command,
-            sbom_code,
-            sbom_output,
-            sbom_duration,
-            "cyclonedx-bom",
-            versions["cyclonedx_py"],
-            roots,
-            {"sourceLock": str(tool_lock), "specVersion": "1.5"},
-        )
-        records.append(sbom_record)
-        failed |= sbom_code != 0
+        for name, filename, source_lock, source_lock_name in (
+            ("Python project SBOM", "python-project-sbom.cdx.json", runtime_lock, "requirements-runtime.lock"),
+            ("Python toolchain SBOM", "python-toolchain-sbom.cdx.json", tool_lock, "requirements-ci.lock"),
+        ):
+            sbom_path = evidence_dir / filename
+            sbom_command = module_command(
+                tool_python,
+                "cyclonedx_py",
+                "requirements",
+                str(source_lock),
+                "--pyproject",
+                str(project / "pyproject.toml"),
+                "--sv",
+                "1.5",
+                "--output-reproducible",
+                "--output-file",
+                str(sbom_path),
+            )
+            sbom_code, sbom_output, sbom_duration = run(sbom_command, args.work_root, env)
+            sbom_record = make_evidence(
+                name,
+                "security",
+                sbom_command,
+                sbom_code,
+                sbom_output,
+                sbom_duration,
+                "cyclonedx-bom",
+                versions["cyclonedx_py"],
+                roots,
+                {"sourceLock": source_lock_name, "specVersion": "1.5"},
+            )
+            records.append(sbom_record)
+            failed |= sbom_code != 0
 
     write_record(evidence_dir, "python-build.json", build_records)
     records.extend(build_records)

@@ -139,6 +139,8 @@ Adoption evidence MUST include the manifest, configuration, workflow run, valida
 
 Evidence must distinguish automated validation from manual review. Manual validation is acceptable only when the reviewer, method, scope, and limitations are recorded.
 
+Completion evidence binds its result to `validatedCommitSha`. `validatedCommitTag` is optional audit metadata, not a required fetch: commit-only and no-tags checkouts must validate without it. If that tag is present locally, the validator verifies that it is annotated and resolves to the recorded commit. Fetch tags only for a separate audit that needs the tag identity.
+
 ## Branch Protection
 
 Apply `docs/BRANCH_PROTECTION.md` to `master`, `main`, and any long-lived release branches. Require pull requests, CODEOWNERS review, conversation resolution, required checks, restricted force pushes, and deletion protection.

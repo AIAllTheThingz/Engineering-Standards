@@ -285,6 +285,7 @@ Completion evidence distinguishes the commit that was validated from the commit 
 
 - `validatedCommitSha` is the repository commit whose contents were validated.
 - `commitSha` is retained for compatibility and MUST match `validatedCommitSha`.
+- `validatedCommitTag` MAY record an annotated audit tag for `validatedCommitSha`. It is optional metadata: a no-tags or commit-only checkout MUST validate from `validatedCommitSha` without fetching tags. When the named ref is available locally, it MUST be an annotated tag object that peels to `validatedCommitSha`. Auditors that need this additional identity MAY fetch tags explicitly as a separate audit action.
 - `evidenceCommitSha` is the commit containing a checked-in evidence file when that relationship is intentionally recorded. It MAY be null to avoid infinite evidence-regeneration commits.
 - When `evidenceCommitSha` is supplied, `validatedCommitSha` MUST be an ancestor of or equal to it.
 - GitHub Actions artifact evidence MUST use `executionContext: GitHubActions`, MUST set `validatedCommitSha` to `GITHUB_SHA`, and MUST leave `evidenceCommitSha` null.

@@ -52,11 +52,11 @@ jobs:
           $project = $projectItem.FullName
           if (-not ($project -eq $root -or $project.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal))) { throw 'project-path escaped the caller checkout.' }
 
-      - name: Set up Python 3.13 lock resolver
+      - name: Set up exact CPython 3.13.2 lock resolver
         id: lock_resolver
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
-          python-version: 3.13
+          python-version: 3.13.2
 
       - name: Set up exact Python runtime
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
@@ -137,7 +137,7 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: |
-          & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath (Join-Path $env:PYTHON_WORK_ROOT 'caller') -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary 'Governed Python static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' -CommandsExecuted @('python-project-validation.py') -ArtifactPath @('evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json') -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha '${{ job.workflow_sha }}'
+          & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath (Join-Path $env:PYTHON_WORK_ROOT 'caller') -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary 'Governed Python static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' -CommandsExecuted @('python-project-validation.py') -ArtifactPath @('evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json','evidence/python-toolchain-sbom.cdx.json') -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha '${{ job.workflow_sha }}'
           $completionPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/completion-result.json'
           if (-not (Test-Path -LiteralPath $completionPath -PathType Leaf)) { throw 'Completion evidence was not created.' }
           $global:LASTEXITCODE = 0
