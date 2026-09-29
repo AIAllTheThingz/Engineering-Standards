@@ -1094,6 +1094,7 @@ def validate_requirements_lock_closure(
                 "--no-input",
                 "--only-binary=:all:",
                 "--no-cache-dir",
+                "--require-hashes",
                 "--dry-run",
                 "--ignore-installed",
                 "--report",

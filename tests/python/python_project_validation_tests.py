@@ -1524,6 +1524,10 @@ def test_requirements_lock_closure_resolves_every_target_and_functional_runtime(
         "the functional CPython 3.12.11 runtime was not resolved",
     )
     require(
+        all("--require-hashes" in command for command in pip_commands),
+        "every target resolution must verify the selected artifact against lock hashes",
+    )
+    require(
         pinned_resolver_calls
         == [(resolver_python, "CPython 3.13.2"), (runtime_python, "CPython 3.12.11")],
         "closure resolution did not bootstrap both pinned resolver environments",
