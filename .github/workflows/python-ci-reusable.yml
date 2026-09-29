@@ -48,7 +48,16 @@ jobs:
           persist-credentials: false
           path: standards
 
+      - name: Initialize Python evidence workspace
+        shell: pwsh
+        run: |
+          $workRoot = Join-Path $env:RUNNER_TEMP 'python-functional'
+          New-Item -ItemType Directory -Path (Join-Path $workRoot 'evidence') -Force | Out-Null
+          "PYTHON_WORK_ROOT=$workRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Validate fixed runtime and project path
+        id: inputs
+        continue-on-error: true
         shell: pwsh
         run: |
           if ('${{ inputs.python-version }}' -cne '3.12.11') { throw 'python-version must be the reviewed exact version 3.12.11.' }
@@ -60,16 +69,10 @@ jobs:
           $project = $projectItem.FullName
           if (-not ($project -eq $root -or $project.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal))) { throw 'project-path escaped the caller checkout.' }
 
-      - name: Initialize Python evidence workspace
-        shell: pwsh
-        run: |
-          $workRoot = Join-Path $env:RUNNER_TEMP 'python-functional'
-          New-Item -ItemType Directory -Path (Join-Path $workRoot 'evidence') -Force | Out-Null
-          "PYTHON_WORK_ROOT=$workRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
       - name: Set up exact CPython 3.13.2 lock resolver
         id: lock_resolver
         continue-on-error: true
+        if: steps.inputs.outcome == 'success'
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: 3.13.2
@@ -77,6 +80,7 @@ jobs:
       - name: Set up exact Python runtime
         id: runtime
         continue-on-error: true
+        if: steps.inputs.outcome == 'success'
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: 3.12.11
@@ -84,6 +88,7 @@ jobs:
       - name: Verify complete hash-locked toolchain closure before installation
         id: lock_verification
         continue-on-error: true
+        if: steps.inputs.outcome == 'success'
         shell: pwsh
         run: |
           $resolverPython = '${{ steps.lock_resolver.outputs.python-path }}'
@@ -217,6 +222,7 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: |
+          $inputValidationOutcome = '${{ steps.inputs.outcome }}'
           $lockVerificationOutcome = '${{ steps.lock_verification.outcome }}'
           $lockVerificationStarted = '${{ steps.lock_verification.outputs.verifier_started }}' -eq 'true'
           $lockVerificationBlocked = '${{ steps.lock_verification.outputs.verifier_blocked }}' -eq 'true'
@@ -228,7 +234,17 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($lockVerificationCommand)) {
             $lockVerificationCommand = '<CPython-3.13.2 with pip==26.2.1> -I standards/scripts/python-project-validation.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci.lock --resolver-python <CPython-3.13.2> --runtime-python <CPython-3.12.11>'
           }
-          if ([string]::IsNullOrWhiteSpace($lockVerificationStartedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationCompletedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationDurationText)) {
+          if ($inputValidationOutcome -ne 'success') {
+            $inputValidationTimestamp = (Get-Date).ToUniversalTime().ToString('o')
+            $lockVerificationOutcome = 'skipped'
+            $lockVerificationStarted = $false
+            $lockVerificationBlocked = $true
+            $lockVerificationBlockedReason = 'The fixed runtime and project path validation did not succeed, so lock validation was not started.'
+            $lockVerificationStartedAtUtc = $inputValidationTimestamp
+            $lockVerificationCompletedAtUtc = $inputValidationTimestamp
+            $lockVerificationDurationText = '0.000'
+          }
+          elseif ([string]::IsNullOrWhiteSpace($lockVerificationStartedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationCompletedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationDurationText)) {
             throw 'Lock verification did not report required timing metadata.'
           }
           $lockVerificationDurationSeconds = [double]::Parse($lockVerificationDurationText, [Globalization.CultureInfo]::InvariantCulture)
@@ -363,18 +379,19 @@ jobs:
             $failureChangedFiles = @(Get-FailureChangedFiles -RepositoryPath $failureCallerStage -ValidatedCommit $env:GITHUB_SHA -BaseCommit $failureScopeBaseSha)
             if ($failureChangedFiles.Count -eq 0) { throw 'Failure evidence change inventory is empty for github.sha.' }
             if (-not (Test-Path -LiteralPath $lockEvidenceLogPath -PathType Leaf)) {
-              'The Python lock verifier did not start because a required prerequisite did not complete.' | Set-Content -LiteralPath $lockEvidenceLogPath -Encoding utf8
+              $lockVerifierLogMessage = if ($inputValidationOutcome -ne 'success') { 'The Python lock verifier did not start because the fixed runtime and project path validation did not succeed.' } else { 'The Python lock verifier did not start because a required prerequisite did not complete.' }
+              $lockVerifierLogMessage | Set-Content -LiteralPath $lockEvidenceLogPath -Encoding utf8
             }
             $commandsExecuted = @()
-            $commandsNotExecuted = @('Toolchain installation and functional validation were not run because lock verification did not succeed.')
+            $commandsNotExecuted = if ($inputValidationOutcome -ne 'success') { @('Toolchain installation and functional validation were not run because the fixed runtime and project path validation did not succeed.') } else { @('Toolchain installation and functional validation were not run because lock verification did not succeed.') }
             if ($lockVerificationStarted) {
               $commandsExecuted = @($lockVerificationCommand)
             }
             else {
               $commandsNotExecuted += $lockVerificationCommand
             }
-            $completionSummary = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'Python toolchain lock verification could not complete before toolchain installation.' } else { 'Python toolchain lock verification failed before toolchain installation.' }
-            $blockedReason = if (-not $lockVerificationBlocked -and $lockVerificationStarted) { $null } elseif ([string]::IsNullOrWhiteSpace($lockVerificationBlockedReason)) { 'The Python lock verifier prerequisite or package resolver was unavailable, so validation could not complete.' } else { $lockVerificationBlockedReason }
+            $completionSummary = if ($inputValidationOutcome -ne 'success') { 'Python input validation did not succeed before toolchain lock verification.' } elseif ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'Python toolchain lock verification could not complete before toolchain installation.' } else { 'Python toolchain lock verification failed before toolchain installation.' }
+            $blockedReason = if ($inputValidationOutcome -ne 'success') { $lockVerificationBlockedReason } elseif (-not $lockVerificationBlocked -and $lockVerificationStarted) { $null } elseif ([string]::IsNullOrWhiteSpace($lockVerificationBlockedReason)) { 'The Python lock verifier prerequisite or package resolver was unavailable, so validation could not complete.' } else { $lockVerificationBlockedReason }
             $lockVerificationRecord = [ordered]@{
               schemaVersion = '1.1.0'
               name = 'Python toolchain lock closure'
@@ -397,6 +414,7 @@ jobs:
               notApplicableRationale = $null
               details = [ordered]@{
                 outcome = $lockVerificationOutcome
+                inputValidationOutcome = $inputValidationOutcome
                 verifierStarted = $lockVerificationStarted
                 resolverAvailable = -not ($lockVerificationBlocked -or -not $lockVerificationStarted)
                 logPath = 'evidence/lock-verification.log'
@@ -420,6 +438,7 @@ jobs:
         shell: pwsh
         run: |
           $outcomes = [ordered]@{
+            inputs = '${{ steps.inputs.outcome }}'
             lock_verification = '${{ steps.lock_verification.outcome }}'
             regression = '${{ steps.regression.outcome }}'
             functional = '${{ steps.functional.outcome }}'
@@ -443,6 +462,7 @@ jobs:
         shell: pwsh
         run: |
           $outcomes = [ordered]@{
+            inputs = '${{ steps.inputs.outcome }}'
             lock_verification = '${{ steps.lock_verification.outcome }}'
             regression = '${{ steps.regression.outcome }}'
             functional = '${{ steps.functional.outcome }}'

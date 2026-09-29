@@ -220,7 +220,7 @@ MACOS_13_0_PLATFORM_VERSION = (
 )
 # Pip's cross-platform options select compatible wheels but do not apply PEP 508
 # platform markers. These environments mirror the targets resolved above and are
-# used only to account for a marker-gated dependency omitted from those reports.
+# injected into Pip before each base or supplemental target resolution.
 LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS: tuple[dict[str, str], ...] = (
     {
         "implementation_name": "cpython",
@@ -279,6 +279,25 @@ FUNCTIONAL_RUNTIME_MARKER_ENVIRONMENT: dict[str, str] = {
     "sys_platform": "linux",
     "extra": "",
 }
+TARGET_MARKER_PIP_WRAPPER = """\
+import json
+import sys
+
+from pip._vendor.packaging import markers
+
+target_environment = json.loads(sys.argv[1])
+
+
+def target_marker_environment():
+    return dict(target_environment)
+
+
+markers.default_environment = target_marker_environment
+
+from pip._internal.cli.main import main
+
+raise SystemExit(main(sys.argv[2:]))
+"""
 TOOLCHAIN_SBOM_PROJECT_NAME = "engineering-standards-python-toolchain"
 TOOLCHAIN_SBOM_PROJECT_VERSION = "1.0.0"
 
@@ -1142,11 +1161,14 @@ def validate_requirements_lock_closure(
             Path(directory) / "runtime-cpython-3.12.11",
             env,
         )
+        target_marker_wrapper = Path(directory) / "target-marker-pip.py"
+        target_marker_wrapper.write_text(TARGET_MARKER_PIP_WRAPPER, encoding="utf-8")
 
         def resolve_target(
             python: Path,
             target_name: str,
             target_args: tuple[str, ...],
+            target_environment: dict[str, str],
             resolution_input: Path,
             report_name: str,
         ) -> Path:
@@ -1154,8 +1176,8 @@ def validate_requirements_lock_closure(
             command = [
                 str(python),
                 "-I",
-                "-m",
-                "pip",
+                str(target_marker_wrapper),
+                json.dumps(target_environment, sort_keys=True, separators=(",", ":")),
                 "--isolated",
                 "install",
                 "--disable-pip-version-check",
@@ -1282,6 +1304,7 @@ def validate_requirements_lock_closure(
                 python,
                 target_name,
                 target_args,
+                target_environment,
                 requirements_input,
                 f"{target_name}-base",
             )
@@ -1364,6 +1387,7 @@ def validate_requirements_lock_closure(
                         python,
                         target_name,
                         target_args,
+                        target_environment,
                         marker_input,
                         f"{target_name}-marker-{marker_request_number}",
                     )

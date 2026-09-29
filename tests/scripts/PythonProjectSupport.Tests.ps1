@@ -62,13 +62,39 @@ Describe 'Governed Python project support' {
         $script:driver | Should -Match 'validate_resolved_requirements_lock'
         $script:driver | Should -Match 'require_pinned_lock_metadata_parser'
         $script:driver | Should -Match 'bootstrap_pinned_lock_metadata_parser'
-        $script:driver | Should -Not -Match 'default_environment'
+        $script:driver | Should -Match 'TARGET_MARKER_PIP_WRAPPER'
+        $script:driver | Should -Match 'markers\.default_environment\s*=\s*target_marker_environment'
+        $script:driver | Should -Not -Match 'original_default_environment'
     }
 
     It 'reserves enough job time for serial lock closure and durable evidence' {
         $timeoutMatch = [regex]::Match($script:workflow, '(?m)^\s+timeout-minutes:\s*(?<minutes>\d+)\s*$')
         $timeoutMatch.Success | Should -BeTrue
         [int]$timeoutMatch.Groups['minutes'].Value | Should -BeGreaterOrEqual 60
+    }
+
+    It 'creates durable failure evidence when caller inputs are rejected' {
+        $workspaceIndex = $script:workflow.IndexOf('Initialize Python evidence workspace')
+        $inputValidationIndex = $script:workflow.IndexOf('Validate fixed runtime and project path')
+        $workspaceIndex | Should -BeGreaterThan -1
+        $inputValidationIndex | Should -BeGreaterThan -1
+        $workspaceIndex | Should -BeLessThan $inputValidationIndex
+        $inputValidation = [regex]::Match(
+            $script:workflow,
+            '(?s)- name: Validate fixed runtime and project path\s*(?<body>.*?)(?=\r?\n\s*- name:)'
+        )
+        $inputValidation.Success | Should -BeTrue
+        $inputValidation.Groups['body'].Value | Should -Match 'id:\s*inputs'
+        $inputValidation.Groups['body'].Value | Should -Match 'continue-on-error:\s*true'
+        foreach ($stepName in @('Set up exact CPython 3.13.2 lock resolver','Set up exact Python runtime','Verify complete hash-locked toolchain closure before installation')) {
+            $step = [regex]::Match($script:workflow, "(?s)- name: $([regex]::Escape($stepName))\s*(?<body>.*?)(?=\r?\n\s*- name:)")
+            $step.Success | Should -BeTrue
+            $step.Groups['body'].Value | Should -Match "if:\s*steps\.inputs\.outcome\s*==\s*'success'"
+        }
+        $script:workflow | Should -Match '\$inputValidationOutcome = ''\$\{\{ steps\.inputs\.outcome \}\}'''
+        $script:workflow | Should -Match 'The fixed runtime and project path validation did not succeed, so lock validation was not started\.'
+        $script:workflow | Should -Match 'inputs = ''\$\{\{ steps\.inputs\.outcome \}\}'''
+        $script:workflow | Should -Match 'inputValidationOutcome = \$inputValidationOutcome'
     }
 
     It 'emits validated failure completion evidence when toolchain lock verification does not succeed' {

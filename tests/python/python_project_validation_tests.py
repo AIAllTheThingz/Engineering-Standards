@@ -1505,6 +1505,8 @@ def test_requirements_lock_closure_resolves_every_target_and_functional_runtime(
     resolver_python.touch()
     runtime_python.touch()
     pip_commands: list[list[str]] = []
+    marker_environments: list[dict[str, str]] = []
+    marker_wrapper_sources: list[str] = []
     validated_reports: list[tuple[Path, ...]] = []
     pinned_resolver_calls: list[tuple[Path, str]] = []
 
@@ -1513,6 +1515,13 @@ def test_requirements_lock_closure_resolves_every_target_and_functional_runtime(
             expected = "cpython 3.13.2" if command[0] == str(resolver_python) else "cpython 3.12.11"
             return 0, expected + "\n", 0.0
         report = Path(command[command.index("--report") + 1])
+        wrapper = Path(command[2])
+        require(
+            wrapper.name == "target-marker-pip.py",
+            "pip invocation did not use the synthetic target-marker wrapper",
+        )
+        marker_environments.append(json.loads(command[3]))
+        marker_wrapper_sources.append(wrapper.read_text(encoding="utf-8"))
         report.write_text(
             json.dumps({"install": [{"metadata": {"name": "build", "version": "1.6.1"}}]}),
             encoding="utf-8",
@@ -1556,11 +1565,73 @@ def test_requirements_lock_closure_resolves_every_target_and_functional_runtime(
         "every target resolution must verify the selected artifact against lock hashes",
     )
     require(
+        marker_environments
+        == [
+            *validator.LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS,
+            validator.FUNCTIONAL_RUNTIME_MARKER_ENVIRONMENT,
+        ],
+        "each resolver invocation must receive its full synthetic target marker environment",
+    )
+    require(
+        all(
+            "markers.default_environment = target_marker_environment" in source
+            and "default_environment()" not in source
+            for source in marker_wrapper_sources
+        ),
+        "the target-marker wrapper must replace, not inherit, the host marker environment",
+    )
+    require(
         pinned_resolver_calls
         == [(resolver_python, "CPython 3.13.2"), (runtime_python, "CPython 3.12.11")],
         "closure resolution did not bootstrap both pinned resolver environments",
     )
     require(len(validated_reports) == 1 and len(validated_reports[0]) == 4, "all target reports were not validated")
+
+
+def test_target_marker_pip_wrapper_evaluates_markers_for_the_declared_target(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """The resolver wrapper must replace host PEP 508 markers before Pip evaluates dependencies."""
+    from pip._internal.cli import main as pip_cli_main
+    from pip._vendor.packaging import markers
+
+    wrapper = tmp_path / "target-marker-pip.py"
+    wrapper.write_text(validator.TARGET_MARKER_PIP_WRAPPER, encoding="utf-8")
+    target_environment = validator.LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS[1]
+    pip_arguments: list[list[str]] = []
+
+    def fake_main(arguments: list[str]) -> int:
+        pip_arguments.append(arguments)
+        return 0
+
+    original_default_environment = markers.default_environment
+    monkeypatch.setattr(pip_cli_main, "main", fake_main)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [str(wrapper), json.dumps(target_environment), "--isolated", "install"],
+    )
+    try:
+        try:
+            runpy.run_path(str(wrapper), run_name="__main__")
+        except SystemExit as exc:
+            require(exc.code == 0, "target-marker wrapper did not return Pip's exit status")
+        else:
+            raise AssertionError("target-marker wrapper did not invoke Pip")
+        require(
+            pip_arguments == [["--isolated", "install"]],
+            "target-marker wrapper did not forward the Pip command line",
+        )
+        require(
+            markers.Marker("sys_platform == 'win32'").evaluate(),
+            "the Windows target marker environment was not applied",
+        )
+        require(
+            not markers.Marker("sys_platform != 'win32'").evaluate(),
+            "a Linux-only marker remained active for the Windows target",
+        )
+    finally:
+        markers.default_environment = original_default_environment
 
 
 def test_requirements_lock_closure_marks_resolver_outage_blocked(tmp_path: Path, monkeypatch) -> None:
