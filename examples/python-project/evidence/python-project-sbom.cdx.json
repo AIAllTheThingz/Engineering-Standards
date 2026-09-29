@@ -1,7 +1,8 @@
 {
   "dependencies": [
     {
-      "ref": "root-component"
+      "ref": "root-component",
+      "dependsOn": []
     }
   ],
   "metadata": {
