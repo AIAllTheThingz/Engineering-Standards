@@ -560,6 +560,7 @@ Describe 'Validate evidence action' {
             try {
                 New-Item -ItemType Directory -Path (Join-Path $sourceRoot 'examples/python-project/evidence') -Force | Out-Null
                 Set-Content -LiteralPath (Join-Path $sourceRoot 'examples/python-project/source.py') -Value 'VALUE = 1' -NoNewline
+                Set-Content -LiteralPath (Join-Path $sourceRoot 'café.txt') -Value 'unicode content' -NoNewline
                 & git -C $sourceRoot init --quiet
                 $LASTEXITCODE | Should -Be 0
                 & git -C $sourceRoot config user.email 'evidence-test@example.invalid'
@@ -823,7 +824,7 @@ Describe 'Validate evidence action' {
                 $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
                 @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
 
-                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v29'
+                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v30'
                 $tagReference = "refs/tags/$($receipt.validatedCommitTag)"
                 & git -C $repositoryRoot show-ref --verify --quiet $tagReference
                 if ($LASTEXITCODE -eq 0) {

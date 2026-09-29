@@ -52,6 +52,13 @@ jobs:
           $project = $projectItem.FullName
           if (-not ($project -eq $root -or $project.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal))) { throw 'project-path escaped the caller checkout.' }
 
+      - name: Initialize Python evidence workspace
+        shell: pwsh
+        run: |
+          $workRoot = Join-Path $env:RUNNER_TEMP 'python-functional'
+          New-Item -ItemType Directory -Path (Join-Path $workRoot 'evidence') -Force | Out-Null
+          "PYTHON_WORK_ROOT=$workRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Set up exact CPython 3.13.2 lock resolver
         id: lock_resolver
         continue-on-error: true
@@ -60,16 +67,11 @@ jobs:
           python-version: 3.13.2
 
       - name: Set up exact Python runtime
+        id: runtime
+        continue-on-error: true
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: 3.12.11
-
-      - name: Initialize Python evidence workspace
-        shell: pwsh
-        run: |
-          $workRoot = Join-Path $env:RUNNER_TEMP 'python-functional'
-          New-Item -ItemType Directory -Path (Join-Path $workRoot 'evidence') -Force | Out-Null
-          "PYTHON_WORK_ROOT=$workRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Verify complete hash-locked toolchain closure before installation
         id: lock_verification
@@ -101,8 +103,7 @@ jobs:
             Complete-LockVerificationTiming
             throw 'The exact CPython 3.13.2 lock resolver is unavailable.'
           }
-          $runtimeCommand = Get-Command python -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-          $runtimePython = if ($null -eq $runtimeCommand) { $null } else { $runtimeCommand.Path }
+          $runtimePython = '${{ steps.runtime.outputs.python-path }}'
           if ([string]::IsNullOrWhiteSpace($runtimePython) -or -not (Test-Path -LiteralPath $runtimePython -PathType Leaf)) {
             'verifier_started=false' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             'verifier_blocked=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append

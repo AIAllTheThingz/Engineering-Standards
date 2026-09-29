@@ -193,12 +193,14 @@ function Get-ValidatedContentFingerprint {
     if ($LASTEXITCODE -ne 0) {
         throw "Validated commit '$CommitSha' is not available in SourceRepositoryPath."
     }
-    $treeEntries = @(& git -C $RepositoryRoot ls-tree -r --full-tree $CommitSha 2>$null)
+    $treeOutput = @(& git -C $RepositoryRoot ls-tree -r --full-tree -z $CommitSha 2>$null)
     if ($LASTEXITCODE -ne 0) {
         throw "Could not enumerate validated commit '$CommitSha' for content identity."
     }
+    $treeEntries = (($treeOutput -join "`n") -split "`0")
     $records = [System.Collections.Generic.List[string]]::new()
     foreach ($entry in $treeEntries) {
+        if ([string]::IsNullOrEmpty([string]$entry)) { continue }
         $match = [regex]::Match(
             [string]$entry,
             '^(?<mode>[0-7]{6}) (?<type>blob|commit) (?<object>[A-Fa-f0-9]{40}|[A-Fa-f0-9]{64})\t(?<path>.+)$'

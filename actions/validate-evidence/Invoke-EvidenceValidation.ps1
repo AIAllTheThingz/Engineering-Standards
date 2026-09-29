@@ -68,12 +68,14 @@ function Get-RepositoryContentFingerprint {
     if ($commitSha -notmatch '^[A-Fa-f0-9]{40,64}$') {
         throw "Commit '$CommitReference' did not resolve to a Git object identifier."
     }
-    $treeEntries = @(& git -C $gitRoot ls-tree -r --full-tree $commitSha 2>$null)
+    $treeOutput = @(& git -C $gitRoot ls-tree -r --full-tree -z $commitSha 2>$null)
     if ($LASTEXITCODE -ne 0) {
         throw "Could not enumerate commit '$commitSha' for completion-evidence content identity."
     }
+    $treeEntries = (($treeOutput -join "`n") -split "`0")
     $records = [System.Collections.Generic.List[string]]::new()
     foreach ($entry in $treeEntries) {
+        if ([string]::IsNullOrEmpty([string]$entry)) { continue }
         $match = [regex]::Match(
             [string]$entry,
             '^(?<mode>[0-7]{6}) (?<type>blob|commit) (?<object>[A-Fa-f0-9]{40}|[A-Fa-f0-9]{64})\t(?<path>.+)$'

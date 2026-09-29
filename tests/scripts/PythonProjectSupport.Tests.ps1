@@ -48,9 +48,8 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match '--verify-tool-lock'
         $script:workflow | Should -Match '--resolver-python'
         $script:workflow | Should -Match '--runtime-python'
-        $script:workflow | Should -Match '\$runtimeCommand = Get-Command python -CommandType Application -ErrorAction SilentlyContinue \| Select-Object -First 1'
-        $script:workflow | Should -Match '\$runtimePython = if \(\$null -eq \$runtimeCommand\) \{ \$null \} else \{ \$runtimeCommand\.Path \}'
-        $script:workflow | Should -Not -Match '\$runtimePython = \(Get-Command python -CommandType Application -ErrorAction Stop\)\.Path'
+        $script:workflow | Should -Match '\$runtimePython = ''\$\{\{ steps\.runtime\.outputs\.python-path \}\}'''
+        $script:workflow | Should -Not -Match 'Get-Command python -CommandType Application'
         $script:driver | Should -Match '"--dry-run"'
         $script:driver | Should -Match '"--ignore-installed"'
         $script:driver | Should -Match '"-c"'
@@ -116,6 +115,23 @@ Describe 'Governed Python project support' {
         $failureEvidence.Groups['body'].Value | Should -Not -Match 'New-Item -ItemType Directory -Path \$callerStage'
         $failureEvidence.Groups['body'].Value | Should -Match '-SourceRepositoryPath \$callerStage'
         $script:workflow | Should -Match '(?s)id:\s*evidence\s*\r?\n\s*if:\s*always\(\) && steps\.completion\.outcome == ''success'''
+    }
+
+    It 'preserves failure evidence when the functional runtime setup is unavailable' {
+        $workspaceIndex = $script:workflow.IndexOf('Initialize Python evidence workspace')
+        $resolverIndex = $script:workflow.IndexOf('Set up exact CPython 3.13.2 lock resolver')
+        $runtimeIndex = $script:workflow.IndexOf('Set up exact Python runtime')
+        $workspaceIndex | Should -BeGreaterThan -1
+        $workspaceIndex | Should -BeLessThan $resolverIndex
+        $workspaceIndex | Should -BeLessThan $runtimeIndex
+        $runtimeSetup = [regex]::Match(
+            $script:workflow,
+            '(?s)- name: Set up exact Python runtime\s*(?<body>.*?)(?=\r?\n\s*- name:)'
+        )
+        $runtimeSetup.Success | Should -BeTrue
+        $runtimeSetup.Groups['body'].Value | Should -Match 'id:\s*runtime'
+        $runtimeSetup.Groups['body'].Value | Should -Match 'continue-on-error:\s*true'
+        $script:workflow | Should -Match 'The exact CPython 3\.12\.11 functional runtime was unavailable; no toolchain was installed\.'
     }
 
     It 'validates a lock-failure receipt without installing the rejected toolchain' {
