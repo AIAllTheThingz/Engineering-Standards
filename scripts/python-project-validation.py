@@ -1207,6 +1207,14 @@ def validate_requirements_lock_closure(
             while True:
                 target_reports = [base_report, *supplemental_reports.values()]
                 install_records, resolved = collect_target_resolution(target_reports, target_name)
+                dependencies = package_dependency_requirements(install_records)
+                _, active_extras_by_package = target_reachable_packages_and_extras_for_target(
+                    dependencies,
+                    target_environment,
+                    target_name,
+                    target_root_packages,
+                    requested_marker_extras,
+                )
                 marker_requirements = marker_gated_requirements_for_target(
                     install_records,
                     locked,
@@ -1215,12 +1223,26 @@ def validate_requirements_lock_closure(
                     requested_marker_extras,
                     target_root_packages,
                 )
+                desired_marker_requirements = {
+                    name: (
+                        version,
+                        tuple(sorted(set(extras).union(active_extras_by_package.get(name, ())))),
+                    )
+                    for name, (version, extras) in marker_requirements.items()
+                }
+                obsolete_marker_reports = sorted(
+                    set(supplemental_reports).difference(desired_marker_requirements)
+                )
+                if obsolete_marker_reports:
+                    for name in obsolete_marker_reports:
+                        del supplemental_reports[name]
+                        del requested_marker_extras[name]
+                    continue
                 pending: list[tuple[str, str, tuple[str, ...]]] = []
-                for name, (version, extras) in sorted(marker_requirements.items()):
+                for name, (version, extras) in sorted(desired_marker_requirements.items()):
                     requested_extras = requested_marker_extras.get(name, ())
-                    combined_extras = tuple(sorted(set(requested_extras).union(extras)))
-                    if name not in resolved or combined_extras != requested_extras:
-                        pending.append((name, version, combined_extras))
+                    if name not in resolved or extras != requested_extras:
+                        pending.append((name, version, extras))
                 if not pending:
                     break
                 for name, version, extras in pending:
@@ -1241,9 +1263,8 @@ def validate_requirements_lock_closure(
                     if marker_resolved.get(name) != version:
                         raise ValueError(
                             f"marker-gated package {name}=={version} was not resolved for {target_name}"
-                    )
+                        )
                     requested_marker_extras[name] = extras
-                    target_root_packages.add(name)
                     supplemental_reports[name] = filter_supplemental_report_for_target(
                         marker_report,
                         name,
