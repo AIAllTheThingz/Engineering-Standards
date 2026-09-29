@@ -466,7 +466,7 @@ Describe 'Validate evidence action' {
             $artifactPath = Join-Path $script:tempRoot 'evidence/report.json'
             [System.IO.File]::WriteAllText($artifactPath, "{`r`n  `"status`": `"passed`"`r`n}`r`n", [System.Text.UTF8Encoding]::new($false))
 
-            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'LF-governed artifact integrity fixture.' -ArtifactPath 'evidence/report.json'
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -ExecutionContext Local -Summary 'LF-governed artifact integrity fixture.' -ArtifactPath 'evidence/report.json'
             $LASTEXITCODE | Should -Be 0
 
             $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/generated.json') -Raw | ConvertFrom-Json
@@ -487,7 +487,7 @@ Describe 'Validate evidence action' {
             [byte[]]$originalBytes = @(0, 13, 10, 255, 0, 13, 10, 1)
             [System.IO.File]::WriteAllBytes($artifactPath, $originalBytes)
 
-            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'Binary artifact integrity fixture.' -ArtifactPath 'evidence/report.bin'
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -ExecutionContext Local -Summary 'Binary artifact integrity fixture.' -ArtifactPath 'evidence/report.bin'
             $LASTEXITCODE | Should -Be 0
 
             $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/generated.json') -Raw | ConvertFrom-Json
@@ -823,7 +823,7 @@ Describe 'Validate evidence action' {
                 $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
                 @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
 
-                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v27'
+                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v28'
                 $tagReference = "refs/tags/$($receipt.validatedCommitTag)"
                 & git -C $repositoryRoot show-ref --verify --quiet $tagReference
                 if ($LASTEXITCODE -eq 0) {
