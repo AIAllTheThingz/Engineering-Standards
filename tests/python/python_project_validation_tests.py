@@ -341,6 +341,58 @@ def test_requirements_lock_rejects_marker_package_omitted_from_unverified_report
         raise AssertionError("marker package omitted from its closure report was accepted")
 
 
+def test_marker_closure_keeps_dependency_with_active_non_extra_condition() -> None:
+    """An active condition must not be discarded merely because a marker also mentions extras."""
+    records = [
+        {
+            "metadata": {
+                "name": "build",
+                "version": "1.6.1",
+                "requires_dist": [
+                    "marker-parent==1.0.0; sys_platform == 'win32' or extra == 'feature'"
+                ],
+            }
+        }
+    ]
+
+    marker_requirements = validator.marker_gated_requirements_for_target(
+        records,
+        {"marker-parent": "1.0.0"},
+        validator.LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS[1],
+        "windows-cpython-3.13.2-x86_64",
+    )
+
+    require(
+        marker_requirements == {"marker-parent": "1.0.0"},
+        "an active non-extra marker condition was discarded",
+    )
+
+
+def test_windows_marker_environment_matches_declared_amd64_target() -> None:
+    """The synthetic Windows markers must match the declared win_amd64 target."""
+    records = [
+        {
+            "metadata": {
+                "name": "build",
+                "version": "1.6.1",
+                "requires_dist": ["marker-parent==1.0.0; platform_machine == 'AMD64'"],
+            }
+        }
+    ]
+
+    marker_requirements = validator.marker_gated_requirements_for_target(
+        records,
+        {"marker-parent": "1.0.0"},
+        validator.LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS[1],
+        "windows-cpython-3.13.2-x86_64",
+    )
+
+    require(
+        marker_requirements == {"marker-parent": "1.0.0"},
+        "the Windows marker environment does not model win_amd64",
+    )
+
+
 def test_requirements_lock_closure_resolves_marker_gated_transitive_chain(
     tmp_path: Path, monkeypatch
 ) -> None:
@@ -579,6 +631,17 @@ def test_requirements_lock_closure_marks_resolver_outage_blocked(tmp_path: Path,
         require("could not resolve the requirements lock closure" in str(exc), "blocked resolver output was lost")
     else:
         raise AssertionError("resolver outage was not classified as blocked")
+
+
+def test_requirements_lock_closure_marks_http_429_as_blocked() -> None:
+    """Package-index throttling is an outage, not proof that a valid lock is stale."""
+    require(
+        validator.is_transient_lock_resolution_failure(
+            1,
+            "ERROR: Could not install because of HTTP error 429: Too Many Requests",
+        ),
+        "HTTP 429 was not classified as a transient resolver failure",
+    )
 
 
 def test_requirements_lock_closure_keeps_invalid_resolution_as_failure(tmp_path: Path, monkeypatch) -> None:

@@ -223,7 +223,7 @@ LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS: tuple[dict[str, str], ...] = (
         "implementation_name": "cpython",
         "implementation_version": "3.13.2",
         "os_name": "nt",
-        "platform_machine": "x86_64",
+        "platform_machine": "AMD64",
         "platform_python_implementation": "CPython",
         "platform_release": "",
         "platform_system": "Windows",
@@ -632,9 +632,6 @@ def marker_gated_requirements_for_target(
             name = normalized_requirement_name(requirement.name)
             if requirement.marker is None:
                 continue
-            # An unrequested optional extra must never justify a lock entry.
-            if "extra" in str(requirement.marker).lower():
-                continue
             if not requirement.marker.evaluate(target_environment):
                 continue
             version = locked.get(name)
@@ -712,7 +709,8 @@ def is_transient_lock_resolution_failure(exit_code: int, output: str) -> bool:
         re.search(
             r"(?:could not fetch url|read timed? out|timed out|connection (?:reset|refused|aborted|error)|"
             r"failed to establish a new connection|network is unreachable|temporary failure in name resolution|"
-            r"name or service not known|service unavailable|http error 5\d{2}|503 server error)",
+            r"name or service not known|service unavailable|http error (?:429|5\d{2})|"
+            r"(?:429|5\d{2}) (?:client|server) error|too many requests|503 server error)",
             output,
             flags=re.IGNORECASE,
         )
