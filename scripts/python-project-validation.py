@@ -248,6 +248,20 @@ LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS: tuple[dict[str, str], ...] = (
         "extra": "",
     },
 )
+FUNCTIONAL_RUNTIME_MARKER_ENVIRONMENT: dict[str, str] = {
+    "implementation_name": "cpython",
+    "implementation_version": "3.12.11",
+    "os_name": "posix",
+    "platform_machine": "x86_64",
+    "platform_python_implementation": "CPython",
+    "platform_release": "",
+    "platform_system": "Linux",
+    "platform_version": "",
+    "python_full_version": "3.12.11",
+    "python_version": "3.12",
+    "sys_platform": "linux",
+    "extra": "",
+}
 TOOLCHAIN_SBOM_PROJECT_NAME = "engineering-standards-python-toolchain"
 TOOLCHAIN_SBOM_PROJECT_VERSION = "1.0.0"
 
@@ -586,18 +600,19 @@ def resolved_requirements(install_records: list[dict[str, Any]]) -> dict[str, st
     return requirements
 
 
-def marker_gated_locked_requirements(
+def marker_gated_requirements_for_target(
     install_records: list[dict[str, Any]],
     locked: dict[str, str],
-    resolved: dict[str, str],
-) -> set[str]:
-    """Find non-extra target-marked pins omitted by pip cross-resolution reports."""
+    target_environment: dict[str, str],
+    target_name: str,
+) -> dict[str, str]:
+    """Return locked non-extra dependencies whose markers apply to one target."""
     try:
         from pip._vendor.packaging.requirements import InvalidRequirement, Requirement
     except ImportError as exc:
         raise ValueError("pip's bundled PEP 508 requirement parser is unavailable") from exc
 
-    marker_gated: set[str] = set()
+    marker_gated: dict[str, str] = {}
     for item in install_records:
         metadata = item.get("metadata")
         if not isinstance(metadata, dict):
@@ -615,16 +630,24 @@ def marker_gated_locked_requirements(
                     f"pip resolution report contains an invalid dependency declaration: {raw_requirement!r}"
                 ) from exc
             name = normalized_requirement_name(requirement.name)
-            if name not in locked or name in resolved or requirement.marker is None:
+            if requirement.marker is None:
                 continue
             # An unrequested optional extra must never justify a lock entry.
             if "extra" in str(requirement.marker).lower():
                 continue
-            if requirement.specifier.contains(locked[name], prereleases=True) and any(
-                requirement.marker.evaluate(environment)
-                for environment in LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS
-            ):
-                marker_gated.add(name)
+            if not requirement.marker.evaluate(target_environment):
+                continue
+            version = locked.get(name)
+            if version is None:
+                raise ValueError(
+                    f"requirements lock is missing marker-gated package '{name}' required for {target_name}"
+                )
+            if not requirement.specifier.contains(version, prereleases=True):
+                raise ValueError(
+                    f"requirements lock pin {name}=={version} does not satisfy the marker-gated "
+                    f"dependency declared for {target_name}"
+                )
+            marker_gated[name] = version
     return marker_gated
 
 
@@ -640,10 +663,8 @@ def validate_resolved_requirements_lock(
     if not report_paths:
         raise ValueError("requirements lock closure must include at least one resolution report")
     resolved: dict[str, str] = {}
-    install_records: list[dict[str, Any]] = []
     for report in report_paths:
         report_records = resolution_install_records(report)
-        install_records.extend(report_records)
         for name, version in resolved_requirements(report_records).items():
             prior_version = resolved.get(name)
             if prior_version is not None and prior_version != version:
@@ -652,11 +673,10 @@ def validate_resolved_requirements_lock(
                     f"{prior_version} and {version}"
                 )
             resolved[name] = version
-    marker_gated = marker_gated_locked_requirements(install_records, locked, resolved)
     unexpected = sorted(
         f"{name}=={locked[name]}"
         for name in locked
-        if name not in resolved and name not in marker_gated
+        if name not in resolved
     )
     missing = sorted(
         f"{name}=={resolved[name]}" for name in resolved if name not in locked
@@ -732,9 +752,16 @@ def validate_requirements_lock_closure(
     verify_python_version(runtime_python, "cpython 3.12.11", "the functional CPython 3.12.11 runtime")
     with tempfile.TemporaryDirectory(prefix="lock-resolution-", dir=resolver_root) as directory:
         reports: list[Path] = []
+        locked = locked_requirements(lock)
 
-        def resolve_target(python: Path, target_name: str, target_args: tuple[str, ...]) -> None:
-            report = Path(directory) / f"{target_name}.json"
+        def resolve_target(
+            python: Path,
+            target_name: str,
+            target_args: tuple[str, ...],
+            resolution_input: Path,
+            report_name: str,
+        ) -> Path:
+            report = Path(directory) / f"{report_name}.json"
             command = [
                 str(python),
                 "-I",
@@ -754,7 +781,7 @@ def validate_requirements_lock_closure(
                 "https://pypi.org/simple",
                 *target_args,
                 "-r",
-                str(requirements_input),
+                str(resolution_input),
                 "-c",
                 str(lock),
             ]
@@ -776,11 +803,82 @@ def validate_requirements_lock_closure(
                 raise ValueError(message)
             if not report.is_file():
                 raise ValueError(f"pip did not produce the required {target_name} resolution report")
-            reports.append(report)
+            return report
 
-        for target_name, target_args in LOCK_RESOLUTION_TARGETS:
-            resolve_target(resolver_python, target_name, target_args)
-        resolve_target(runtime_python, "runtime-cpython-3.12.11", ())
+        def collect_target_resolution(target_reports: list[Path], target_name: str) -> tuple[list[dict[str, Any]], dict[str, str]]:
+            install_records: list[dict[str, Any]] = []
+            resolved: dict[str, str] = {}
+            for report in target_reports:
+                report_records = resolution_install_records(report)
+                install_records.extend(report_records)
+                for name, version in resolved_requirements(report_records).items():
+                    prior_version = resolved.get(name)
+                    if prior_version is not None and prior_version != version:
+                        raise ValueError(
+                            f"requirements lock resolution differs within {target_name} for {name}: "
+                            f"{prior_version} and {version}"
+                        )
+                    resolved[name] = version
+            return install_records, resolved
+
+        if len(LOCK_RESOLUTION_TARGETS) != len(LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS):
+            raise RuntimeError("lock-resolution targets and marker environments are not aligned")
+        target_specs = [
+            (resolver_python, target_name, target_args, target_environment)
+            for (target_name, target_args), target_environment in zip(
+                LOCK_RESOLUTION_TARGETS,
+                LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS,
+                strict=True,
+            )
+        ]
+        target_specs.append(
+            (runtime_python, "runtime-cpython-3.12.11", (), FUNCTIONAL_RUNTIME_MARKER_ENVIRONMENT)
+        )
+
+        for python, target_name, target_args, target_environment in target_specs:
+            target_reports = [
+                resolve_target(
+                    python,
+                    target_name,
+                    target_args,
+                    requirements_input,
+                    f"{target_name}-base",
+                )
+            ]
+            marker_request_number = 0
+            while True:
+                install_records, resolved = collect_target_resolution(target_reports, target_name)
+                marker_requirements = marker_gated_requirements_for_target(
+                    install_records,
+                    locked,
+                    target_environment,
+                    target_name,
+                )
+                pending = sorted(
+                    (name, version)
+                    for name, version in marker_requirements.items()
+                    if name not in resolved
+                )
+                if not pending:
+                    break
+                for name, version in pending:
+                    marker_request_number += 1
+                    marker_input = Path(directory) / f"{target_name}-marker-{marker_request_number}.in"
+                    marker_input.write_text(f"{name}=={version}\n", encoding="utf-8")
+                    marker_report = resolve_target(
+                        python,
+                        target_name,
+                        target_args,
+                        marker_input,
+                        f"{target_name}-marker-{marker_request_number}",
+                    )
+                    marker_resolved = resolved_requirements(resolution_install_records(marker_report))
+                    if marker_resolved.get(name) != version:
+                        raise ValueError(
+                            f"marker-gated package {name}=={version} was not resolved for {target_name}"
+                        )
+                    target_reports.append(marker_report)
+            reports.extend(target_reports)
         validate_resolved_requirements_lock(requirements_input, lock, tuple(reports))
 
 

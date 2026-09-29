@@ -297,10 +297,10 @@ def test_requirements_lock_accepts_dependency_resolved_on_another_target(tmp_pat
     )
 
 
-def test_requirements_lock_accepts_declared_target_marker_omitted_by_pip_cross_resolution(
+def test_requirements_lock_rejects_marker_package_omitted_from_unverified_report(
     tmp_path: Path,
 ) -> None:
-    """Pip target selection does not evaluate Windows markers on a Linux host."""
+    """A marker package needs a supplemental target-specific closure report."""
     requirements_input = tmp_path / "requirements-ci.in"
     requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
     lock = tmp_path / "requirements-ci.lock"
@@ -331,7 +331,158 @@ def test_requirements_lock_accepts_declared_target_marker_omitted_by_pip_cross_r
         encoding="utf-8",
     )
 
-    validator.validate_resolved_requirements_lock(requirements_input, lock, cross_target_report)
+    try:
+        validator.validate_resolved_requirements_lock(requirements_input, lock, cross_target_report)
+    except ValueError as exc:
+        message = str(exc)
+        require("unexpected locked packages" in message, "unverified marker package was accepted")
+        require("colorama==0.4.6" in message, "marker package was omitted from the diagnostic")
+    else:
+        raise AssertionError("marker package omitted from its closure report was accepted")
+
+
+def test_requirements_lock_closure_resolves_marker_gated_transitive_chain(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Marker-only dependencies are recursively resolved for their active target."""
+    requirements_input = tmp_path / "requirements-ci.in"
+    requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "build==1.6.1 \\\n"
+        "    --hash=sha256:" + "0" * 64 + "\n"
+        "    # via -r requirements-ci.in\n"
+        "marker-parent==1.0.0 \\\n"
+        "    --hash=sha256:" + "1" * 64 + "\n"
+        "    # via build\n"
+        "marker-child==2.0.0 \\\n"
+        "    --hash=sha256:" + "2" * 64 + "\n"
+        "    # via marker-parent\n",
+        encoding="utf-8",
+    )
+    resolver_python = tmp_path / "resolver-python"
+    runtime_python = tmp_path / "runtime-python"
+    resolver_python.touch()
+    runtime_python.touch()
+    requested_roots: list[tuple[str, list[str]]] = []
+
+    def fake_run(command: list[str], cwd: Path, env: dict[str, str], timeout: int = 300) -> tuple[int, str, float]:
+        if command[2] == "-c":
+            expected = "cpython 3.13.2" if command[0] == str(resolver_python) else "cpython 3.12.11"
+            return 0, expected + "\n", 0.0
+        report = Path(command[command.index("--report") + 1])
+        requested = Path(command[command.index("-r") + 1]).read_text(encoding="utf-8").strip()
+        requested_roots.append((requested, command))
+        if requested == "build==1.6.1":
+            installs = [
+                {
+                    "metadata": {
+                        "name": "build",
+                        "version": "1.6.1",
+                        "requires_dist": ["marker-parent==1.0.0; sys_platform == 'win32'"],
+                    }
+                }
+            ]
+        elif requested == "marker-parent==1.0.0":
+            installs = [
+                {
+                    "metadata": {
+                        "name": "marker-parent",
+                        "version": "1.0.0",
+                        "requires_dist": ["marker-child==2.0.0; sys_platform == 'win32'"],
+                    }
+                }
+            ]
+        elif requested == "marker-child==2.0.0":
+            installs = [{"metadata": {"name": "marker-child", "version": "2.0.0"}}]
+        else:
+            raise AssertionError(f"unexpected marker resolution request: {requested}")
+        report.write_text(json.dumps({"install": installs}), encoding="utf-8")
+        return 0, "", 0.0
+
+    monkeypatch.setattr(validator, "run", fake_run)
+    validator.validate_requirements_lock_closure(
+        requirements_input,
+        lock,
+        resolver_python,
+        runtime_python,
+        tmp_path / "work",
+    )
+
+    marker_requests = [requested for requested, _command in requested_roots if requested != "build==1.6.1"]
+    require(marker_requests == ["marker-parent==1.0.0", "marker-child==2.0.0"], "marker closure was not recursive")
+    for requested, command in requested_roots:
+        if requested != "build==1.6.1":
+            require("--platform" in command and "win_amd64" in command, "marker closure used the wrong target")
+
+
+def test_requirements_lock_closure_rejects_missing_marker_gated_transitive_pin(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """A marker-only child absent from the lock must not be silently accepted."""
+    requirements_input = tmp_path / "requirements-ci.in"
+    requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "build==1.6.1 \\\n"
+        "    --hash=sha256:" + "0" * 64 + "\n"
+        "    # via -r requirements-ci.in\n"
+        "marker-parent==1.0.0 \\\n"
+        "    --hash=sha256:" + "1" * 64 + "\n"
+        "    # via build\n",
+        encoding="utf-8",
+    )
+    resolver_python = tmp_path / "resolver-python"
+    runtime_python = tmp_path / "runtime-python"
+    resolver_python.touch()
+    runtime_python.touch()
+
+    def fake_run(command: list[str], cwd: Path, env: dict[str, str], timeout: int = 300) -> tuple[int, str, float]:
+        if command[2] == "-c":
+            expected = "cpython 3.13.2" if command[0] == str(resolver_python) else "cpython 3.12.11"
+            return 0, expected + "\n", 0.0
+        report = Path(command[command.index("--report") + 1])
+        requested = Path(command[command.index("-r") + 1]).read_text(encoding="utf-8").strip()
+        if requested == "build==1.6.1":
+            installs = [
+                {
+                    "metadata": {
+                        "name": "build",
+                        "version": "1.6.1",
+                        "requires_dist": ["marker-parent==1.0.0; sys_platform == 'win32'"],
+                    }
+                }
+            ]
+        elif requested == "marker-parent==1.0.0":
+            installs = [
+                {
+                    "metadata": {
+                        "name": "marker-parent",
+                        "version": "1.0.0",
+                        "requires_dist": ["marker-child==2.0.0; sys_platform == 'win32'"],
+                    }
+                }
+            ]
+        else:
+            raise AssertionError(f"unexpected marker resolution request: {requested}")
+        report.write_text(json.dumps({"install": installs}), encoding="utf-8")
+        return 0, "", 0.0
+
+    monkeypatch.setattr(validator, "run", fake_run)
+    try:
+        validator.validate_requirements_lock_closure(
+            requirements_input,
+            lock,
+            resolver_python,
+            runtime_python,
+            tmp_path / "work",
+        )
+    except ValueError as exc:
+        message = str(exc)
+        require("missing marker-gated package" in message, "missing marker child did not fail clearly")
+        require("marker-child" in message, "missing marker child was omitted from the diagnostic")
+    else:
+        raise AssertionError("missing marker-gated transitive package was accepted")
 
 
 def test_requirements_lock_closure_resolves_every_target_and_functional_runtime(
