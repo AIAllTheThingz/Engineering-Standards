@@ -85,6 +85,7 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'status = if \(\$lockVerificationStarted\) \{ ''Failed'' \} else \{ ''Blocked'' \}'
         $script:workflow | Should -Match 'Join-Path \$env:RUNNER_TEMP ''python-lock-verification\.log'''
         $script:workflow | Should -Match 'New-Item -ItemType File -Path \$durableLockLogPath -Force'
+        $script:workflow | Should -Match 'Set-Content -LiteralPath \$durableLockLogPath -Value ''Python toolchain lock verification started\.'''
         $script:workflow | Should -Match 'Copy-Item -LiteralPath \$durableLockLogPath -Destination \$lockEvidenceLogPath'
         $script:workflow | Should -Match "status = 'Passed'"
         $script:workflow | Should -Match 'Python toolchain lock closure completed successfully\.'
