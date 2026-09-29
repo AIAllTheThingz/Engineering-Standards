@@ -4365,15 +4365,8 @@
   "metadata": {
     "component": {
       "bom-ref": "root-component",
-      "description": "Deterministic path-segment validation example",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "name": "governed-paths-example",
+      "description": "Standards-owned Python validation toolchain",
+      "name": "engineering-standards-python-toolchain",
       "type": "application",
       "version": "1.0.0"
     },

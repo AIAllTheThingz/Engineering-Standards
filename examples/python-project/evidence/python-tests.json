@@ -7,9 +7,9 @@
   "evidenceSource": "Automated",
   "command": ".\\test-venv\\Scripts\\python.exe -I -m pytest -c nul --rootdir .\\caller -p no:cacheprovider --strict-config --strict-markers .\\caller\\tests",
   "workingDirectory": "trusted-isolated-workspace",
-  "startedAtUtc": "2026-09-29T01:04:46.075956Z",
-  "completedAtUtc": "2026-09-29T01:04:46.075973Z",
-  "durationSeconds": 1.06,
+  "startedAtUtc": "2026-09-29T02:16:06.580564Z",
+  "completedAtUtc": "2026-09-29T02:16:06.580578Z",
+  "durationSeconds": 1.069,
   "runtime": "CPython 3.13.2",
   "toolVersion": "pytest/9.1.1",
   "exitCode": 0,
@@ -18,7 +18,7 @@
   "failureReason": null,
   "blockedReason": null,
   "details": {
-    "sanitizedOutput": "============================= test session starts =============================\nplatform win32 -- Python 3.13.2, pytest-9.1.1, pluggy-1.6.0\nrootdir: .\\caller\nconfigfile: \\\\.\\nul\ncollected 8 items\n\ncaller\\tests\\test_paths.py ........                                      [100%]\n\n============================== 8 passed in 0.26s ==============================\n",
+    "sanitizedOutput": "============================= test session starts =============================\nplatform win32 -- Python 3.13.2, pytest-9.1.1, pluggy-1.6.0\nrootdir: .\\caller\nconfigfile: \\\\.\\nul\ncollected 8 items\n\ncaller\\tests\\test_paths.py ........                                      [100%]\n\n============================== 8 passed in 0.27s ==============================\n",
     "toolName": "pytest",
     "toolVersion": "9.1.1"
   }
