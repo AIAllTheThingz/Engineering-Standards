@@ -203,6 +203,12 @@ LOCK_RESOLUTION_TARGETS: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 LOCK_RESOLUTION_PIP_NAME = "pip"
 LOCK_RESOLUTION_PIP_VERSION = "26.2.1"
+# The declared win_amd64 target uses the supported Windows 10 22H2 AMD64
+# marker baseline. PEP 508 exposes platform.version() separately from
+# platform.release(), so both must be concrete rather than treating
+# version-gated dependencies as inactive.
+WINDOWS_10_PLATFORM_RELEASE = "10"
+WINDOWS_10_PLATFORM_VERSION = "10.0.19045"
 # The declared macosx_13_0_x86_64 target is the released Intel macOS 13.0
 # baseline.  PEP 508 exposes these values verbatim through platform.release()
 # and platform.version(), so keep the marker environment aligned with that
@@ -236,9 +242,9 @@ LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS: tuple[dict[str, str], ...] = (
         "os_name": "nt",
         "platform_machine": "AMD64",
         "platform_python_implementation": "CPython",
-        "platform_release": "10",
+        "platform_release": WINDOWS_10_PLATFORM_RELEASE,
         "platform_system": "Windows",
-        "platform_version": "",
+        "platform_version": WINDOWS_10_PLATFORM_VERSION,
         "python_full_version": "3.13.2",
         "python_version": "3.13",
         "sys_platform": "win32",
@@ -651,18 +657,25 @@ def marker_gated_requirements_for_target(
     locked: dict[str, str],
     target_environment: dict[str, str],
     target_name: str,
+    activated_extras_by_package: dict[str, tuple[str, ...]] | None = None,
 ) -> dict[str, tuple[str, tuple[str, ...]]]:
-    """Return target-active lock pins together with every requested extra."""
+    """Return target-active lock pins, accounting for activated source-package extras."""
     try:
         from pip._vendor.packaging.requirements import InvalidRequirement, Requirement
     except ImportError as exc:
         raise ValueError("pip's bundled PEP 508 requirement parser is unavailable") from exc
 
     marker_gated: dict[str, tuple[str, tuple[str, ...]]] = {}
+    activated_extras_by_package = activated_extras_by_package or {}
     for item in install_records:
         metadata = item.get("metadata")
         if not isinstance(metadata, dict):
             raise ValueError("pip resolution report contains an invalid install record")
+        source_name = metadata.get("name")
+        if not isinstance(source_name, str) or not source_name:
+            raise ValueError("pip resolution report contains a package without a name")
+        source_package = normalized_requirement_name(source_name)
+        activated_extras = activated_extras_by_package.get(source_package, ())
         requires_dist = metadata.get("requires_dist")
         if requires_dist is None:
             continue
@@ -678,7 +691,10 @@ def marker_gated_requirements_for_target(
             name = normalized_requirement_name(requirement.name)
             if requirement.marker is None:
                 continue
-            if not requirement.marker.evaluate(target_environment):
+            if not any(
+                requirement.marker.evaluate({**target_environment, "extra": extra})
+                for extra in ("", *activated_extras)
+            ):
                 continue
             version = locked.get(name)
             if version is None:
@@ -995,6 +1011,7 @@ def validate_requirements_lock_closure(
                     locked,
                     target_environment,
                     target_name,
+                    requested_marker_extras,
                 )
                 pending: list[tuple[str, str, tuple[str, ...]]] = []
                 for name, (version, extras) in sorted(marker_requirements.items()):

@@ -260,8 +260,8 @@ jobs:
               -ChecksExecuted @('PythonToolchainLockClosure')
           }
           else {
-            $callerStage = Join-Path $env:PYTHON_WORK_ROOT 'caller'
-            New-Item -ItemType Directory -Path $callerStage -Force | Out-Null
+            $callerStage = Join-Path $env:GITHUB_WORKSPACE 'caller'
+            if (-not (Test-Path -LiteralPath $callerStage -PathType Container)) { throw 'Failure evidence caller checkout is unavailable.' }
             $callerStageItem = Get-Item -LiteralPath $callerStage -Force
             if ($callerStageItem.LinkType -or ($callerStageItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Failure evidence caller workspace must not be a link or reparse point.' }
             if (-not (Test-Path -LiteralPath $lockEvidenceLogPath -PathType Leaf)) {

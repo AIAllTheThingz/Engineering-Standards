@@ -106,6 +106,15 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'Copy-Item -LiteralPath \$durableLockLogPath -Destination \$lockEvidenceLogPath'
         $script:workflow | Should -Match "status = 'Passed'"
         $script:workflow | Should -Match 'Python toolchain lock closure completed successfully\.'
+        $completionWorkflow = $script:workflow.Substring($completionIndex, $evidenceIndex - $completionIndex)
+        $failureEvidence = [regex]::Match(
+            $completionWorkflow,
+            '(?s)if \(\$lockVerificationOutcome -eq ''success''\) \{.*?\r?\n\s*\}\r?\n\s*else \{\s*(?<body>.*?)\r?\n\s*\}\r?\n\s*if \(-not \(Test-Path -LiteralPath \$completionPath'
+        )
+        $failureEvidence.Success | Should -BeTrue
+        $failureEvidence.Groups['body'].Value | Should -Match '\$callerStage = Join-Path \$env:GITHUB_WORKSPACE ''caller'''
+        $failureEvidence.Groups['body'].Value | Should -Not -Match 'New-Item -ItemType Directory -Path \$callerStage'
+        $failureEvidence.Groups['body'].Value | Should -Match '-SourceRepositoryPath \$callerStage'
         $script:workflow | Should -Match '(?s)id:\s*evidence\s*\r?\n\s*if:\s*always\(\) && steps\.completion\.outcome == ''success'''
     }
 

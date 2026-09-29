@@ -420,6 +420,34 @@ def test_windows_marker_environment_models_declared_release() -> None:
     )
 
 
+def test_windows_marker_environment_models_declared_platform_version() -> None:
+    """The synthetic Windows target must cover its declared platform-version baseline."""
+    records = [
+        {
+            "metadata": {
+                "name": "build",
+                "version": "1.6.1",
+                "requires_dist": [
+                    "marker-parent==1.0.0; "
+                    "sys_platform == 'win32' and platform_version == '10.0.19045'"
+                ],
+            }
+        }
+    ]
+
+    marker_requirements = validator.marker_gated_requirements_for_target(
+        records,
+        {"marker-parent": "1.0.0"},
+        validator.LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS[1],
+        "windows-cpython-3.13.2-x86_64",
+    )
+
+    require(
+        marker_requirements == {"marker-parent": ("1.0.0", ())},
+        "the Windows marker environment does not model platform_version 10.0.19045",
+    )
+
+
 def test_marker_closure_preserves_and_merges_requested_extras() -> None:
     """Marker-active extras must survive into one deterministic supplemental request."""
     records = [
@@ -640,7 +668,10 @@ def test_requirements_lock_closure_resolves_marker_gated_transitive_chain(
                     "metadata": {
                         "name": "marker-parent",
                         "version": "1.0.0",
-                        "requires_dist": ["marker-child==2.0.0; sys_platform == 'win32'"],
+                        "requires_dist": [
+                            "marker-child==2.0.0; "
+                            "extra == 'feature-one' and sys_platform == 'win32'"
+                        ],
                     }
                 }
             ]
