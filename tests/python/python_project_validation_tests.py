@@ -954,6 +954,111 @@ def test_requirements_lock_closure_skips_target_inactive_sources_in_base_reports
     require(marker_requests == [], "a target-inactive base source triggered supplemental resolution")
 
 
+def test_requirements_lock_closure_replaces_reports_when_activated_extras_expand(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """An obsolete no-extra report must not retain dependencies excluded by a later active extra."""
+    requirements_input = tmp_path / "requirements-ci.in"
+    requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "build==1.6.1 \\\n"
+        "    --hash=sha256:" + "0" * 64 + "\n"
+        "    # via -r requirements-ci.in\n"
+        "marker-parent==1.0.0 \\\n"
+        "    --hash=sha256:" + "1" * 64 + "\n"
+        "    # via build\n"
+        "zz-activator==1.0.0 \\\n"
+        "    --hash=sha256:" + "2" * 64 + "\n"
+        "    # via build\n",
+        encoding="utf-8",
+    )
+    resolver_python = tmp_path / "resolver-python"
+    runtime_python = tmp_path / "runtime-python"
+    resolver_python.touch()
+    runtime_python.touch()
+    marker_requests: list[str] = []
+
+    def fake_run(command: list[str], cwd: Path, env: dict[str, str], timeout: int = 300) -> tuple[int, str, float]:
+        if command[2] == "-c":
+            expected = "cpython 3.13.2" if command[0] == str(resolver_python) else "cpython 3.12.11"
+            return 0, expected + "\n", 0.0
+        report = Path(command[command.index("--report") + 1])
+        requested = Path(command[command.index("-r") + 1]).read_text(encoding="utf-8").strip()
+        if requested == "build==1.6.1":
+            installs = [
+                {
+                    "metadata": {
+                        "name": "build",
+                        "version": "1.6.1",
+                        "requires_dist": [
+                            "marker-parent==1.0.0; sys_platform == 'win32'",
+                            "zz-activator==1.0.0; sys_platform == 'win32'",
+                        ],
+                    }
+                }
+            ]
+        elif requested == "marker-parent==1.0.0":
+            marker_requests.append(requested)
+            installs = [
+                {
+                    "metadata": {
+                        "name": "marker-parent",
+                        "version": "1.0.0",
+                        "requires_dist": ["excluded-child==2.0.0; extra != 'feature'"],
+                    }
+                },
+                {"metadata": {"name": "excluded-child", "version": "2.0.0"}},
+            ]
+        elif requested == "zz-activator==1.0.0":
+            marker_requests.append(requested)
+            installs = [
+                {
+                    "metadata": {
+                        "name": "zz-activator",
+                        "version": "1.0.0",
+                        "requires_dist": [
+                            "marker-parent[feature]==1.0.0; sys_platform == 'win32'"
+                        ],
+                    }
+                }
+            ]
+        elif requested == "marker-parent[feature]==1.0.0":
+            marker_requests.append(requested)
+            installs = [
+                {
+                    "metadata": {
+                        "name": "marker-parent",
+                        "version": "1.0.0",
+                        "requires_dist": ["excluded-child==2.0.0; extra != 'feature'"],
+                    }
+                }
+            ]
+        else:
+            raise AssertionError(f"unexpected marker resolution request: {requested}")
+        report.write_text(json.dumps({"install": installs}), encoding="utf-8")
+        return 0, "", 0.0
+
+    monkeypatch.setattr(validator, "run", fake_run)
+    monkeypatch.setattr(
+        validator,
+        "pinned_lock_resolver",
+        lambda python, _label, _lock, _environment, _env: python,
+    )
+    validator.validate_requirements_lock_closure(
+        requirements_input,
+        lock,
+        resolver_python,
+        runtime_python,
+        tmp_path / "work",
+    )
+    require(
+        marker_requests
+        == ["marker-parent==1.0.0", "zz-activator==1.0.0", "marker-parent[feature]==1.0.0"],
+        "supplemental reports were not rebuilt when activated extras expanded",
+    )
+
+
 def test_requirements_lock_closure_propagates_extras_from_unmarked_dependencies(
     tmp_path: Path, monkeypatch
 ) -> None:

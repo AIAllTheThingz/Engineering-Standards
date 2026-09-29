@@ -736,44 +736,49 @@ def target_reachable_packages_and_extras_for_target(
 ) -> tuple[set[str], dict[str, tuple[str, ...]]]:
     """Traverse only target-reachable dependency edges and propagate their requested extras."""
     initially_activated_extras = initially_activated_extras or {}
-    reachable = (
-        {normalized_requirement_name(package) for package in root_packages}
-        if root_packages is not None
-        else {source_package for source_package, _ in dependencies}
-    )
-    reachable.update(
-        normalized_requirement_name(package)
-        for package in initially_activated_extras
-    )
-    activated: dict[str, set[str]] = {
+    initial_extras: dict[str, set[str]] = {
         normalized_requirement_name(package): set(extras)
         for package, extras in initially_activated_extras.items()
         if extras
     }
+    activated = {package: set(extras) for package, extras in initial_extras.items()}
     while True:
-        changed = False
-        for source_package, requirement in dependencies:
-            if source_package not in reachable:
-                continue
-            source_extras = activated.get(source_package, ())
-            if requirement.marker is not None and not marker_applies_to_target(
-                requirement.marker,
-                target_environment,
-                target_name,
-                source_extras,
-            ):
-                continue
-            target_package = normalized_requirement_name(requirement.name)
-            if target_package not in reachable:
-                reachable.add(target_package)
-                changed = True
-            if requirement.extras:
-                target_extras = activated.setdefault(target_package, set())
-                previous_count = len(target_extras)
-                target_extras.update(requirement.extras)
-                changed = changed or len(target_extras) != previous_count
-        if not changed:
+        reachable = (
+            {normalized_requirement_name(package) for package in root_packages}
+            if root_packages is not None
+            else {source_package for source_package, _ in dependencies}
+        )
+        reachable.update(
+            normalized_requirement_name(package)
+            for package in initially_activated_extras
+        )
+        next_activated = {package: set(extras) for package, extras in initial_extras.items()}
+        changed = True
+        while changed:
+            changed = False
+            for source_package, requirement in dependencies:
+                if source_package not in reachable:
+                    continue
+                source_extras = activated.get(source_package, ())
+                if requirement.marker is not None and not marker_applies_to_target(
+                    requirement.marker,
+                    target_environment,
+                    target_name,
+                    source_extras,
+                ):
+                    continue
+                target_package = normalized_requirement_name(requirement.name)
+                if target_package not in reachable:
+                    reachable.add(target_package)
+                    changed = True
+                if requirement.extras:
+                    target_extras = next_activated.setdefault(target_package, set())
+                    previous_count = len(target_extras)
+                    target_extras.update(requirement.extras)
+                    changed = changed or len(target_extras) != previous_count
+        if next_activated == activated:
             return reachable, {package: tuple(sorted(extras)) for package, extras in activated.items()}
+        activated = next_activated
 
 
 def marker_gated_requirements_for_target(
@@ -1189,18 +1194,18 @@ def validate_requirements_lock_closure(
 
         for python, target_name, target_args, target_environment in target_specs:
             target_root_packages = set(direct_requirement_names)
-            target_reports = [
-                resolve_target(
-                    python,
-                    target_name,
-                    target_args,
-                    requirements_input,
-                    f"{target_name}-base",
-                )
-            ]
+            base_report = resolve_target(
+                python,
+                target_name,
+                target_args,
+                requirements_input,
+                f"{target_name}-base",
+            )
+            supplemental_reports: dict[str, Path] = {}
             marker_request_number = 0
             requested_marker_extras: dict[str, tuple[str, ...]] = {}
             while True:
+                target_reports = [base_report, *supplemental_reports.values()]
                 install_records, resolved = collect_target_resolution(target_reports, target_name)
                 marker_requirements = marker_gated_requirements_for_target(
                     install_records,
@@ -1236,19 +1241,17 @@ def validate_requirements_lock_closure(
                     if marker_resolved.get(name) != version:
                         raise ValueError(
                             f"marker-gated package {name}=={version} was not resolved for {target_name}"
-                        )
+                    )
                     requested_marker_extras[name] = extras
                     target_root_packages.add(name)
-                    target_reports.append(
-                        filter_supplemental_report_for_target(
-                            marker_report,
-                            name,
-                            extras,
-                            target_environment,
-                            target_name,
-                        )
+                    supplemental_reports[name] = filter_supplemental_report_for_target(
+                        marker_report,
+                        name,
+                        extras,
+                        target_environment,
+                        target_name,
                     )
-            reports.extend(target_reports)
+            reports.extend([base_report, *supplemental_reports.values()])
         validate_resolved_requirements_lock(requirements_input, lock, tuple(reports))
 
 
