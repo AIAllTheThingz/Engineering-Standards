@@ -637,6 +637,80 @@ Describe 'Validate evidence action' {
             }
         }
 
+        It 'binds an available Local content fingerprint to its named validated commit' {
+            $identityRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("completion-named-identity-" + [guid]::NewGuid())
+            $sourceRoot = Join-Path $identityRoot 'source'
+            $project = Join-Path $sourceRoot 'examples/python-project'
+            try {
+                New-Item -ItemType Directory -Path (Join-Path $project 'evidence') -Force | Out-Null
+                Set-Content -LiteralPath (Join-Path $project 'source.py') -Value 'VALUE = 1' -NoNewline
+                Set-Content -LiteralPath (Join-Path $project 'evidence/report.json') -Value '{}' -NoNewline
+                & git -C $sourceRoot init --quiet
+                $LASTEXITCODE | Should -Be 0
+                & git -C $sourceRoot config user.email 'evidence-test@example.invalid'
+                & git -C $sourceRoot config user.name 'Evidence Test'
+                & git -C $sourceRoot add --all
+                & git -C $sourceRoot commit --quiet -m 'validated source'
+                $LASTEXITCODE | Should -Be 0
+                $validatedCommit = (& git -C $sourceRoot rev-parse HEAD).Trim()
+
+                $outcomes = @{
+                    yaml='success'; workflow_architecture='success'; json_schemas='success'; markdown_links='success'
+                    documentation='success'; contract='success'; forbidden_patterns='success'; repository_health='success'
+                    powershell_parser='success'; pester='success'; psscriptanalyzer='success'; examples='success'
+                    evidence_validation='success'; github_execution='notrun'
+                }
+                $reports = @{
+                    yaml=''; workflow_architecture=''; json_schemas=''; markdown_links=''
+                    documentation=''; contract=''; forbidden_patterns=''; repository_health=''
+                    powershell_parser=''; pester=''; psscriptanalyzer=''; examples=''
+                    evidence_validation=''; github_execution=''
+                }
+                & "$PSScriptRoot/../../scripts/New-WorkflowTestEvidence.ps1" -RepositoryPath $project -OutputPath 'evidence/local-tests.json' -Outcomes $outcomes -Reports $reports -RunPester -RunDocumentation -RunExamples -Runtime 'Local PowerShell validation' -ToolVersion 'test'
+                $LASTEXITCODE | Should -Be 0
+                & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" `
+                    -RepositoryPath $project -SourceRepositoryPath $sourceRoot `
+                    -OutputPath 'evidence/receipt.json' -ExecutionContext Local `
+                    -Summary 'Receipt bound to its validated source.' `
+                    -TestResultPath 'evidence/local-tests.json' `
+                    -ArtifactPath 'evidence/report.json' `
+                    -CommandsExecuted @('local test command') `
+                    -CommandsNotExecuted @('GitHub-hosted Governance CI workflow execution') `
+                    -ValidatedCommitSha $validatedCommit
+                $LASTEXITCODE | Should -Be 0
+
+                Set-Content -LiteralPath (Join-Path $project 'source.py') -Value 'VALUE = 2' -NoNewline
+                & git -C $sourceRoot add --all
+                & git -C $sourceRoot commit --quiet -m 'different source'
+                $LASTEXITCODE | Should -Be 0
+                $headCommit = (& git -C $sourceRoot rev-parse HEAD).Trim()
+                & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" `
+                    -RepositoryPath $project -SourceRepositoryPath $sourceRoot `
+                    -OutputPath 'evidence/current-head.json' -ExecutionContext Local `
+                    -Summary 'Receipt used only to obtain the current content identity.' `
+                    -TestResultPath 'evidence/local-tests.json' `
+                    -ArtifactPath 'evidence/report.json' `
+                    -CommandsExecuted @('local test command') `
+                    -CommandsNotExecuted @('GitHub-hosted Governance CI workflow execution') `
+                    -ValidatedCommitSha $headCommit
+                $LASTEXITCODE | Should -Be 0
+                $receiptPath = Join-Path $project 'evidence/receipt.json'
+                $receipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json -AsHashtable
+                $currentHeadReceipt = Get-Content -LiteralPath (Join-Path $project 'evidence/current-head.json') -Raw | ConvertFrom-Json -AsHashtable
+                $receipt.validatedContentSha256 = $currentHeadReceipt.validatedContentSha256
+                $receipt | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $receiptPath
+
+                $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $project -EvidencePath 'evidence/receipt.json' 2>&1)
+                $LASTEXITCODE | Should -Not -Be 0
+                ($output -join "`n") | Should -Match 'validatedContentSha256 does not match the named validatedCommitSha content'
+            }
+            finally {
+                if (Test-Path -LiteralPath $identityRoot) {
+                    Remove-Item -LiteralPath $identityRoot -Recurse -Force
+                }
+            }
+        }
+
         It 'uses an explicit complete change inventory when supplied' {
             & $script:NewTempEvidence
             $changedFiles = @(

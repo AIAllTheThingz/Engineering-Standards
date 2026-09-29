@@ -821,6 +821,21 @@ class LockResolutionBlockedError(ValueError):
     """The package resolver could not reach the required external service."""
 
 
+def require_pinned_lock_metadata_parser() -> None:
+    """Reject PEP 508 parsing unless this process uses the governed pip build."""
+    try:
+        import pip
+    except ImportError as exc:
+        raise ValueError(
+            f"requirements lock metadata parsing requires {LOCK_RESOLUTION_PIP_NAME}=={LOCK_RESOLUTION_PIP_VERSION}"
+        ) from exc
+    if getattr(pip, "__version__", None) != LOCK_RESOLUTION_PIP_VERSION:
+        raise ValueError(
+            "requirements lock metadata parsing must run under "
+            f"{LOCK_RESOLUTION_PIP_NAME}=={LOCK_RESOLUTION_PIP_VERSION}"
+        )
+
+
 def is_transient_lock_resolution_failure(exit_code: int, output: str) -> bool:
     """Classify resolver outages without hiding invalid or stale lock failures."""
     if exit_code == 124:
@@ -904,6 +919,30 @@ def pinned_lock_resolver(
     return resolver_python
 
 
+def bootstrap_pinned_lock_metadata_parser(
+    source_python: Path,
+    lock: Path,
+    work_root: Path,
+    output_path: Path,
+) -> None:
+    """Create a verified pip-pinned interpreter for lock metadata parsing."""
+    source_python = source_python.resolve(strict=True)
+    lock = lock.resolve(strict=True)
+    work_root = work_root.absolute()
+    output_path = output_path.absolute()
+    parser_python = pinned_lock_resolver(
+        source_python,
+        "lock metadata parser",
+        lock,
+        work_root / "lock-metadata-parser",
+        trusted_env(work_root / "lock-metadata-parser-home"),
+    )
+    if not parser_python.is_file():
+        raise ValueError("the verified lock metadata parser did not produce a Python executable")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(str(parser_python.resolve()) + "\n", encoding="utf-8")
+
+
 def validate_requirements_lock_closure(
     requirements_input: Path,
     lock: Path,
@@ -914,6 +953,7 @@ def validate_requirements_lock_closure(
     """Resolve the lock for every supported target before installation."""
     import tempfile
 
+    require_pinned_lock_metadata_parser()
     requirements_input = requirements_input.resolve(strict=True)
     lock = lock.resolve(strict=True)
     resolver_python = resolver_python.resolve(strict=True)
@@ -1374,7 +1414,9 @@ def validate(args: argparse.Namespace) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--verify-tool-lock", action="store_true")
+    lock_mode = parser.add_mutually_exclusive_group()
+    lock_mode.add_argument("--verify-tool-lock", action="store_true")
+    lock_mode.add_argument("--bootstrap-lock-parser", action="store_true")
     parser.add_argument("--project", type=Path)
     parser.add_argument("--work-root", type=Path)
     parser.add_argument("--tool-python", type=Path)
@@ -1383,7 +1425,25 @@ def main() -> int:
     parser.add_argument("--mypy-config", type=Path)
     parser.add_argument("--resolver-python", type=Path)
     parser.add_argument("--runtime-python", type=Path)
+    parser.add_argument("--lock-parser-output", type=Path)
     args = parser.parse_args()
+    if args.bootstrap_lock_parser:
+        if args.work_root is None or args.resolver_python is None or args.lock_parser_output is None:
+            parser.error("--bootstrap-lock-parser requires --work-root, --resolver-python, and --lock-parser-output")
+        try:
+            bootstrap_pinned_lock_metadata_parser(
+                args.resolver_python,
+                args.tool_lock,
+                args.work_root,
+                args.lock_parser_output,
+            )
+            return 0
+        except LockResolutionBlockedError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        except Exception as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
     if args.verify_tool_lock:
         if args.work_root is None or args.resolver_python is None or args.runtime_python is None:
             parser.error("--verify-tool-lock requires --work-root, --resolver-python, and --runtime-python")
@@ -1408,7 +1468,7 @@ def main() -> int:
         if value is None
     ]
     if missing:
-        parser.error(f"{' '.join(missing)} required unless --verify-tool-lock is supplied")
+        parser.error(f"{' '.join(missing)} required unless a lock-verification mode is supplied")
     try:
         return validate(args)
     except Exception as exc:

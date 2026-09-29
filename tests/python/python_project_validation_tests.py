@@ -514,6 +514,51 @@ def test_macos_marker_environment_models_declared_release_and_version() -> None:
     )
 
 
+def test_requirements_lock_metadata_parser_rejects_an_unpinned_pip(monkeypatch) -> None:
+    """PEP 508 parsing must not silently inherit the workflow interpreter's pip."""
+    fake_pip = type("FakePip", (), {"__version__": "26.2.0"})
+    monkeypatch.setitem(sys.modules, "pip", fake_pip)
+
+    try:
+        validator.require_pinned_lock_metadata_parser()
+    except ValueError as exc:
+        require("pip==26.2.1" in str(exc), "the unpinned parser diagnostic omitted the governed pip")
+    else:
+        raise AssertionError("an unpinned metadata parser was accepted")
+
+
+def test_bootstrap_lock_metadata_parser_records_the_verified_parser_path(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """The workflow bootstrap must hand verification only an exact-pip parser runtime."""
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text("pip==26.2.1 \\\n    --hash=sha256:" + "0" * 64 + "\n", encoding="utf-8")
+    source_python = tmp_path / "source-python"
+    source_python.touch()
+    parser_python = tmp_path / "lock-metadata-parser" / "python"
+    parser_python.parent.mkdir()
+    parser_python.touch()
+    output_path = tmp_path / "parser-path.txt"
+    calls: list[tuple[Path, str, Path]] = []
+
+    def fake_pinned_resolver(
+        source: Path, label: str, _lock: Path, environment: Path, _env: dict[str, str]
+    ) -> Path:
+        calls.append((source, label, environment))
+        return parser_python
+
+    monkeypatch.setattr(validator, "pinned_lock_resolver", fake_pinned_resolver)
+    validator.bootstrap_pinned_lock_metadata_parser(
+        source_python,
+        lock,
+        tmp_path / "work",
+        output_path,
+    )
+
+    require(calls == [(source_python, "lock metadata parser", tmp_path / "work" / "lock-metadata-parser")], "the parser bootstrap did not use the dedicated pinned resolver")
+    require(output_path.read_text(encoding="utf-8").strip() == str(parser_python.resolve()), "the parser bootstrap did not record the verified interpreter")
+
+
 def test_pinned_lock_resolver_bootstraps_the_hash_pinned_pip(tmp_path: Path, monkeypatch) -> None:
     """Closure resolution must replace an interpreter's bundled pip with the governed pin."""
     lock = tmp_path / "requirements-ci.lock"

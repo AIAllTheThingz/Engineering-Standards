@@ -217,9 +217,9 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
         }
         elseif ($validatedContentSha256) {
             try {
-                $currentContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference 'HEAD'
-                if ($currentContentSha256 -ine $validatedContentSha256) {
-                    throw 'validatedContentSha256 does not match the current repository content.'
+                $validatedCommitContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference $validatedSha
+                if ($validatedCommitContentSha256 -ine $validatedContentSha256) {
+                    throw 'validatedContentSha256 does not match the named validatedCommitSha content.'
                 }
             }
             catch {

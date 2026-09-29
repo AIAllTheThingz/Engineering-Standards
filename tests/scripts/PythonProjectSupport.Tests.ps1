@@ -46,6 +46,8 @@ Describe 'Governed Python project support' {
         $resolverIndex | Should -BeLessThan $installIndex
         $script:workflow | Should -Match 'python-version:\s*3\.13\.2'
         $script:workflow | Should -Match '--verify-tool-lock'
+        $script:workflow | Should -Match '--bootstrap-lock-parser'
+        $script:workflow | Should -Match '\$lockParserPython -I standards/scripts/python-project-validation\.py'
         $script:workflow | Should -Match '--resolver-python'
         $script:workflow | Should -Match '--runtime-python'
         $script:workflow | Should -Match '\$runtimePython = ''\$\{\{ steps\.runtime\.outputs\.python-path \}\}'''
@@ -58,6 +60,8 @@ Describe 'Governed Python project support' {
         $script:driver | Should -Match 'cpython 3\.13\.2'
         $script:driver | Should -Match 'cpython 3\.12\.11'
         $script:driver | Should -Match 'validate_resolved_requirements_lock'
+        $script:driver | Should -Match 'require_pinned_lock_metadata_parser'
+        $script:driver | Should -Match 'bootstrap_pinned_lock_metadata_parser'
         $script:driver | Should -Not -Match 'default_environment'
     }
 
@@ -95,7 +99,7 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match '\$commandsNotExecuted \+= \$lockVerificationCommand'
         $script:workflow | Should -Match 'status = if \(\$lockVerificationBlocked -or -not \$lockVerificationStarted\) \{ ''Blocked'' \} else \{ ''Failed'' \}'
         $script:workflow | Should -Match 'exitCode = if \(\$lockVerificationBlocked -or -not \$lockVerificationStarted\) \{ \$null \} else \{ 1 \}'
-        $script:workflow | Should -Match '\$verificationCommand = ''<CPython-3\.13\.2> -I standards/scripts/python-project-validation\.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci\.lock --resolver-python <CPython-3\.13\.2> --runtime-python <CPython-3\.12\.11>'
+        $script:workflow | Should -Match '\$verificationCommand = ''<CPython-3\.13\.2 with pip==26\.2\.1> -I standards/scripts/python-project-validation\.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci\.lock --resolver-python <CPython-3\.13\.2> --runtime-python <CPython-3\.12\.11>'
         $script:workflow | Should -Match '"verification_command=\$verificationCommand"'
         $script:workflow | Should -Match '\$lockVerificationCommand = ''\$\{\{ steps\.lock_verification\.outputs\.verification_command \}\}'''
         $script:workflow | Should -Match '-CommandsExecuted @\(\$lockVerificationCommand,''python-project-validation\.py''\)'
@@ -112,8 +116,12 @@ Describe 'Governed Python project support' {
         )
         $failureEvidence.Success | Should -BeTrue
         $failureEvidence.Groups['body'].Value | Should -Match '\$callerStage = Join-Path \$env:GITHUB_WORKSPACE ''caller'''
+        $failureEvidence.Groups['body'].Value | Should -Match '\$failureCallerStage = Join-Path \$env:PYTHON_WORK_ROOT ''caller'''
+        $failureEvidence.Groups['body'].Value | Should -Match 'git -c protocol\.file\.allow=always clone --no-local --no-checkout --no-tags \$callerStage \$failureCallerStage'
+        $failureEvidence.Groups['body'].Value | Should -Not -Match 'checkout --detach'
         $failureEvidence.Groups['body'].Value | Should -Not -Match 'New-Item -ItemType Directory -Path \$callerStage'
-        $failureEvidence.Groups['body'].Value | Should -Match '-SourceRepositoryPath \$callerStage'
+        $failureEvidence.Groups['body'].Value | Should -Not -Match '-SourceRepositoryPath \$callerStage'
+        $failureEvidence.Groups['body'].Value | Should -Match '-SourceRepositoryPath \$failureCallerStage'
         $script:workflow | Should -Match '(?s)id:\s*evidence\s*\r?\n\s*if:\s*always\(\) && steps\.completion\.outcome == ''success'''
     }
 
@@ -134,11 +142,25 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'The exact CPython 3\.12\.11 functional runtime was unavailable; no toolchain was installed\.'
     }
 
-    It 'validates a lock-failure receipt without installing the rejected toolchain' {
+    It 'validates a lock-failure receipt from metadata staged beneath the evidence root' {
         $workspace = Join-Path $TestDrive 'python-lock-failure-evidence'
+        $callerSource = Join-Path $TestDrive 'python-lock-failure-caller-source'
         $caller = Join-Path $workspace 'caller'
         $evidence = Join-Path $workspace 'evidence'
-        New-Item -ItemType Directory -Path $caller,$evidence -Force | Out-Null
+        New-Item -ItemType Directory -Path $callerSource,$evidence -Force | Out-Null
+        'CALLER_SOURCE = 1' | Set-Content -LiteralPath (Join-Path $callerSource 'source.py') -NoNewline
+        & git -C $callerSource init --quiet
+        $LASTEXITCODE | Should -Be 0
+        & git -C $callerSource config user.email 'evidence-test@example.invalid'
+        & git -C $callerSource config user.name 'Evidence Test'
+        & git -C $callerSource add --all
+        & git -C $callerSource commit --quiet -m 'caller source'
+        $LASTEXITCODE | Should -Be 0
+        $callerSha = (& git -C $callerSource rev-parse HEAD).Trim()
+        & git -c protocol.file.allow=always clone --no-local --no-checkout --no-tags $callerSource $caller
+        $LASTEXITCODE | Should -Be 0
+        & git -C $caller cat-file -e "$callerSha^{commit}"
+        $LASTEXITCODE | Should -Be 0
         'The governed lock verifier rejected the supplied toolchain closure.' | Set-Content -LiteralPath (Join-Path $evidence 'lock-verification.log') -Encoding utf8
         $now = (Get-Date).ToUniversalTime().ToString('o')
         $failureRecord = [ordered]@{
@@ -173,7 +195,7 @@ Describe 'Governed Python project support' {
         }
         try {
             $env:GITHUB_ACTIONS = 'true'; $env:GITHUB_RUN_ID = '1'; $env:GITHUB_RUN_ATTEMPT = '1'
-            $env:GITHUB_WORKFLOW = 'Python validation'; $env:GITHUB_SHA = ('1' * 40)
+            $env:GITHUB_WORKFLOW = 'Python validation'; $env:GITHUB_SHA = $callerSha
             $env:GITHUB_REF_NAME = 'main'; $env:GITHUB_REPOSITORY = 'example-org/project'
             & (Join-Path $script:root 'scripts/New-CompletionEvidence.ps1') `
                 -RepositoryPath $workspace -SourceRepositoryPath $caller -OutputPath 'evidence/completion-result.json' `
@@ -182,14 +204,14 @@ Describe 'Governed Python project support' {
                 -CommandsExecuted @('python-project-validation.py --verify-tool-lock') `
                 -CommandsNotExecuted @('Toolchain installation and functional validation were not run because lock verification failed.') `
                 -ArtifactPath @('evidence/lock-verification.log','evidence/local-test-results.json') `
-                -ArtifactName 'python-evidence-1' -Repository 'example-org/project' -Branch main -ValidatedCommitSha ('1' * 40) `
+                -ArtifactName 'python-evidence-1' -Repository 'example-org/project' -Branch main -ValidatedCommitSha $callerSha `
                 -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha ('2' * 40) `
                 -ValidationProfile 'python-functional' -ChecksExecuted @('PythonToolchainLockClosure') `
                 -EvidenceExecutionContext GitHubActions | Out-Null
             $LASTEXITCODE | Should -Be 0
             & (Join-Path $script:root 'actions/validate-evidence/Invoke-EvidenceValidation.ps1') `
                 -Path $workspace -EvidencePath 'evidence/completion-result.json' `
-                -ExpectedCommitSha ('1' * 40) -ExpectedRepository 'example-org/project' -ExpectedRefName main `
+                -ExpectedCommitSha $callerSha -ExpectedRepository 'example-org/project' -ExpectedRefName main `
                 -OutputJson (Join-Path $evidence 'evidence-validation.json') | Out-Null
             $LASTEXITCODE | Should -Be 0
             $completion = Get-Content -LiteralPath (Join-Path $evidence 'completion-result.json') -Raw | ConvertFrom-Json
