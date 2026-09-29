@@ -707,6 +707,86 @@ def test_requirements_lock_closure_resolves_marker_gated_transitive_chain(
             require("--platform" in command and "win_amd64" in command, "marker closure used the wrong target")
 
 
+def test_requirements_lock_closure_propagates_extras_from_unmarked_dependencies(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """An unconditional extra request must activate its target's marker-gated dependencies."""
+    requirements_input = tmp_path / "requirements-ci.in"
+    requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "build==1.6.1 \\\n"
+        "    --hash=sha256:" + "0" * 64 + "\n"
+        "    # via -r requirements-ci.in\n"
+        "marker-parent==1.0.0 \\\n"
+        "    --hash=sha256:" + "1" * 64 + "\n"
+        "    # via build\n"
+        "marker-child==2.0.0 \\\n"
+        "    --hash=sha256:" + "2" * 64 + "\n"
+        "    # via marker-parent\n",
+        encoding="utf-8",
+    )
+    resolver_python = tmp_path / "resolver-python"
+    runtime_python = tmp_path / "runtime-python"
+    resolver_python.touch()
+    runtime_python.touch()
+    requested_roots: list[tuple[str, list[str]]] = []
+
+    def fake_run(command: list[str], cwd: Path, env: dict[str, str], timeout: int = 300) -> tuple[int, str, float]:
+        if command[2] == "-c":
+            expected = "cpython 3.13.2" if command[0] == str(resolver_python) else "cpython 3.12.11"
+            return 0, expected + "\n", 0.0
+        report = Path(command[command.index("--report") + 1])
+        requested = Path(command[command.index("-r") + 1]).read_text(encoding="utf-8").strip()
+        requested_roots.append((requested, command))
+        if requested == "build==1.6.1":
+            installs = [
+                {
+                    "metadata": {
+                        "name": "build",
+                        "version": "1.6.1",
+                        "requires_dist": ["marker-parent[feature]==1.0.0"],
+                    }
+                },
+                {
+                    "metadata": {
+                        "name": "marker-parent",
+                        "version": "1.0.0",
+                        "requires_dist": [
+                            "marker-child==2.0.0; "
+                            "extra == 'feature' and sys_platform == 'win32'"
+                        ],
+                    }
+                },
+            ]
+        elif requested == "marker-child==2.0.0":
+            installs = [{"metadata": {"name": "marker-child", "version": "2.0.0"}}]
+        else:
+            raise AssertionError(f"unexpected marker resolution request: {requested}")
+        report.write_text(json.dumps({"install": installs}), encoding="utf-8")
+        return 0, "", 0.0
+
+    monkeypatch.setattr(validator, "run", fake_run)
+    monkeypatch.setattr(
+        validator,
+        "pinned_lock_resolver",
+        lambda python, _label, _lock, _environment, _env: python,
+    )
+    validator.validate_requirements_lock_closure(
+        requirements_input,
+        lock,
+        resolver_python,
+        runtime_python,
+        tmp_path / "work",
+    )
+
+    marker_requests = [requested for requested, _command in requested_roots if requested != "build==1.6.1"]
+    require(
+        marker_requests == ["marker-child==2.0.0"],
+        "unconditional dependency extras did not activate the marker-gated transitive child",
+    )
+
+
 def test_requirements_lock_closure_rejects_missing_marker_gated_transitive_pin(
     tmp_path: Path, monkeypatch
 ) -> None:

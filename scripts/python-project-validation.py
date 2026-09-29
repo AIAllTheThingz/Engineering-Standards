@@ -652,21 +652,14 @@ def resolved_requirements(install_records: list[dict[str, Any]]) -> dict[str, st
     return requirements
 
 
-def marker_gated_requirements_for_target(
-    install_records: list[dict[str, Any]],
-    locked: dict[str, str],
-    target_environment: dict[str, str],
-    target_name: str,
-    activated_extras_by_package: dict[str, tuple[str, ...]] | None = None,
-) -> dict[str, tuple[str, tuple[str, ...]]]:
-    """Return target-active lock pins, accounting for activated source-package extras."""
+def package_dependency_requirements(install_records: list[dict[str, Any]]) -> list[tuple[str, Any]]:
+    """Parse the complete package dependency graph from a pip resolution report."""
     try:
         from pip._vendor.packaging.requirements import InvalidRequirement, Requirement
     except ImportError as exc:
         raise ValueError("pip's bundled PEP 508 requirement parser is unavailable") from exc
 
-    marker_gated: dict[str, tuple[str, tuple[str, ...]]] = {}
-    activated_extras_by_package = activated_extras_by_package or {}
+    dependencies: list[tuple[str, Any]] = []
     for item in install_records:
         metadata = item.get("metadata")
         if not isinstance(metadata, dict):
@@ -675,7 +668,6 @@ def marker_gated_requirements_for_target(
         if not isinstance(source_name, str) or not source_name:
             raise ValueError("pip resolution report contains a package without a name")
         source_package = normalized_requirement_name(source_name)
-        activated_extras = activated_extras_by_package.get(source_package, ())
         requires_dist = metadata.get("requires_dist")
         if requires_dist is None:
             continue
@@ -683,40 +675,90 @@ def marker_gated_requirements_for_target(
             raise ValueError("pip resolution report contains invalid package dependency metadata")
         for raw_requirement in requires_dist:
             try:
-                requirement = Requirement(raw_requirement)
+                dependencies.append((source_package, Requirement(raw_requirement)))
             except InvalidRequirement as exc:
                 raise ValueError(
                     f"pip resolution report contains an invalid dependency declaration: {raw_requirement!r}"
                 ) from exc
-            name = normalized_requirement_name(requirement.name)
-            if requirement.marker is None:
-                continue
-            if not any(
+    return dependencies
+
+
+def activated_extras_for_target(
+    dependencies: list[tuple[str, Any]],
+    target_environment: dict[str, str],
+    initially_activated_extras: dict[str, tuple[str, ...]] | None = None,
+) -> dict[str, tuple[str, ...]]:
+    """Propagate extras along every dependency edge active for a target marker environment."""
+    activated: dict[str, set[str]] = {
+        normalized_requirement_name(package): set(extras)
+        for package, extras in (initially_activated_extras or {}).items()
+        if extras
+    }
+    while True:
+        changed = False
+        for source_package, requirement in dependencies:
+            source_extras = activated.get(source_package, ())
+            if requirement.marker is not None and not any(
                 requirement.marker.evaluate({**target_environment, "extra": extra})
-                for extra in ("", *activated_extras)
+                for extra in ("", *source_extras)
             ):
                 continue
-            version = locked.get(name)
-            if version is None:
+            if not requirement.extras:
+                continue
+            target_extras = activated.setdefault(normalized_requirement_name(requirement.name), set())
+            previous_count = len(target_extras)
+            target_extras.update(requirement.extras)
+            changed = changed or len(target_extras) != previous_count
+        if not changed:
+            return {package: tuple(sorted(extras)) for package, extras in activated.items()}
+
+
+def marker_gated_requirements_for_target(
+    install_records: list[dict[str, Any]],
+    locked: dict[str, str],
+    target_environment: dict[str, str],
+    target_name: str,
+    activated_extras_by_package: dict[str, tuple[str, ...]] | None = None,
+) -> dict[str, tuple[str, tuple[str, ...]]]:
+    """Return target-active lock pins, accounting for activated source-package extras."""
+    dependencies = package_dependency_requirements(install_records)
+    activated_extras_by_package = activated_extras_for_target(
+        dependencies,
+        target_environment,
+        activated_extras_by_package,
+    )
+    marker_gated: dict[str, tuple[str, tuple[str, ...]]] = {}
+    for source_package, requirement in dependencies:
+        activated_extras = activated_extras_by_package.get(source_package, ())
+        if requirement.marker is None:
+            continue
+        if not any(
+            requirement.marker.evaluate({**target_environment, "extra": extra})
+            for extra in ("", *activated_extras)
+        ):
+            continue
+        name = normalized_requirement_name(requirement.name)
+        version = locked.get(name)
+        if version is None:
+            raise ValueError(
+                f"requirements lock is missing marker-gated package '{name}' required for {target_name}"
+            )
+        if not requirement.specifier.contains(version, prereleases=True):
+            raise ValueError(
+                f"requirements lock pin {name}=={version} does not satisfy the marker-gated "
+                f"dependency declared for {target_name}"
+            )
+        extras = tuple(sorted(requirement.extras))
+        prior = marker_gated.get(name)
+        if prior is not None:
+            prior_version, prior_extras = prior
+            if prior_version != version:
                 raise ValueError(
-                    f"requirements lock is missing marker-gated package '{name}' required for {target_name}"
+                    f"marker-gated package {name} has incompatible locked versions "
+                    f"for {target_name}"
                 )
-            if not requirement.specifier.contains(version, prereleases=True):
-                raise ValueError(
-                    f"requirements lock pin {name}=={version} does not satisfy the marker-gated "
-                    f"dependency declared for {target_name}"
-                )
-            extras = tuple(sorted(requirement.extras))
-            prior = marker_gated.get(name)
-            if prior is not None:
-                prior_version, prior_extras = prior
-                if prior_version != version:
-                    raise ValueError(
-                        f"marker-gated package {name} has incompatible locked versions "
-                        f"for {target_name}"
-                    )
-                extras = tuple(sorted(set(prior_extras).union(extras)))
-            marker_gated[name] = (version, extras)
+            extras = tuple(sorted(set(prior_extras).union(extras)))
+        marker_gated[name] = (version, extras)
     return marker_gated
 
 
