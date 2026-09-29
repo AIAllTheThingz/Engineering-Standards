@@ -127,7 +127,7 @@ function Test-BashExampleWrapperControls {
 }
 
 function Get-BashCompletionEvidenceInputChanges {
-    param([Parameter(Mandatory)][string[]]$ChangedPaths)
+    param([Parameter(Mandatory)][AllowEmptyCollection()][string[]]$ChangedPaths)
 
     $validatorDependencies = @(
         'scripts/GovernanceValidation.psm1',
@@ -321,7 +321,7 @@ Describe 'Governed Bash project support' {
         $completion = Get-Content -LiteralPath $completionPath -Raw | ConvertFrom-Json
         $completion.commitSha | Should -Match '^[0-9a-f]{40}$'
         $completion.validatedCommitSha | Should -BeExactly $completion.commitSha
-        $completion.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v9'
+        $completion.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v11'
         $tagReference = "refs/tags/$($completion.validatedCommitTag)"
         & git -C $script:root show-ref --verify --quiet $tagReference
         if ($LASTEXITCODE -eq 0) {
