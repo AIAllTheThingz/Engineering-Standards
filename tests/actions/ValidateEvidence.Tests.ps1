@@ -620,8 +620,6 @@ Describe 'Validate evidence action' {
 
         It 'records the complete dependency-correction and governance-fix scope and categories' {
             $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../..')).Path
-            $completionPath = Join-Path $repositoryRoot 'examples/python-project/evidence/local-completion-result.json'
-            $completion = Get-Content -LiteralPath $completionPath -Raw | ConvertFrom-Json
             $expectedChangedFiles = @(
                 '.github/workflows/python-ci-reusable.yml'
                 'README.md'
@@ -661,6 +659,7 @@ Describe 'Validate evidence action' {
                 'schemas/completion-result.schema.json'
                 'scripts/New-CompletionEvidence.ps1'
                 'scripts/Normalize-PythonFunctionalEvidence.py'
+                'scripts/Test-PythonStaticAnalysis.ps1'
                 'scripts/python-project-validation.py'
                 'tests/actions/ValidateEvidence.Tests.ps1'
                 'tests/python/python_project_validation_tests.py'
@@ -692,6 +691,7 @@ Describe 'Validate evidence action' {
                     'schemas/completion-result.schema.json'
                     'scripts/New-CompletionEvidence.ps1'
                     'scripts/Normalize-PythonFunctionalEvidence.py'
+                    'scripts/Test-PythonStaticAnalysis.ps1'
                     'scripts/python-project-validation.py'
                 )
                 tests = @(
@@ -726,38 +726,45 @@ Describe 'Validate evidence action' {
                 generatedBuildOutput = @()
             }
 
-            $actualChangedFiles = @($completion.changedFiles | Sort-Object)
             $expectedChangedFiles = @($expectedChangedFiles | Sort-Object)
-            $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
-            @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
-
-            $completion.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v11'
-            $tagReference = "refs/tags/$($completion.validatedCommitTag)"
-            & git -C $repositoryRoot show-ref --verify --quiet $tagReference
-            if ($LASTEXITCODE -eq 0) {
-                ((& git -C $repositoryRoot cat-file -t $tagReference) -join '').Trim() | Should -BeExactly 'tag'
-                ((& git -C $repositoryRoot rev-parse "$tagReference^{}") -join '').Trim() | Should -BeExactly $completion.validatedCommitSha
-            }
-
-            $actualCategoryNames = @($completion.changedFileCategories.PSObject.Properties.Name | Sort-Object)
             $expectedCategoryNames = @($expectedCategories.Keys | Sort-Object)
-            $actualCategoryNames.Count | Should -Be $expectedCategoryNames.Count
-            @(Compare-Object -ReferenceObject $expectedCategoryNames -DifferenceObject $actualCategoryNames).Count | Should -Be 0
 
-            foreach ($categoryName in $expectedCategories.Keys) {
-                $actualCategoryFiles = @($completion.changedFileCategories.$categoryName | Sort-Object)
-                $expectedCategoryFiles = @($expectedCategories[$categoryName] | Sort-Object)
-                $actualCategoryFiles.Count | Should -Be $expectedCategoryFiles.Count
-                @(Compare-Object -ReferenceObject $expectedCategoryFiles -DifferenceObject $actualCategoryFiles).Count | Should -Be 0
-            }
+            foreach ($receiptPath in @(
+                'examples/python-project/evidence/local-completion-result.json'
+                'examples/bash-project/evidence/local-completion-result.json'
+            )) {
+                $receipt = Get-Content -LiteralPath (Join-Path $repositoryRoot $receiptPath) -Raw | ConvertFrom-Json
+                $actualChangedFiles = @($receipt.changedFiles | Sort-Object)
+                $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
+                @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
 
-            $categorizedFiles = @(
-                foreach ($category in $completion.changedFileCategories.PSObject.Properties) {
-                    @($category.Value)
+                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v20'
+                $tagReference = "refs/tags/$($receipt.validatedCommitTag)"
+                & git -C $repositoryRoot show-ref --verify --quiet $tagReference
+                if ($LASTEXITCODE -eq 0) {
+                    ((& git -C $repositoryRoot cat-file -t $tagReference) -join '').Trim() | Should -BeExactly 'tag'
+                    ((& git -C $repositoryRoot rev-parse "$tagReference^{}") -join '').Trim() | Should -BeExactly $receipt.validatedCommitSha
                 }
-            ) | Sort-Object
-            $categorizedFiles.Count | Should -Be $expectedChangedFiles.Count
-            @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $categorizedFiles).Count | Should -Be 0
+
+                $actualCategoryNames = @($receipt.changedFileCategories.PSObject.Properties.Name | Sort-Object)
+                $actualCategoryNames.Count | Should -Be $expectedCategoryNames.Count
+                @(Compare-Object -ReferenceObject $expectedCategoryNames -DifferenceObject $actualCategoryNames).Count | Should -Be 0
+
+                foreach ($categoryName in $expectedCategories.Keys) {
+                    $actualCategoryFiles = @($receipt.changedFileCategories.$categoryName | Sort-Object)
+                    $expectedCategoryFiles = @($expectedCategories[$categoryName] | Sort-Object)
+                    $actualCategoryFiles.Count | Should -Be $expectedCategoryFiles.Count
+                    @(Compare-Object -ReferenceObject $expectedCategoryFiles -DifferenceObject $actualCategoryFiles).Count | Should -Be 0
+                }
+
+                $categorizedFiles = @(
+                    foreach ($category in $receipt.changedFileCategories.PSObject.Properties) {
+                        @($category.Value)
+                    }
+                ) | Sort-Object
+                $categorizedFiles.Count | Should -Be $expectedChangedFiles.Count
+                @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $categorizedFiles).Count | Should -Be 0
+            }
         }
 
         It 'computes Failed when a mandatory test failed' {
