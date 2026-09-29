@@ -18,7 +18,6 @@ import stat
 import subprocess
 import sys
 import tarfile
-import tempfile
 import time
 import tomllib
 import venv
@@ -57,96 +56,7 @@ TOOL_DISTRIBUTIONS = {
     "hatchling": "hatchling",
     "pip": "pip",
 }
-LOCK_RESOLUTION_TARGETS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    (
-        "linux-cpython-3.13.2-x86_64",
-        (
-            "--platform",
-            "manylinux_2_17_x86_64",
-            "--implementation",
-            "cp",
-            "--python-version",
-            "3.13.2",
-            "--abi",
-            "cp313",
-        ),
-    ),
-    (
-        "windows-cpython-3.13.2-x86_64",
-        (
-            "--platform",
-            "win_amd64",
-            "--implementation",
-            "cp",
-            "--python-version",
-            "3.13.2",
-            "--abi",
-            "cp313",
-        ),
-    ),
-    (
-        "macos-cpython-3.13.2-x86_64",
-        (
-            "--platform",
-            "macosx_13_0_x86_64",
-            "--implementation",
-            "cp",
-            "--python-version",
-            "3.13.2",
-            "--abi",
-            "cp313",
-        ),
-    ),
-)
-# Pip's cross-platform options select compatible wheels but do not apply PEP 508
-# platform markers. These environments mirror the targets resolved above and are
-# used only to account for a marker-gated dependency omitted from those reports.
-LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS: tuple[dict[str, str], ...] = (
-    {
-        "implementation_name": "cpython",
-        "implementation_version": "3.13.2",
-        "os_name": "posix",
-        "platform_machine": "x86_64",
-        "platform_python_implementation": "CPython",
-        "platform_release": "",
-        "platform_system": "Linux",
-        "platform_version": "",
-        "python_full_version": "3.13.2",
-        "python_version": "3.13",
-        "sys_platform": "linux",
-        "extra": "",
-    },
-    {
-        "implementation_name": "cpython",
-        "implementation_version": "3.13.2",
-        "os_name": "nt",
-        "platform_machine": "x86_64",
-        "platform_python_implementation": "CPython",
-        "platform_release": "",
-        "platform_system": "Windows",
-        "platform_version": "",
-        "python_full_version": "3.13.2",
-        "python_version": "3.13",
-        "sys_platform": "win32",
-        "extra": "",
-    },
-    {
-        "implementation_name": "cpython",
-        "implementation_version": "3.13.2",
-        "os_name": "posix",
-        "platform_machine": "x86_64",
-        "platform_python_implementation": "CPython",
-        "platform_release": "",
-        "platform_system": "Darwin",
-        "platform_version": "",
-        "python_full_version": "3.13.2",
-        "python_version": "3.13",
-        "sys_platform": "darwin",
-        "extra": "",
-    },
-)
-TOOLCHAIN_SBOM_PROJECT_NAME = "engineering-standards-python-toolchain"
-TOOLCHAIN_SBOM_PROJECT_VERSION = "1.0.0"
+
 
 def utc() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
@@ -248,6 +158,98 @@ def sanitize_evidence_value(value: Any, roots: list[Path]) -> Any:
             for key, item in value.items()
         }
     return value
+
+
+LOCK_RESOLUTION_TARGETS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "linux-cpython-3.13.2-x86_64",
+        (
+            "--platform",
+            "manylinux_2_17_x86_64",
+            "--implementation",
+            "cp",
+            "--python-version",
+            "3.13.2",
+            "--abi",
+            "cp313",
+        ),
+    ),
+    (
+        "windows-cpython-3.13.2-x86_64",
+        (
+            "--platform",
+            "win_amd64",
+            "--implementation",
+            "cp",
+            "--python-version",
+            "3.13.2",
+            "--abi",
+            "cp313",
+        ),
+    ),
+    (
+        "macos-cpython-3.13.2-x86_64",
+        (
+            "--platform",
+            "macosx_13_0_x86_64",
+            "--implementation",
+            "cp",
+            "--python-version",
+            "3.13.2",
+            "--abi",
+            "cp313",
+        ),
+    ),
+)
+# Pip's cross-platform options select compatible wheels but do not apply PEP 508
+# platform markers. These environments mirror the targets resolved above and are
+# used only to account for a marker-gated dependency omitted from those reports.
+LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS: tuple[dict[str, str], ...] = (
+    {
+        "implementation_name": "cpython",
+        "implementation_version": "3.13.2",
+        "os_name": "posix",
+        "platform_machine": "x86_64",
+        "platform_python_implementation": "CPython",
+        "platform_release": "",
+        "platform_system": "Linux",
+        "platform_version": "",
+        "python_full_version": "3.13.2",
+        "python_version": "3.13",
+        "sys_platform": "linux",
+        "extra": "",
+    },
+    {
+        "implementation_name": "cpython",
+        "implementation_version": "3.13.2",
+        "os_name": "nt",
+        "platform_machine": "x86_64",
+        "platform_python_implementation": "CPython",
+        "platform_release": "",
+        "platform_system": "Windows",
+        "platform_version": "",
+        "python_full_version": "3.13.2",
+        "python_version": "3.13",
+        "sys_platform": "win32",
+        "extra": "",
+    },
+    {
+        "implementation_name": "cpython",
+        "implementation_version": "3.13.2",
+        "os_name": "posix",
+        "platform_machine": "x86_64",
+        "platform_python_implementation": "CPython",
+        "platform_release": "",
+        "platform_system": "Darwin",
+        "platform_version": "",
+        "python_full_version": "3.13.2",
+        "python_version": "3.13",
+        "sys_platform": "darwin",
+        "extra": "",
+    },
+)
+TOOLCHAIN_SBOM_PROJECT_NAME = "engineering-standards-python-toolchain"
+TOOLCHAIN_SBOM_PROJECT_VERSION = "1.0.0"
 
 
 def module_command(python: Path, module: str, *args: str) -> list[str]:
@@ -705,6 +707,8 @@ def validate_requirements_lock_closure(
     work_root: Path,
 ) -> None:
     """Resolve the lock for every supported target before installation."""
+    import tempfile
+
     requirements_input = requirements_input.resolve(strict=True)
     lock = lock.resolve(strict=True)
     resolver_python = resolver_python.resolve(strict=True)
