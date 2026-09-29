@@ -675,11 +675,17 @@ def package_dependency_requirements(install_records: list[dict[str, Any]]) -> li
             raise ValueError("pip resolution report contains invalid package dependency metadata")
         for raw_requirement in requires_dist:
             try:
-                dependencies.append((source_package, Requirement(raw_requirement)))
+                requirement = Requirement(raw_requirement)
             except InvalidRequirement as exc:
                 raise ValueError(
                     f"pip resolution report contains an invalid dependency declaration: {raw_requirement!r}"
                 ) from exc
+            if requirement.url is not None:
+                raise ValueError(
+                    "pip resolution report contains an unsupported direct URL dependency declaration: "
+                    f"{raw_requirement!r}"
+                )
+            dependencies.append((source_package, requirement))
     return dependencies
 
 

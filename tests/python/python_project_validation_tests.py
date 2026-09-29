@@ -509,6 +509,34 @@ def test_marker_closure_preserves_and_merges_requested_extras() -> None:
     )
 
 
+def test_marker_gated_requirements_reject_direct_url_dependencies() -> None:
+    """Closure validation must not rewrite a direct artifact URL as a registry pin."""
+    records = [
+        {
+            "metadata": {
+                "name": "build",
+                "version": "1.6.1",
+                "requires_dist": [
+                    "marker-child @ https://example.invalid/marker-child-2.0.0.whl ; "
+                    "sys_platform == 'win32'"
+                ],
+            }
+        }
+    ]
+
+    try:
+        validator.marker_gated_requirements_for_target(
+            records,
+            {"marker-child": "2.0.0"},
+            validator.LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS[1],
+            "windows-cpython-3.13.2-x86_64",
+        )
+    except ValueError as exc:
+        require("direct URL" in str(exc), "direct URL rejection returned the wrong diagnostic")
+    else:
+        raise AssertionError("direct URL dependency was rewritten as a registry pin")
+
+
 def test_macos_marker_environment_models_declared_release_and_version() -> None:
     """The macOS 13.0 target must evaluate its declared Darwin marker values."""
     records = [
