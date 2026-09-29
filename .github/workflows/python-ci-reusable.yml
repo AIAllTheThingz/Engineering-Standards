@@ -77,6 +77,17 @@ jobs:
         shell: pwsh
         run: |
           $resolverPython = '${{ steps.lock_resolver.outputs.python-path }}'
+          $lockVerificationStartedAt = (Get-Date).ToUniversalTime()
+          $lockVerificationStartedAtUtc = $lockVerificationStartedAt.ToString('o')
+          "verification_started_at_utc=$lockVerificationStartedAtUtc" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          function Complete-LockVerificationTiming {
+            $lockVerificationCompletedAt = (Get-Date).ToUniversalTime()
+            $lockVerificationCompletedAtUtc = $lockVerificationCompletedAt.ToString('o')
+            $lockVerificationDurationSeconds = [Math]::Round(($lockVerificationCompletedAt - $lockVerificationStartedAt).TotalSeconds, 3)
+            $lockVerificationDurationText = [string]::Format([Globalization.CultureInfo]::InvariantCulture, '{0:F3}', $lockVerificationDurationSeconds)
+            "verification_completed_at_utc=$lockVerificationCompletedAtUtc" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            "verification_duration_seconds=$lockVerificationDurationText" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
           $durableLockLogPath = Join-Path $env:RUNNER_TEMP 'python-lock-verification.log'
           $verificationCommand = '<CPython-3.13.2> -I standards/scripts/python-project-validation.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci.lock --resolver-python <CPython-3.13.2> --runtime-python <CPython-3.12.11>'
           "verification_command=$verificationCommand" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
@@ -87,14 +98,17 @@ jobs:
             'verifier_blocked=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             'verifier_blocked_reason=The exact CPython 3.13.2 lock resolver was unavailable, so validation could not start.' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             'The exact CPython 3.13.2 lock resolver was unavailable; no toolchain was installed.' | Tee-Object -FilePath $durableLockLogPath
+            Complete-LockVerificationTiming
             throw 'The exact CPython 3.13.2 lock resolver is unavailable.'
           }
-          $runtimePython = (Get-Command python -CommandType Application -ErrorAction Stop | Select-Object -First 1).Path
+          $runtimeCommand = Get-Command python -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+          $runtimePython = if ($null -eq $runtimeCommand) { $null } else { $runtimeCommand.Path }
           if ([string]::IsNullOrWhiteSpace($runtimePython) -or -not (Test-Path -LiteralPath $runtimePython -PathType Leaf)) {
             'verifier_started=false' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             'verifier_blocked=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             'verifier_blocked_reason=The exact CPython 3.12.11 functional runtime was unavailable, so validation could not start.' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             'The exact CPython 3.12.11 functional runtime was unavailable; no toolchain was installed.' | Tee-Object -FilePath $durableLockLogPath
+            Complete-LockVerificationTiming
             throw 'The exact CPython 3.12.11 functional runtime is unavailable.'
           }
           'verifier_started=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
@@ -109,9 +123,14 @@ jobs:
           if ($lockVerificationExitCode -eq 2) {
             'verifier_blocked=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             'verifier_blocked_reason=The Python package resolver was unavailable or timed out, so lock validation could not complete.' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Complete-LockVerificationTiming
             throw 'The governed Python toolchain lock resolver was unavailable or timed out.'
           }
-          if ($lockVerificationExitCode -ne 0) { throw 'The governed Python toolchain lock does not match its complete resolved closure.' }
+          if ($lockVerificationExitCode -ne 0) {
+            Complete-LockVerificationTiming
+            throw 'The governed Python toolchain lock does not match its complete resolved closure.'
+          }
+          Complete-LockVerificationTiming
 
       - name: Install standards-owned hash-locked toolchain
         if: steps.lock_verification.outcome == 'success'
@@ -171,9 +190,17 @@ jobs:
           $lockVerificationBlocked = '${{ steps.lock_verification.outputs.verifier_blocked }}' -eq 'true'
           $lockVerificationBlockedReason = '${{ steps.lock_verification.outputs.verifier_blocked_reason }}'
           $lockVerificationCommand = '${{ steps.lock_verification.outputs.verification_command }}'
+          $lockVerificationStartedAtUtc = '${{ steps.lock_verification.outputs.verification_started_at_utc }}'
+          $lockVerificationCompletedAtUtc = '${{ steps.lock_verification.outputs.verification_completed_at_utc }}'
+          $lockVerificationDurationText = '${{ steps.lock_verification.outputs.verification_duration_seconds }}'
           if ([string]::IsNullOrWhiteSpace($lockVerificationCommand)) {
             $lockVerificationCommand = '<CPython-3.13.2> -I standards/scripts/python-project-validation.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci.lock --resolver-python <CPython-3.13.2> --runtime-python <CPython-3.12.11>'
           }
+          if ([string]::IsNullOrWhiteSpace($lockVerificationStartedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationCompletedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationDurationText)) {
+            throw 'Lock verification did not report required timing metadata.'
+          }
+          $lockVerificationDurationSeconds = [double]::Parse($lockVerificationDurationText, [Globalization.CultureInfo]::InvariantCulture)
+          if ($lockVerificationDurationSeconds -lt 0) { throw 'Lock verification reported an invalid negative duration.' }
           $durableLockLogPath = Join-Path $env:RUNNER_TEMP 'python-lock-verification.log'
           $lockEvidenceLogPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/lock-verification.log'
           New-Item -ItemType Directory -Path (Split-Path -Parent $lockEvidenceLogPath) -Force | Out-Null
@@ -185,7 +212,6 @@ jobs:
             if (-not (Test-Path -LiteralPath $lockEvidenceLogPath -PathType Leaf)) {
               throw 'Successful Python lock verification did not produce its durable log.'
             }
-            $now = (Get-Date).ToUniversalTime().ToString('o')
             $lockVerificationRecord = [ordered]@{
               schemaVersion = '1.1.0'
               name = 'Python toolchain lock closure'
@@ -195,9 +221,9 @@ jobs:
               evidenceSource = 'Automated'
               command = $lockVerificationCommand
               workingDirectory = 'trusted-isolated-workspace'
-              startedAtUtc = $now
-              completedAtUtc = $now
-              durationSeconds = 0
+              startedAtUtc = $lockVerificationStartedAtUtc
+              completedAtUtc = $lockVerificationCompletedAtUtc
+              durationSeconds = $lockVerificationDurationSeconds
               runtime = 'CPython 3.13.2 resolver and CPython 3.12.11 functional runtime'
               toolVersion = 'python-project-validation.py'
               exitCode = 0
@@ -251,7 +277,6 @@ jobs:
             }
             $completionSummary = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'Python toolchain lock verification could not complete before toolchain installation.' } else { 'Python toolchain lock verification failed before toolchain installation.' }
             $blockedReason = if (-not $lockVerificationBlocked -and $lockVerificationStarted) { $null } elseif ([string]::IsNullOrWhiteSpace($lockVerificationBlockedReason)) { 'The Python lock verifier prerequisite or package resolver was unavailable, so validation could not complete.' } else { $lockVerificationBlockedReason }
-            $now = (Get-Date).ToUniversalTime().ToString('o')
             $lockVerificationRecord = [ordered]@{
               schemaVersion = '1.1.0'
               name = 'Python toolchain lock closure'
@@ -261,9 +286,9 @@ jobs:
               evidenceSource = 'Automated'
               command = $lockVerificationCommand
               workingDirectory = 'trusted-isolated-workspace'
-              startedAtUtc = $now
-              completedAtUtc = $now
-              durationSeconds = 0
+              startedAtUtc = $lockVerificationStartedAtUtc
+              completedAtUtc = $lockVerificationCompletedAtUtc
+              durationSeconds = $lockVerificationDurationSeconds
               runtime = 'CPython 3.13.2 resolver'
               toolVersion = 'python-project-validation.py'
               exitCode = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { $null } else { 1 }
