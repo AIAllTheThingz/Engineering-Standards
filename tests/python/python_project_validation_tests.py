@@ -5,6 +5,7 @@ import json
 import re
 import runpy
 import stat
+import subprocess
 import sys
 import tomllib
 import zipfile
@@ -391,6 +392,51 @@ def test_marker_closure_does_not_evaluate_empty_extra_when_an_extra_is_active() 
     require(
         marker_requirements == {},
         "an active extra was incorrectly evaluated together with the empty-extra context",
+    )
+
+
+def test_marker_closure_rejects_oscillating_extra_activation() -> None:
+    """A self-requested extra must fail explicitly rather than spin until workflow timeout."""
+    child_program = f"""
+import runpy
+
+validator = runpy.run_path({str(VALIDATOR)!r})
+try:
+    validator["marker_gated_requirements_for_target"](
+        [
+            {{
+                "metadata": {{
+                    "name": "a",
+                    "version": "1.0.0",
+                    "requires_dist": ["a[feature]==1.0.0; extra != 'feature'"],
+                }}
+            }}
+        ],
+        {{"a": "1.0.0"}},
+        validator["LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS"][0],
+        "linux-cpython-3.13.2-manylinux_2_17_x86_64",
+    )
+except ValueError as exc:
+    if "extra activation state did not converge" not in str(exc):
+        raise AssertionError(f"unexpected oscillation error: {{exc}}") from exc
+else:
+    raise AssertionError("oscillating extra activation was accepted")
+"""
+    try:
+        result = subprocess.run(
+            [sys.executable, "-I", "-c", child_program],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=3,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise AssertionError("oscillating extra activation did not terminate") from exc
+
+    require(
+        result.returncode == 0,
+        "oscillating extra activation was not rejected explicitly:\n"
+        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
     )
 
 

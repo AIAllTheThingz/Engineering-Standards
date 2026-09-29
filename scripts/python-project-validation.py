@@ -835,6 +835,9 @@ def target_reachable_packages_and_extras_for_target(
         if extras
     }
     activated = {package: set(extras) for package, extras in initial_extras.items()}
+    seen_activated_states = {
+        tuple(sorted((package, tuple(sorted(extras))) for package, extras in activated.items()))
+    }
     while True:
         reachable = (
             {normalized_requirement_name(package) for package in root_packages}
@@ -871,6 +874,15 @@ def target_reachable_packages_and_extras_for_target(
                     changed = changed or len(target_extras) != previous_count
         if next_activated == activated:
             return reachable, {package: tuple(sorted(extras)) for package, extras in activated.items()}
+        next_activated_state = tuple(
+            sorted((package, tuple(sorted(extras))) for package, extras in next_activated.items())
+        )
+        if next_activated_state in seen_activated_states:
+            raise ValueError(
+                "requirements lock closure extra activation state did not converge for "
+                f"{target_name}"
+            )
+        seen_activated_states.add(next_activated_state)
         activated = next_activated
 
 

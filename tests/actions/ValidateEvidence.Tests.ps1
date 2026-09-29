@@ -744,6 +744,27 @@ Describe 'Validate evidence action' {
             $generated.changedFileCategories.tests | Should -Contain 'tests/app.Tests.ps1'
         }
 
+        It 'preserves whitespace in explicit changed-file paths and categories' {
+            & $script:NewTempEvidence
+            $changedFiles = @(
+                ' report.json'
+                'docs/report.json '
+                ' '
+            )
+
+            & "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'Whitespace-preserving change inventory fixture.' -ArtifactPath 'evidence/report.json' -ChangedFile $changedFiles
+            $LASTEXITCODE | Should -Be 0
+
+            $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/generated.json') -Raw | ConvertFrom-Json
+            @($generated.changedFiles).Count | Should -Be $changedFiles.Count
+            foreach ($changedFile in $changedFiles) {
+                $generated.changedFiles | Should -Contain $changedFile
+            }
+            $generated.changedFileCategories.configuration | Should -Contain ' report.json'
+            $generated.changedFileCategories.source | Should -Contain 'docs/report.json '
+            $generated.changedFileCategories.source | Should -Contain ' '
+        }
+
         It 'rejects unsafe explicit change inventory paths' {
             & $script:NewTempEvidence
             $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'Unsafe change inventory fixture.' -ChangedFile '../outside.json' 2>&1)
@@ -904,7 +925,7 @@ Describe 'Validate evidence action' {
                 $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
                 @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
 
-                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v46'
+                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v47'
                 $tagReference = "refs/tags/$($receipt.validatedCommitTag)"
                 & git -C $repositoryRoot show-ref --verify --quiet $tagReference
                 if ($LASTEXITCODE -eq 0) {

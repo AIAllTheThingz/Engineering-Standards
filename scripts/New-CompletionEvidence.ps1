@@ -371,11 +371,11 @@ function Test-GeneratedBuildOutputPath {
 function Convert-ChangedFilePath {
     param([Parameter(Mandatory)][string]$Path)
 
-    $normalized = $Path.Trim().Replace('\', '/')
+    $normalized = $Path.Replace('\', '/')
     while ($normalized.StartsWith('./', [StringComparison]::Ordinal)) {
         $normalized = $normalized.Substring(2)
     }
-    if ([string]::IsNullOrWhiteSpace($normalized) -or $normalized -eq 'unknown' -or $normalized -match '^(?:[A-Za-z]:|/|//)' -or $normalized -match '(?:^|/)\.\.(?:/|$)') {
+    if ($normalized.Length -eq 0 -or $normalized -eq 'unknown' -or $normalized -match '^(?:[A-Za-z]:|/|//)' -or $normalized -match '(?:^|/)\.\.(?:/|$)') {
         throw "ChangedFile '$Path' must be a non-empty repository-relative path without traversal."
     }
     return $normalized
@@ -392,7 +392,7 @@ function Get-ChangedFileCategories {
         generatedBuildOutput = @()
     }
     foreach ($file in @($Files)) {
-        if ([string]::IsNullOrWhiteSpace($file) -or $file -eq 'unknown') { continue }
+        if ($null -eq $file -or $file.Length -eq 0 -or $file -eq 'unknown') { continue }
         $path = $file.Replace('\','/')
         if (Test-GeneratedBuildOutputPath -Path $path) { $categories.generatedBuildOutput += $path; continue }
         if ($path -match '^evidence/' -or $path -match '/evidence/') { $categories.generatedEvidence += $path; continue }
