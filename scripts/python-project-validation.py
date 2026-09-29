@@ -1110,6 +1110,71 @@ def validate_requirements_lock_closure(
                     resolved[name] = version
             return install_records, resolved
 
+        def filter_supplemental_report_for_target(
+            report: Path,
+            root_name: str,
+            root_extras: tuple[str, ...],
+            target_environment: dict[str, str],
+            target_name: str,
+        ) -> Path:
+            """Keep only the requested root and dependencies active for the synthetic target."""
+            try:
+                document = json.loads(report.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                raise ValueError(f"could not read the pip resolution report: {exc}") from exc
+            if not isinstance(document, dict):
+                raise ValueError("pip resolution report must be a JSON object")
+            install_records = resolution_install_records(report)
+            resolved_requirements(install_records)
+            dependencies = package_dependency_requirements(install_records)
+            records_by_package = {
+                normalized_requirement_name(record["metadata"]["name"]): record
+                for record in install_records
+            }
+            root_package = normalized_requirement_name(root_name)
+            if root_package not in records_by_package:
+                raise ValueError(
+                    f"marker-gated package {root_name} was not resolved for {target_name}"
+                )
+            active_packages = {root_package}
+            active_extras: dict[str, set[str]] = {}
+            if root_extras:
+                active_extras[root_package] = set(root_extras)
+            while True:
+                changed = False
+                for source_package, requirement in dependencies:
+                    if source_package not in active_packages:
+                        continue
+                    source_extras = tuple(sorted(active_extras.get(source_package, set())))
+                    if requirement.marker is not None and not marker_applies_to_target(
+                        requirement.marker,
+                        target_environment,
+                        target_name,
+                        source_extras,
+                    ):
+                        continue
+                    dependency_package = normalized_requirement_name(requirement.name)
+                    if dependency_package not in records_by_package:
+                        continue
+                    if dependency_package not in active_packages:
+                        active_packages.add(dependency_package)
+                        changed = True
+                    if requirement.extras:
+                        dependency_extras = active_extras.setdefault(dependency_package, set())
+                        previous_count = len(dependency_extras)
+                        dependency_extras.update(requirement.extras)
+                        changed = changed or len(dependency_extras) != previous_count
+                if not changed:
+                    break
+            document["install"] = [
+                record
+                for record in install_records
+                if normalized_requirement_name(record["metadata"]["name"]) in active_packages
+            ]
+            filtered_report = report.with_name(f"{report.stem}-target-filtered.json")
+            filtered_report.write_text(json.dumps(document), encoding="utf-8")
+            return filtered_report
+
         if len(LOCK_RESOLUTION_TARGETS) != len(LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS):
             raise RuntimeError("lock-resolution targets and marker environments are not aligned")
         target_specs = [
@@ -1173,7 +1238,15 @@ def validate_requirements_lock_closure(
                             f"marker-gated package {name}=={version} was not resolved for {target_name}"
                         )
                     requested_marker_extras[name] = extras
-                    target_reports.append(marker_report)
+                    target_reports.append(
+                        filter_supplemental_report_for_target(
+                            marker_report,
+                            name,
+                            extras,
+                            target_environment,
+                            target_name,
+                        )
+                    )
             reports.extend(target_reports)
         validate_resolved_requirements_lock(requirements_input, lock, tuple(reports))
 

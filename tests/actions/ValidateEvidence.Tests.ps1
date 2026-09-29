@@ -904,7 +904,7 @@ Describe 'Validate evidence action' {
                 $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
                 @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
 
-                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v35'
+                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v36'
                 $tagReference = "refs/tags/$($receipt.validatedCommitTag)"
                 & git -C $repositoryRoot show-ref --verify --quiet $tagReference
                 if ($LASTEXITCODE -eq 0) {
