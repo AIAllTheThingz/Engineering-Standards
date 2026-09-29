@@ -727,21 +727,34 @@ def marker_applies_to_target(
     )
 
 
-def activated_extras_for_target(
+def target_reachable_packages_and_extras_for_target(
     dependencies: list[tuple[str, Any]],
     target_environment: dict[str, str],
     target_name: str,
+    root_packages: set[str] | None = None,
     initially_activated_extras: dict[str, tuple[str, ...]] | None = None,
-) -> dict[str, tuple[str, ...]]:
-    """Propagate extras along every dependency edge active for a target marker environment."""
+) -> tuple[set[str], dict[str, tuple[str, ...]]]:
+    """Traverse only target-reachable dependency edges and propagate their requested extras."""
+    initially_activated_extras = initially_activated_extras or {}
+    reachable = (
+        {normalized_requirement_name(package) for package in root_packages}
+        if root_packages is not None
+        else {source_package for source_package, _ in dependencies}
+    )
+    reachable.update(
+        normalized_requirement_name(package)
+        for package in initially_activated_extras
+    )
     activated: dict[str, set[str]] = {
         normalized_requirement_name(package): set(extras)
-        for package, extras in (initially_activated_extras or {}).items()
+        for package, extras in initially_activated_extras.items()
         if extras
     }
     while True:
         changed = False
         for source_package, requirement in dependencies:
+            if source_package not in reachable:
+                continue
             source_extras = activated.get(source_package, ())
             if requirement.marker is not None and not marker_applies_to_target(
                 requirement.marker,
@@ -750,14 +763,17 @@ def activated_extras_for_target(
                 source_extras,
             ):
                 continue
-            if not requirement.extras:
-                continue
-            target_extras = activated.setdefault(normalized_requirement_name(requirement.name), set())
-            previous_count = len(target_extras)
-            target_extras.update(requirement.extras)
-            changed = changed or len(target_extras) != previous_count
+            target_package = normalized_requirement_name(requirement.name)
+            if target_package not in reachable:
+                reachable.add(target_package)
+                changed = True
+            if requirement.extras:
+                target_extras = activated.setdefault(target_package, set())
+                previous_count = len(target_extras)
+                target_extras.update(requirement.extras)
+                changed = changed or len(target_extras) != previous_count
         if not changed:
-            return {package: tuple(sorted(extras)) for package, extras in activated.items()}
+            return reachable, {package: tuple(sorted(extras)) for package, extras in activated.items()}
 
 
 def marker_gated_requirements_for_target(
@@ -766,17 +782,21 @@ def marker_gated_requirements_for_target(
     target_environment: dict[str, str],
     target_name: str,
     activated_extras_by_package: dict[str, tuple[str, ...]] | None = None,
+    root_packages: set[str] | None = None,
 ) -> dict[str, tuple[str, tuple[str, ...]]]:
-    """Return target-active lock pins, accounting for activated source-package extras."""
+    """Return lock pins reached by target-active dependency edges and activated extras."""
     dependencies = package_dependency_requirements(install_records)
-    activated_extras_by_package = activated_extras_for_target(
+    reachable_packages, activated_extras_by_package = target_reachable_packages_and_extras_for_target(
         dependencies,
         target_environment,
         target_name,
+        root_packages,
         activated_extras_by_package,
     )
     marker_gated: dict[str, tuple[str, tuple[str, ...]]] = {}
     for source_package, requirement in dependencies:
+        if source_package not in reachable_packages:
+            continue
         activated_extras = activated_extras_by_package.get(source_package, ())
         if requirement.marker is None:
             continue
@@ -1028,6 +1048,7 @@ def validate_requirements_lock_closure(
     with tempfile.TemporaryDirectory(prefix="lock-resolution-", dir=resolver_root) as directory:
         reports: list[Path] = []
         locked = locked_requirements(lock)
+        direct_requirement_names = set(pinned_requirements(requirements_input))
         resolver_pip = pinned_lock_resolver(
             resolver_python,
             "CPython 3.13.2",
@@ -1136,36 +1157,13 @@ def validate_requirements_lock_closure(
                 raise ValueError(
                     f"marker-gated package {root_name} was not resolved for {target_name}"
                 )
-            active_packages = {root_package}
-            active_extras: dict[str, set[str]] = {}
-            if root_extras:
-                active_extras[root_package] = set(root_extras)
-            while True:
-                changed = False
-                for source_package, requirement in dependencies:
-                    if source_package not in active_packages:
-                        continue
-                    source_extras = tuple(sorted(active_extras.get(source_package, set())))
-                    if requirement.marker is not None and not marker_applies_to_target(
-                        requirement.marker,
-                        target_environment,
-                        target_name,
-                        source_extras,
-                    ):
-                        continue
-                    dependency_package = normalized_requirement_name(requirement.name)
-                    if dependency_package not in records_by_package:
-                        continue
-                    if dependency_package not in active_packages:
-                        active_packages.add(dependency_package)
-                        changed = True
-                    if requirement.extras:
-                        dependency_extras = active_extras.setdefault(dependency_package, set())
-                        previous_count = len(dependency_extras)
-                        dependency_extras.update(requirement.extras)
-                        changed = changed or len(dependency_extras) != previous_count
-                if not changed:
-                    break
+            active_packages, _ = target_reachable_packages_and_extras_for_target(
+                dependencies,
+                target_environment,
+                target_name,
+                {root_package},
+                {root_package: root_extras},
+            )
             document["install"] = [
                 record
                 for record in install_records
@@ -1190,6 +1188,7 @@ def validate_requirements_lock_closure(
         )
 
         for python, target_name, target_args, target_environment in target_specs:
+            target_root_packages = set(direct_requirement_names)
             target_reports = [
                 resolve_target(
                     python,
@@ -1209,6 +1208,7 @@ def validate_requirements_lock_closure(
                     target_environment,
                     target_name,
                     requested_marker_extras,
+                    target_root_packages,
                 )
                 pending: list[tuple[str, str, tuple[str, ...]]] = []
                 for name, (version, extras) in sorted(marker_requirements.items()):
@@ -1238,6 +1238,7 @@ def validate_requirements_lock_closure(
                             f"marker-gated package {name}=={version} was not resolved for {target_name}"
                         )
                     requested_marker_extras[name] = extras
+                    target_root_packages.add(name)
                     target_reports.append(
                         filter_supplemental_report_for_target(
                             marker_report,

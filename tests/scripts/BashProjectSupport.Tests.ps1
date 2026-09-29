@@ -321,7 +321,7 @@ Describe 'Governed Bash project support' {
         $completion = Get-Content -LiteralPath $completionPath -Raw | ConvertFrom-Json
         $completion.commitSha | Should -Match '^[0-9a-f]{40}$'
         $completion.validatedCommitSha | Should -BeExactly $completion.commitSha
-        $completion.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v36'
+        $completion.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v37'
         $tagReference = "refs/tags/$($completion.validatedCommitTag)"
         & git -C $script:root show-ref --verify --quiet $tagReference
         if ($LASTEXITCODE -eq 0) {
