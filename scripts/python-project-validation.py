@@ -57,49 +57,46 @@ TOOL_DISTRIBUTIONS = {
     "hatchling": "hatchling",
     "pip": "pip",
 }
-LOCK_RESOLUTION_MARKER_TARGETS: tuple[dict[str, str], ...] = (
-    {
-        "implementation_name": "cpython",
-        "implementation_version": "3.13.2",
-        "os_name": "posix",
-        "platform_machine": "x86_64",
-        "platform_python_implementation": "CPython",
-        "platform_release": "",
-        "platform_system": "Linux",
-        "platform_version": "",
-        "python_full_version": "3.13.2",
-        "python_version": "3.13",
-        "sys_platform": "linux",
-        "extra": "",
-    },
-    {
-        "implementation_name": "cpython",
-        "implementation_version": "3.13.2",
-        "os_name": "nt",
-        "platform_machine": "x86_64",
-        "platform_python_implementation": "CPython",
-        "platform_release": "",
-        "platform_system": "Windows",
-        "platform_version": "",
-        "python_full_version": "3.13.2",
-        "python_version": "3.13",
-        "sys_platform": "win32",
-        "extra": "",
-    },
-    {
-        "implementation_name": "cpython",
-        "implementation_version": "3.13.2",
-        "os_name": "posix",
-        "platform_machine": "x86_64",
-        "platform_python_implementation": "CPython",
-        "platform_release": "",
-        "platform_system": "Darwin",
-        "platform_version": "",
-        "python_full_version": "3.13.2",
-        "python_version": "3.13",
-        "sys_platform": "darwin",
-        "extra": "",
-    },
+LOCK_RESOLUTION_TARGETS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "linux-cpython-3.13.2-x86_64",
+        (
+            "--platform",
+            "manylinux_2_17_x86_64",
+            "--implementation",
+            "cp",
+            "--python-version",
+            "3.13.2",
+            "--abi",
+            "cp313",
+        ),
+    ),
+    (
+        "windows-cpython-3.13.2-x86_64",
+        (
+            "--platform",
+            "win_amd64",
+            "--implementation",
+            "cp",
+            "--python-version",
+            "3.13.2",
+            "--abi",
+            "cp313",
+        ),
+    ),
+    (
+        "macos-cpython-3.13.2-x86_64",
+        (
+            "--platform",
+            "macosx_13_0_x86_64",
+            "--implementation",
+            "cp",
+            "--python-version",
+            "3.13.2",
+            "--abi",
+            "cp313",
+        ),
+    ),
 )
 TOOLCHAIN_SBOM_PROJECT_NAME = "engineering-standards-python-toolchain"
 TOOLCHAIN_SBOM_PROJECT_VERSION = "1.0.0"
@@ -169,7 +166,7 @@ def run(
 ) -> tuple[int, str, float]:
     started = time.monotonic()
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # noqa: S603 - commands use standards-validated executables and paths.
             command,
             cwd=cwd,
             env=env,
@@ -503,81 +500,31 @@ def resolved_requirements(install_records: list[dict[str, Any]]) -> dict[str, st
     return requirements
 
 
-def conditionally_inapplicable_lock_requirements(
-    install_records: list[dict[str, Any]],
-    locked: dict[str, str],
-    resolved: dict[str, str],
-) -> set[str]:
-    """Return alternate-environment pins justified by resolved package metadata.
-
-    A universal lock can include a platform- or interpreter-gated dependency that
-    the current resolver correctly omits. It remains valid only when a package
-    in the current closure declares that exact dependency behind a non-extra
-    marker active for at least one declared CPython 3.13.2 lock-resolution
-    target. This deliberately does not trust ``# via`` comments.
-    """
-    try:
-        # This pre-install validator can rely only on pip, so use pip's bundled
-        # PEP 508 parser instead of an independently installed dependency.
-        from pip._vendor.packaging.markers import default_environment
-        from pip._vendor.packaging.requirements import InvalidRequirement, Requirement
-    except ImportError as exc:
-        raise ValueError("pip's bundled PEP 508 requirement parser is unavailable") from exc
-
-    current_environment = default_environment()
-    target_environments = tuple(
-        {**current_environment, **target}
-        for target in LOCK_RESOLUTION_MARKER_TARGETS
-    )
-    conditionally_inapplicable: set[str] = set()
-    for item in install_records:
-        metadata = item.get("metadata")
-        if not isinstance(metadata, dict):
-            raise ValueError("pip resolution report contains an invalid install record")
-        requires_dist = metadata.get("requires_dist")
-        if requires_dist is None:
-            continue
-        if not isinstance(requires_dist, list) or any(
-            not isinstance(requirement, str) for requirement in requires_dist
-        ):
-            raise ValueError("pip resolution report contains an invalid requires_dist record")
-        for raw_requirement in requires_dist:
-            try:
-                requirement = Requirement(raw_requirement)
-            except InvalidRequirement as exc:
-                raise ValueError(
-                    f"pip resolution report contains an invalid dependency declaration: {raw_requirement!r}"
-                ) from exc
-            name = normalized_requirement_name(requirement.name)
-            if name not in locked or name in resolved or requirement.marker is None:
-                continue
-            # Dependencies enabled only by an unrequested extra must never
-            # justify a lock entry.  Pip would otherwise have resolved it.
-            if "extra" in str(requirement.marker).lower() or requirement.marker.evaluate(current_environment):
-                continue
-            if (
-                requirement.specifier.contains(locked[name], prereleases=True)
-                and any(requirement.marker.evaluate(environment) for environment in target_environments)
-            ):
-                conditionally_inapplicable.add(name)
-    return conditionally_inapplicable
-
-
-def validate_resolved_requirements_lock(requirements_input: Path, lock: Path, report: Path) -> None:
+def validate_resolved_requirements_lock(
+    requirements_input: Path,
+    lock: Path,
+    reports: Path | tuple[Path, ...],
+) -> None:
     """Require the lock to match the resolver closure on every applicable platform."""
     validate_requirements_lock(requirements_input, lock)
     locked = locked_requirements(lock)
-    install_records = resolution_install_records(report)
-    resolved = resolved_requirements(install_records)
-    conditionally_inapplicable = conditionally_inapplicable_lock_requirements(
-        install_records,
-        locked,
-        resolved,
-    )
+    report_paths = (reports,) if isinstance(reports, Path) else reports
+    if not report_paths:
+        raise ValueError("requirements lock closure must include at least one resolution report")
+    resolved: dict[str, str] = {}
+    for report in report_paths:
+        for name, version in resolved_requirements(resolution_install_records(report)).items():
+            prior_version = resolved.get(name)
+            if prior_version is not None and prior_version != version:
+                raise ValueError(
+                    f"requirements lock resolution differs across supported targets for {name}: "
+                    f"{prior_version} and {version}"
+                )
+            resolved[name] = version
     unexpected = sorted(
         f"{name}=={locked[name]}"
         for name in locked
-        if name not in resolved and name not in conditionally_inapplicable
+        if name not in resolved
     )
     missing = sorted(
         f"{name}=={resolved[name]}" for name in resolved if name not in locked
@@ -605,55 +552,80 @@ def validate_requirements_lock_closure(
     requirements_input: Path,
     lock: Path,
     resolver_python: Path,
+    runtime_python: Path,
     work_root: Path,
 ) -> None:
-    """Resolve the declared input under the lock before any lock package is installed."""
+    """Resolve the lock for every supported target before installation."""
     requirements_input = requirements_input.resolve(strict=True)
     lock = lock.resolve(strict=True)
     resolver_python = resolver_python.resolve(strict=True)
+    runtime_python = runtime_python.resolve(strict=True)
     resolver_root = work_root.absolute() / "lock-resolution"
     resolver_root.mkdir(parents=True, exist_ok=True)
     env = trusted_env(resolver_root / "home")
-    version_command = [
-        str(resolver_python),
-        "-I",
-        "-c",
-        "import sys; print(f'{sys.implementation.name} {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')",
-    ]
-    version_code, version_output, _ = run(version_command, resolver_root, env, 60)
-    if version_code != 0 or version_output.strip() != "cpython 3.13.2":
-        raise ValueError("requirements lock closure must be resolved with CPython 3.13.2")
-    with tempfile.TemporaryDirectory(prefix="lock-resolution-", dir=resolver_root) as directory:
-        report = Path(directory) / "pip-resolution.json"
-        command = [
-            str(resolver_python),
+
+    def verify_python_version(python: Path, expected: str, label: str) -> None:
+        version_command = [
+            str(python),
             "-I",
-            "-m",
-            "pip",
-            "--isolated",
-            "install",
-            "--disable-pip-version-check",
-            "--no-input",
-            "--only-binary=:all:",
-            "--no-cache-dir",
-            "--dry-run",
-            "--ignore-installed",
-            "--report",
-            str(report),
-            "--index-url",
-            "https://pypi.org/simple",
-            "-r",
-            str(requirements_input),
             "-c",
-            str(lock),
+            "import sys; print(f'{sys.implementation.name} {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')",
         ]
-        code, output, _ = run(command, resolver_root, env, 300)
-        if code != 0:
-            sanitized = sanitize(output, [requirements_input.parent, lock.parent, resolver_root, resolver_python.parent])
-            raise ValueError(f"could not resolve the requirements lock closure: {sanitized}")
-        if not report.is_file():
-            raise ValueError("pip did not produce the required requirements lock resolution report")
-        validate_resolved_requirements_lock(requirements_input, lock, report)
+        version_code, version_output, _ = run(version_command, resolver_root, env, 60)
+        if version_code != 0 or version_output.strip() != expected:
+            raise ValueError(f"requirements lock closure must use {label}")
+
+    verify_python_version(resolver_python, "cpython 3.13.2", "CPython 3.13.2")
+    verify_python_version(runtime_python, "cpython 3.12.11", "the functional CPython 3.12.11 runtime")
+    with tempfile.TemporaryDirectory(prefix="lock-resolution-", dir=resolver_root) as directory:
+        reports: list[Path] = []
+
+        def resolve_target(python: Path, target_name: str, target_args: tuple[str, ...]) -> None:
+            report = Path(directory) / f"{target_name}.json"
+            command = [
+                str(python),
+                "-I",
+                "-m",
+                "pip",
+                "--isolated",
+                "install",
+                "--disable-pip-version-check",
+                "--no-input",
+                "--only-binary=:all:",
+                "--no-cache-dir",
+                "--dry-run",
+                "--ignore-installed",
+                "--report",
+                str(report),
+                "--index-url",
+                "https://pypi.org/simple",
+                *target_args,
+                "-r",
+                str(requirements_input),
+                "-c",
+                str(lock),
+            ]
+            code, output, _ = run(command, resolver_root, env, 300)
+            if code != 0:
+                sanitized = sanitize(
+                    output,
+                    [
+                        requirements_input.parent,
+                        lock.parent,
+                        resolver_root,
+                        resolver_python.parent,
+                        runtime_python.parent,
+                    ],
+                )
+                raise ValueError(f"could not resolve the requirements lock closure for {target_name}: {sanitized}")
+            if not report.is_file():
+                raise ValueError(f"pip did not produce the required {target_name} resolution report")
+            reports.append(report)
+
+        for target_name, target_args in LOCK_RESOLUTION_TARGETS:
+            resolve_target(resolver_python, target_name, target_args)
+        resolve_target(runtime_python, "runtime-cpython-3.12.11", ())
+        validate_resolved_requirements_lock(requirements_input, lock, tuple(reports))
 
 
 def tool_versions(tool_python: Path, env: dict[str, str], cwd: Path) -> dict[str, str]:
@@ -944,15 +916,17 @@ def main() -> int:
     parser.add_argument("--runtime-lock", default="requirements-runtime.lock")
     parser.add_argument("--mypy-config", type=Path)
     parser.add_argument("--resolver-python", type=Path)
+    parser.add_argument("--runtime-python", type=Path)
     args = parser.parse_args()
     if args.verify_tool_lock:
-        if args.work_root is None or args.resolver_python is None:
-            parser.error("--verify-tool-lock requires --work-root and --resolver-python")
+        if args.work_root is None or args.resolver_python is None or args.runtime_python is None:
+            parser.error("--verify-tool-lock requires --work-root, --resolver-python, and --runtime-python")
         try:
             validate_requirements_lock_closure(
                 args.tool_lock.with_suffix(".in"),
                 args.tool_lock,
                 args.resolver_python,
+                args.runtime_python,
                 args.work_root,
             )
             return 0

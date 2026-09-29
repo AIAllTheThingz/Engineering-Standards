@@ -47,11 +47,16 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'python-version:\s*3\.13\.2'
         $script:workflow | Should -Match '--verify-tool-lock'
         $script:workflow | Should -Match '--resolver-python'
+        $script:workflow | Should -Match '--runtime-python'
         $script:driver | Should -Match '"--dry-run"'
         $script:driver | Should -Match '"--ignore-installed"'
         $script:driver | Should -Match '"-c"'
+        $script:driver | Should -Match '"--platform"'
+        $script:driver | Should -Match '"--python-version"'
         $script:driver | Should -Match 'cpython 3\.13\.2'
+        $script:driver | Should -Match 'cpython 3\.12\.11'
         $script:driver | Should -Match 'validate_resolved_requirements_lock'
+        $script:driver | Should -Not -Match 'default_environment'
     }
 
     It 'emits validated failure completion evidence when toolchain lock verification does not succeed' {
@@ -71,9 +76,15 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'evidence/lock-verification\.log'
         $script:workflow | Should -Match 'verifier_started=false'
         $script:workflow | Should -Match 'verifier_started=true'
+        $script:workflow | Should -Match 'verifier_blocked_reason='
         $script:workflow | Should -Match '\$lockVerificationStarted'
+        $script:workflow | Should -Match '\$lockVerificationBlockedReason'
         $script:workflow | Should -Match '\$commandsNotExecuted \+= \$verificationCommand'
         $script:workflow | Should -Match 'status = if \(\$lockVerificationStarted\) \{ ''Failed'' \} else \{ ''Blocked'' \}'
+        $script:workflow | Should -Match 'Join-Path \$env:RUNNER_TEMP ''python-lock-verification\.log'''
+        $script:workflow | Should -Match 'Copy-Item -LiteralPath \$durableLockLogPath -Destination \$lockEvidenceLogPath'
+        $script:workflow | Should -Match "status = 'Passed'"
+        $script:workflow | Should -Match 'Python toolchain lock closure completed successfully\.'
         $script:workflow | Should -Match '(?s)id:\s*evidence\s*\r?\n\s*if:\s*always\(\) && steps\.completion\.outcome == ''success'''
     }
 

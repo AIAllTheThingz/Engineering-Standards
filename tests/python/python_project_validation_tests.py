@@ -192,9 +192,8 @@ def test_requirements_lock_rejects_unresolved_transitive_pin(tmp_path: Path) -> 
         raise AssertionError("injected transitive lock entry was accepted")
 
 
-def test_requirements_lock_accepts_declared_platform_transitive_pin(tmp_path: Path) -> None:
-    """A universal lock can retain a pin used by a declared lock-resolution target."""
-    alternate_platform = "linux" if sys.platform != "linux" else "win32"
+def test_requirements_lock_accepts_dependency_resolved_on_another_target(tmp_path: Path) -> None:
+    """A universal lock retains pins resolved by at least one real target report."""
     requirements_input = tmp_path / "requirements-ci.in"
     requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
     lock = tmp_path / "requirements-ci.lock"
@@ -207,8 +206,8 @@ def test_requirements_lock_accepts_declared_platform_transitive_pin(tmp_path: Pa
         "    # via build\n",
         encoding="utf-8",
     )
-    report = tmp_path / "resolution.json"
-    report.write_text(
+    linux_report = tmp_path / "linux-resolution.json"
+    linux_report.write_text(
         json.dumps(
             {
                 "install": [
@@ -216,9 +215,6 @@ def test_requirements_lock_accepts_declared_platform_transitive_pin(tmp_path: Pa
                         "metadata": {
                             "name": "build",
                             "version": "1.6.1",
-                            "requires_dist": [
-                                f"colorama==0.4.6; sys_platform == '{alternate_platform}'"
-                            ],
                         }
                     },
                 ]
@@ -226,8 +222,83 @@ def test_requirements_lock_accepts_declared_platform_transitive_pin(tmp_path: Pa
         ),
         encoding="utf-8",
     )
+    windows_report = tmp_path / "windows-resolution.json"
+    windows_report.write_text(
+        json.dumps(
+            {
+                "install": [
+                    {"metadata": {"name": "build", "version": "1.6.1"}},
+                    {"metadata": {"name": "colorama", "version": "0.4.6"}},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
 
-    validator.validate_resolved_requirements_lock(requirements_input, lock, report)
+    validator.validate_resolved_requirements_lock(
+        requirements_input,
+        lock,
+        (linux_report, windows_report),
+    )
+
+
+def test_requirements_lock_closure_resolves_every_target_and_functional_runtime(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Closure verification invokes pip for every supported target plus CPython 3.12.11."""
+    requirements_input = tmp_path / "requirements-ci.in"
+    requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "build==1.6.1 \\\n"
+        "    --hash=sha256:" + "0" * 64 + "\n"
+        "    # via -r requirements-ci.in\n",
+        encoding="utf-8",
+    )
+    resolver_python = tmp_path / "resolver-python"
+    runtime_python = tmp_path / "runtime-python"
+    resolver_python.touch()
+    runtime_python.touch()
+    pip_commands: list[list[str]] = []
+    validated_reports: list[tuple[Path, ...]] = []
+
+    def fake_run(command: list[str], cwd: Path, env: dict[str, str], timeout: int = 300) -> tuple[int, str, float]:
+        if command[2] == "-c":
+            expected = "cpython 3.13.2" if command[0] == str(resolver_python) else "cpython 3.12.11"
+            return 0, expected + "\n", 0.0
+        report = Path(command[command.index("--report") + 1])
+        report.write_text(
+            json.dumps({"install": [{"metadata": {"name": "build", "version": "1.6.1"}}]}),
+            encoding="utf-8",
+        )
+        pip_commands.append(command)
+        return 0, "", 0.0
+
+    monkeypatch.setattr(validator, "run", fake_run)
+    monkeypatch.setattr(
+        validator,
+        "validate_resolved_requirements_lock",
+        lambda _input, _lock, reports: validated_reports.append(tuple(reports)),
+    )
+
+    validator.validate_requirements_lock_closure(
+        requirements_input,
+        lock,
+        resolver_python,
+        runtime_python,
+        tmp_path / "work",
+    )
+
+    require(len(pip_commands) == 4, "closure did not resolve every declared target and runtime")
+    require(
+        all("--platform" in command for command in pip_commands[:3]),
+        "declared CPython 3.13.2 targets were not resolved with pip target selection",
+    )
+    require(
+        any(command[0] == str(runtime_python) for command in pip_commands),
+        "the functional CPython 3.12.11 runtime was not resolved",
+    )
+    require(len(validated_reports) == 1 and len(validated_reports[0]) == 4, "all target reports were not validated")
 
 
 def test_requirements_lock_rejects_impossible_marker_transitive_pin(tmp_path: Path) -> None:
