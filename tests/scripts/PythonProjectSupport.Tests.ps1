@@ -126,12 +126,86 @@ Describe 'Governed Python project support' {
         $failureEvidence.Groups['body'].Value | Should -Match 'git -c protocol\.file\.allow=always clone --no-local --no-checkout --no-tags \$callerStage \$failureCallerStage'
         $failureEvidence.Groups['body'].Value | Should -Not -Match 'checkout --detach'
         $failureEvidence.Groups['body'].Value | Should -Match '\$failureChangedFiles = @\('
-        $failureEvidence.Groups['body'].Value | Should -Match 'git -C \$failureCallerStage diff-tree --root --no-commit-id --name-only -r \$env:GITHUB_SHA'
+        $script:workflow | Should -Match '(?s)- name: Checkout caller without credentials.*?fetch-depth:\s*0'
+        $failureEvidence.Groups['body'].Value | Should -Match '\$failureScopeBaseSha = \$env:FAILURE_SCOPE_BASE_SHA'
+        $failureEvidence.Groups['body'].Value | Should -Match 'function Get-FailureChangedFiles'
+        $failureEvidence.Groups['body'].Value | Should -Match "'-z'"
+        $failureEvidence.Groups['body'].Value | Should -Match 'ArgumentList\.Add\(\$argument\)'
+        $failureEvidence.Groups['body'].Value | Should -Match '\[Text\.UTF8Encoding\]::new\(\$false, \$true\)'
+        $failureEvidence.Groups['body'].Value | Should -Not -Match 'diff-tree --root'
         $failureEvidence.Groups['body'].Value | Should -Match '-ChangedFile \$failureChangedFiles'
         $failureEvidence.Groups['body'].Value | Should -Not -Match 'New-Item -ItemType Directory -Path \$callerStage'
         $failureEvidence.Groups['body'].Value | Should -Not -Match '-SourceRepositoryPath \$callerStage'
         $failureEvidence.Groups['body'].Value | Should -Match '-SourceRepositoryPath \$failureCallerStage'
         $script:workflow | Should -Match '(?s)id:\s*evidence\s*\r?\n\s*if:\s*always\(\) && steps\.completion\.outcome == ''success'''
+    }
+
+    It 'preserves Unicode and newline paths when reading a NUL-delimited failure inventory' {
+        $repository = Join-Path $TestDrive 'nul-delimited-failure-inventory'
+        New-Item -ItemType Directory -Path $repository -Force | Out-Null
+        & git -C $repository init --quiet
+        $LASTEXITCODE | Should -Be 0
+        & git -C $repository config user.email 'evidence-test@example.invalid'
+        & git -C $repository config user.name 'Evidence Test'
+        [IO.File]::WriteAllText((Join-Path $repository 'baseline.txt'), 'baseline', [Text.UTF8Encoding]::new($false))
+        & git -C $repository add --all
+        $LASTEXITCODE | Should -Be 0
+        & git -C $repository commit --quiet -m 'baseline'
+        $LASTEXITCODE | Should -Be 0
+        $defaultBranch = (& git -C $repository branch --show-current).Trim()
+        & git -C $repository checkout --quiet -b feature
+        $LASTEXITCODE | Should -Be 0
+
+        $unicodeName = 'café.txt'
+        $newlineName = 'line' + [char]10 + 'feed.txt'
+        [IO.File]::WriteAllText((Join-Path $repository $unicodeName), 'unicode', [Text.UTF8Encoding]::new($false))
+        & git -C $repository add --all
+        $LASTEXITCODE | Should -Be 0
+        & git -C $repository commit --quiet -m 'feature path inventory'
+        $LASTEXITCODE | Should -Be 0
+        & git -C $repository checkout --quiet $defaultBranch
+        $LASTEXITCODE | Should -Be 0
+        [IO.File]::WriteAllText((Join-Path $repository 'base-only.txt'), 'base', [Text.UTF8Encoding]::new($false))
+        & git -C $repository add --all
+        $LASTEXITCODE | Should -Be 0
+        & git -C $repository commit --quiet -m 'base-only change'
+        $LASTEXITCODE | Should -Be 0
+        $baseSha = (& git -C $repository rev-parse HEAD).Trim()
+        & git -C $repository merge --quiet --no-ff --no-edit feature
+        $LASTEXITCODE | Should -Be 0
+        $headSha = (& git -C $repository rev-parse HEAD).Trim()
+
+        $gitCommand = @(Get-Command git -CommandType Application -ErrorAction Stop)[0]
+        $startInfo = [Diagnostics.ProcessStartInfo]::new($gitCommand.Source)
+        $startInfo.UseShellExecute = $false
+        $startInfo.RedirectStandardOutput = $true
+        $startInfo.RedirectStandardError = $true
+        foreach ($argument in @('-C', $repository, 'diff', '--no-ext-diff', '--name-only', '-z', $baseSha, $headSha)) {
+            [void]$startInfo.ArgumentList.Add($argument)
+        }
+        $process = [Diagnostics.Process]::new()
+        $process.StartInfo = $startInfo
+        $output = [IO.MemoryStream]::new()
+        try {
+            $started = $process.Start()
+            $started | Should -BeTrue
+            $process.StandardOutput.BaseStream.CopyTo($output)
+            $standardError = $process.StandardError.ReadToEnd()
+            $process.WaitForExit()
+            $process.ExitCode | Should -Be 0
+            $standardError | Should -BeExactly ''
+            $paths = [Text.UTF8Encoding]::new($false, $true).GetString($output.ToArray()).Split([char]0, [StringSplitOptions]::RemoveEmptyEntries)
+            $paths | Should -Contain $unicodeName
+            $paths | Should -Not -Contain 'base-only.txt'
+            $newlinePaths = [Text.UTF8Encoding]::new($false, $true).GetString(
+                [Text.UTF8Encoding]::new($false).GetBytes($unicodeName + [char]0 + $newlineName + [char]0)
+            ).Split([char]0, [StringSplitOptions]::RemoveEmptyEntries)
+            $newlinePaths | Should -Contain $newlineName
+        }
+        finally {
+            $output.Dispose()
+            $process.Dispose()
+        }
     }
 
     It 'preserves failure evidence when the functional runtime setup is unavailable' {

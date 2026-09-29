@@ -29,12 +29,16 @@ jobs:
       PYTHONSAFEPATH: "1"
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      FAILURE_SCOPE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
     steps:
       - name: Checkout caller without credentials
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
           path: caller
+          # Failure evidence scopes a PR merge commit against its event base.
+          # Retain that object so a shallow boundary cannot be mistaken for a root.
+          fetch-depth: 0
 
       - name: Checkout immutable standards implementation
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -301,14 +305,62 @@ jobs:
               & git -c protocol.file.allow=always clone --no-local --no-checkout --no-tags $callerStage $failureCallerStage
               if ($LASTEXITCODE -ne 0) { throw 'Failure evidence caller metadata could not be staged.' }
             }
+            if ($env:GITHUB_SHA -notmatch '(?i)^[0-9a-f]{40}$') { throw 'Failure evidence github.sha is not a full commit SHA.' }
             & git -C $failureCallerStage cat-file -e "$env:GITHUB_SHA^{commit}"
             if ($LASTEXITCODE -ne 0) { throw 'Failure evidence caller metadata does not contain github.sha.' }
-            $failureChangedFiles = @(
-              & git -C $failureCallerStage diff-tree --root --no-commit-id --name-only -r $env:GITHUB_SHA |
-                ForEach-Object { $_.Trim().Replace('\\','/') } |
-                Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
-            )
-            if ($LASTEXITCODE -ne 0) { throw 'Failure evidence change inventory could not be derived from github.sha.' }
+            function Get-FailureChangedFiles {
+              param(
+                [Parameter(Mandatory)][string]$RepositoryPath,
+                [Parameter(Mandatory)][string]$ValidatedCommit,
+                [AllowNull()][string]$BaseCommit
+              )
+              $gitCommand = @(Get-Command git -CommandType Application -ErrorAction Stop)[0]
+              $startInfo = [Diagnostics.ProcessStartInfo]::new($gitCommand.Source)
+              $startInfo.UseShellExecute = $false
+              $startInfo.RedirectStandardOutput = $true
+              $startInfo.RedirectStandardError = $true
+              $startInfo.CreateNoWindow = $true
+              $gitArguments = @('-C', $RepositoryPath)
+              if ([string]::IsNullOrWhiteSpace($BaseCommit)) {
+                $gitArguments += @('diff-tree', '--root', '--no-commit-id', '--name-only', '-r', '-z', $ValidatedCommit)
+              }
+              else {
+                $gitArguments += @('diff', '--no-ext-diff', '--name-only', '-z', $BaseCommit, $ValidatedCommit)
+              }
+              foreach ($argument in $gitArguments) {
+                [void]$startInfo.ArgumentList.Add($argument)
+              }
+              $process = [Diagnostics.Process]::new()
+              $process.StartInfo = $startInfo
+              $output = [IO.MemoryStream]::new()
+              try {
+                if (-not $process.Start()) { throw 'Failure evidence change inventory process could not start.' }
+                $standardErrorTask = $process.StandardError.ReadToEndAsync()
+                $process.StandardOutput.BaseStream.CopyTo($output)
+                $process.WaitForExit()
+                $null = $standardErrorTask.GetAwaiter().GetResult()
+                if ($process.ExitCode -ne 0) { throw 'Failure evidence change inventory could not be derived from the validated commit.' }
+                $pathText = [Text.UTF8Encoding]::new($false, $true).GetString($output.ToArray())
+                return @($pathText.Split([char]0, [StringSplitOptions]::RemoveEmptyEntries))
+              }
+              finally {
+                $output.Dispose()
+                $process.Dispose()
+              }
+            }
+            $failureScopeBaseSha = $env:FAILURE_SCOPE_BASE_SHA
+            if ([string]::IsNullOrWhiteSpace($failureScopeBaseSha)) {
+              $failureParents = (& git -C $failureCallerStage show -s --format=%P $env:GITHUB_SHA).Trim()
+              if ($LASTEXITCODE -ne 0) { throw 'Failure evidence parent metadata could not be derived from github.sha.' }
+              $failureParentShas = @($failureParents -split '\s+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+              if ($failureParentShas.Count -gt 0) { $failureScopeBaseSha = $failureParentShas[0] }
+            }
+            if (-not [string]::IsNullOrWhiteSpace($failureScopeBaseSha)) {
+              if ($failureScopeBaseSha -notmatch '(?i)^[0-9a-f]{40}$') { throw 'Failure evidence base is not a full commit SHA.' }
+              & git -C $failureCallerStage cat-file -e "$failureScopeBaseSha^{commit}"
+              if ($LASTEXITCODE -ne 0) { throw 'Failure evidence caller metadata does not contain the scope base.' }
+            }
+            $failureChangedFiles = @(Get-FailureChangedFiles -RepositoryPath $failureCallerStage -ValidatedCommit $env:GITHUB_SHA -BaseCommit $failureScopeBaseSha)
             if ($failureChangedFiles.Count -eq 0) { throw 'Failure evidence change inventory is empty for github.sha.' }
             if (-not (Test-Path -LiteralPath $lockEvidenceLogPath -PathType Leaf)) {
               'The Python lock verifier did not start because a required prerequisite did not complete.' | Set-Content -LiteralPath $lockEvidenceLogPath -Encoding utf8
