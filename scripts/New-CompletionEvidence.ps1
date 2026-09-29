@@ -41,6 +41,8 @@ takes precedence over Git working-tree and commit change detection.
 Exact commands that ran.
 .PARAMETER CommandsNotExecuted
 Commands not run and reasons.
+.PARAMETER BlockedReason
+Reason a required validation could not start when the computed status is Blocked.
 .EXAMPLE
 pwsh -File scripts/New-CompletionEvidence.ps1 -OutputPath evidence/completion-result.json -Summary 'Validation completed'
 .OUTPUTS
@@ -60,6 +62,7 @@ param(
     [string[]]$ArtifactPath=@(),
     [string[]]$CommandsExecuted=@(),
     [string[]]$CommandsNotExecuted=@(),
+    [string]$BlockedReason,
     [string[]]$Warnings=@(),
     [string[]]$KnownLimitations=@(),
     [string[]]$RemainingRisks=@(),
@@ -115,6 +118,19 @@ if ($Status -ne $computedStatus) {
     }
     else {
         throw "Caller status '$Status' contradicts computed test-record status '$computedStatus'."
+    }
+}
+$effectiveBlockedReason = $null
+if ($computedStatus -eq 'Blocked') {
+    $effectiveBlockedReason = $BlockedReason
+    if ([string]::IsNullOrWhiteSpace($effectiveBlockedReason)) {
+        $blockedRecord = (@($tests | Where-Object { $_.status -eq 'Blocked' }) | Select-Object -First 1)
+        if ($null -ne $blockedRecord -and -not [string]::IsNullOrWhiteSpace([string]$blockedRecord.blockedReason)) {
+            $effectiveBlockedReason = [string]$blockedRecord.blockedReason
+        }
+        else {
+            $effectiveBlockedReason = 'A required validation prerequisite was unavailable.'
+        }
     }
 }
 $commit = if ($EvidenceExecutionContext -eq 'GitHubActions') { $env:GITHUB_SHA } else { $null }
@@ -384,7 +400,7 @@ $evidence = [ordered]@{
     identityUsed = $(if ($EvidenceExecutionContext -eq 'GitHubActions') { 'GitHub Actions runner identity' } else { 'Local maintainer context' })
     credentialMode = $(if ($EvidenceExecutionContext -eq 'GitHubActions') { 'GitHub-provided ephemeral token' } else { 'Local workstation credentials' })
     notRunReason = $(if ($computedStatus -eq 'NotRun') { if (@($CommandsNotExecuted).Count -gt 0) { @($CommandsNotExecuted)[0] } else { 'Mandatory validation did not execute.' } } else { $null })
-    blockedReason = $null
+    blockedReason = $effectiveBlockedReason
     notApplicableRationale = $null
     commandsExecuted = @($CommandsExecuted)
     commandsNotExecuted = @($CommandsNotExecuted)

@@ -6,6 +6,7 @@ import re
 import runpy
 import stat
 import sys
+import tomllib
 import zipfile
 from pathlib import Path
 
@@ -99,6 +100,26 @@ def test_requirements_lock_accepts_current_input_and_lock() -> None:
     )
 
 
+def test_toolchain_sbom_metadata_is_standards_owned(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path.parent)
+    metadata_path = validator.write_toolchain_sbom_pyproject(Path(tmp_path.name))
+    require(metadata_path.is_absolute(), "toolchain SBOM metadata path must be absolute")
+    require(
+        metadata_path.is_relative_to(tmp_path.resolve()),
+        "toolchain SBOM metadata must remain inside the trusted work root",
+    )
+    metadata = tomllib.loads(metadata_path.read_text(encoding="utf-8"))
+    project = metadata.get("project", {})
+    require(
+        project.get("name") == "engineering-standards-python-toolchain",
+        "toolchain SBOM metadata must use the standards-owned root name",
+    )
+    require(
+        project.get("requires-python") == ">=3.13,<3.14",
+        "toolchain SBOM metadata must remain tied to the governed resolver range",
+    )
+
+
 def test_requirements_lock_accepts_multiline_direct_provenance(tmp_path: Path) -> None:
     """A pip-compile multiline ``# via`` block still identifies a direct pin."""
     requirements_input = tmp_path / "requirements-ci.in"
@@ -171,8 +192,46 @@ def test_requirements_lock_rejects_unresolved_transitive_pin(tmp_path: Path) -> 
         raise AssertionError("injected transitive lock entry was accepted")
 
 
-def test_requirements_lock_accepts_inactive_platform_transitive_pin(tmp_path: Path) -> None:
-    """A universal lock can retain a package that only another platform needs."""
+def test_requirements_lock_accepts_declared_platform_transitive_pin(tmp_path: Path) -> None:
+    """A universal lock can retain a pin used by a declared lock-resolution target."""
+    alternate_platform = "linux" if sys.platform != "linux" else "win32"
+    requirements_input = tmp_path / "requirements-ci.in"
+    requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "build==1.6.1 \\\n"
+        "    --hash=sha256:" + "0" * 64 + "\n"
+        "    # via -r requirements-ci.in\n"
+        "colorama==0.4.6 \\\n"
+        "    --hash=sha256:" + "1" * 64 + "\n"
+        "    # via build\n",
+        encoding="utf-8",
+    )
+    report = tmp_path / "resolution.json"
+    report.write_text(
+        json.dumps(
+            {
+                "install": [
+                    {
+                        "metadata": {
+                            "name": "build",
+                            "version": "1.6.1",
+                            "requires_dist": [
+                                f"colorama==0.4.6; sys_platform == '{alternate_platform}'"
+                            ],
+                        }
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    validator.validate_resolved_requirements_lock(requirements_input, lock, report)
+
+
+def test_requirements_lock_rejects_impossible_marker_transitive_pin(tmp_path: Path) -> None:
+    """Inactive markers must be satisfiable by a declared lock-resolution target."""
     requirements_input = tmp_path / "requirements-ci.in"
     requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
     lock = tmp_path / "requirements-ci.lock"
@@ -205,7 +264,13 @@ def test_requirements_lock_accepts_inactive_platform_transitive_pin(tmp_path: Pa
         encoding="utf-8",
     )
 
-    validator.validate_resolved_requirements_lock(requirements_input, lock, report)
+    try:
+        validator.validate_resolved_requirements_lock(requirements_input, lock, report)
+    except ValueError as exc:
+        require("unexpected locked packages" in str(exc), "impossible marker pin was not rejected")
+        require("colorama==0.4.6" in str(exc), "impossible marker pin was omitted from diagnostics")
+    else:
+        raise AssertionError("impossible marker transitive pin was accepted")
 
 
 def test_requirements_lock_rejects_unrequested_extra_transitive_pin(tmp_path: Path) -> None:
@@ -307,6 +372,11 @@ def test_toolchain_sbom_matches_governed_lock_requirements() -> None:
         (root / "examples" / "python-project" / "evidence" / "python-toolchain-sbom.cdx.json").read_text(
             encoding="utf-8"
         )
+    )
+    root_component = sbom.get("metadata", {}).get("component", {})
+    require(
+        root_component.get("name") == "engineering-standards-python-toolchain",
+        "toolchain SBOM must use the standards-owned toolchain root identity",
     )
     components = {
         validator.normalized_requirement_name(component["name"]): component

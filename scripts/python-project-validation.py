@@ -57,6 +57,52 @@ TOOL_DISTRIBUTIONS = {
     "hatchling": "hatchling",
     "pip": "pip",
 }
+LOCK_RESOLUTION_MARKER_TARGETS: tuple[dict[str, str], ...] = (
+    {
+        "implementation_name": "cpython",
+        "implementation_version": "3.13.2",
+        "os_name": "posix",
+        "platform_machine": "x86_64",
+        "platform_python_implementation": "CPython",
+        "platform_release": "",
+        "platform_system": "Linux",
+        "platform_version": "",
+        "python_full_version": "3.13.2",
+        "python_version": "3.13",
+        "sys_platform": "linux",
+        "extra": "",
+    },
+    {
+        "implementation_name": "cpython",
+        "implementation_version": "3.13.2",
+        "os_name": "nt",
+        "platform_machine": "x86_64",
+        "platform_python_implementation": "CPython",
+        "platform_release": "",
+        "platform_system": "Windows",
+        "platform_version": "",
+        "python_full_version": "3.13.2",
+        "python_version": "3.13",
+        "sys_platform": "win32",
+        "extra": "",
+    },
+    {
+        "implementation_name": "cpython",
+        "implementation_version": "3.13.2",
+        "os_name": "posix",
+        "platform_machine": "x86_64",
+        "platform_python_implementation": "CPython",
+        "platform_release": "",
+        "platform_system": "Darwin",
+        "platform_version": "",
+        "python_full_version": "3.13.2",
+        "python_version": "3.13",
+        "sys_platform": "darwin",
+        "extra": "",
+    },
+)
+TOOLCHAIN_SBOM_PROJECT_NAME = "engineering-standards-python-toolchain"
+TOOLCHAIN_SBOM_PROJECT_VERSION = "1.0.0"
 
 def utc() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
@@ -209,6 +255,22 @@ def prepare_work_root(project: Path, work_root: Path) -> tuple[Path, Path, Path]
     dist_dir.mkdir(mode=0o700)
     inspect_project_tree(caller)
     return caller, evidence_dir, dist_dir
+
+
+def write_toolchain_sbom_pyproject(work_root: Path) -> Path:
+    """Write standards-owned metadata for the validation-toolchain SBOM root."""
+    metadata_dir = work_root.resolve(strict=True) / "toolchain-sbom-metadata"
+    metadata_dir.mkdir(mode=0o700, exist_ok=True)
+    metadata_path = metadata_dir / "pyproject.toml"
+    metadata_path.write_text(
+        "[project]\n"
+        f'name = "{TOOLCHAIN_SBOM_PROJECT_NAME}"\n'
+        f'version = "{TOOLCHAIN_SBOM_PROJECT_VERSION}"\n'
+        'description = "Standards-owned Python validation toolchain"\n'
+        'requires-python = ">=3.13,<3.14"\n',
+        encoding="utf-8",
+    )
+    return metadata_path
 
 
 GOVERNED_HATCHLING_VERSION = "1.32.4"
@@ -449,9 +511,10 @@ def conditionally_inapplicable_lock_requirements(
     """Return alternate-environment pins justified by resolved package metadata.
 
     A universal lock can include a platform- or interpreter-gated dependency that
-    the current resolver correctly omits.  It remains valid only when a package
-    in the current closure declares that exact dependency behind an inactive
-    non-extra marker.  This deliberately does not trust ``# via`` comments.
+    the current resolver correctly omits. It remains valid only when a package
+    in the current closure declares that exact dependency behind a non-extra
+    marker active for at least one declared CPython 3.13.2 lock-resolution
+    target. This deliberately does not trust ``# via`` comments.
     """
     try:
         # This pre-install validator can rely only on pip, so use pip's bundled
@@ -461,7 +524,11 @@ def conditionally_inapplicable_lock_requirements(
     except ImportError as exc:
         raise ValueError("pip's bundled PEP 508 requirement parser is unavailable") from exc
 
-    environment = default_environment()
+    current_environment = default_environment()
+    target_environments = tuple(
+        {**current_environment, **target}
+        for target in LOCK_RESOLUTION_MARKER_TARGETS
+    )
     conditionally_inapplicable: set[str] = set()
     for item in install_records:
         metadata = item.get("metadata")
@@ -486,9 +553,12 @@ def conditionally_inapplicable_lock_requirements(
                 continue
             # Dependencies enabled only by an unrequested extra must never
             # justify a lock entry.  Pip would otherwise have resolved it.
-            if "extra" in str(requirement.marker).lower() or requirement.marker.evaluate(environment):
+            if "extra" in str(requirement.marker).lower() or requirement.marker.evaluate(current_environment):
                 continue
-            if requirement.specifier.contains(locked[name], prereleases=True):
+            if (
+                requirement.specifier.contains(locked[name], prereleases=True)
+                and any(requirement.marker.evaluate(environment) for environment in target_environments)
+            ):
                 conditionally_inapplicable.add(name)
     return conditionally_inapplicable
 
@@ -672,6 +742,7 @@ def validate(args: argparse.Namespace) -> int:
     if runtime_lock.is_symlink() or not runtime_lock.is_file():
         raise ValueError("runtime dependency lock is missing or unsafe")
     metadata = parse_project_metadata(project)
+    toolchain_sbom_pyproject = write_toolchain_sbom_pyproject(args.work_root)
     env = trusted_env(args.work_root / "home")
     versions = tool_versions(tool_python, env, args.work_root)
     records: list[dict[str, Any]] = []
@@ -782,9 +853,23 @@ def validate(args: argparse.Namespace) -> int:
             build_records.append(smoke_record)
             failed |= smoke_code != 0
 
-        for name, filename, source_lock, source_lock_name in (
-            ("Python project SBOM", "python-project-sbom.cdx.json", runtime_lock, "requirements-runtime.lock"),
-            ("Python toolchain SBOM", "python-toolchain-sbom.cdx.json", tool_lock, "requirements-ci.lock"),
+        for name, filename, source_lock, source_lock_name, sbom_pyproject, root_component in (
+            (
+                "Python project SBOM",
+                "python-project-sbom.cdx.json",
+                runtime_lock,
+                "requirements-runtime.lock",
+                project / "pyproject.toml",
+                metadata["distribution"],
+            ),
+            (
+                "Python toolchain SBOM",
+                "python-toolchain-sbom.cdx.json",
+                tool_lock,
+                "requirements-ci.lock",
+                toolchain_sbom_pyproject,
+                TOOLCHAIN_SBOM_PROJECT_NAME,
+            ),
         ):
             sbom_path = evidence_dir / filename
             sbom_command = module_command(
@@ -793,7 +878,7 @@ def validate(args: argparse.Namespace) -> int:
                 "requirements",
                 str(source_lock),
                 "--pyproject",
-                str(project / "pyproject.toml"),
+                str(sbom_pyproject),
                 "--sv",
                 "1.5",
                 "--output-reproducible",
@@ -811,7 +896,11 @@ def validate(args: argparse.Namespace) -> int:
                 "cyclonedx-bom",
                 versions["cyclonedx_py"],
                 roots,
-                {"sourceLock": source_lock_name, "specVersion": "1.5"},
+                {
+                    "sourceLock": source_lock_name,
+                    "specVersion": "1.5",
+                    "rootComponent": root_component,
+                },
             )
             records.append(sbom_record)
             failed |= sbom_code != 0

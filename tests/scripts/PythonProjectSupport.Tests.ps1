@@ -63,9 +63,17 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'if \(\$lockVerificationOutcome -eq ''success''\)'
         $script:workflow | Should -Match '(?s)id:\s*lock_resolver\s*\r?\n\s*continue-on-error:\s*true'
         $script:workflow | Should -Match 'The exact CPython 3\.13\.2 lock resolver was unavailable; no toolchain was installed\.'
+        $readme = Get-Content -LiteralPath (Join-Path $script:example 'README.md') -Raw
+        $readme | Should -Match 'Linux, Windows, and macOS'
+        $readme | Should -Match 'does not expand the functional workflow'
         $script:workflow | Should -Match 'local-test-results\.json'
         $script:workflow | Should -Match 'The governed Python toolchain lock verification did not complete successfully\.'
         $script:workflow | Should -Match 'evidence/lock-verification\.log'
+        $script:workflow | Should -Match 'verifier_started=false'
+        $script:workflow | Should -Match 'verifier_started=true'
+        $script:workflow | Should -Match '\$lockVerificationStarted'
+        $script:workflow | Should -Match '\$commandsNotExecuted \+= \$verificationCommand'
+        $script:workflow | Should -Match 'status = if \(\$lockVerificationStarted\) \{ ''Failed'' \} else \{ ''Blocked'' \}'
         $script:workflow | Should -Match '(?s)id:\s*evidence\s*\r?\n\s*if:\s*always\(\) && steps\.completion\.outcome == ''success'''
     }
 
@@ -131,6 +139,77 @@ Describe 'Governed Python project support' {
             $completion.status | Should -BeExactly 'Failed'
             @($completion.artifacts.path) | Should -Contain 'evidence/lock-verification.log'
             @($completion.artifacts.path) | Should -Contain 'evidence/local-test-results.json'
+        }
+        finally {
+            foreach ($name in $saved.Keys) { [Environment]::SetEnvironmentVariable($name, $saved[$name]) }
+        }
+    }
+
+    It 'records an unavailable resolver as blocked completion evidence' {
+        $workspace = Join-Path $TestDrive 'python-lock-resolver-blocked-evidence'
+        $caller = Join-Path $workspace 'caller'
+        $evidence = Join-Path $workspace 'evidence'
+        New-Item -ItemType Directory -Path $caller,$evidence -Force | Out-Null
+        'The exact CPython 3.13.2 lock resolver was unavailable; no toolchain was installed.' | Set-Content -LiteralPath (Join-Path $evidence 'lock-verification.log') -Encoding utf8
+        $now = (Get-Date).ToUniversalTime().ToString('o')
+        $blockedRecord = [ordered]@{
+            schemaVersion = '1.1.0'
+            name = 'Python toolchain lock closure'
+            category = 'security'
+            status = 'Blocked'
+            requiredValidation = $true
+            evidenceSource = 'Automated'
+            command = 'python-project-validation.py --verify-tool-lock'
+            workingDirectory = 'trusted-isolated-workspace'
+            startedAtUtc = $now
+            completedAtUtc = $now
+            durationSeconds = 0
+            runtime = 'CPython 3.13.2 resolver'
+            toolVersion = 'python-project-validation.py'
+            exitCode = $null
+            summary = 'The required Python toolchain lock verification could not start.'
+            warnings = @()
+            failureReason = $null
+            blockedReason = 'The exact CPython 3.13.2 lock resolver was unavailable, so validation could not start.'
+            notApplicableRationale = $null
+            details = [ordered]@{
+                outcome = 'failure'
+                resolverAvailable = $false
+                logPath = 'evidence/lock-verification.log'
+            }
+        }
+        @($blockedRecord) | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath (Join-Path $evidence 'local-test-results.json') -Encoding utf8
+        $saved = @{}
+        foreach ($name in @('GITHUB_ACTIONS','GITHUB_RUN_ID','GITHUB_RUN_ATTEMPT','GITHUB_WORKFLOW','GITHUB_SHA','GITHUB_REF_NAME','GITHUB_REPOSITORY')) {
+            $saved[$name] = [Environment]::GetEnvironmentVariable($name)
+        }
+        try {
+            $env:GITHUB_ACTIONS = 'true'; $env:GITHUB_RUN_ID = '1'; $env:GITHUB_RUN_ATTEMPT = '1'
+            $env:GITHUB_WORKFLOW = 'Python validation'; $env:GITHUB_SHA = ('1' * 40)
+            $env:GITHUB_REF_NAME = 'main'; $env:GITHUB_REPOSITORY = 'example-org/project'
+            & (Join-Path $script:root 'scripts/New-CompletionEvidence.ps1') `
+                -RepositoryPath $workspace -SourceRepositoryPath $caller -OutputPath 'evidence/completion-result.json' `
+                -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate `
+                -Summary 'Python toolchain lock verification could not start before toolchain installation.' `
+                -CommandsExecuted @() `
+                -CommandsNotExecuted @('python-project-validation.py --verify-tool-lock','Toolchain installation and functional validation were not run because lock verification did not succeed.') `
+                -BlockedReason 'The exact CPython 3.13.2 lock resolver was unavailable, so validation could not start.' `
+                -ArtifactPath @('evidence/lock-verification.log','evidence/local-test-results.json') `
+                -ArtifactName 'python-evidence-1' -Repository 'example-org/project' -Branch main -ValidatedCommitSha ('1' * 40) `
+                -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha ('2' * 40) `
+                -ValidationProfile 'python-functional' -ChecksExecuted @('PythonToolchainLockClosure') `
+                -EvidenceExecutionContext GitHubActions | Out-Null
+            $LASTEXITCODE | Should -Be 0
+            & (Join-Path $script:root 'actions/validate-evidence/Invoke-EvidenceValidation.ps1') `
+                -Path $workspace -EvidencePath 'evidence/completion-result.json' `
+                -ExpectedCommitSha ('1' * 40) -ExpectedRepository 'example-org/project' -ExpectedRefName main `
+                -OutputJson (Join-Path $evidence 'evidence-validation.json') | Out-Null
+            $LASTEXITCODE | Should -Be 0
+            $completion = Get-Content -LiteralPath (Join-Path $evidence 'completion-result.json') -Raw | ConvertFrom-Json
+            $completion.status | Should -BeExactly 'Blocked'
+            $completion.blockedReason | Should -BeExactly 'The exact CPython 3.13.2 lock resolver was unavailable, so validation could not start.'
+            @($completion.commandsExecuted) | Should -Not -Contain 'python-project-validation.py --verify-tool-lock'
+            @($completion.commandsNotExecuted) | Should -Contain 'python-project-validation.py --verify-tool-lock'
         }
         finally {
             foreach ($name in $saved.Keys) { [Environment]::SetEnvironmentVariable($name, $saved[$name]) }
