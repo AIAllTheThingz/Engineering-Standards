@@ -462,7 +462,7 @@ def test_requirements_lock_closure_keeps_invalid_resolution_as_failure(tmp_path:
             tmp_path / "work",
         )
     except validator.LockResolutionBlockedError:
-        raise AssertionError("invalid resolution was incorrectly classified as blocked")
+        raise AssertionError("invalid resolution was incorrectly classified as blocked") from None
     except ValueError:
         pass
     else:
