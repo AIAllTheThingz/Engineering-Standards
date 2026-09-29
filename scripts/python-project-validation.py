@@ -317,6 +317,43 @@ def write_toolchain_sbom_pyproject(work_root: Path) -> Path:
     return metadata_path
 
 
+def attach_toolchain_sbom_root_dependencies(sbom_path: Path) -> None:
+    """Connect the standards-owned SBOM root to every governed tool component."""
+    try:
+        document = json.loads(sbom_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"could not read generated toolchain SBOM: {exc}") from exc
+    if not isinstance(document, dict):
+        raise ValueError("generated toolchain SBOM must be a JSON object")
+    metadata = document.get("metadata")
+    root_component = metadata.get("component") if isinstance(metadata, dict) else None
+    root_ref = root_component.get("bom-ref") if isinstance(root_component, dict) else None
+    if not isinstance(root_ref, str) or not root_ref:
+        raise ValueError("generated toolchain SBOM is missing its root component reference")
+    components = document.get("components")
+    if not isinstance(components, list) or not components:
+        raise ValueError("generated toolchain SBOM must contain governed components")
+    component_refs: list[str] = []
+    for component in components:
+        ref = component.get("bom-ref") if isinstance(component, dict) else None
+        if not isinstance(ref, str) or not ref:
+            raise ValueError("generated toolchain SBOM contains a component without a reference")
+        if ref in component_refs:
+            raise ValueError(f"generated toolchain SBOM contains duplicate component reference '{ref}'")
+        component_refs.append(ref)
+    dependencies = document.get("dependencies")
+    if not isinstance(dependencies, list) or any(not isinstance(item, dict) for item in dependencies):
+        raise ValueError("generated toolchain SBOM contains invalid dependency records")
+    root_records = [item for item in dependencies if item.get("ref") == root_ref]
+    if len(root_records) != 1:
+        raise ValueError("generated toolchain SBOM must contain exactly one root dependency record")
+    root_records[0]["dependsOn"] = component_refs
+    try:
+        sbom_path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    except OSError as exc:
+        raise ValueError(f"could not write generated toolchain SBOM: {exc}") from exc
+
+
 GOVERNED_HATCHLING_VERSION = "1.32.4"
 
 
@@ -951,6 +988,12 @@ def validate(args: argparse.Namespace) -> int:
                 str(sbom_path),
             )
             sbom_code, sbom_output, sbom_duration = run(sbom_command, args.work_root, env)
+            if sbom_code == 0 and root_component == TOOLCHAIN_SBOM_PROJECT_NAME:
+                try:
+                    attach_toolchain_sbom_root_dependencies(sbom_path)
+                except ValueError as exc:
+                    sbom_code = 1
+                    sbom_output = f"{sbom_output}\nToolchain SBOM dependency graph validation failed: {exc}".strip()
             sbom_record = make_evidence(
                 name,
                 "security",

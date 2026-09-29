@@ -120,6 +120,37 @@ def test_toolchain_sbom_metadata_is_standards_owned(tmp_path: Path, monkeypatch)
     )
 
 
+def test_toolchain_sbom_root_references_every_toolchain_component(tmp_path: Path) -> None:
+    """The standards-owned SBOM root must expose the governed toolchain closure."""
+    sbom_path = tmp_path / "python-toolchain-sbom.cdx.json"
+    sbom_path.write_text(
+        json.dumps(
+            {
+                "metadata": {"component": {"bom-ref": "root-component"}},
+                "components": [
+                    {"bom-ref": "requirements-L7", "name": "build"},
+                    {"bom-ref": "requirements-L11", "name": "hatchling"},
+                ],
+                "dependencies": [
+                    {"ref": "requirements-L7"},
+                    {"ref": "requirements-L11"},
+                    {"ref": "root-component"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    validator.attach_toolchain_sbom_root_dependencies(sbom_path)
+
+    sbom = json.loads(sbom_path.read_text(encoding="utf-8"))
+    root_dependency = next(item for item in sbom["dependencies"] if item["ref"] == "root-component")
+    require(
+        root_dependency.get("dependsOn") == ["requirements-L7", "requirements-L11"],
+        "toolchain SBOM root must depend on every toolchain component",
+    )
+
+
 def test_requirements_lock_accepts_multiline_direct_provenance(tmp_path: Path) -> None:
     """A pip-compile multiline ``# via`` block still identifies a direct pin."""
     requirements_input = tmp_path / "requirements-ci.in"
