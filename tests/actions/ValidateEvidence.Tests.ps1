@@ -551,6 +551,91 @@ Describe 'Validate evidence action' {
             ($output -join "`n") | Should -Match 'validatedCommitTag does not resolve to validatedCommitSha'
         }
 
+        It 'accepts an equivalent squashed Local receipt only when its content identity matches' {
+            $identityRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("completion-identity-" + [guid]::NewGuid())
+            $sourceRoot = Join-Path $identityRoot 'source'
+            $receiptProject = Join-Path $identityRoot 'receipt/examples/python-project'
+            $squashedRoot = Join-Path $identityRoot 'squashed'
+            $squashedProject = Join-Path $squashedRoot 'examples/python-project'
+            try {
+                New-Item -ItemType Directory -Path (Join-Path $sourceRoot 'examples/python-project/evidence') -Force | Out-Null
+                Set-Content -LiteralPath (Join-Path $sourceRoot 'examples/python-project/source.py') -Value 'VALUE = 1' -NoNewline
+                & git -C $sourceRoot init --quiet
+                $LASTEXITCODE | Should -Be 0
+                & git -C $sourceRoot config user.email 'evidence-test@example.invalid'
+                $LASTEXITCODE | Should -Be 0
+                & git -C $sourceRoot config user.name 'Evidence Test'
+                $LASTEXITCODE | Should -Be 0
+                & git -C $sourceRoot add --all
+                & git -C $sourceRoot commit --quiet -m 'validated source'
+                $LASTEXITCODE | Should -Be 0
+                $validatedCommit = (& git -C $sourceRoot rev-parse HEAD).Trim()
+
+                New-Item -ItemType Directory -Path (Join-Path $receiptProject 'evidence') -Force | Out-Null
+                Set-Content -LiteralPath (Join-Path $receiptProject 'evidence/report.json') -Value '{}' -NoNewline
+                $outcomes = @{
+                    yaml='success'; workflow_architecture='success'; json_schemas='success'; markdown_links='success'
+                    documentation='success'; contract='success'; forbidden_patterns='success'; repository_health='success'
+                    powershell_parser='success'; pester='success'; psscriptanalyzer='success'; examples='success'
+                    evidence_validation='success'; github_execution='notrun'
+                }
+                $reports = @{
+                    yaml=''; workflow_architecture=''; json_schemas=''; markdown_links=''
+                    documentation=''; contract=''; forbidden_patterns=''; repository_health=''
+                    powershell_parser=''; pester=''; psscriptanalyzer=''; examples=''
+                    evidence_validation=''; github_execution=''
+                }
+                & "$PSScriptRoot/../../scripts/New-WorkflowTestEvidence.ps1" -RepositoryPath $receiptProject -OutputPath 'evidence/local-tests.json' -Outcomes $outcomes -Reports $reports -RunPester -RunDocumentation -RunExamples -Runtime 'Local PowerShell validation' -ToolVersion 'test'
+                $LASTEXITCODE | Should -Be 0
+                & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" `
+                    -RepositoryPath $receiptProject -SourceRepositoryPath $sourceRoot `
+                    -OutputPath 'evidence/local-completion-result.json' -ExecutionContext Local `
+                    -Summary 'Local receipt with a squash-safe content identity fixture.' `
+                    -TestResultPath 'evidence/local-tests.json' `
+                    -ArtifactPath 'evidence/report.json' `
+                    -CommandsExecuted @('local test command') `
+                    -CommandsNotExecuted @('GitHub-hosted Governance CI workflow execution') `
+                    -ValidatedCommitSha $validatedCommit
+                $LASTEXITCODE | Should -Be 0
+                $receipt = Get-Content -LiteralPath (Join-Path $receiptProject 'evidence/local-completion-result.json') -Raw | ConvertFrom-Json
+                $receipt.validatedContentSha256 | Should -Match '^[a-f0-9]{64}$'
+
+                New-Item -ItemType Directory -Path $squashedRoot -Force | Out-Null
+                Get-ChildItem -LiteralPath $sourceRoot -Force |
+                    Where-Object Name -ne '.git' |
+                    Copy-Item -Destination $squashedRoot -Recurse -Force
+                New-Item -ItemType Directory -Path $squashedProject -Force | Out-Null
+                Copy-Item -Path (Join-Path $receiptProject 'evidence/*') -Destination (Join-Path $squashedProject 'evidence') -Recurse -Force
+                & git -C $squashedRoot init --quiet
+                $LASTEXITCODE | Should -Be 0
+                & git -C $squashedRoot config user.email 'evidence-test@example.invalid'
+                $LASTEXITCODE | Should -Be 0
+                & git -C $squashedRoot config user.name 'Evidence Test'
+                $LASTEXITCODE | Should -Be 0
+                & git -C $squashedRoot add --all
+                & git -C $squashedRoot commit --quiet -m 'squashed validated content'
+                $LASTEXITCODE | Should -Be 0
+
+                $initialOutput = @(& pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $squashedProject -EvidencePath 'evidence/local-completion-result.json' 2>&1)
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Equivalent squashed receipt validation failed (governanceVersion='$($receipt.governanceVersion)'): $($initialOutput -join "`n")"
+                }
+
+                Set-Content -LiteralPath (Join-Path $squashedProject 'source.py') -Value 'VALUE = 2' -NoNewline
+                & git -C $squashedRoot add --all
+                & git -C $squashedRoot commit --quiet -m 'content changed'
+                $LASTEXITCODE | Should -Be 0
+                $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $squashedProject -EvidencePath 'evidence/local-completion-result.json' 2>&1)
+                $LASTEXITCODE | Should -Not -Be 0
+                ($output -join "`n") | Should -Match 'validatedContentSha256 does not match the current repository content'
+            }
+            finally {
+                if (Test-Path -LiteralPath $identityRoot) {
+                    Remove-Item -LiteralPath $identityRoot -Recurse -Force
+                }
+            }
+        }
+
         It 'uses an explicit complete change inventory when supplied' {
             & $script:NewTempEvidence
             $changedFiles = @(
@@ -738,7 +823,7 @@ Describe 'Validate evidence action' {
                 $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
                 @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
 
-                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v23'
+                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v24'
                 $tagReference = "refs/tags/$($receipt.validatedCommitTag)"
                 & git -C $repositoryRoot show-ref --verify --quiet $tagReference
                 if ($LASTEXITCODE -eq 0) {

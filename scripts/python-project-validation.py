@@ -201,6 +201,8 @@ LOCK_RESOLUTION_TARGETS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
 )
+LOCK_RESOLUTION_PIP_NAME = "pip"
+LOCK_RESOLUTION_PIP_VERSION = "26.2.1"
 # Pip's cross-platform options select compatible wheels but do not apply PEP 508
 # platform markers. These environments mirror the targets resolved above and are
 # used only to account for a marker-gated dependency omitted from those reports.
@@ -225,7 +227,7 @@ LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS: tuple[dict[str, str], ...] = (
         "os_name": "nt",
         "platform_machine": "AMD64",
         "platform_python_implementation": "CPython",
-        "platform_release": "",
+        "platform_release": "10",
         "platform_system": "Windows",
         "platform_version": "",
         "python_full_version": "3.13.2",
@@ -519,6 +521,41 @@ def locked_requirements(path: Path) -> dict[str, str]:
     return requirements
 
 
+def locked_requirement_hashes(path: Path, name: str, version: str) -> tuple[str, ...]:
+    """Return the hash options for one exact package pin in a pip-compile lock."""
+    target_name = normalized_requirement_name(name)
+    pinned_version: str | None = None
+    hashes: list[str] = []
+    collecting_hashes = False
+    hash_pattern = re.compile(r"^\s*--hash=sha256:([0-9a-fA-F]{64})(?:\s+\\)?\s*$")
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        package_match = re.match(r"^([A-Za-z0-9_.-]+)==([^\s\\]+)", raw_line.strip())
+        if package_match:
+            package_name = normalized_requirement_name(package_match.group(1))
+            package_version = package_match.group(2)
+            collecting_hashes = package_name == target_name
+            if collecting_hashes:
+                if pinned_version is not None:
+                    raise ValueError(f"{path.name} contains duplicate locked requirement '{name}'")
+                pinned_version = package_version
+            continue
+        if not collecting_hashes:
+            continue
+        hash_match = hash_pattern.fullmatch(raw_line)
+        if hash_match:
+            hashes.append(f"--hash=sha256:{hash_match.group(1).lower()}")
+    if pinned_version is None:
+        raise ValueError(f"{path.name} must lock {name}=={version} for resolver verification")
+    if pinned_version != version:
+        raise ValueError(
+            f"{path.name} must lock {name}=={version} for resolver verification "
+            f"(found {name}=={pinned_version})"
+        )
+    if not hashes:
+        raise ValueError(f"{path.name} must hash-pin {name}=={version} for resolver verification")
+    return tuple(hashes)
+
+
 def direct_locked_requirements(path: Path, requirements_input: Path) -> dict[str, str]:
     requirements: dict[str, str] = {}
     current: tuple[str, str] | None = None
@@ -717,6 +754,73 @@ def is_transient_lock_resolution_failure(exit_code: int, output: str) -> bool:
     )
 
 
+def pinned_lock_resolver(
+    source_python: Path,
+    label: str,
+    lock: Path,
+    environment: Path,
+    env: dict[str, str],
+) -> Path:
+    """Create a temporary resolver environment with the lock-pinned pip version."""
+    hashes = locked_requirement_hashes(lock, LOCK_RESOLUTION_PIP_NAME, LOCK_RESOLUTION_PIP_VERSION)
+    create_command = module_command(source_python, "venv", str(environment))
+    create_code, create_output, _ = run(create_command, environment.parent, env, 120)
+    if create_code != 0:
+        raise ValueError(
+            f"could not create the {label} resolver environment: "
+            f"{sanitize(create_output, [lock.parent, environment.parent, source_python.parent])}"
+        )
+    resolver_python = environment / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    if not resolver_python.is_file():
+        raise ValueError(f"the {label} resolver environment did not produce a Python executable")
+    bootstrap_requirements = environment / "bootstrap-pip.requirements"
+    bootstrap_lines = [f"{LOCK_RESOLUTION_PIP_NAME}=={LOCK_RESOLUTION_PIP_VERSION} \\"]
+    for index, hash_option in enumerate(hashes):
+        continuation = " \\" if index < len(hashes) - 1 else ""
+        bootstrap_lines.append(f"    {hash_option}{continuation}")
+    bootstrap_requirements.write_text("\n".join(bootstrap_lines) + "\n", encoding="utf-8")
+    bootstrap_command = module_command(
+        resolver_python,
+        "pip",
+        "--isolated",
+        "install",
+        "--disable-pip-version-check",
+        "--no-input",
+        "--no-deps",
+        "--upgrade",
+        "--force-reinstall",
+        "--only-binary=:all:",
+        "--no-cache-dir",
+        "--require-hashes",
+        "--index-url",
+        "https://pypi.org/simple",
+        "-r",
+        str(bootstrap_requirements),
+    )
+    bootstrap_code, bootstrap_output, _ = run(bootstrap_command, environment.parent, env, 300)
+    if bootstrap_code != 0:
+        message = (
+            f"could not install the locked resolver pip for {label}: "
+            f"{sanitize(bootstrap_output, [lock.parent, environment.parent, source_python.parent])}"
+        )
+        if is_transient_lock_resolution_failure(bootstrap_code, bootstrap_output):
+            raise LockResolutionBlockedError(message)
+        raise ValueError(message)
+    version_command = [
+        str(resolver_python),
+        "-I",
+        "-c",
+        "import pip; print(pip.__version__)",
+    ]
+    version_code, version_output, _ = run(version_command, environment.parent, env, 60)
+    if version_code != 0 or version_output.strip() != LOCK_RESOLUTION_PIP_VERSION:
+        raise ValueError(
+            f"the {label} resolver must use {LOCK_RESOLUTION_PIP_NAME}=={LOCK_RESOLUTION_PIP_VERSION}"
+        )
+    print(f"Lock-closure resolver for {label}: {LOCK_RESOLUTION_PIP_NAME}=={LOCK_RESOLUTION_PIP_VERSION}")
+    return resolver_python
+
+
 def validate_requirements_lock_closure(
     requirements_input: Path,
     lock: Path,
@@ -751,6 +855,20 @@ def validate_requirements_lock_closure(
     with tempfile.TemporaryDirectory(prefix="lock-resolution-", dir=resolver_root) as directory:
         reports: list[Path] = []
         locked = locked_requirements(lock)
+        resolver_pip = pinned_lock_resolver(
+            resolver_python,
+            "CPython 3.13.2",
+            lock,
+            Path(directory) / "resolver-cpython-3.13.2",
+            env,
+        )
+        runtime_pip = pinned_lock_resolver(
+            runtime_python,
+            "CPython 3.12.11",
+            lock,
+            Path(directory) / "runtime-cpython-3.12.11",
+            env,
+        )
 
         def resolve_target(
             python: Path,
@@ -822,7 +940,7 @@ def validate_requirements_lock_closure(
         if len(LOCK_RESOLUTION_TARGETS) != len(LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS):
             raise RuntimeError("lock-resolution targets and marker environments are not aligned")
         target_specs = [
-            (resolver_python, target_name, target_args, target_environment)
+            (resolver_pip, target_name, target_args, target_environment)
             for (target_name, target_args), target_environment in zip(
                 LOCK_RESOLUTION_TARGETS,
                 LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS,
@@ -830,7 +948,7 @@ def validate_requirements_lock_closure(
             )
         ]
         target_specs.append(
-            (runtime_python, "runtime-cpython-3.12.11", (), FUNCTIONAL_RUNTIME_MARKER_ENVIRONMENT)
+            (runtime_pip, "runtime-cpython-3.12.11", (), FUNCTIONAL_RUNTIME_MARKER_ENVIRONMENT)
         )
 
         for python, target_name, target_args, target_environment in target_specs:

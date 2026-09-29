@@ -165,7 +165,74 @@ function Resolve-ValidatedCommitTag {
     return $tag
 }
 
+function Test-CompletionReceiptPayloadPath {
+    param([Parameter(Mandatory)][string]$RelativePath)
+
+    $normalized = $RelativePath.Replace('\','/')
+    return (
+        $normalized.StartsWith('examples/python-project/evidence/', [StringComparison]::Ordinal) -or
+        $normalized.StartsWith('examples/bash-project/evidence/', [StringComparison]::Ordinal)
+    )
+}
+
+function Get-ValidatedContentFingerprint {
+    param(
+        [Parameter(Mandatory)][string]$RepositoryRoot,
+        [Parameter(Mandatory)][string]$CommitSha
+    )
+
+    if ($CommitSha -eq 'unknown') { return $null }
+    if ($CommitSha -notmatch '^[A-Fa-f0-9]{40,64}$') {
+        throw "Validated commit '$CommitSha' must be a Git object identifier."
+    }
+    $gitProbe = @(& git -C $RepositoryRoot rev-parse --is-inside-work-tree 2>$null)
+    if ($LASTEXITCODE -ne 0 -or ($gitProbe -join '').Trim() -cne 'true') {
+        return $null
+    }
+    & git -C $RepositoryRoot cat-file -e "$CommitSha^{commit}" 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Validated commit '$CommitSha' is not available in SourceRepositoryPath."
+    }
+    $treeEntries = @(& git -C $RepositoryRoot ls-tree -r --full-tree $CommitSha 2>$null)
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not enumerate validated commit '$CommitSha' for content identity."
+    }
+    $records = [System.Collections.Generic.List[string]]::new()
+    foreach ($entry in $treeEntries) {
+        $match = [regex]::Match(
+            [string]$entry,
+            '^(?<mode>[0-7]{6}) (?<type>blob|commit) (?<object>[A-Fa-f0-9]{40}|[A-Fa-f0-9]{64})\t(?<path>.+)$'
+        )
+        if (-not $match.Success) {
+            throw "Validated commit '$CommitSha' contains an unsupported tree entry."
+        }
+        $relativePath = $match.Groups['path'].Value
+        if (
+            [string]::IsNullOrWhiteSpace($relativePath) -or
+            $relativePath.StartsWith('"', [StringComparison]::Ordinal) -or
+            $relativePath -match '(^|/)\.\.(/|$)|^(?:/|[A-Za-z]:)|[\x00-\x1F]'
+        ) {
+            throw "Validated commit '$CommitSha' contains an unsafe tree path."
+        }
+        if (Test-CompletionReceiptPayloadPath -RelativePath $relativePath) { continue }
+        $records.Add((
+            '{0}`0{1}`0{2}`0{3}' -f
+            $match.Groups['mode'].Value,
+            $match.Groups['type'].Value,
+            $match.Groups['object'].Value.ToLowerInvariant(),
+            $relativePath
+        ))
+    }
+    $canonicalRecords = $records.ToArray()
+    [Array]::Sort($canonicalRecords, [StringComparer]::Ordinal)
+    $payload = "completion-evidence-content-v1`n$($canonicalRecords -join "`n")`n"
+    return [Convert]::ToHexString(
+        [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($payload))
+    ).ToLowerInvariant()
+}
+
 $validatedCommitTag = Resolve-ValidatedCommitTag -TagName $ValidatedCommitTag -RepositoryRoot $sourceRoot -CommitSha $validatedCommit
+$validatedContentSha256 = Get-ValidatedContentFingerprint -RepositoryRoot $sourceRoot -CommitSha $validatedCommit
 $effectiveBranch = $env:GITHUB_REF_NAME
 if ($Branch) {
     $effectiveBranch = $Branch
@@ -361,6 +428,7 @@ $evidence = [ordered]@{
     repository = $(if ($Repository) { $Repository } elseif ($env:GITHUB_REPOSITORY) { $env:GITHUB_REPOSITORY } else { Get-OriginRepositoryName -RepositoryRoot $sourceRoot })
     commitSha = $validatedCommit.Trim()
     validatedCommitSha = $validatedCommit.Trim()
+    validatedContentSha256 = $validatedContentSha256
     validatedCommitTag = $validatedCommitTag
     evidenceCommitSha = $(if ($EvidenceCommitSha) { $EvidenceCommitSha.Trim() } else { $null })
     branch = $effectiveBranch.Trim()

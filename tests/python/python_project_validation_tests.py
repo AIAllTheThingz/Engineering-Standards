@@ -393,6 +393,136 @@ def test_windows_marker_environment_matches_declared_amd64_target() -> None:
     )
 
 
+def test_windows_marker_environment_models_declared_release() -> None:
+    """The synthetic Windows target must cover release-gated dependencies."""
+    records = [
+        {
+            "metadata": {
+                "name": "build",
+                "version": "1.6.1",
+                "requires_dist": [
+                    "marker-parent==1.0.0; sys_platform == 'win32' and platform_release == '10'"
+                ],
+            }
+        }
+    ]
+
+    marker_requirements = validator.marker_gated_requirements_for_target(
+        records,
+        {"marker-parent": "1.0.0"},
+        validator.LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS[1],
+        "windows-cpython-3.13.2-x86_64",
+    )
+
+    require(
+        marker_requirements == {"marker-parent": "1.0.0"},
+        "the Windows marker environment does not model platform_release 10",
+    )
+
+
+def test_pinned_lock_resolver_bootstraps_the_hash_pinned_pip(tmp_path: Path, monkeypatch) -> None:
+    """Closure resolution must replace an interpreter's bundled pip with the governed pin."""
+    lock = tmp_path / "requirements-ci.lock"
+    first_hash = "1" * 64
+    second_hash = "2" * 64
+    lock.write_text(
+        "pip==26.2.1 \\\n"
+        f"    --hash=sha256:{first_hash} \\\n"
+        f"    --hash=sha256:{second_hash}\n",
+        encoding="utf-8",
+    )
+    source_python = tmp_path / "source-python"
+    source_python.touch()
+    environment = tmp_path / "resolver"
+    resolver_python = environment / ("Scripts/python.exe" if validator.os.name == "nt" else "bin/python")
+    commands: list[list[str]] = []
+
+    def fake_run(command: list[str], cwd: Path, env: dict[str, str], timeout: int = 300) -> tuple[int, str, float]:
+        commands.append(command)
+        if command[2:4] == ["-m", "venv"]:
+            resolver_python.parent.mkdir(parents=True)
+            resolver_python.touch()
+            return 0, "", 0.0
+        if command[2:4] == ["-m", "pip"]:
+            require(command[0] == str(resolver_python), "pip did not run from the temporary resolver environment")
+            return 0, "", 0.0
+        if command[2] == "-c":
+            return 0, "26.2.1\n", 0.0
+        raise AssertionError(f"unexpected command: {command}")
+
+    monkeypatch.setattr(validator, "run", fake_run)
+    actual = validator.pinned_lock_resolver(
+        source_python,
+        "test resolver",
+        lock,
+        environment,
+        validator.trusted_env(tmp_path / "home"),
+    )
+
+    require(actual == resolver_python, "the pinned resolver did not return its virtual-environment Python")
+    bootstrap = next(command for command in commands if command[2:4] == ["-m", "pip"])
+    require("--require-hashes" in bootstrap, "resolver pip installation did not enforce hashes")
+    require("--force-reinstall" in bootstrap, "resolver pip installation trusted the bundled pip")
+    require("--no-deps" in bootstrap, "resolver pip installation could resolve unpinned dependencies")
+    bootstrap_input = Path(bootstrap[bootstrap.index("-r") + 1])
+    bootstrap_text = bootstrap_input.read_text(encoding="utf-8")
+    require("pip==26.2.1" in bootstrap_text, "resolver pip installation used the wrong pip version")
+    require(f"--hash=sha256:{first_hash}" in bootstrap_text, "first governed pip hash was omitted")
+    require(f"--hash=sha256:{second_hash}" in bootstrap_text, "second governed pip hash was omitted")
+
+
+def test_pinned_lock_resolver_rejects_an_unhashed_pip_pin(tmp_path: Path) -> None:
+    """The lock cannot delegate resolver integrity to an unhashed pip pin."""
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text("pip==26.2.1\n", encoding="utf-8")
+
+    try:
+        validator.locked_requirement_hashes(lock, "pip", "26.2.1")
+    except ValueError as exc:
+        require("hash-pin" in str(exc), "an unhashed resolver pip failed without a clear diagnostic")
+    else:
+        raise AssertionError("an unhashed resolver pip was accepted")
+
+
+def test_pinned_lock_resolver_rejects_a_wrong_installed_pip_version(tmp_path: Path, monkeypatch) -> None:
+    """A successful bootstrap is insufficient unless the selected pip version is exact."""
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "pip==26.2.1 \\\n"
+        f"    --hash=sha256:{'3' * 64}\n",
+        encoding="utf-8",
+    )
+    source_python = tmp_path / "source-python"
+    source_python.touch()
+    environment = tmp_path / "resolver"
+    resolver_python = environment / ("Scripts/python.exe" if validator.os.name == "nt" else "bin/python")
+
+    def fake_run(command: list[str], cwd: Path, env: dict[str, str], timeout: int = 300) -> tuple[int, str, float]:
+        if command[2:4] == ["-m", "venv"]:
+            resolver_python.parent.mkdir(parents=True)
+            resolver_python.touch()
+            return 0, "", 0.0
+        if command[2:4] == ["-m", "pip"]:
+            return 0, "", 0.0
+        if command[2] == "-c":
+            return 0, "26.2.0\n", 0.0
+        raise AssertionError(f"unexpected command: {command}")
+
+    monkeypatch.setattr(validator, "run", fake_run)
+    try:
+        validator.pinned_lock_resolver(
+            source_python,
+            "test resolver",
+            lock,
+            environment,
+            validator.trusted_env(tmp_path / "home"),
+        )
+    except ValueError as exc:
+        require("pip==26.2.1" in str(exc), "the unexpected resolver pip version was not identified")
+    else:
+        raise AssertionError("an unexpected resolver pip version was accepted")
+
+
 def test_requirements_lock_closure_resolves_marker_gated_transitive_chain(
     tmp_path: Path, monkeypatch
 ) -> None:
@@ -453,6 +583,11 @@ def test_requirements_lock_closure_resolves_marker_gated_transitive_chain(
         return 0, "", 0.0
 
     monkeypatch.setattr(validator, "run", fake_run)
+    monkeypatch.setattr(
+        validator,
+        "pinned_lock_resolver",
+        lambda python, _label, _lock, _environment, _env: python,
+    )
     validator.validate_requirements_lock_closure(
         requirements_input,
         lock,
@@ -521,6 +656,11 @@ def test_requirements_lock_closure_rejects_missing_marker_gated_transitive_pin(
         return 0, "", 0.0
 
     monkeypatch.setattr(validator, "run", fake_run)
+    monkeypatch.setattr(
+        validator,
+        "pinned_lock_resolver",
+        lambda python, _label, _lock, _environment, _env: python,
+    )
     try:
         validator.validate_requirements_lock_closure(
             requirements_input,
@@ -556,6 +696,7 @@ def test_requirements_lock_closure_resolves_every_target_and_functional_runtime(
     runtime_python.touch()
     pip_commands: list[list[str]] = []
     validated_reports: list[tuple[Path, ...]] = []
+    pinned_resolver_calls: list[tuple[Path, str]] = []
 
     def fake_run(command: list[str], cwd: Path, env: dict[str, str], timeout: int = 300) -> tuple[int, str, float]:
         if command[2] == "-c":
@@ -570,6 +711,13 @@ def test_requirements_lock_closure_resolves_every_target_and_functional_runtime(
         return 0, "", 0.0
 
     monkeypatch.setattr(validator, "run", fake_run)
+    monkeypatch.setattr(
+        validator,
+        "pinned_lock_resolver",
+        lambda python, label, _lock, _environment, _env: (
+            pinned_resolver_calls.append((python, label)) or python
+        ),
+    )
     monkeypatch.setattr(
         validator,
         "validate_resolved_requirements_lock",
@@ -592,6 +740,11 @@ def test_requirements_lock_closure_resolves_every_target_and_functional_runtime(
     require(
         any(command[0] == str(runtime_python) for command in pip_commands),
         "the functional CPython 3.12.11 runtime was not resolved",
+    )
+    require(
+        pinned_resolver_calls
+        == [(resolver_python, "CPython 3.13.2"), (runtime_python, "CPython 3.12.11")],
+        "closure resolution did not bootstrap both pinned resolver environments",
     )
     require(len(validated_reports) == 1 and len(validated_reports[0]) == 4, "all target reports were not validated")
 
@@ -619,6 +772,11 @@ def test_requirements_lock_closure_marks_resolver_outage_blocked(tmp_path: Path,
         return 124, "ERROR: Could not fetch URL: Read timed out", 300.0
 
     monkeypatch.setattr(validator, "run", fake_run)
+    monkeypatch.setattr(
+        validator,
+        "pinned_lock_resolver",
+        lambda python, _label, _lock, _environment, _env: python,
+    )
     try:
         validator.validate_requirements_lock_closure(
             requirements_input,
@@ -667,6 +825,11 @@ def test_requirements_lock_closure_keeps_invalid_resolution_as_failure(tmp_path:
         return 1, "ERROR: Cannot install build==1.6.1 because these package versions have conflicting dependencies.", 0.0
 
     monkeypatch.setattr(validator, "run", fake_run)
+    monkeypatch.setattr(
+        validator,
+        "pinned_lock_resolver",
+        lambda python, _label, _lock, _environment, _env: python,
+    )
     try:
         validator.validate_requirements_lock_closure(
             requirements_input,

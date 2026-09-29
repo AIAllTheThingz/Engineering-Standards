@@ -39,6 +39,73 @@ function Resolve-ExistingEvidencePathCasing {
     $current
 }
 
+function Test-CompletionReceiptPayloadPath {
+    param([Parameter(Mandatory)][string]$RelativePath)
+
+    $normalized = $RelativePath.Replace('\','/')
+    return (
+        $normalized.StartsWith('examples/python-project/evidence/', [StringComparison]::Ordinal) -or
+        $normalized.StartsWith('examples/bash-project/evidence/', [StringComparison]::Ordinal)
+    )
+}
+
+function Get-RepositoryContentFingerprint {
+    param(
+        [Parameter(Mandatory)][string]$RepositoryPath,
+        [Parameter(Mandatory)][string]$CommitReference
+    )
+
+    $gitRootOutput = @(& git -C $RepositoryPath rev-parse --show-toplevel 2>$null)
+    if ($LASTEXITCODE -ne 0 -or -not $gitRootOutput) {
+        throw 'Could not resolve the Git root for completion-evidence content identity.'
+    }
+    $gitRoot = ($gitRootOutput -join '').Trim()
+    $commitOutput = @(& git -C $gitRoot rev-parse --verify "$CommitReference^{commit}" 2>$null)
+    if ($LASTEXITCODE -ne 0 -or -not $commitOutput) {
+        throw "Could not resolve commit '$CommitReference' for completion-evidence content identity."
+    }
+    $commitSha = ($commitOutput -join '').Trim()
+    if ($commitSha -notmatch '^[A-Fa-f0-9]{40,64}$') {
+        throw "Commit '$CommitReference' did not resolve to a Git object identifier."
+    }
+    $treeEntries = @(& git -C $gitRoot ls-tree -r --full-tree $commitSha 2>$null)
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not enumerate commit '$commitSha' for completion-evidence content identity."
+    }
+    $records = [System.Collections.Generic.List[string]]::new()
+    foreach ($entry in $treeEntries) {
+        $match = [regex]::Match(
+            [string]$entry,
+            '^(?<mode>[0-7]{6}) (?<type>blob|commit) (?<object>[A-Fa-f0-9]{40}|[A-Fa-f0-9]{64})\t(?<path>.+)$'
+        )
+        if (-not $match.Success) {
+            throw "Commit '$commitSha' contains an unsupported tree entry."
+        }
+        $relativePath = $match.Groups['path'].Value
+        if (
+            [string]::IsNullOrWhiteSpace($relativePath) -or
+            $relativePath.StartsWith('"', [StringComparison]::Ordinal) -or
+            $relativePath -match '(^|/)\.\.(/|$)|^(?:/|[A-Za-z]:)|[\x00-\x1F]'
+        ) {
+            throw "Commit '$commitSha' contains an unsafe tree path."
+        }
+        if (Test-CompletionReceiptPayloadPath -RelativePath $relativePath) { continue }
+        $records.Add((
+            '{0}`0{1}`0{2}`0{3}' -f
+            $match.Groups['mode'].Value,
+            $match.Groups['type'].Value,
+            $match.Groups['object'].Value.ToLowerInvariant(),
+            $relativePath
+        ))
+    }
+    $canonicalRecords = $records.ToArray()
+    [Array]::Sort($canonicalRecords, [StringComparer]::Ordinal)
+    $payload = "completion-evidence-content-v1`n$($canonicalRecords -join "`n")`n"
+    return [Convert]::ToHexString(
+        [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($payload))
+    ).ToLowerInvariant()
+}
+
 try {
     $full = Resolve-SafePath -Root $root -ChildPath $EvidencePath
 }
@@ -98,6 +165,18 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
             $validatedTag = [string]$validatedTagProperty.Value
         }
     }
+    $validatedContentSha256 = $null
+    if ($evidence -is [System.Collections.IDictionary]) {
+        if ($evidence.Contains('validatedContentSha256') -and $evidence['validatedContentSha256']) {
+            $validatedContentSha256 = [string]$evidence['validatedContentSha256']
+        }
+    }
+    else {
+        $validatedContentProperty = $evidence.PSObject.Properties['validatedContentSha256']
+        if ($validatedContentProperty -and $validatedContentProperty.Value) {
+            $validatedContentSha256 = [string]$validatedContentProperty.Value
+        }
+    }
     $evidenceSha = if ($evidence.evidenceCommitSha) { [string]$evidence.evidenceCommitSha } else { $null }
     if ($ExpectedCommitSha -and $validatedSha -ne $ExpectedCommitSha) {
         $results.Add((New-ValidationResult -Status Failed -Message 'Commit SHA mismatch.' -Path $EvidencePath))
@@ -105,11 +184,44 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
     & git -C $root rev-parse --is-inside-work-tree 2>$null | Out-Null
     $hasGitRepository = ($LASTEXITCODE -eq 0)
     if ($hasGitRepository) {
-        foreach ($shaCheck in @(@{ name='validatedCommitSha'; value=$validatedSha }, @{ name='evidenceCommitSha'; value=$evidenceSha })) {
-            if (-not $shaCheck.value) { continue }
-            & git -C $root cat-file -e "$($shaCheck.value)^{commit}" 2>$null
-            if ($LASTEXITCODE -ne 0) {
-                $results.Add((New-ValidationResult -Status Failed -Message "$($shaCheck.name) does not exist in this repository." -Path $EvidencePath))
+        $validatedCommitExists = $false
+        if ($validatedSha) {
+            & git -C $root cat-file -e "$validatedSha^{commit}" 2>$null
+            $validatedCommitExists = ($LASTEXITCODE -eq 0)
+        }
+        $evidenceCommitExists = $false
+        if ($evidenceSha) {
+            & git -C $root cat-file -e "$evidenceSha^{commit}" 2>$null
+            $evidenceCommitExists = ($LASTEXITCODE -eq 0)
+            if (-not $evidenceCommitExists) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'evidenceCommitSha does not exist in this repository.' -Path $EvidencePath))
+            }
+        }
+        if (-not $validatedCommitExists) {
+            if ($evidence.executionContext -eq 'Local' -and $validatedContentSha256) {
+                try {
+                    $currentContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference 'HEAD'
+                    if ($currentContentSha256 -ine $validatedContentSha256) {
+                        throw 'validatedContentSha256 does not match the current repository content.'
+                    }
+                }
+                catch {
+                    $results.Add((New-ValidationResult -Status Failed -Message $_.Exception.Message -Path $EvidencePath))
+                }
+            }
+            else {
+                $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitSha does not exist in this repository.' -Path $EvidencePath))
+            }
+        }
+        elseif ($validatedContentSha256) {
+            try {
+                $currentContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference 'HEAD'
+                if ($currentContentSha256 -ine $validatedContentSha256) {
+                    throw 'validatedContentSha256 does not match the current repository content.'
+                }
+            }
+            catch {
+                $results.Add((New-ValidationResult -Status Failed -Message $_.Exception.Message -Path $EvidencePath))
             }
         }
         if ($validatedTag) {
@@ -134,7 +246,7 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
                 }
             }
         }
-        if ($validatedSha -and $evidenceSha) {
+        if ($validatedCommitExists -and $evidenceCommitExists) {
             & git -C $root merge-base --is-ancestor $validatedSha $evidenceSha 2>$null
             if ($LASTEXITCODE -ne 0) {
                 $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitSha must be an ancestor of or equal to evidenceCommitSha.' -Path $EvidencePath))
