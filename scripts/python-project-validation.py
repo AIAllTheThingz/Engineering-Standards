@@ -1142,6 +1142,7 @@ def validate_requirements_lock_closure(
             root_extras: tuple[str, ...],
             target_environment: dict[str, str],
             target_name: str,
+            activated_extras_by_package: dict[str, tuple[str, ...]] | None = None,
         ) -> Path:
             """Keep only the requested root and dependencies active for the synthetic target."""
             try:
@@ -1162,12 +1163,20 @@ def validate_requirements_lock_closure(
                 raise ValueError(
                     f"marker-gated package {root_name} was not resolved for {target_name}"
                 )
+            active_extra_context = {
+                normalized_requirement_name(package): tuple(sorted(set(extras)))
+                for package, extras in (activated_extras_by_package or {}).items()
+                if extras
+            }
+            active_extra_context[root_package] = tuple(
+                sorted(set(active_extra_context.get(root_package, ())).union(root_extras))
+            )
             active_packages, _ = target_reachable_packages_and_extras_for_target(
                 dependencies,
                 target_environment,
                 target_name,
                 {root_package},
-                {root_package: root_extras},
+                active_extra_context,
             )
             document["install"] = [
                 record
@@ -1202,6 +1211,8 @@ def validate_requirements_lock_closure(
                 f"{target_name}-base",
             )
             supplemental_reports: dict[str, Path] = {}
+            supplemental_raw_reports: dict[str, Path] = {}
+            supplemental_report_contexts: dict[str, dict[str, tuple[str, ...]]] = {}
             marker_request_number = 0
             requested_marker_extras: dict[str, tuple[str, ...]] = {}
             while True:
@@ -1215,6 +1226,26 @@ def validate_requirements_lock_closure(
                     target_root_packages,
                     requested_marker_extras,
                 )
+                active_extra_context = {
+                    name: extras for name, extras in active_extras_by_package.items() if extras
+                }
+                reports_to_refilter = [
+                    name
+                    for name in supplemental_reports
+                    if supplemental_report_contexts.get(name) != active_extra_context
+                ]
+                if reports_to_refilter:
+                    for name in reports_to_refilter:
+                        supplemental_reports[name] = filter_supplemental_report_for_target(
+                            supplemental_raw_reports[name],
+                            name,
+                            requested_marker_extras[name],
+                            target_environment,
+                            target_name,
+                            active_extra_context,
+                        )
+                        supplemental_report_contexts[name] = dict(active_extra_context)
+                    continue
                 marker_requirements = marker_gated_requirements_for_target(
                     install_records,
                     locked,
@@ -1236,6 +1267,8 @@ def validate_requirements_lock_closure(
                 if obsolete_marker_reports:
                     for name in obsolete_marker_reports:
                         del supplemental_reports[name]
+                        del supplemental_raw_reports[name]
+                        del supplemental_report_contexts[name]
                         del requested_marker_extras[name]
                     continue
                 pending: list[tuple[str, str, tuple[str, ...]]] = []
@@ -1265,6 +1298,7 @@ def validate_requirements_lock_closure(
                             f"marker-gated package {name}=={version} was not resolved for {target_name}"
                         )
                     requested_marker_extras[name] = extras
+                    supplemental_raw_reports[name] = marker_report
                     supplemental_reports[name] = filter_supplemental_report_for_target(
                         marker_report,
                         name,
@@ -1272,6 +1306,7 @@ def validate_requirements_lock_closure(
                         target_environment,
                         target_name,
                     )
+                    supplemental_report_contexts[name] = {}
             reports.extend([base_report, *supplemental_reports.values()])
         validate_resolved_requirements_lock(requirements_input, lock, tuple(reports))
 
