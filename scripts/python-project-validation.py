@@ -98,6 +98,53 @@ LOCK_RESOLUTION_TARGETS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
 )
+# Pip's cross-platform options select compatible wheels but do not apply PEP 508
+# platform markers. These environments mirror the targets resolved above and are
+# used only to account for a marker-gated dependency omitted from those reports.
+LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS: tuple[dict[str, str], ...] = (
+    {
+        "implementation_name": "cpython",
+        "implementation_version": "3.13.2",
+        "os_name": "posix",
+        "platform_machine": "x86_64",
+        "platform_python_implementation": "CPython",
+        "platform_release": "",
+        "platform_system": "Linux",
+        "platform_version": "",
+        "python_full_version": "3.13.2",
+        "python_version": "3.13",
+        "sys_platform": "linux",
+        "extra": "",
+    },
+    {
+        "implementation_name": "cpython",
+        "implementation_version": "3.13.2",
+        "os_name": "nt",
+        "platform_machine": "x86_64",
+        "platform_python_implementation": "CPython",
+        "platform_release": "",
+        "platform_system": "Windows",
+        "platform_version": "",
+        "python_full_version": "3.13.2",
+        "python_version": "3.13",
+        "sys_platform": "win32",
+        "extra": "",
+    },
+    {
+        "implementation_name": "cpython",
+        "implementation_version": "3.13.2",
+        "os_name": "posix",
+        "platform_machine": "x86_64",
+        "platform_python_implementation": "CPython",
+        "platform_release": "",
+        "platform_system": "Darwin",
+        "platform_version": "",
+        "python_full_version": "3.13.2",
+        "python_version": "3.13",
+        "sys_platform": "darwin",
+        "extra": "",
+    },
+)
 TOOLCHAIN_SBOM_PROJECT_NAME = "engineering-standards-python-toolchain"
 TOOLCHAIN_SBOM_PROJECT_VERSION = "1.0.0"
 
@@ -500,6 +547,48 @@ def resolved_requirements(install_records: list[dict[str, Any]]) -> dict[str, st
     return requirements
 
 
+def marker_gated_locked_requirements(
+    install_records: list[dict[str, Any]],
+    locked: dict[str, str],
+    resolved: dict[str, str],
+) -> set[str]:
+    """Find non-extra target-marked pins omitted by pip cross-resolution reports."""
+    try:
+        from pip._vendor.packaging.requirements import InvalidRequirement, Requirement
+    except ImportError as exc:
+        raise ValueError("pip's bundled PEP 508 requirement parser is unavailable") from exc
+
+    marker_gated: set[str] = set()
+    for item in install_records:
+        metadata = item.get("metadata")
+        if not isinstance(metadata, dict):
+            raise ValueError("pip resolution report contains an invalid install record")
+        requires_dist = metadata.get("requires_dist")
+        if requires_dist is None:
+            continue
+        if not isinstance(requires_dist, list) or any(not isinstance(raw, str) for raw in requires_dist):
+            raise ValueError("pip resolution report contains invalid package dependency metadata")
+        for raw_requirement in requires_dist:
+            try:
+                requirement = Requirement(raw_requirement)
+            except InvalidRequirement as exc:
+                raise ValueError(
+                    f"pip resolution report contains an invalid dependency declaration: {raw_requirement!r}"
+                ) from exc
+            name = normalized_requirement_name(requirement.name)
+            if name not in locked or name in resolved or requirement.marker is None:
+                continue
+            # An unrequested optional extra must never justify a lock entry.
+            if "extra" in str(requirement.marker).lower():
+                continue
+            if requirement.specifier.contains(locked[name], prereleases=True) and any(
+                requirement.marker.evaluate(environment)
+                for environment in LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS
+            ):
+                marker_gated.add(name)
+    return marker_gated
+
+
 def validate_resolved_requirements_lock(
     requirements_input: Path,
     lock: Path,
@@ -512,8 +601,11 @@ def validate_resolved_requirements_lock(
     if not report_paths:
         raise ValueError("requirements lock closure must include at least one resolution report")
     resolved: dict[str, str] = {}
+    install_records: list[dict[str, Any]] = []
     for report in report_paths:
-        for name, version in resolved_requirements(resolution_install_records(report)).items():
+        report_records = resolution_install_records(report)
+        install_records.extend(report_records)
+        for name, version in resolved_requirements(report_records).items():
             prior_version = resolved.get(name)
             if prior_version is not None and prior_version != version:
                 raise ValueError(
@@ -521,10 +613,11 @@ def validate_resolved_requirements_lock(
                     f"{prior_version} and {version}"
                 )
             resolved[name] = version
+    marker_gated = marker_gated_locked_requirements(install_records, locked, resolved)
     unexpected = sorted(
         f"{name}=={locked[name]}"
         for name in locked
-        if name not in resolved
+        if name not in resolved and name not in marker_gated
     )
     missing = sorted(
         f"{name}=={resolved[name]}" for name in resolved if name not in locked

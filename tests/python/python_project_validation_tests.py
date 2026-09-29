@@ -242,6 +242,43 @@ def test_requirements_lock_accepts_dependency_resolved_on_another_target(tmp_pat
     )
 
 
+def test_requirements_lock_accepts_declared_target_marker_omitted_by_pip_cross_resolution(
+    tmp_path: Path,
+) -> None:
+    """Pip target selection does not evaluate Windows markers on a Linux host."""
+    requirements_input = tmp_path / "requirements-ci.in"
+    requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "build==1.6.1 \\\n"
+        "    --hash=sha256:" + "0" * 64 + "\n"
+        "    # via -r requirements-ci.in\n"
+        "colorama==0.4.6 \\\n"
+        "    --hash=sha256:" + "1" * 64 + "\n"
+        "    # via build\n",
+        encoding="utf-8",
+    )
+    cross_target_report = tmp_path / "cross-target-resolution.json"
+    cross_target_report.write_text(
+        json.dumps(
+            {
+                "install": [
+                    {
+                        "metadata": {
+                            "name": "build",
+                            "version": "1.6.1",
+                            "requires_dist": ["colorama==0.4.6; sys_platform == 'win32'"],
+                        }
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    validator.validate_resolved_requirements_lock(requirements_input, lock, cross_target_report)
+
+
 def test_requirements_lock_closure_resolves_every_target_and_functional_runtime(
     tmp_path: Path, monkeypatch
 ) -> None:
