@@ -202,6 +202,13 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
         if (-not $validatedCommitExists) {
             if ($evidence.executionContext -eq 'Local' -and $validatedContentSha256) {
                 try {
+                    $workingTreeChanges = @(& git -C $root status --porcelain=v1 --untracked-files=all 2>$null)
+                    if ($LASTEXITCODE -ne 0) {
+                        throw 'Could not inspect the working tree for squash-safe Local content validation.'
+                    }
+                    if ($workingTreeChanges.Count -gt 0) {
+                        throw 'squash-safe Local content validation requires a clean working tree.'
+                    }
                     $currentContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference 'HEAD'
                     if ($currentContentSha256 -ine $validatedContentSha256) {
                         throw 'validatedContentSha256 does not match the current repository content.'

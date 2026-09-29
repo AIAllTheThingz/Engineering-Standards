@@ -551,7 +551,7 @@ Describe 'Validate evidence action' {
             ($output -join "`n") | Should -Match 'validatedCommitTag does not resolve to validatedCommitSha'
         }
 
-        It 'accepts an equivalent squashed Local receipt only when its content identity matches' {
+        It 'accepts an equivalent squashed Local receipt only when its content identity matches in a clean working tree' {
             $identityRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("completion-identity-" + [guid]::NewGuid())
             $sourceRoot = Join-Path $identityRoot 'source'
             $receiptProject = Join-Path $identityRoot 'receipt/examples/python-project'
@@ -623,7 +623,15 @@ Describe 'Validate evidence action' {
                 }
 
                 Set-Content -LiteralPath (Join-Path $squashedProject 'source.py') -Value 'VALUE = 2' -NoNewline
+                $dirtyOutput = @(& pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $squashedProject -EvidencePath 'evidence/local-completion-result.json' 2>&1)
+                $LASTEXITCODE | Should -Not -Be 0
+                ($dirtyOutput -join "`n") | Should -Match 'squash-safe Local content validation requires a clean working tree'
+
                 & git -C $squashedRoot add --all
+                $stagedOutput = @(& pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $squashedProject -EvidencePath 'evidence/local-completion-result.json' 2>&1)
+                $LASTEXITCODE | Should -Not -Be 0
+                ($stagedOutput -join "`n") | Should -Match 'squash-safe Local content validation requires a clean working tree'
+
                 & git -C $squashedRoot commit --quiet -m 'content changed'
                 $LASTEXITCODE | Should -Be 0
                 $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $squashedProject -EvidencePath 'evidence/local-completion-result.json' 2>&1)
@@ -898,7 +906,7 @@ Describe 'Validate evidence action' {
                 $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
                 @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
 
-                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v32'
+                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v33'
                 $tagReference = "refs/tags/$($receipt.validatedCommitTag)"
                 & git -C $repositoryRoot show-ref --verify --quiet $tagReference
                 if ($LASTEXITCODE -eq 0) {

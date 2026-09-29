@@ -683,9 +683,53 @@ def package_dependency_requirements(install_records: list[dict[str, Any]]) -> li
     return dependencies
 
 
+def marker_variable_names(marker: Any) -> set[str]:
+    """Return PEP 508 marker variables from pip's governed parser representation."""
+    try:
+        from pip._vendor.packaging.markers import Variable
+    except ImportError as exc:
+        raise ValueError("pip's bundled PEP 508 marker parser is unavailable") from exc
+
+    variables: set[str] = set()
+
+    def visit(value: Any) -> None:
+        if isinstance(value, Variable):
+            variables.add(value.value)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                visit(item)
+
+    visit(marker._markers)
+    return variables
+
+
+def marker_applies_to_target(
+    marker: Any,
+    target_environment: dict[str, str],
+    target_name: str,
+    activated_extras: tuple[str, ...],
+) -> bool:
+    """Evaluate a marker only when its target environment models every platform value it uses."""
+    unmodeled_fields = sorted(
+        field
+        for field in ("platform_release", "platform_version")
+        if field in marker_variable_names(marker) and not target_environment.get(field)
+    )
+    if unmodeled_fields:
+        raise ValueError(
+            "requirements lock closure cannot safely evaluate unmodeled "
+            f"{', '.join(unmodeled_fields)} marker(s) for {target_name}"
+        )
+    return any(
+        marker.evaluate({**target_environment, "extra": extra})
+        for extra in ("", *activated_extras)
+    )
+
+
 def activated_extras_for_target(
     dependencies: list[tuple[str, Any]],
     target_environment: dict[str, str],
+    target_name: str,
     initially_activated_extras: dict[str, tuple[str, ...]] | None = None,
 ) -> dict[str, tuple[str, ...]]:
     """Propagate extras along every dependency edge active for a target marker environment."""
@@ -698,9 +742,11 @@ def activated_extras_for_target(
         changed = False
         for source_package, requirement in dependencies:
             source_extras = activated.get(source_package, ())
-            if requirement.marker is not None and not any(
-                requirement.marker.evaluate({**target_environment, "extra": extra})
-                for extra in ("", *source_extras)
+            if requirement.marker is not None and not marker_applies_to_target(
+                requirement.marker,
+                target_environment,
+                target_name,
+                source_extras,
             ):
                 continue
             if not requirement.extras:
@@ -725,6 +771,7 @@ def marker_gated_requirements_for_target(
     activated_extras_by_package = activated_extras_for_target(
         dependencies,
         target_environment,
+        target_name,
         activated_extras_by_package,
     )
     marker_gated: dict[str, tuple[str, tuple[str, ...]]] = {}
@@ -732,9 +779,11 @@ def marker_gated_requirements_for_target(
         activated_extras = activated_extras_by_package.get(source_package, ())
         if requirement.marker is None:
             continue
-        if not any(
-            requirement.marker.evaluate({**target_environment, "extra": extra})
-            for extra in ("", *activated_extras)
+        if not marker_applies_to_target(
+            requirement.marker,
+            target_environment,
+            target_name,
+            activated_extras,
         ):
             continue
         name = normalized_requirement_name(requirement.name)
