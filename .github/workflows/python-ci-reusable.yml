@@ -303,6 +303,13 @@ jobs:
             }
             & git -C $failureCallerStage cat-file -e "$env:GITHUB_SHA^{commit}"
             if ($LASTEXITCODE -ne 0) { throw 'Failure evidence caller metadata does not contain github.sha.' }
+            $failureChangedFiles = @(
+              & git -C $failureCallerStage diff-tree --root --no-commit-id --name-only -r $env:GITHUB_SHA |
+                ForEach-Object { $_.Trim().Replace('\\','/') } |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+            )
+            if ($LASTEXITCODE -ne 0) { throw 'Failure evidence change inventory could not be derived from github.sha.' }
+            if ($failureChangedFiles.Count -eq 0) { throw 'Failure evidence change inventory is empty for github.sha.' }
             if (-not (Test-Path -LiteralPath $lockEvidenceLogPath -PathType Leaf)) {
               'The Python lock verifier did not start because a required prerequisite did not complete.' | Set-Content -LiteralPath $lockEvidenceLogPath -Encoding utf8
             }
@@ -344,7 +351,7 @@ jobs:
               }
             }
             @($lockVerificationRecord) | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath (Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json') -Encoding utf8
-            & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath $failureCallerStage -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary $completionSummary -CommandsExecuted $commandsExecuted -CommandsNotExecuted $commandsNotExecuted -BlockedReason $blockedReason -ArtifactPath @('evidence/lock-verification.log','evidence/local-test-results.json') -ArtifactName "python-evidence-$env:GITHUB_RUN_ID" -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha '${{ job.workflow_sha }}' -ValidationProfile 'python-functional' -ChecksExecuted @('PythonToolchainLockClosure')
+            & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath $failureCallerStage -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary $completionSummary -CommandsExecuted $commandsExecuted -CommandsNotExecuted $commandsNotExecuted -BlockedReason $blockedReason -ArtifactPath @('evidence/lock-verification.log','evidence/local-test-results.json') -ArtifactName "python-evidence-$env:GITHUB_RUN_ID" -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha '${{ job.workflow_sha }}' -ValidationProfile 'python-functional' -ChecksExecuted @('PythonToolchainLockClosure') -ChangedFile $failureChangedFiles
           }
           if (-not (Test-Path -LiteralPath $completionPath -PathType Leaf)) { throw 'Completion evidence was not created.' }
           $global:LASTEXITCODE = 0

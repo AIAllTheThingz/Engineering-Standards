@@ -598,6 +598,34 @@ def test_linux_marker_environment_rejects_unmodeled_release_and_version() -> Non
             raise AssertionError(f"an unmodeled Linux {field} marker was treated as inactive")
 
 
+def test_linux_marker_environment_skips_target_excluding_unmodeled_release_and_version() -> None:
+    """A target-excluding clause must short-circuit an otherwise unmodeled field."""
+    for field, value in (("platform_release", "10"), ("platform_version", "10.0.19045")):
+        records = [
+            {
+                "metadata": {
+                    "name": "build",
+                    "version": "1.6.1",
+                    "requires_dist": [
+                        f"marker-parent==1.0.0; sys_platform == 'win32' and {field} == '{value}'"
+                    ],
+                }
+            }
+        ]
+
+        marker_requirements = validator.marker_gated_requirements_for_target(
+            records,
+            {"marker-parent": "1.0.0"},
+            validator.LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS[0],
+            "linux-cpython-3.13.2-manylinux_2_17_x86_64",
+        )
+
+        require(
+            marker_requirements == {},
+            f"a target-excluding Linux {field} marker was not short-circuited",
+        )
+
+
 def test_requirements_lock_metadata_parser_rejects_an_unpinned_pip(monkeypatch) -> None:
     """PEP 508 parsing must not silently inherit the workflow interpreter's pip."""
     fake_pip = type("FakePip", (), {"__version__": "26.2.0"})

@@ -709,23 +709,91 @@ def marker_variable_names(marker: Any) -> set[str]:
     return variables
 
 
+def marker_may_apply_to_target(
+    marker: Any,
+    target_environment: dict[str, str],
+    activated_extras: tuple[str, ...],
+    unmodeled_fields: set[str],
+) -> bool:
+    """Return whether a marker can apply without assuming values for unmodeled fields."""
+    try:
+        from pip._vendor.packaging.markers import Variable, _eval_op, _normalize
+    except ImportError as exc:
+        raise ValueError("pip's bundled PEP 508 marker parser is unavailable") from exc
+
+    def evaluate_condition(condition: tuple[Any, Any, Any], environment: dict[str, Any]) -> bool | None:
+        lhs, operator, rhs = condition
+        if isinstance(lhs, Variable):
+            environment_key = lhs.value
+            if environment_key in unmodeled_fields:
+                return None
+            lhs_value = environment[environment_key]
+            rhs_value = rhs.value
+        else:
+            environment_key = rhs.value
+            if environment_key in unmodeled_fields:
+                return None
+            lhs_value = lhs.value
+            rhs_value = environment[environment_key]
+        normalized_lhs, normalized_rhs = _normalize(lhs_value, rhs_value, key=environment_key)
+        return _eval_op(normalized_lhs, operator, normalized_rhs, key=environment_key)
+
+    def evaluate_expression(expression: list[Any], environment: dict[str, Any]) -> bool | None:
+        groups: list[list[bool | None]] = [[]]
+        for item in expression:
+            if isinstance(item, list):
+                groups[-1].append(evaluate_expression(item, environment))
+            elif isinstance(item, tuple):
+                groups[-1].append(evaluate_condition(item, environment))
+            elif item == "or":
+                groups.append([])
+            elif item != "and":
+                raise ValueError("pip resolution report contains an unsupported marker expression")
+        group_results: list[bool | None] = []
+        for group in groups:
+            if any(result is False for result in group):
+                group_results.append(False)
+            elif all(result is True for result in group):
+                group_results.append(True)
+            else:
+                group_results.append(None)
+        if any(result is True for result in group_results):
+            return True
+        if all(result is False for result in group_results):
+            return False
+        return None
+
+    for extra in activated_extras or ("",):
+        environment = {**target_environment, "extra": extra}
+        if evaluate_expression(marker._markers, environment) is not False:
+            return True
+    return False
+
+
 def marker_applies_to_target(
     marker: Any,
     target_environment: dict[str, str],
     target_name: str,
     activated_extras: tuple[str, ...],
 ) -> bool:
-    """Evaluate a marker only when its target environment models every platform value it uses."""
+    """Evaluate markers fail-closed only when unmodeled fields can affect the target."""
     unmodeled_fields = sorted(
         field
         for field in ("platform_release", "platform_version")
         if field in marker_variable_names(marker) and not target_environment.get(field)
     )
-    if unmodeled_fields:
+    if unmodeled_fields and marker_may_apply_to_target(
+        marker,
+        target_environment,
+        activated_extras,
+        set(unmodeled_fields),
+    ):
         raise ValueError(
             "requirements lock closure cannot safely evaluate unmodeled "
             f"{', '.join(unmodeled_fields)} marker(s) for {target_name}"
         )
+    if unmodeled_fields:
+        return False
     extra_contexts = activated_extras or ("",)
     return any(
         marker.evaluate({**target_environment, "extra": extra})
