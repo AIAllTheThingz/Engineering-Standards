@@ -19,7 +19,11 @@ jobs:
   python:
     name: Python validation
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    # Lock closure permits three serial five-minute resolver bootstraps and four
+    # serial five-minute base-target resolutions. Preserve a further 25 minutes
+    # for supplemental marker resolution, functional validation, and durable
+    # failure/completion evidence rather than letting the job timeout bypass it.
+    timeout-minutes: 60
     env:
       PYTHONNOUSERSITE: "1"
       PYTHONSAFEPATH: "1"

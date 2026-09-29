@@ -65,6 +65,12 @@ Describe 'Governed Python project support' {
         $script:driver | Should -Not -Match 'default_environment'
     }
 
+    It 'reserves enough job time for serial lock closure and durable evidence' {
+        $timeoutMatch = [regex]::Match($script:workflow, '(?m)^\s+timeout-minutes:\s*(?<minutes>\d+)\s*$')
+        $timeoutMatch.Success | Should -BeTrue
+        [int]$timeoutMatch.Groups['minutes'].Value | Should -BeGreaterOrEqual 60
+    }
+
     It 'emits validated failure completion evidence when toolchain lock verification does not succeed' {
         $completionIndex = $script:workflow.IndexOf('Create completion evidence in trusted workspace')
         $evidenceIndex = $script:workflow.IndexOf('Validate Python completion evidence')
