@@ -368,6 +368,32 @@ def test_marker_closure_keeps_dependency_with_active_non_extra_condition() -> No
     )
 
 
+def test_marker_closure_does_not_evaluate_empty_extra_when_an_extra_is_active() -> None:
+    """A requested extra must not also activate dependencies for the empty-extra context."""
+    records = [
+        {
+            "metadata": {
+                "name": "marker-parent",
+                "version": "1.0.0",
+                "requires_dist": ["marker-child==2.0.0; extra != 'feature'"],
+            }
+        }
+    ]
+
+    marker_requirements = validator.marker_gated_requirements_for_target(
+        records,
+        {"marker-child": "2.0.0"},
+        validator.LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS[0],
+        "linux-cpython-3.13.2-manylinux_2_17_x86_64",
+        {"marker-parent": ("feature",)},
+    )
+
+    require(
+        marker_requirements == {},
+        "an active extra was incorrectly evaluated together with the empty-extra context",
+    )
+
+
 def test_windows_marker_environment_matches_declared_amd64_target() -> None:
     """The synthetic Windows markers must match the declared win_amd64 target."""
     records = [

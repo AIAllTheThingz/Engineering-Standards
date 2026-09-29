@@ -827,7 +827,6 @@ Describe 'Validate evidence action' {
                 'schemas/completion-result.schema.json'
                 'scripts/New-CompletionEvidence.ps1'
                 'scripts/Normalize-PythonFunctionalEvidence.py'
-                'scripts/Test-PythonStaticAnalysis.ps1'
                 'scripts/python-project-validation.py'
                 'tests/actions/ValidateEvidence.Tests.ps1'
                 'tests/python/python_project_validation_tests.py'
@@ -859,7 +858,6 @@ Describe 'Validate evidence action' {
                     'schemas/completion-result.schema.json'
                     'scripts/New-CompletionEvidence.ps1'
                     'scripts/Normalize-PythonFunctionalEvidence.py'
-                    'scripts/Test-PythonStaticAnalysis.ps1'
                     'scripts/python-project-validation.py'
                 )
                 tests = @(
@@ -906,7 +904,7 @@ Describe 'Validate evidence action' {
                 $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
                 @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
 
-                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v34'
+                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v35'
                 $tagReference = "refs/tags/$($receipt.validatedCommitTag)"
                 & git -C $repositoryRoot show-ref --verify --quiet $tagReference
                 if ($LASTEXITCODE -eq 0) {

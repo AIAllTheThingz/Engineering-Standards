@@ -720,9 +720,10 @@ def marker_applies_to_target(
             "requirements lock closure cannot safely evaluate unmodeled "
             f"{', '.join(unmodeled_fields)} marker(s) for {target_name}"
         )
+    extra_contexts = activated_extras or ("",)
     return any(
         marker.evaluate({**target_environment, "extra": extra})
-        for extra in ("", *activated_extras)
+        for extra in extra_contexts
     )
 
 
