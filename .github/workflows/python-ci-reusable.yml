@@ -84,7 +84,7 @@ jobs:
             'The exact CPython 3.13.2 lock resolver was unavailable; no toolchain was installed.' | Tee-Object -FilePath $durableLockLogPath
             throw 'The exact CPython 3.13.2 lock resolver is unavailable.'
           }
-          $runtimePython = (Get-Command python -CommandType Application -ErrorAction Stop).Path
+          $runtimePython = (Get-Command python -CommandType Application -ErrorAction Stop | Select-Object -First 1).Path
           if ([string]::IsNullOrWhiteSpace($runtimePython) -or -not (Test-Path -LiteralPath $runtimePython -PathType Leaf)) {
             'verifier_started=false' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             'verifier_blocked_reason=The exact CPython 3.12.11 functional runtime was unavailable, so validation could not start.' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append

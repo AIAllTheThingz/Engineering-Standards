@@ -48,6 +48,8 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match '--verify-tool-lock'
         $script:workflow | Should -Match '--resolver-python'
         $script:workflow | Should -Match '--runtime-python'
+        $script:workflow | Should -Match '\$runtimePython = \(Get-Command python -CommandType Application -ErrorAction Stop \| Select-Object -First 1\)\.Path'
+        $script:workflow | Should -Not -Match '\$runtimePython = \(Get-Command python -CommandType Application -ErrorAction Stop\)\.Path'
         $script:driver | Should -Match '"--dry-run"'
         $script:driver | Should -Match '"--ignore-installed"'
         $script:driver | Should -Match '"-c"'
