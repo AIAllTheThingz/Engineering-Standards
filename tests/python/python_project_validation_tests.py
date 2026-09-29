@@ -141,13 +141,37 @@ def test_toolchain_sbom_root_references_every_toolchain_component(tmp_path: Path
         encoding="utf-8",
     )
 
-    validator.attach_toolchain_sbom_root_dependencies(sbom_path)
+    validator.attach_sbom_root_dependencies(sbom_path)
 
     sbom = json.loads(sbom_path.read_text(encoding="utf-8"))
     root_dependency = next(item for item in sbom["dependencies"] if item["ref"] == "root-component")
     require(
         root_dependency.get("dependsOn") == ["requirements-L7", "requirements-L11"],
         "toolchain SBOM root must depend on every toolchain component",
+    )
+
+
+def test_project_sbom_root_references_every_runtime_component(tmp_path: Path) -> None:
+    """The project SBOM root must expose the governed runtime closure too."""
+    sbom_path = tmp_path / "python-project-sbom.cdx.json"
+    sbom_path.write_text(
+        json.dumps(
+            {
+                "metadata": {"component": {"bom-ref": "project-root"}},
+                "components": [{"bom-ref": "runtime-L7", "name": "requests"}],
+                "dependencies": [{"ref": "runtime-L7"}, {"ref": "project-root"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    validator.attach_sbom_root_dependencies(sbom_path)
+
+    sbom = json.loads(sbom_path.read_text(encoding="utf-8"))
+    root_dependency = next(item for item in sbom["dependencies"] if item["ref"] == "project-root")
+    require(
+        root_dependency.get("dependsOn") == ["runtime-L7"],
+        "project SBOM root must depend on every runtime component",
     )
 
 
@@ -367,6 +391,82 @@ def test_requirements_lock_closure_resolves_every_target_and_functional_runtime(
         "the functional CPython 3.12.11 runtime was not resolved",
     )
     require(len(validated_reports) == 1 and len(validated_reports[0]) == 4, "all target reports were not validated")
+
+
+def test_requirements_lock_closure_marks_resolver_outage_blocked(tmp_path: Path, monkeypatch) -> None:
+    """Transient resolver outages must be reported separately from stale locks."""
+    requirements_input = tmp_path / "requirements-ci.in"
+    requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "build==1.6.1 \\\n"
+        "    --hash=sha256:" + "0" * 64 + "\n"
+        "    # via -r requirements-ci.in\n",
+        encoding="utf-8",
+    )
+    resolver_python = tmp_path / "resolver-python"
+    runtime_python = tmp_path / "runtime-python"
+    resolver_python.touch()
+    runtime_python.touch()
+
+    def fake_run(command: list[str], cwd: Path, env: dict[str, str], timeout: int = 300) -> tuple[int, str, float]:
+        if command[2] == "-c":
+            expected = "cpython 3.13.2" if command[0] == str(resolver_python) else "cpython 3.12.11"
+            return 0, expected + "\n", 0.0
+        return 124, "ERROR: Could not fetch URL: Read timed out", 300.0
+
+    monkeypatch.setattr(validator, "run", fake_run)
+    try:
+        validator.validate_requirements_lock_closure(
+            requirements_input,
+            lock,
+            resolver_python,
+            runtime_python,
+            tmp_path / "work",
+        )
+    except validator.LockResolutionBlockedError as exc:
+        require("could not resolve the requirements lock closure" in str(exc), "blocked resolver output was lost")
+    else:
+        raise AssertionError("resolver outage was not classified as blocked")
+
+
+def test_requirements_lock_closure_keeps_invalid_resolution_as_failure(tmp_path: Path, monkeypatch) -> None:
+    """Invalid resolver output remains a failed closure, not a blocked closure."""
+    requirements_input = tmp_path / "requirements-ci.in"
+    requirements_input.write_text("build==1.6.1\n", encoding="utf-8")
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "build==1.6.1 \\\n"
+        "    --hash=sha256:" + "0" * 64 + "\n"
+        "    # via -r requirements-ci.in\n",
+        encoding="utf-8",
+    )
+    resolver_python = tmp_path / "resolver-python"
+    runtime_python = tmp_path / "runtime-python"
+    resolver_python.touch()
+    runtime_python.touch()
+
+    def fake_run(command: list[str], cwd: Path, env: dict[str, str], timeout: int = 300) -> tuple[int, str, float]:
+        if command[2] == "-c":
+            expected = "cpython 3.13.2" if command[0] == str(resolver_python) else "cpython 3.12.11"
+            return 0, expected + "\n", 0.0
+        return 1, "ERROR: Cannot install build==1.6.1 because these package versions have conflicting dependencies.", 0.0
+
+    monkeypatch.setattr(validator, "run", fake_run)
+    try:
+        validator.validate_requirements_lock_closure(
+            requirements_input,
+            lock,
+            resolver_python,
+            runtime_python,
+            tmp_path / "work",
+        )
+    except validator.LockResolutionBlockedError:
+        raise AssertionError("invalid resolution was incorrectly classified as blocked")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("invalid resolution was not rejected")
 
 
 def test_requirements_lock_rejects_impossible_marker_transitive_pin(tmp_path: Path) -> None:

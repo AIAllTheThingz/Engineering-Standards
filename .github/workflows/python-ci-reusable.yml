@@ -78,10 +78,13 @@ jobs:
         run: |
           $resolverPython = '${{ steps.lock_resolver.outputs.python-path }}'
           $durableLockLogPath = Join-Path $env:RUNNER_TEMP 'python-lock-verification.log'
+          $verificationCommand = '<CPython-3.13.2> -I standards/scripts/python-project-validation.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci.lock --resolver-python <CPython-3.13.2> --runtime-python <CPython-3.12.11>'
+          "verification_command=$verificationCommand" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           New-Item -ItemType File -Path $durableLockLogPath -Force | Out-Null
           Set-Content -LiteralPath $durableLockLogPath -Value 'Python toolchain lock verification started.'
           if ([string]::IsNullOrWhiteSpace($resolverPython) -or -not (Test-Path -LiteralPath $resolverPython -PathType Leaf)) {
             'verifier_started=false' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            'verifier_blocked=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             'verifier_blocked_reason=The exact CPython 3.13.2 lock resolver was unavailable, so validation could not start.' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             'The exact CPython 3.13.2 lock resolver was unavailable; no toolchain was installed.' | Tee-Object -FilePath $durableLockLogPath
             throw 'The exact CPython 3.13.2 lock resolver is unavailable.'
@@ -89,18 +92,26 @@ jobs:
           $runtimePython = (Get-Command python -CommandType Application -ErrorAction Stop | Select-Object -First 1).Path
           if ([string]::IsNullOrWhiteSpace($runtimePython) -or -not (Test-Path -LiteralPath $runtimePython -PathType Leaf)) {
             'verifier_started=false' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            'verifier_blocked=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             'verifier_blocked_reason=The exact CPython 3.12.11 functional runtime was unavailable, so validation could not start.' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             'The exact CPython 3.12.11 functional runtime was unavailable; no toolchain was installed.' | Tee-Object -FilePath $durableLockLogPath
             throw 'The exact CPython 3.12.11 functional runtime is unavailable.'
           }
           'verifier_started=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          'verifier_blocked=false' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           & $resolverPython -I standards/scripts/python-project-validation.py `
             --verify-tool-lock `
             --work-root (Join-Path $env:RUNNER_TEMP 'python-lock-resolution') `
             --tool-lock standards/examples/python-project/requirements-ci.lock `
             --resolver-python $resolverPython `
             --runtime-python $runtimePython 2>&1 | Tee-Object -FilePath $durableLockLogPath
-          if ($LASTEXITCODE -ne 0) { throw 'The governed Python toolchain lock does not match its complete resolved closure.' }
+          $lockVerificationExitCode = $LASTEXITCODE
+          if ($lockVerificationExitCode -eq 2) {
+            'verifier_blocked=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            'verifier_blocked_reason=The Python package resolver was unavailable or timed out, so lock validation could not complete.' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            throw 'The governed Python toolchain lock resolver was unavailable or timed out.'
+          }
+          if ($lockVerificationExitCode -ne 0) { throw 'The governed Python toolchain lock does not match its complete resolved closure.' }
 
       - name: Install standards-owned hash-locked toolchain
         if: steps.lock_verification.outcome == 'success'
@@ -157,7 +168,12 @@ jobs:
         run: |
           $lockVerificationOutcome = '${{ steps.lock_verification.outcome }}'
           $lockVerificationStarted = '${{ steps.lock_verification.outputs.verifier_started }}' -eq 'true'
+          $lockVerificationBlocked = '${{ steps.lock_verification.outputs.verifier_blocked }}' -eq 'true'
           $lockVerificationBlockedReason = '${{ steps.lock_verification.outputs.verifier_blocked_reason }}'
+          $lockVerificationCommand = '${{ steps.lock_verification.outputs.verification_command }}'
+          if ([string]::IsNullOrWhiteSpace($lockVerificationCommand)) {
+            $lockVerificationCommand = '<CPython-3.13.2> -I standards/scripts/python-project-validation.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci.lock --resolver-python <CPython-3.13.2> --runtime-python <CPython-3.12.11>'
+          }
           $durableLockLogPath = Join-Path $env:RUNNER_TEMP 'python-lock-verification.log'
           $lockEvidenceLogPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/lock-verification.log'
           New-Item -ItemType Directory -Path (Split-Path -Parent $lockEvidenceLogPath) -Force | Out-Null
@@ -177,7 +193,7 @@ jobs:
               status = 'Passed'
               requiredValidation = $true
               evidenceSource = 'Automated'
-              command = 'python-project-validation.py --verify-tool-lock'
+              command = $lockVerificationCommand
               workingDirectory = 'trusted-isolated-workspace'
               startedAtUtc = $now
               completedAtUtc = $now
@@ -207,7 +223,7 @@ jobs:
               -GovernanceVersion 1.1.0 `
               -RiskClassification Moderate `
               -Summary 'Governed Python toolchain lock closure, static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' `
-              -CommandsExecuted @('python-project-validation.py --verify-tool-lock','python-project-validation.py') `
+              -CommandsExecuted @($lockVerificationCommand,'python-project-validation.py') `
               -ArtifactPath @('evidence/lock-verification.log','evidence/local-test-results.json','evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json','evidence/python-toolchain-sbom.cdx.json') `
               -Repository $env:GITHUB_REPOSITORY `
               -Branch $env:GITHUB_REF_NAME `
@@ -225,41 +241,41 @@ jobs:
             if (-not (Test-Path -LiteralPath $lockEvidenceLogPath -PathType Leaf)) {
               'The Python lock verifier did not start because a required prerequisite did not complete.' | Set-Content -LiteralPath $lockEvidenceLogPath -Encoding utf8
             }
-            $verificationCommand = 'python-project-validation.py --verify-tool-lock'
             $commandsExecuted = @()
             $commandsNotExecuted = @('Toolchain installation and functional validation were not run because lock verification did not succeed.')
             if ($lockVerificationStarted) {
-              $commandsExecuted = @($verificationCommand)
+              $commandsExecuted = @($lockVerificationCommand)
             }
             else {
-              $commandsNotExecuted += $verificationCommand
+              $commandsNotExecuted += $lockVerificationCommand
             }
-            $completionSummary = if ($lockVerificationStarted) { 'Python toolchain lock verification failed before toolchain installation.' } else { 'Python toolchain lock verification could not start before toolchain installation.' }
-            $blockedReason = if ($lockVerificationStarted) { $null } elseif ([string]::IsNullOrWhiteSpace($lockVerificationBlockedReason)) { 'The Python lock verifier prerequisite was unavailable, so validation could not start.' } else { $lockVerificationBlockedReason }
+            $completionSummary = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'Python toolchain lock verification could not complete before toolchain installation.' } else { 'Python toolchain lock verification failed before toolchain installation.' }
+            $blockedReason = if (-not $lockVerificationBlocked -and $lockVerificationStarted) { $null } elseif ([string]::IsNullOrWhiteSpace($lockVerificationBlockedReason)) { 'The Python lock verifier prerequisite or package resolver was unavailable, so validation could not complete.' } else { $lockVerificationBlockedReason }
             $now = (Get-Date).ToUniversalTime().ToString('o')
             $lockVerificationRecord = [ordered]@{
               schemaVersion = '1.1.0'
               name = 'Python toolchain lock closure'
               category = 'security'
-              status = if ($lockVerificationStarted) { 'Failed' } else { 'Blocked' }
+              status = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'Blocked' } else { 'Failed' }
               requiredValidation = $true
               evidenceSource = 'Automated'
-              command = $verificationCommand
+              command = $lockVerificationCommand
               workingDirectory = 'trusted-isolated-workspace'
               startedAtUtc = $now
               completedAtUtc = $now
               durationSeconds = 0
               runtime = 'CPython 3.13.2 resolver'
               toolVersion = 'python-project-validation.py'
-              exitCode = if ($lockVerificationStarted) { 1 } else { $null }
-              summary = if ($lockVerificationStarted) { 'The required Python toolchain lock verification did not succeed.' } else { 'The required Python toolchain lock verification could not start.' }
+              exitCode = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { $null } else { 1 }
+              summary = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'The required Python toolchain lock verification could not complete.' } else { 'The required Python toolchain lock verification did not succeed.' }
               warnings = @()
-              failureReason = if ($lockVerificationStarted) { 'The governed Python toolchain lock verification did not complete successfully.' } else { $null }
+              failureReason = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { $null } else { 'The governed Python toolchain lock verification did not complete successfully.' }
               blockedReason = $blockedReason
               notApplicableRationale = $null
               details = [ordered]@{
                 outcome = $lockVerificationOutcome
-                resolverAvailable = $lockVerificationStarted
+                verifierStarted = $lockVerificationStarted
+                resolverAvailable = -not ($lockVerificationBlocked -or -not $lockVerificationStarted)
                 logPath = 'evidence/lock-verification.log'
               }
             }

@@ -317,41 +317,41 @@ def write_toolchain_sbom_pyproject(work_root: Path) -> Path:
     return metadata_path
 
 
-def attach_toolchain_sbom_root_dependencies(sbom_path: Path) -> None:
-    """Connect the standards-owned SBOM root to every governed tool component."""
+def attach_sbom_root_dependencies(sbom_path: Path) -> None:
+    """Connect an SBOM root to every governed component in its closure."""
     try:
         document = json.loads(sbom_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise ValueError(f"could not read generated toolchain SBOM: {exc}") from exc
+        raise ValueError(f"could not read generated SBOM: {exc}") from exc
     if not isinstance(document, dict):
-        raise ValueError("generated toolchain SBOM must be a JSON object")
+        raise ValueError("generated SBOM must be a JSON object")
     metadata = document.get("metadata")
     root_component = metadata.get("component") if isinstance(metadata, dict) else None
     root_ref = root_component.get("bom-ref") if isinstance(root_component, dict) else None
     if not isinstance(root_ref, str) or not root_ref:
-        raise ValueError("generated toolchain SBOM is missing its root component reference")
-    components = document.get("components")
-    if not isinstance(components, list) or not components:
-        raise ValueError("generated toolchain SBOM must contain governed components")
+        raise ValueError("generated SBOM is missing its root component reference")
+    components = document.get("components", [])
+    if not isinstance(components, list):
+        raise ValueError("generated SBOM components must be a list")
     component_refs: list[str] = []
     for component in components:
         ref = component.get("bom-ref") if isinstance(component, dict) else None
         if not isinstance(ref, str) or not ref:
-            raise ValueError("generated toolchain SBOM contains a component without a reference")
+            raise ValueError("generated SBOM contains a component without a reference")
         if ref in component_refs:
-            raise ValueError(f"generated toolchain SBOM contains duplicate component reference '{ref}'")
+            raise ValueError(f"generated SBOM contains duplicate component reference '{ref}'")
         component_refs.append(ref)
     dependencies = document.get("dependencies")
     if not isinstance(dependencies, list) or any(not isinstance(item, dict) for item in dependencies):
-        raise ValueError("generated toolchain SBOM contains invalid dependency records")
+        raise ValueError("generated SBOM contains invalid dependency records")
     root_records = [item for item in dependencies if item.get("ref") == root_ref]
     if len(root_records) != 1:
-        raise ValueError("generated toolchain SBOM must contain exactly one root dependency record")
+        raise ValueError("generated SBOM must contain exactly one root dependency record")
     root_records[0]["dependsOn"] = component_refs
     try:
         sbom_path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
     except OSError as exc:
-        raise ValueError(f"could not write generated toolchain SBOM: {exc}") from exc
+        raise ValueError(f"could not write generated SBOM: {exc}") from exc
 
 
 GOVERNED_HATCHLING_VERSION = "1.32.4"
@@ -678,6 +678,25 @@ def validate_resolved_requirements_lock(
         )
 
 
+class LockResolutionBlockedError(ValueError):
+    """The package resolver could not reach the required external service."""
+
+
+def is_transient_lock_resolution_failure(exit_code: int, output: str) -> bool:
+    """Classify resolver outages without hiding invalid or stale lock failures."""
+    if exit_code == 124:
+        return True
+    return bool(
+        re.search(
+            r"(?:could not fetch url|read timed? out|timed out|connection (?:reset|refused|aborted|error)|"
+            r"failed to establish a new connection|network is unreachable|temporary failure in name resolution|"
+            r"name or service not known|service unavailable|http error 5\d{2}|503 server error)",
+            output,
+            flags=re.IGNORECASE,
+        )
+    )
+
+
 def validate_requirements_lock_closure(
     requirements_input: Path,
     lock: Path,
@@ -747,7 +766,10 @@ def validate_requirements_lock_closure(
                         runtime_python.parent,
                     ],
                 )
-                raise ValueError(f"could not resolve the requirements lock closure for {target_name}: {sanitized}")
+                message = f"could not resolve the requirements lock closure for {target_name}: {sanitized}"
+                if is_transient_lock_resolution_failure(code, output):
+                    raise LockResolutionBlockedError(message)
+                raise ValueError(message)
             if not report.is_file():
                 raise ValueError(f"pip did not produce the required {target_name} resolution report")
             reports.append(report)
@@ -988,12 +1010,12 @@ def validate(args: argparse.Namespace) -> int:
                 str(sbom_path),
             )
             sbom_code, sbom_output, sbom_duration = run(sbom_command, args.work_root, env)
-            if sbom_code == 0 and root_component == TOOLCHAIN_SBOM_PROJECT_NAME:
+            if sbom_code == 0:
                 try:
-                    attach_toolchain_sbom_root_dependencies(sbom_path)
+                    attach_sbom_root_dependencies(sbom_path)
                 except ValueError as exc:
                     sbom_code = 1
-                    sbom_output = f"{sbom_output}\nToolchain SBOM dependency graph validation failed: {exc}".strip()
+                    sbom_output = f"{sbom_output}\nSBOM dependency graph validation failed: {exc}".strip()
             sbom_record = make_evidence(
                 name,
                 "security",
@@ -1066,6 +1088,9 @@ def main() -> int:
                 args.work_root,
             )
             return 0
+        except LockResolutionBlockedError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
         except Exception as exc:
             print(str(exc), file=sys.stderr)
             return 1
