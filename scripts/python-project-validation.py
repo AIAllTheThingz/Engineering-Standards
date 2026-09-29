@@ -203,6 +203,15 @@ LOCK_RESOLUTION_TARGETS: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 LOCK_RESOLUTION_PIP_NAME = "pip"
 LOCK_RESOLUTION_PIP_VERSION = "26.2.1"
+# The declared macosx_13_0_x86_64 target is the released Intel macOS 13.0
+# baseline.  PEP 508 exposes these values verbatim through platform.release()
+# and platform.version(), so keep the marker environment aligned with that
+# target instead of silently treating release-gated requirements as inactive.
+MACOS_13_0_PLATFORM_RELEASE = "22.1.0"
+MACOS_13_0_PLATFORM_VERSION = (
+    "Darwin Kernel Version 22.1.0: Sun Oct 9 20:14:54 PDT 2022; "
+    "root:xnu-8792.41.9~2/RELEASE_X86_64"
+)
 # Pip's cross-platform options select compatible wheels but do not apply PEP 508
 # platform markers. These environments mirror the targets resolved above and are
 # used only to account for a marker-gated dependency omitted from those reports.
@@ -241,9 +250,9 @@ LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS: tuple[dict[str, str], ...] = (
         "os_name": "posix",
         "platform_machine": "x86_64",
         "platform_python_implementation": "CPython",
-        "platform_release": "",
+        "platform_release": MACOS_13_0_PLATFORM_RELEASE,
         "platform_system": "Darwin",
-        "platform_version": "",
+        "platform_version": MACOS_13_0_PLATFORM_VERSION,
         "python_full_version": "3.13.2",
         "python_version": "3.13",
         "sys_platform": "darwin",
@@ -642,14 +651,14 @@ def marker_gated_requirements_for_target(
     locked: dict[str, str],
     target_environment: dict[str, str],
     target_name: str,
-) -> dict[str, str]:
-    """Return locked non-extra dependencies whose markers apply to one target."""
+) -> dict[str, tuple[str, tuple[str, ...]]]:
+    """Return target-active lock pins together with every requested extra."""
     try:
         from pip._vendor.packaging.requirements import InvalidRequirement, Requirement
     except ImportError as exc:
         raise ValueError("pip's bundled PEP 508 requirement parser is unavailable") from exc
 
-    marker_gated: dict[str, str] = {}
+    marker_gated: dict[str, tuple[str, tuple[str, ...]]] = {}
     for item in install_records:
         metadata = item.get("metadata")
         if not isinstance(metadata, dict):
@@ -681,8 +690,24 @@ def marker_gated_requirements_for_target(
                     f"requirements lock pin {name}=={version} does not satisfy the marker-gated "
                     f"dependency declared for {target_name}"
                 )
-            marker_gated[name] = version
+            extras = tuple(sorted(requirement.extras))
+            prior = marker_gated.get(name)
+            if prior is not None:
+                prior_version, prior_extras = prior
+                if prior_version != version:
+                    raise ValueError(
+                        f"marker-gated package {name} has incompatible locked versions "
+                        f"for {target_name}"
+                    )
+                extras = tuple(sorted(set(prior_extras).union(extras)))
+            marker_gated[name] = (version, extras)
     return marker_gated
+
+
+def marker_resolution_requirement(name: str, version: str, extras: tuple[str, ...]) -> str:
+    """Format a constrained supplemental request without discarding extras."""
+    suffix = f"[{','.join(extras)}]" if extras else ""
+    return f"{name}{suffix}=={version}"
 
 
 def validate_resolved_requirements_lock(
@@ -962,6 +987,7 @@ def validate_requirements_lock_closure(
                 )
             ]
             marker_request_number = 0
+            requested_marker_extras: dict[str, tuple[str, ...]] = {}
             while True:
                 install_records, resolved = collect_target_resolution(target_reports, target_name)
                 marker_requirements = marker_gated_requirements_for_target(
@@ -970,17 +996,21 @@ def validate_requirements_lock_closure(
                     target_environment,
                     target_name,
                 )
-                pending = sorted(
-                    (name, version)
-                    for name, version in marker_requirements.items()
-                    if name not in resolved
-                )
+                pending: list[tuple[str, str, tuple[str, ...]]] = []
+                for name, (version, extras) in sorted(marker_requirements.items()):
+                    requested_extras = requested_marker_extras.get(name, ())
+                    combined_extras = tuple(sorted(set(requested_extras).union(extras)))
+                    if name not in resolved or combined_extras != requested_extras:
+                        pending.append((name, version, combined_extras))
                 if not pending:
                     break
-                for name, version in pending:
+                for name, version, extras in pending:
                     marker_request_number += 1
                     marker_input = Path(directory) / f"{target_name}-marker-{marker_request_number}.in"
-                    marker_input.write_text(f"{name}=={version}\n", encoding="utf-8")
+                    marker_input.write_text(
+                        marker_resolution_requirement(name, version, extras) + "\n",
+                        encoding="utf-8",
+                    )
                     marker_report = resolve_target(
                         python,
                         target_name,
@@ -993,6 +1023,7 @@ def validate_requirements_lock_closure(
                         raise ValueError(
                             f"marker-gated package {name}=={version} was not resolved for {target_name}"
                         )
+                    requested_marker_extras[name] = extras
                     target_reports.append(marker_report)
             reports.extend(target_reports)
         validate_resolved_requirements_lock(requirements_input, lock, tuple(reports))

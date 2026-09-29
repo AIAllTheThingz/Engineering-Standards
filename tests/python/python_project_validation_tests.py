@@ -363,7 +363,7 @@ def test_marker_closure_keeps_dependency_with_active_non_extra_condition() -> No
     )
 
     require(
-        marker_requirements == {"marker-parent": "1.0.0"},
+        marker_requirements == {"marker-parent": ("1.0.0", ())},
         "an active non-extra marker condition was discarded",
     )
 
@@ -388,7 +388,7 @@ def test_windows_marker_environment_matches_declared_amd64_target() -> None:
     )
 
     require(
-        marker_requirements == {"marker-parent": "1.0.0"},
+        marker_requirements == {"marker-parent": ("1.0.0", ())},
         "the Windows marker environment does not model win_amd64",
     )
 
@@ -415,8 +415,74 @@ def test_windows_marker_environment_models_declared_release() -> None:
     )
 
     require(
-        marker_requirements == {"marker-parent": "1.0.0"},
+        marker_requirements == {"marker-parent": ("1.0.0", ())},
         "the Windows marker environment does not model platform_release 10",
+    )
+
+
+def test_marker_closure_preserves_and_merges_requested_extras() -> None:
+    """Marker-active extras must survive into one deterministic supplemental request."""
+    records = [
+        {
+            "metadata": {
+                "name": "build",
+                "version": "1.6.1",
+                "requires_dist": [
+                    "marker-parent[feature-one]==1.0.0; sys_platform == 'win32'",
+                    "marker-parent[feature-two]==1.0.0; sys_platform == 'win32'",
+                ],
+            }
+        }
+    ]
+
+    marker_requirements = validator.marker_gated_requirements_for_target(
+        records,
+        {"marker-parent": "1.0.0"},
+        validator.LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS[1],
+        "windows-cpython-3.13.2-x86_64",
+    )
+
+    require(
+        marker_requirements == {"marker-parent": ("1.0.0", ("feature-one", "feature-two"))},
+        "marker-gated extras were not preserved and merged",
+    )
+    require(
+        validator.marker_resolution_requirement(
+            "marker-parent", "1.0.0", ("feature-one", "feature-two")
+        )
+        == "marker-parent[feature-one,feature-two]==1.0.0",
+        "supplemental marker resolution discarded requested extras",
+    )
+
+
+def test_macos_marker_environment_models_declared_release_and_version() -> None:
+    """The macOS 13.0 target must evaluate its declared Darwin marker values."""
+    records = [
+        {
+            "metadata": {
+                "name": "build",
+                "version": "1.6.1",
+                "requires_dist": [
+                    "marker-release==1.0.0; "
+                    f"sys_platform == 'darwin' and platform_release == '{validator.MACOS_13_0_PLATFORM_RELEASE}'",
+                    "marker-version==1.0.0; "
+                    f"sys_platform == 'darwin' and platform_version == '{validator.MACOS_13_0_PLATFORM_VERSION}'",
+                ],
+            }
+        }
+    ]
+
+    marker_requirements = validator.marker_gated_requirements_for_target(
+        records,
+        {"marker-release": "1.0.0", "marker-version": "1.0.0"},
+        validator.LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS[2],
+        "macos-cpython-3.13.2-x86_64",
+    )
+
+    require(
+        marker_requirements
+        == {"marker-release": ("1.0.0", ()), "marker-version": ("1.0.0", ())},
+        "the macOS marker environment does not model its declared Darwin release and version",
     )
 
 
@@ -561,11 +627,14 @@ def test_requirements_lock_closure_resolves_marker_gated_transitive_chain(
                     "metadata": {
                         "name": "build",
                         "version": "1.6.1",
-                        "requires_dist": ["marker-parent==1.0.0; sys_platform == 'win32'"],
+                        "requires_dist": [
+                            "marker-parent[feature-one]==1.0.0; sys_platform == 'win32'",
+                            "marker-parent[feature-two]==1.0.0; sys_platform == 'win32'",
+                        ],
                     }
                 }
             ]
-        elif requested == "marker-parent==1.0.0":
+        elif requested == "marker-parent[feature-one,feature-two]==1.0.0":
             installs = [
                 {
                     "metadata": {
@@ -597,7 +666,11 @@ def test_requirements_lock_closure_resolves_marker_gated_transitive_chain(
     )
 
     marker_requests = [requested for requested, _command in requested_roots if requested != "build==1.6.1"]
-    require(marker_requests == ["marker-parent==1.0.0", "marker-child==2.0.0"], "marker closure was not recursive")
+    require(
+        marker_requests
+        == ["marker-parent[feature-one,feature-two]==1.0.0", "marker-child==2.0.0"],
+        "marker closure did not preserve extras while resolving recursively",
+    )
     for requested, command in requested_roots:
         if requested != "build==1.6.1":
             require("--platform" in command and "win_amd64" in command, "marker closure used the wrong target")
