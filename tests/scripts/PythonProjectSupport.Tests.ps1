@@ -54,6 +54,89 @@ Describe 'Governed Python project support' {
         $script:driver | Should -Match 'validate_resolved_requirements_lock'
     }
 
+    It 'emits validated failure completion evidence when toolchain lock verification does not succeed' {
+        $completionIndex = $script:workflow.IndexOf('Create completion evidence in trusted workspace')
+        $evidenceIndex = $script:workflow.IndexOf('Validate Python completion evidence')
+        $completionIndex | Should -BeGreaterThan -1
+        $evidenceIndex | Should -BeGreaterThan $completionIndex
+        $script:workflow | Should -Match '(?s)id:\s*completion\s*\r?\n\s*if:\s*always\(\)'
+        $script:workflow | Should -Match 'if \(\$lockVerificationOutcome -eq ''success''\)'
+        $script:workflow | Should -Match '(?s)id:\s*lock_resolver\s*\r?\n\s*continue-on-error:\s*true'
+        $script:workflow | Should -Match 'The exact CPython 3\.13\.2 lock resolver was unavailable; no toolchain was installed\.'
+        $script:workflow | Should -Match 'local-test-results\.json'
+        $script:workflow | Should -Match 'The governed Python toolchain lock verification did not complete successfully\.'
+        $script:workflow | Should -Match 'evidence/lock-verification\.log'
+        $script:workflow | Should -Match '(?s)id:\s*evidence\s*\r?\n\s*if:\s*always\(\) && steps\.completion\.outcome == ''success'''
+    }
+
+    It 'validates a lock-failure receipt without installing the rejected toolchain' {
+        $workspace = Join-Path $TestDrive 'python-lock-failure-evidence'
+        $caller = Join-Path $workspace 'caller'
+        $evidence = Join-Path $workspace 'evidence'
+        New-Item -ItemType Directory -Path $caller,$evidence -Force | Out-Null
+        'The governed lock verifier rejected the supplied toolchain closure.' | Set-Content -LiteralPath (Join-Path $evidence 'lock-verification.log') -Encoding utf8
+        $now = (Get-Date).ToUniversalTime().ToString('o')
+        $failureRecord = [ordered]@{
+            schemaVersion = '1.1.0'
+            name = 'Python toolchain lock closure'
+            category = 'security'
+            status = 'Failed'
+            requiredValidation = $true
+            evidenceSource = 'Automated'
+            command = 'python-project-validation.py --verify-tool-lock'
+            workingDirectory = 'trusted-isolated-workspace'
+            startedAtUtc = $now
+            completedAtUtc = $now
+            durationSeconds = 0
+            runtime = 'CPython 3.13.2 resolver'
+            toolVersion = 'python-project-validation.py'
+            exitCode = 1
+            summary = 'The required Python toolchain lock verification did not succeed.'
+            warnings = @()
+            failureReason = 'The governed Python toolchain lock verification did not complete successfully.'
+            blockedReason = $null
+            notApplicableRationale = $null
+            details = [ordered]@{
+                outcome = 'failure'
+                logPath = 'evidence/lock-verification.log'
+            }
+        }
+        @($failureRecord) | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath (Join-Path $evidence 'local-test-results.json') -Encoding utf8
+        $saved = @{}
+        foreach ($name in @('GITHUB_ACTIONS','GITHUB_RUN_ID','GITHUB_RUN_ATTEMPT','GITHUB_WORKFLOW','GITHUB_SHA','GITHUB_REF_NAME','GITHUB_REPOSITORY')) {
+            $saved[$name] = [Environment]::GetEnvironmentVariable($name)
+        }
+        try {
+            $env:GITHUB_ACTIONS = 'true'; $env:GITHUB_RUN_ID = '1'; $env:GITHUB_RUN_ATTEMPT = '1'
+            $env:GITHUB_WORKFLOW = 'Python validation'; $env:GITHUB_SHA = ('1' * 40)
+            $env:GITHUB_REF_NAME = 'main'; $env:GITHUB_REPOSITORY = 'example-org/project'
+            & (Join-Path $script:root 'scripts/New-CompletionEvidence.ps1') `
+                -RepositoryPath $workspace -SourceRepositoryPath $caller -OutputPath 'evidence/completion-result.json' `
+                -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate `
+                -Summary 'Python toolchain lock verification failed before toolchain installation.' `
+                -CommandsExecuted @('python-project-validation.py --verify-tool-lock') `
+                -CommandsNotExecuted @('Toolchain installation and functional validation were not run because lock verification failed.') `
+                -ArtifactPath @('evidence/lock-verification.log','evidence/local-test-results.json') `
+                -ArtifactName 'python-evidence-1' -Repository 'example-org/project' -Branch main -ValidatedCommitSha ('1' * 40) `
+                -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha ('2' * 40) `
+                -ValidationProfile 'python-functional' -ChecksExecuted @('PythonToolchainLockClosure') `
+                -EvidenceExecutionContext GitHubActions | Out-Null
+            $LASTEXITCODE | Should -Be 0
+            & (Join-Path $script:root 'actions/validate-evidence/Invoke-EvidenceValidation.ps1') `
+                -Path $workspace -EvidencePath 'evidence/completion-result.json' `
+                -ExpectedCommitSha ('1' * 40) -ExpectedRepository 'example-org/project' -ExpectedRefName main `
+                -OutputJson (Join-Path $evidence 'evidence-validation.json') | Out-Null
+            $LASTEXITCODE | Should -Be 0
+            $completion = Get-Content -LiteralPath (Join-Path $evidence 'completion-result.json') -Raw | ConvertFrom-Json
+            $completion.status | Should -BeExactly 'Failed'
+            @($completion.artifacts.path) | Should -Contain 'evidence/lock-verification.log'
+            @($completion.artifacts.path) | Should -Contain 'evidence/local-test-results.json'
+        }
+        finally {
+            foreach ($name in $saved.Keys) { [Environment]::SetEnvironmentVariable($name, $saved[$name]) }
+        }
+    }
+
     It 'keeps functional tools outside the central static validator lock' {
         $central = Get-Content -LiteralPath (Join-Path $script:root '.github/dependencies/validator-dependencies.psd1') -Raw
         $central | Should -Not -Match "(?i)Name\s*=\s*'(pytest|mypy|pip-audit|build|hatchling|cyclonedx-bom)'"

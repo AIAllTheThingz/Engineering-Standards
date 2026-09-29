@@ -54,6 +54,7 @@ jobs:
 
       - name: Set up exact CPython 3.13.2 lock resolver
         id: lock_resolver
+        continue-on-error: true
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: 3.13.2
@@ -77,6 +78,10 @@ jobs:
         run: |
           $resolverPython = '${{ steps.lock_resolver.outputs.python-path }}'
           $logPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/lock-verification.log'
+          if ([string]::IsNullOrWhiteSpace($resolverPython) -or -not (Test-Path -LiteralPath $resolverPython -PathType Leaf)) {
+            'The exact CPython 3.13.2 lock resolver was unavailable; no toolchain was installed.' | Tee-Object -FilePath $logPath
+            throw 'The exact CPython 3.13.2 lock resolver is unavailable.'
+          }
           & $resolverPython -I standards/scripts/python-project-validation.py `
             --verify-tool-lock `
             --work-root (Join-Path $env:RUNNER_TEMP 'python-lock-resolution') `
@@ -133,18 +138,68 @@ jobs:
 
       - name: Create completion evidence in trusted workspace
         id: completion
-        if: always() && steps.lock_verification.outcome == 'success'
+        if: always()
         continue-on-error: true
         shell: pwsh
         run: |
-          & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath (Join-Path $env:PYTHON_WORK_ROOT 'caller') -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary 'Governed Python static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' -CommandsExecuted @('python-project-validation.py') -ArtifactPath @('evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json','evidence/python-toolchain-sbom.cdx.json') -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha '${{ job.workflow_sha }}'
+          $lockVerificationOutcome = '${{ steps.lock_verification.outcome }}'
           $completionPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/completion-result.json'
+          if ($lockVerificationOutcome -eq 'success') {
+            & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath (Join-Path $env:PYTHON_WORK_ROOT 'caller') -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary 'Governed Python static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' -CommandsExecuted @('python-project-validation.py') -ArtifactPath @('evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json','evidence/python-toolchain-sbom.cdx.json') -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha '${{ job.workflow_sha }}'
+          }
+          else {
+            $callerStage = Join-Path $env:PYTHON_WORK_ROOT 'caller'
+            New-Item -ItemType Directory -Path $callerStage -Force | Out-Null
+            $callerStageItem = Get-Item -LiteralPath $callerStage -Force
+            if ($callerStageItem.LinkType -or ($callerStageItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Failure evidence caller workspace must not be a link or reparse point.' }
+            $logPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/lock-verification.log'
+            if (-not (Test-Path -LiteralPath $logPath -PathType Leaf)) {
+              'The Python lock verifier did not start because a required prerequisite did not complete.' | Set-Content -LiteralPath $logPath -Encoding utf8
+            }
+            $verificationCommand = 'python-project-validation.py --verify-tool-lock'
+            $commandsExecuted = @()
+            $commandsNotExecuted = @('Toolchain installation and functional validation were not run because lock verification did not succeed.')
+            if ($lockVerificationOutcome -eq 'failure') {
+              $commandsExecuted = @($verificationCommand)
+            }
+            else {
+              $commandsNotExecuted += 'The lock verification command did not run because its prerequisite did not complete.'
+            }
+            $now = (Get-Date).ToUniversalTime().ToString('o')
+            $failureRecord = [ordered]@{
+              schemaVersion = '1.1.0'
+              name = 'Python toolchain lock closure'
+              category = 'security'
+              status = 'Failed'
+              requiredValidation = $true
+              evidenceSource = 'Automated'
+              command = $verificationCommand
+              workingDirectory = 'trusted-isolated-workspace'
+              startedAtUtc = $now
+              completedAtUtc = $now
+              durationSeconds = 0
+              runtime = 'CPython 3.13.2 resolver'
+              toolVersion = 'python-project-validation.py'
+              exitCode = $(if ($lockVerificationOutcome -eq 'failure') { 1 } else { $null })
+              summary = 'The required Python toolchain lock verification did not succeed.'
+              warnings = @()
+              failureReason = 'The governed Python toolchain lock verification did not complete successfully.'
+              blockedReason = $null
+              notApplicableRationale = $null
+              details = [ordered]@{
+                outcome = $lockVerificationOutcome
+                logPath = 'evidence/lock-verification.log'
+              }
+            }
+            @($failureRecord) | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath (Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json') -Encoding utf8
+            & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath $callerStage -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary 'Python toolchain lock verification failed before toolchain installation.' -CommandsExecuted $commandsExecuted -CommandsNotExecuted $commandsNotExecuted -ArtifactPath @('evidence/lock-verification.log','evidence/local-test-results.json') -ArtifactName "python-evidence-$env:GITHUB_RUN_ID" -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha '${{ job.workflow_sha }}' -ValidationProfile 'python-functional' -ChecksExecuted @('PythonToolchainLockClosure')
+          }
           if (-not (Test-Path -LiteralPath $completionPath -PathType Leaf)) { throw 'Completion evidence was not created.' }
           $global:LASTEXITCODE = 0
 
       - name: Validate Python completion evidence
         id: evidence
-        if: always() && steps.lock_verification.outcome == 'success'
+        if: always() && steps.completion.outcome == 'success'
         continue-on-error: true
         shell: pwsh
         run: ./standards/actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path $env:PYTHON_WORK_ROOT -EvidencePath 'evidence/completion-result.json' -OutputJson "$env:PYTHON_WORK_ROOT/evidence/evidence-validation.json"
