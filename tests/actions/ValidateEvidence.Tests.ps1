@@ -710,6 +710,58 @@ Describe 'Validate evidence action' {
                 $source | Should -Not -Match ([regex]::Escape('`0{1}`0')) -Because $script
             }
         }
+        It 'excludes the directory where a receipt is written on Linux, for backslash-named and case-distinct paths' {
+            if ($IsWindows) {
+                Set-ItResult -Skipped -Because 'Backslash and case-distinct directory names are Linux-only fixtures.'
+                return
+            }
+            # PowerShell cmdlets on Linux normalize a backslash in a path to a slash (even with -LiteralPath), so a
+            # receipt given as 'evi\dence/receipt.json' is written to and read from evi/dence/. The exclusion must
+            # name that directory, and a case-distinct directory must not be mistaken for a central example one.
+            foreach ($receiptDirectory in @('evi\dence', 'Examples/Python-project/evidence')) {
+                $identityRoot = Join-Path ([IO.Path]::GetTempPath()) ("completion-linux-receipt-" + [guid]::NewGuid())
+                $source = Join-Path $identityRoot 'source'
+                try {
+                    New-Item -ItemType Directory -Path $source -Force | Out-Null
+                    Set-Content -LiteralPath (Join-Path $source 'app.py') -Value 'VALUE = 1' -NoNewline
+                    & git -C $source init --quiet
+                    & git -C $source config user.email 'evidence-test@example.invalid'
+                    & git -C $source config user.name 'Evidence Test'
+                    & git -C $source add --all
+                    & git -C $source commit --quiet -m 'validated source'
+                    $first = (& git -C $source rev-parse HEAD).Trim()
+                    $receiptPath = Join-Path $source "$receiptDirectory/receipt.json"
+                    New-Item -ItemType Directory -Path (Split-Path -Parent $receiptPath) -Force | Out-Null
+                    Set-Content -LiteralPath (Join-Path (Split-Path -Parent $receiptPath) 'report.json') -Value '{}' -NoNewline
+
+                    $generate = {
+                        param($commit)
+                        & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" `
+                            -RepositoryPath $source -SourceRepositoryPath $source `
+                            -OutputPath "$receiptDirectory/receipt.json" -ExecutionContext Local `
+                            -Summary 'Linux receipt directory fixture.' `
+                            -ArtifactPath "$receiptDirectory/report.json" `
+                            -CommandsExecuted @('fixture') `
+                            -CommandsNotExecuted @('GitHub-hosted Governance CI workflow execution') `
+                            -ChangedFile @('app.py') `
+                            -ValidatedCommitSha $commit | Out-Null
+                        $LASTEXITCODE | Should -Be 0 -Because $receiptDirectory
+                        (Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json).validatedContentSha256
+                    }
+                    $firstFingerprint = & $generate $first
+                    # Check in the receipt, as a squash merge would, and fingerprint the resulting commit.
+                    & git -C $source add --all
+                    & git -C $source commit --quiet -m 'receipt checked in'
+                    $LASTEXITCODE | Should -Be 0
+                    $second = (& git -C $source rev-parse HEAD).Trim()
+                    $secondFingerprint = & $generate $second
+                    $secondFingerprint | Should -BeExactly $firstFingerprint -Because "the receipt directory '$receiptDirectory' must be excluded exactly as named"
+                }
+                finally {
+                    if (Test-Path -LiteralPath $identityRoot) { Remove-Item -LiteralPath $identityRoot -Recurse -Force }
+                }
+            }
+        }
         It 'keeps downstream files under the central example evidence paths in the content fingerprint' {
             $identityRoot = Join-Path ([IO.Path]::GetTempPath()) ("completion-downstream-paths-" + [guid]::NewGuid())
             $source = Join-Path $identityRoot 'source'

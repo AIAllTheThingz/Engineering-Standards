@@ -185,17 +185,21 @@ function Get-ReceiptExclusionPath {
         [AllowNull()][string]$ReceiptFullPath
     )
     if ([string]::IsNullOrWhiteSpace($ReceiptFullPath)) { return @() }
-    $rootFull = [IO.Path]::GetFullPath($GitRoot).TrimEnd([char]'\', [char]'/')
+    # Only Windows treats a backslash as a separator; on Linux it is a legal filename character.
+    $trimCharacters = if ($IsWindows) { [char[]]@('\', '/') } else { [char[]]@('/') }
+    $rootFull = [IO.Path]::GetFullPath($GitRoot).TrimEnd($trimCharacters)
     $receiptFull = [IO.Path]::GetFullPath($ReceiptFullPath)
     $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
     if (-not $receiptFull.StartsWith($rootFull + [IO.Path]::DirectorySeparatorChar, $comparison)) { return @() }
-    $relative = $receiptFull.Substring($rootFull.Length + 1).Replace('\', '/')
+    $relative = $receiptFull.Substring($rootFull.Length + 1)
+    if ($IsWindows) { $relative = $relative.Replace('\', '/') }
     $slash = $relative.LastIndexOf('/')
     if ($slash -lt 0) { return @($relative) }
     $receiptDirectory = $relative.Substring(0, $slash + 1)
     # This repository's two example receipts bind each other's trees, so each excludes both directories.
     $centralEvidenceDirectories = @('examples/python-project/evidence/', 'examples/bash-project/evidence/')
-    if ($receiptDirectory -cin $centralEvidenceDirectories) { return $centralEvidenceDirectories }
+    $isCentralDirectory = @($centralEvidenceDirectories | Where-Object { [string]::Equals($_, $receiptDirectory, $comparison) }).Count -gt 0
+    if ($isCentralDirectory) { return $centralEvidenceDirectories }
     return @($receiptDirectory)
 }
 
