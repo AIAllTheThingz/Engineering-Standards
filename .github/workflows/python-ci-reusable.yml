@@ -29,7 +29,7 @@ jobs:
       PYTHONSAFEPATH: "1"
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
-      FAILURE_SCOPE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      FAILURE_SCOPE_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
     steps:
       - name: Checkout caller without credentials
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -462,6 +462,421 @@ jobs:
             }
 
           $completionScopeBaseSha = $env:FAILURE_SCOPE_BASE_SHA
+          if ($completionScopeBaseSha -match '^0{40}
+            $completionParents = (& git -C $completionSourceRoot show -s --format=%P $env:GITHUB_SHA).Trim()
+            if ($LASTEXITCODE -ne 0) { throw 'Completion evidence parent metadata could not be derived from github.sha.' }
+            $completionParentShas = @($completionParents -split '\s+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+            if ($completionParentShas.Count -gt 0) { $completionScopeBaseSha = $completionParentShas[0] }
+          }
+          if (-not [string]::IsNullOrWhiteSpace($completionScopeBaseSha)) {
+            if ($completionScopeBaseSha -notmatch '(?i)^[0-9a-f]{40}$') { throw 'Completion evidence base is not a full commit SHA.' }
+            & git -C $completionSourceRoot cat-file -e "$completionScopeBaseSha^{commit}"
+            if ($LASTEXITCODE -ne 0) { throw 'Completion evidence Git metadata does not contain the scope base.' }
+          }
+          $completionChangedFiles = @(Get-CompletionChangedFiles -RepositoryPath $completionSourceRoot -ValidatedCommit $env:GITHUB_SHA -BaseCommit $completionScopeBaseSha)
+          if ($completionChangedFiles.Count -eq 0) { throw 'Completion evidence change inventory is empty for github.sha.' }
+          $completionChangedFiles | ConvertTo-Json -AsArray | Set-Content -LiteralPath "$env:PYTHON_WORK_ROOT/evidence/changed-files.json" -Encoding utf8
+
+      - name: Create completion evidence in trusted workspace
+        id: completion
+        if: always()
+        continue-on-error: true
+        shell: pwsh
+        env:
+          INPUT_OUTCOME: ${{ steps.inputs.outcome }}
+          LOCK_OUTCOME: ${{ steps.lock_verification.outcome }}
+          TOOL_OUTCOME: ${{ steps.toolchain_install.outcome }}
+          FUNCTIONAL_OUTCOME: ${{ steps.functional.outcome }}
+          NORMALIZATION_OUTCOME: ${{ steps.normalization.outcome }}
+          REGRESSION_OUTCOME: ${{ steps.regression.outcome }}
+          REGRESSION_STARTED_AT_UTC: ${{ steps.regression.outputs.started_at_utc }}
+          REGRESSION_COMPLETED_AT_UTC: ${{ steps.regression.outputs.completed_at_utc }}
+          REGRESSION_DURATION_SECONDS: ${{ steps.regression.outputs.duration_seconds }}
+          REGRESSION_EXIT_CODE: ${{ steps.regression.outputs.exit_code }}
+          LOCK_STARTED: ${{ steps.lock_verification.outputs.verifier_started }}
+          LOCK_BLOCKED: ${{ steps.lock_verification.outputs.verifier_blocked }}
+          LOCK_BLOCKED_REASON: ${{ steps.lock_verification.outputs.verifier_blocked_reason }}
+          LOCK_COMMAND: ${{ steps.lock_verification.outputs.verification_command }}
+          LOCK_STARTED_AT_UTC: ${{ steps.lock_verification.outputs.verification_started_at_utc }}
+          LOCK_COMPLETED_AT_UTC: ${{ steps.lock_verification.outputs.verification_completed_at_utc }}
+          LOCK_DURATION_SECONDS: ${{ steps.lock_verification.outputs.verification_duration_seconds }}
+          SOURCE_METADATA_OUTCOME: ${{ steps.source_metadata.outcome }}
+          STANDARDS_WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          $inputValidationOutcome = [string]$env:INPUT_OUTCOME
+          $lockVerificationOutcome = [string]$env:LOCK_OUTCOME
+          $toolchainInstallOutcome = [string]$env:TOOL_OUTCOME
+          $functionalOutcome = [string]$env:FUNCTIONAL_OUTCOME
+          $normalizationOutcome = [string]$env:NORMALIZATION_OUTCOME
+          $regressionOutcome = [string]$env:REGRESSION_OUTCOME
+          $regressionStartedAtUtc = [string]$env:REGRESSION_STARTED_AT_UTC
+          $regressionCompletedAtUtc = [string]$env:REGRESSION_COMPLETED_AT_UTC
+          $regressionDurationText = [string]$env:REGRESSION_DURATION_SECONDS
+          $regressionExitCodeText = [string]$env:REGRESSION_EXIT_CODE
+          $lockVerificationStarted = [string]$env:LOCK_STARTED -eq 'true'
+          $lockVerificationBlocked = [string]$env:LOCK_BLOCKED -eq 'true'
+          $lockVerificationBlockedReason = [string]$env:LOCK_BLOCKED_REASON
+          $lockVerificationCommand = [string]$env:LOCK_COMMAND
+          $lockVerificationStartedAtUtc = [string]$env:LOCK_STARTED_AT_UTC
+          $lockVerificationCompletedAtUtc = [string]$env:LOCK_COMPLETED_AT_UTC
+          $lockVerificationDurationText = [string]$env:LOCK_DURATION_SECONDS
+          if ([string]::IsNullOrWhiteSpace($lockVerificationCommand)) {
+            $lockVerificationCommand = '<CPython-3.13.2 with pip==26.2.1> -I standards/scripts/python-project-validation.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci.lock --resolver-python <CPython-3.13.2> --runtime-python <CPython-3.12.11>'
+          }
+          if ($inputValidationOutcome -eq 'success') {
+            if ([string]::IsNullOrWhiteSpace($lockVerificationStartedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationCompletedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationDurationText)) { throw 'Lock verification did not report required timing metadata.' }
+            $lockVerificationDurationSeconds = [double]::Parse($lockVerificationDurationText, [Globalization.CultureInfo]::InvariantCulture)
+            if ($lockVerificationDurationSeconds -lt 0) { throw 'Lock verification reported an invalid negative duration.' }
+          }
+          $durableLockLogPath = Join-Path $env:RUNNER_TEMP 'python-lock-verification.log'
+          $lockEvidenceLogPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/lock-verification.log'
+          New-Item -ItemType Directory -Path (Split-Path -Parent $lockEvidenceLogPath) -Force | Out-Null
+          if (Test-Path -LiteralPath $durableLockLogPath -PathType Leaf) {
+            Copy-Item -LiteralPath $durableLockLogPath -Destination $lockEvidenceLogPath -Force
+          }
+          $sourceMetadataOutcome = [string]$env:SOURCE_METADATA_OUTCOME
+          if ($sourceMetadataOutcome -ne 'success') { throw 'Python completion source metadata staging did not succeed.' }
+          $completionSourceRoot = Join-Path $env:PYTHON_WORK_ROOT 'caller'
+          $changedFilesPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/changed-files.json'
+          if (-not (Test-Path -LiteralPath $changedFilesPath -PathType Leaf)) { throw 'Python completion changed-file inventory is unavailable.' }
+          $completionChangedFiles = @(Get-Content -LiteralPath $changedFilesPath -Raw | ConvertFrom-Json)
+          if ($completionChangedFiles.Count -eq 0) { throw 'Python completion changed-file inventory is empty.' }
+          $completionPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/completion-result.json'
+          $regressionRecord = $null
+          $regressionLogPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/validator-regression.log'
+          $regressionRan = $regressionOutcome -in @('success','failure')
+          if ($regressionRan) {
+            if (-not (Test-Path -LiteralPath $regressionLogPath -PathType Leaf)) {
+              throw 'Python validator regression execution did not produce its durable log.'
+            }
+            if (
+              [string]::IsNullOrWhiteSpace($regressionStartedAtUtc) -or
+              [string]::IsNullOrWhiteSpace($regressionCompletedAtUtc) -or
+              [string]::IsNullOrWhiteSpace($regressionDurationText) -or
+              [string]::IsNullOrWhiteSpace($regressionExitCodeText)
+            ) { throw 'Python validator regression execution did not report required metadata.' }
+            $regressionDurationSeconds = [double]::Parse($regressionDurationText, [Globalization.CultureInfo]::InvariantCulture)
+            $regressionExitCode = [int]::Parse($regressionExitCodeText, [Globalization.CultureInfo]::InvariantCulture)
+            $regressionRecord = [ordered]@{
+              schemaVersion = '1.1.0'
+              name = 'Python validator regression tests'
+              category = 'test'
+              status = if ($regressionOutcome -eq 'success') { 'Passed' } else { 'Failed' }
+              requiredValidation = $true
+              evidenceSource = 'Automated'
+              command = 'pytest -c /dev/null --rootdir standards -p no:cacheprovider standards/tests/python/python_project_validation_tests.py'
+              workingDirectory = 'trusted-isolated-workspace'
+              startedAtUtc = $regressionStartedAtUtc
+              completedAtUtc = $regressionCompletedAtUtc
+              durationSeconds = $regressionDurationSeconds
+              runtime = 'standards-owned hash-locked Python toolchain'
+              toolVersion = 'pytest'
+              exitCode = $regressionExitCode
+              summary = if ($regressionOutcome -eq 'success') { 'Trusted Python validator regression tests completed successfully.' } else { 'Trusted Python validator regression tests failed.' }
+              warnings = @()
+              failureReason = if ($regressionOutcome -eq 'success') { $null } else { 'Trusted Python validator regression tests did not complete successfully.' }
+              blockedReason = $null
+              notApplicableRationale = $null
+              details = [ordered]@{
+                outcome = $regressionOutcome
+                logPath = 'evidence/validator-regression.log'
+              }
+            }
+          }
+          if (
+            $lockVerificationOutcome -eq 'success' -and
+            $toolchainInstallOutcome -eq 'success' -and
+            $functionalOutcome -eq 'success' -and
+            $normalizationOutcome -eq 'success'
+          ) {
+            if (-not (Test-Path -LiteralPath $lockEvidenceLogPath -PathType Leaf)) {
+              throw 'Successful Python lock verification did not produce its durable log.'
+            }
+            $toolchainRecordPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-toolchain-installation.json'
+            if (-not (Test-Path -LiteralPath $toolchainRecordPath -PathType Leaf)) { throw 'Successful Python toolchain installation record is unavailable.' }
+            $toolchainInstallRecord = Get-Content -LiteralPath $toolchainRecordPath -Raw | ConvertFrom-Json
+            $toolchainInstallCommand = [string]$toolchainInstallRecord.command
+            $lockRecordPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-lock-verification.json'
+            if (-not (Test-Path -LiteralPath $lockRecordPath -PathType Leaf)) { throw 'Successful Python lock-verification record is unavailable.' }
+            $lockVerificationRecord = Get-Content -LiteralPath $lockRecordPath -Raw | ConvertFrom-Json
+            $testResultPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json'
+            $allTestRecords = @($lockVerificationRecord, $toolchainInstallRecord, $regressionRecord) + @(Get-Content -LiteralPath $testResultPath -Raw | ConvertFrom-Json)
+            $allTestRecords | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath $testResultPath -Encoding utf8
+            & ./standards/scripts/New-CompletionEvidence.ps1 `
+              -RepositoryPath $env:PYTHON_WORK_ROOT `
+              -SourceRepositoryPath $completionSourceRoot `
+              -OutputPath 'evidence/completion-result.json' `
+              -TestResultPath 'evidence/local-test-results.json' `
+              -GovernanceVersion 1.1.0 `
+              -RiskClassification Moderate `
+              -Summary 'Governed Python toolchain lock closure, static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' `
+              -CommandsExecuted @($lockVerificationCommand,$toolchainInstallCommand,'python-project-validation.py') `
+              -ArtifactPath @('evidence/lock-verification.log','evidence/validator-regression.log','evidence/local-test-results.json','evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json','evidence/python-toolchain-sbom.cdx.json') `
+              -Repository $env:GITHUB_REPOSITORY `
+              -Branch $env:GITHUB_REF_NAME `
+              -ValidatedCommitSha $env:GITHUB_SHA `
+              -StandardsRepository 'AIAllTheThingz/Engineering-Standards' `
+              -StandardsWorkflowSha $env:STANDARDS_WORKFLOW_SHA `
+              -ValidationProfile 'python-functional' `
+              -ChecksExecuted @('PythonToolchainLockClosure') `
+              -ChangedFile $completionChangedFiles
+          }
+          else {
+            if (-not (Test-Path -LiteralPath $lockEvidenceLogPath -PathType Leaf)) {
+              $lockVerifierLogMessage = if ($inputValidationOutcome -ne 'success') { 'The Python lock verifier did not start because the fixed runtime and project path validation did not succeed.' } else { 'The Python lock verifier did not start because a required prerequisite did not complete.' }
+              $lockVerifierLogMessage | Set-Content -LiteralPath $lockEvidenceLogPath -Encoding utf8
+            }
+            $toolchainInstallFailed = $lockVerificationOutcome -eq 'success' -and $toolchainInstallOutcome -ne 'success'
+            $functionalFailed = (
+              $lockVerificationOutcome -eq 'success' -and
+              $toolchainInstallOutcome -eq 'success' -and
+              $functionalOutcome -ne 'success'
+            )
+            $normalizationFailed = (
+              $lockVerificationOutcome -eq 'success' -and
+              $toolchainInstallOutcome -eq 'success' -and
+              $functionalOutcome -eq 'success' -and
+              $normalizationOutcome -ne 'success'
+            )
+            $commandsExecuted = @()
+            $commandsNotExecuted = @()
+            $failureRecords = @()
+            $failureArtifacts = @('evidence/lock-verification.log','evidence/local-test-results.json')
+            $prerequisiteRecords = @()
+            $prerequisiteCommands = @()
+            if ($lockVerificationOutcome -eq 'success' -and $toolchainInstallOutcome -eq 'success') {
+              $lockRecordPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-lock-verification.json'
+              $toolRecordPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-toolchain-installation.json'
+              if (-not (Test-Path -LiteralPath $lockRecordPath -PathType Leaf) -or -not (Test-Path -LiteralPath $toolRecordPath -PathType Leaf)) { throw 'Successful prerequisite phase evidence is unavailable.' }
+              $lockPrerequisiteRecord = Get-Content -LiteralPath $lockRecordPath -Raw | ConvertFrom-Json
+              $toolPrerequisiteRecord = Get-Content -LiteralPath $toolRecordPath -Raw | ConvertFrom-Json
+              $prerequisiteRecords = @($lockPrerequisiteRecord,$toolPrerequisiteRecord)
+              $prerequisiteCommands = @([string]$lockPrerequisiteRecord.command,[string]$toolPrerequisiteRecord.command)
+            }
+            if ($lockVerificationStarted) { $commandsExecuted += $lockVerificationCommand } else { $commandsNotExecuted += $lockVerificationCommand }
+            if ($inputValidationOutcome -ne 'success') {
+              $inputRecordPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-input-validation.json'
+              if (-not (Test-Path -LiteralPath $inputRecordPath -PathType Leaf)) { throw 'Python input-validation failure record is unavailable.' }
+              $failureRecords = @(Get-Content -LiteralPath $inputRecordPath -Raw | ConvertFrom-Json)
+              $commandsExecuted += [string]$failureRecords[0].command
+              $commandsNotExecuted += @($lockVerificationCommand,'Python toolchain installation','python-project-validation.py')
+              $completionSummary = 'Python workflow input validation failed.'
+              $blockedReason = $null
+            }
+            elseif ($toolchainInstallFailed) {
+              $toolchainRecordPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-toolchain-installation.json'
+              if (-not (Test-Path -LiteralPath $toolchainRecordPath -PathType Leaf)) { throw 'Python toolchain installation failure record is unavailable.' }
+              $failureRecords = @(Get-Content -LiteralPath $toolchainRecordPath -Raw | ConvertFrom-Json)
+              $commandsExecuted += [string]$failureRecords[0].command
+              $commandsNotExecuted += 'Functional validation was not run because toolchain installation failed.'
+              $completionSummary = 'Python toolchain installation failed after successful lock verification.'
+              $blockedReason = $null
+            }
+            elseif ($functionalFailed) {
+              $commandsExecuted += 'python-project-validation.py'
+              $commandsNotExecuted += 'Successful completion evidence assembly was not run because functional validation failed.'
+              $completionSummary = 'Governed Python functional validation failed.'
+              $blockedReason = $null
+              $functionalResultsPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json'
+              if (Test-Path -LiteralPath $functionalResultsPath -PathType Leaf) {
+                $failureRecords = @(Get-Content -LiteralPath $functionalResultsPath -Raw | ConvertFrom-Json)
+              }
+              if ($failureRecords.Count -eq 0) {
+                $functionalTimestamp = (Get-Date).ToUniversalTime().ToString('o')
+                $failureRecords = @([ordered]@{
+                  schemaVersion = '1.1.0'
+                  name = 'Governed Python functional validation'
+                  category = 'test'
+                  status = 'Failed'
+                  requiredValidation = $true
+                  evidenceSource = 'Automated'
+                  command = 'python-project-validation.py'
+                  workingDirectory = 'trusted-isolated-workspace'
+                  startedAtUtc = $functionalTimestamp
+                  completedAtUtc = $functionalTimestamp
+                  durationSeconds = 0
+                  runtime = 'CPython 3.12.11 functional runtime'
+                  toolVersion = 'python-project-validation.py'
+                  exitCode = 1
+                  summary = 'Governed Python functional validation did not complete successfully.'
+                  warnings = @()
+                  failureReason = 'Functional validation failed before detailed test records were available.'
+                  blockedReason = $null
+                  notApplicableRationale = $null
+                  details = [ordered]@{ outcome = $functionalOutcome }
+                })
+              }
+              if ($prerequisiteRecords.Count -gt 0) {
+                $failureRecords = $prerequisiteRecords + $failureRecords
+                $commandsExecuted += $prerequisiteCommands
+              }
+              $normalizationFailurePath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-normalization-failure.json'
+              if (Test-Path -LiteralPath $normalizationFailurePath -PathType Leaf) {
+                $failureRecords += (Get-Content -LiteralPath $normalizationFailurePath -Raw | ConvertFrom-Json)
+                $commandsExecuted += 'Normalize-PythonFunctionalEvidence.py'
+              }
+              if ($null -ne $regressionRecord) {
+                $failureRecords += $regressionRecord
+                $failureArtifacts += 'evidence/validator-regression.log'
+              }
+            }
+            elseif ($normalizationFailed) {
+              $commandsExecuted += 'Normalize-PythonFunctionalEvidence.py'
+              $commandsNotExecuted += 'Successful completion evidence assembly was not run because evidence normalization failed.'
+              $completionSummary = 'Python functional evidence normalization failed.'
+              $blockedReason = $null
+              $normalizationTimestamp = (Get-Date).ToUniversalTime().ToString('o')
+              $failureRecords = @([ordered]@{
+                schemaVersion = '1.1.0'
+                name = 'Python evidence normalization'
+                category = 'test'
+                status = 'Failed'
+                requiredValidation = $true
+                evidenceSource = 'Automated'
+                command = 'Normalize-PythonFunctionalEvidence.py'
+                workingDirectory = 'trusted-isolated-workspace'
+                startedAtUtc = $normalizationTimestamp
+                completedAtUtc = $normalizationTimestamp
+                durationSeconds = 0
+                runtime = 'standards-owned hash-locked Python toolchain'
+                toolVersion = 'Normalize-PythonFunctionalEvidence.py'
+                exitCode = 1
+                summary = 'Python functional evidence normalization did not complete successfully.'
+                warnings = @()
+                failureReason = 'Evidence normalization failed.'
+                blockedReason = $null
+                notApplicableRationale = $null
+                details = [ordered]@{ outcome = $normalizationOutcome }
+              })
+              $functionalResultsPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json'
+              if (Test-Path -LiteralPath $functionalResultsPath -PathType Leaf) {
+                $failureRecords = @(Get-Content -LiteralPath $functionalResultsPath -Raw | ConvertFrom-Json) + $failureRecords
+              }
+              if ($prerequisiteRecords.Count -gt 0) {
+                $failureRecords = $prerequisiteRecords + $failureRecords
+                $commandsExecuted += $prerequisiteCommands
+              }
+              if ($null -ne $regressionRecord) {
+                $failureRecords += $regressionRecord
+                $failureArtifacts += 'evidence/validator-regression.log'
+              }
+            }
+            else {
+              $commandsNotExecuted += 'Toolchain installation and functional validation were not run because lock verification did not succeed.'
+              $completionSummary = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'Python toolchain lock verification could not complete before toolchain installation.' } else { 'Python toolchain lock verification failed before toolchain installation.' }
+              $blockedReason = if (-not $lockVerificationBlocked -and $lockVerificationStarted) { $null } elseif ([string]::IsNullOrWhiteSpace($lockVerificationBlockedReason)) { 'The Python lock verifier prerequisite or package resolver was unavailable, so validation could not complete.' } else { $lockVerificationBlockedReason }
+              $failureRecords = @([ordered]@{
+                schemaVersion = '1.1.0'
+                name = 'Python toolchain lock closure'
+                category = 'security'
+                status = if ($lockVerificationBlocked) { 'Blocked' } else { 'Failed' }
+                requiredValidation = $true
+                evidenceSource = 'Automated'
+                command = $lockVerificationCommand
+                workingDirectory = 'trusted-isolated-workspace'
+                startedAtUtc = $lockVerificationStartedAtUtc
+                completedAtUtc = $lockVerificationCompletedAtUtc
+                durationSeconds = $lockVerificationDurationSeconds
+                runtime = 'CPython 3.13.2 resolver'
+                toolVersion = 'python-project-validation.py'
+                exitCode = if ($lockVerificationBlocked) { $null } else { 1 }
+                summary = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'The required Python toolchain lock verification could not complete.' } else { 'The required Python toolchain lock verification did not succeed.' }
+                warnings = @()
+                failureReason = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { $null } else { 'The governed Python toolchain lock verification did not complete successfully.' }
+                blockedReason = $blockedReason
+                notApplicableRationale = $null
+                details = [ordered]@{
+                  outcome = $lockVerificationOutcome
+                  inputValidationOutcome = $inputValidationOutcome
+                  verifierStarted = $lockVerificationStarted
+                  resolverAvailable = -not ($lockVerificationBlocked -or -not $lockVerificationStarted)
+                  logPath = 'evidence/lock-verification.log'
+                }
+              })
+            }
+            $failureRecords | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath (Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json') -Encoding utf8
+            & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath $completionSourceRoot -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary $completionSummary -CommandsExecuted $commandsExecuted -CommandsNotExecuted $commandsNotExecuted -BlockedReason $blockedReason -ArtifactPath $failureArtifacts -ArtifactName "python-evidence-$env:GITHUB_RUN_ID" -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha $env:STANDARDS_WORKFLOW_SHA -ValidationProfile 'python-functional' -ChecksExecuted @('PythonToolchainLockClosure') -ChangedFile $completionChangedFiles
+          }
+          if (-not (Test-Path -LiteralPath $completionPath -PathType Leaf)) { throw 'Completion evidence was not created.' }
+          $global:LASTEXITCODE = 0
+
+      - name: Validate Python completion evidence
+        id: evidence
+        if: always() && steps.completion.outcome == 'success'
+        continue-on-error: true
+        shell: pwsh
+        run: ./standards/actions/validate-evidence/Invoke-EvidenceValidation.ps1 -Path $env:PYTHON_WORK_ROOT -EvidencePath 'evidence/completion-result.json' -OutputJson "$env:PYTHON_WORK_ROOT/evidence/evidence-validation.json"
+
+      - name: Record Python validation outcomes
+        if: always()
+        shell: pwsh
+        env:
+          INPUT_OUTCOME: ${{ steps.inputs.outcome }}
+          LOCK_OUTCOME: ${{ steps.lock_verification.outcome }}
+          TOOL_OUTCOME: ${{ steps.toolchain_install.outcome }}
+          REGRESSION_OUTCOME: ${{ steps.regression.outcome }}
+          FUNCTIONAL_OUTCOME: ${{ steps.functional.outcome }}
+          NORMALIZATION_OUTCOME: ${{ steps.normalization.outcome }}
+          PHASE_EVIDENCE_OUTCOME: ${{ steps.phase_evidence.outcome }}
+          SOURCE_METADATA_OUTCOME: ${{ steps.source_metadata.outcome }}
+          COMPLETION_OUTCOME: ${{ steps.completion.outcome }}
+          EVIDENCE_OUTCOME: ${{ steps.evidence.outcome }}
+        run: |
+          [ordered]@{
+            inputs = [string]$env:INPUT_OUTCOME
+            lock_verification = [string]$env:LOCK_OUTCOME
+            toolchain_install = [string]$env:TOOL_OUTCOME
+            regression = [string]$env:REGRESSION_OUTCOME
+            functional = [string]$env:FUNCTIONAL_OUTCOME
+            normalization = [string]$env:NORMALIZATION_OUTCOME
+            phase_evidence = [string]$env:PHASE_EVIDENCE_OUTCOME
+            source_metadata = [string]$env:SOURCE_METADATA_OUTCOME
+            completion = [string]$env:COMPLETION_OUTCOME
+            evidence = [string]$env:EVIDENCE_OUTCOME
+          } | ConvertTo-Json | Set-Content -LiteralPath "$env:PYTHON_WORK_ROOT/evidence/step-outcomes.json" -Encoding utf8
+
+      - name: Upload Python evidence before enforcement
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: python-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/python-functional/evidence/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce Python validation
+        if: always()
+        shell: pwsh
+        env:
+          INPUT_OUTCOME: ${{ steps.inputs.outcome }}
+          LOCK_OUTCOME: ${{ steps.lock_verification.outcome }}
+          TOOL_OUTCOME: ${{ steps.toolchain_install.outcome }}
+          REGRESSION_OUTCOME: ${{ steps.regression.outcome }}
+          FUNCTIONAL_OUTCOME: ${{ steps.functional.outcome }}
+          NORMALIZATION_OUTCOME: ${{ steps.normalization.outcome }}
+          PHASE_EVIDENCE_OUTCOME: ${{ steps.phase_evidence.outcome }}
+          SOURCE_METADATA_OUTCOME: ${{ steps.source_metadata.outcome }}
+          COMPLETION_OUTCOME: ${{ steps.completion.outcome }}
+          EVIDENCE_OUTCOME: ${{ steps.evidence.outcome }}
+        run: |
+          $outcomes = [ordered]@{
+            inputs = [string]$env:INPUT_OUTCOME
+            lock_verification = [string]$env:LOCK_OUTCOME
+            toolchain_install = [string]$env:TOOL_OUTCOME
+            regression = [string]$env:REGRESSION_OUTCOME
+            functional = [string]$env:FUNCTIONAL_OUTCOME
+            normalization = [string]$env:NORMALIZATION_OUTCOME
+            phase_evidence = [string]$env:PHASE_EVIDENCE_OUTCOME
+            source_metadata = [string]$env:SOURCE_METADATA_OUTCOME
+            completion = [string]$env:COMPLETION_OUTCOME
+            evidence = [string]$env:EVIDENCE_OUTCOME
+          }
+          $failed = @($outcomes.GetEnumerator() | Where-Object Value -ne 'success')
+          if ($failed.Count -gt 0) {
+            $summary = ($failed | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ', '
+            throw "Mandatory governed Python validation failed: $summary"
+          }
+) { $completionScopeBaseSha = $null }
           if ([string]::IsNullOrWhiteSpace($completionScopeBaseSha)) {
             $completionParents = (& git -C $completionSourceRoot show -s --format=%P $env:GITHUB_SHA).Trim()
             if ($LASTEXITCODE -ne 0) { throw 'Completion evidence parent metadata could not be derived from github.sha.' }

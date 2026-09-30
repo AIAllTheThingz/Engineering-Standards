@@ -410,14 +410,14 @@ function Get-OriginRepositoryName {
 
 function Test-GeneratedBuildOutputPath {
     param([string]$Path)
-    $normalized = $Path.Replace('\','/')
+    $normalized = $Path
     $normalized -match '(^|/)(bin|obj|dist)(/|$)' -or $normalized -match '^(coverage|TestResults)(/|$)'
 }
 
 function Convert-ChangedFilePath {
     param([Parameter(Mandatory)][string]$Path)
 
-    $normalized = $Path.Replace('\', '/')
+    $normalized = $Path
     while ($normalized.StartsWith('./', [StringComparison]::Ordinal)) {
         $normalized = $normalized.Substring(2)
     }
@@ -439,7 +439,7 @@ function Get-ChangedFileCategories {
     }
     foreach ($file in @($Files)) {
         if ($null -eq $file -or $file.Length -eq 0 -or $file -eq 'unknown') { continue }
-        $path = $file.Replace('\','/')
+        $path = $file
         if (Test-GeneratedBuildOutputPath -Path $path) { $categories.generatedBuildOutput += $path; continue }
         if ($path -match '^evidence/' -or $path -match '/evidence/') { $categories.generatedEvidence += $path; continue }
         if ($path -match '(^|/)tests?/' -or $path -match '\.Tests\.ps1$') { $categories.tests += $path; continue }
@@ -456,11 +456,11 @@ $changedFiles = @(
         $ChangedFile | ForEach-Object { Convert-ChangedFilePath -Path $_ }
     }
     else {
-        & git -C $sourceRoot status --short 2>$null | ForEach-Object { $_.Substring(3).Replace('\','/') }
+        & git -C $sourceRoot status --short 2>$null | ForEach-Object { $_.Substring(3) }
     }
 )
 if ($changedFiles.Count -eq 0 -and $commit -ne 'unknown') {
-    $changedFiles = @(& git -C $sourceRoot diff-tree --no-commit-id --name-only -r $commit 2>$null | ForEach-Object { $_.Replace('\','/') })
+    $changedFiles = @(& git -C $sourceRoot diff-tree --no-commit-id --name-only -r $commit 2>$null | ForEach-Object { $_ })
 }
 $changedFiles = @($changedFiles | Where-Object { -not (Test-GeneratedBuildOutputPath -Path $_) } | Sort-Object -Unique)
 if ($changedFiles.Count -eq 0) { $changedFiles = @('unknown') }
