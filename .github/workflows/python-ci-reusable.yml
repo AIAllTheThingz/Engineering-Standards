@@ -672,10 +672,14 @@ jobs:
               $blockedReason = $null
             }
             elseif ($toolchainInstallFailed) {
+              $lockRecordPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-lock-verification.json'
               $toolchainRecordPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-toolchain-installation.json'
+              if (-not (Test-Path -LiteralPath $lockRecordPath -PathType Leaf)) { throw 'Successful Python lock-verification record is unavailable for install-failure evidence.' }
               if (-not (Test-Path -LiteralPath $toolchainRecordPath -PathType Leaf)) { throw 'Python toolchain installation failure record is unavailable.' }
-              $failureRecords = @(Get-Content -LiteralPath $toolchainRecordPath -Raw | ConvertFrom-Json)
-              $commandsExecuted += [string]$failureRecords[0].command
+              $lockInstallRecord = Get-Content -LiteralPath $lockRecordPath -Raw | ConvertFrom-Json
+              $toolInstallFailureRecord = Get-Content -LiteralPath $toolchainRecordPath -Raw | ConvertFrom-Json
+              $failureRecords = @($lockInstallRecord,$toolInstallFailureRecord)
+              $commandsExecuted += @([string]$lockInstallRecord.command,[string]$toolInstallFailureRecord.command)
               $commandsNotExecuted += 'Functional validation was not run because toolchain installation failed.'
               $completionSummary = 'Python toolchain installation failed after successful lock verification.'
               $blockedReason = $null

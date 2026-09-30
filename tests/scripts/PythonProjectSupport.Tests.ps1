@@ -148,6 +148,8 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'exit_code='
         $script:workflow | Should -Match 'name = ''Python toolchain installation'''
         $script:workflow | Should -Match 'Toolchain installation failed after successful lock verification\.'
+        $script:workflow | Should -Match 'Successful Python lock-verification record is unavailable for install-failure evidence\.'
+        $script:workflow | Should -Match '\$failureRecords = @\(\$lockInstallRecord,\$toolInstallFailureRecord\)'
         $script:workflow | Should -Match '(?s)id:\s*lock_resolver\s*\r?\n\s*continue-on-error:\s*true'
         $script:workflow | Should -Match 'The exact CPython 3\.13\.2 lock resolver was unavailable; no toolchain was installed\.'
         $readme = Get-Content -LiteralPath (Join-Path $script:example 'README.md') -Raw
