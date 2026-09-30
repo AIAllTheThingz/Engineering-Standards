@@ -86,6 +86,14 @@ Describe 'Governed Python project support' {
         $inputValidation.Success | Should -BeTrue
         $inputValidation.Groups['body'].Value | Should -Match 'id:\s*inputs'
         $inputValidation.Groups['body'].Value | Should -Match 'continue-on-error:\s*true'
+        $inputValidation.Groups['body'].Value | Should -Match 'CALLER_PYTHON_VERSION:\s*\$\{\{ inputs\.python-version \}\}'
+        $inputValidation.Groups['body'].Value | Should -Match 'CALLER_PROJECT_PATH:\s*\$\{\{ inputs\.project-path \}\}'
+        $inputValidation.Groups['body'].Value | Should -Match '\$env:CALLER_PYTHON_VERSION'
+        $inputValidation.Groups['body'].Value | Should -Match '\$env:CALLER_PROJECT_PATH'
+        $inputValidation.Groups['body'].Value | Should -Match 'project-path must not contain a link or reparse-point component\.'
+        $inputValidation.Groups['body'].Value | Should -Match '\$resolvedProject\.StartsWith\(\$resolvedRoot'
+        $inputValidation.Groups['body'].Value | Should -Not -Match "'\$\{\{ inputs\.python-version \}\}'"
+        $inputValidation.Groups['body'].Value | Should -Not -Match "'\$\{\{ inputs\.project-path \}\}'"
         foreach ($stepName in @('Set up exact CPython 3.13.2 lock resolver','Set up exact Python runtime','Verify complete hash-locked toolchain closure before installation')) {
             $step = [regex]::Match($script:workflow, "(?s)- name: $([regex]::Escape($stepName))\s*(?<body>.*?)(?=\r?\n\s*- name:)")
             $step.Success | Should -BeTrue
@@ -98,6 +106,11 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'failureReason=\$inputError'
         $script:workflow | Should -Match 'inputs = ''\$\{\{ steps\.inputs\.outcome \}\}'''
         $script:workflow | Should -Match 'inputValidationOutcome = \$inputValidationOutcome'
+        $functional = [regex]::Match($script:workflow, '(?s)- name: Run governed functional validation\s*(?<body>.*?)(?=\r?\n\s*- name:)')
+        $functional.Success | Should -BeTrue
+        $functional.Groups['body'].Value | Should -Match 'VALIDATED_PROJECT_PATH:\s*\$\{\{ steps\.inputs\.outputs\.project_path \}\}'
+        $functional.Groups['body'].Value | Should -Match '--project "\$VALIDATED_PROJECT_PATH"'
+        $functional.Groups['body'].Value | Should -Not -Match '\$\{\{ inputs\.project-path \}\}'
     }
 
     It 'emits validated failure completion evidence when toolchain lock verification does not succeed' {

@@ -59,18 +59,31 @@ jobs:
         id: inputs
         continue-on-error: true
         shell: pwsh
+        env:
+          CALLER_PYTHON_VERSION: ${{ inputs.python-version }}
+          CALLER_PROJECT_PATH: ${{ inputs.project-path }}
         run: |
           $inputStartedAt = (Get-Date).ToUniversalTime()
           "started_at_utc=$($inputStartedAt.ToString('o'))" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           try {
-            if ('${{ inputs.python-version }}' -cne '3.12.11') { throw 'python-version must be the reviewed exact version 3.12.11.' }
-            $candidate = '${{ inputs.project-path }}'
+            if ($env:CALLER_PYTHON_VERSION -cne '3.12.11') { throw 'python-version must be the reviewed exact version 3.12.11.' }
+            $candidate = [string]$env:CALLER_PROJECT_PATH
+            if ([string]::IsNullOrWhiteSpace($candidate)) { throw 'project-path must not be empty.' }
             if ([IO.Path]::IsPathRooted($candidate) -or $candidate -match '(^|[\\/])\.\.([\\/]|$)') { throw 'project-path must be repository-relative without traversal.' }
-            $root = (Resolve-Path -LiteralPath (Join-Path $env:GITHUB_WORKSPACE 'caller')).Path
-            $projectItem = Get-Item -LiteralPath (Join-Path $root $candidate) -Force
-            if ($projectItem.LinkType -or ($projectItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'project-path must not be a link or reparse point.' }
-            $project = $projectItem.FullName
-            if (-not ($project -eq $root -or $project.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal))) { throw 'project-path escaped the caller checkout.' }
+            $rootItem = Get-Item -LiteralPath (Join-Path $env:GITHUB_WORKSPACE 'caller') -Force
+            if ($rootItem.LinkType -or ($rootItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'caller checkout root must not be a link or reparse point.' }
+            $root = $rootItem.FullName
+            $current = $root
+            foreach ($component in @($candidate -split '[\\/]')) {
+              if ([string]::IsNullOrEmpty($component) -or $component -eq '.') { continue }
+              $current = Join-Path $current $component
+              $componentItem = Get-Item -LiteralPath $current -Force
+              if ($componentItem.LinkType -or ($componentItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'project-path must not contain a link or reparse-point component.' }
+            }
+            $resolvedRoot = (Resolve-Path -LiteralPath $root).Path
+            $resolvedProject = (Resolve-Path -LiteralPath $current).Path
+            if (-not ($resolvedProject -eq $resolvedRoot -or $resolvedProject.StartsWith($resolvedRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal))) { throw 'project-path escaped the caller checkout.' }
+            "project_path=$resolvedProject" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             'exit_code=0' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           }
           catch {
@@ -243,9 +256,11 @@ jobs:
         id: functional
         if: steps.lock_verification.outcome == 'success' && steps.toolchain_install.outcome == 'success'
         continue-on-error: true
+        env:
+          VALIDATED_PROJECT_PATH: ${{ steps.inputs.outputs.project_path }}
         run: >-
           "$TOOL_PYTHON" -I standards/scripts/python-project-validation.py
-          --project "caller/${{ inputs.project-path }}"
+          --project "$VALIDATED_PROJECT_PATH"
           --work-root "$PYTHON_WORK_ROOT"
           --tool-python "$TOOL_PYTHON"
           --tool-lock standards/examples/python-project/requirements-ci.lock
