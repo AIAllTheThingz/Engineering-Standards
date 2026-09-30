@@ -213,6 +213,8 @@ Describe 'Governed Python project support' {
         $failureBody | Should -Match '-ArtifactPath \$failureArtifacts'
         $failureBody | Should -Match '-SourceRepositoryPath \$completionSourceRoot'
         $failureBody | Should -Match '-ChangedFile \$completionChangedFiles'
+        $failureBody | Should -Match '(?s)elseif \(\$normalizationFailed\) \{.*?if \(\$null -ne \$regressionRecord\) \{.*?\}\s*\}\s*else \{'
+        $failureBody | Should -Not -Match '(?s)elseif \(\$normalizationFailed\) \{.*?\}\s*\}\s*if \(\$null -ne \$regressionRecord\)'
         $script:workflow | Should -Match '(?s)- name: Stage Python completion source metadata\s+id:\s*source_metadata'
         $script:workflow | Should -Match '\$completionChangedFiles \| ConvertTo-Json -AsArray'
         $script:workflow | Should -Match '(?s)id:\s*evidence\s*\r?\n\s*if:\s*always\(\) && steps\.completion\.outcome == ''success'''

@@ -756,7 +756,6 @@ jobs:
                 $failureRecords = $prerequisiteRecords + $failureRecords
                 $commandsExecuted += $prerequisiteCommands
               }
-              }
               if ($null -ne $regressionRecord) {
                 $failureRecords += $regressionRecord
                 $failureArtifacts += 'evidence/validator-regression.log'
