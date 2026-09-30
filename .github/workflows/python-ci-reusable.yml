@@ -356,8 +356,29 @@ jobs:
                 $process.WaitForExit()
                 $null = $standardErrorTask.GetAwaiter().GetResult()
                 if ($process.ExitCode -ne 0) { throw 'Failure evidence change inventory could not be derived from the validated commit.' }
-                $pathText = [Text.UTF8Encoding]::new($false, $true).GetString($output.ToArray())
-                return @($pathText.Split([char]0, [StringSplitOptions]::RemoveEmptyEntries))
+                [byte[]]$pathBytes = $output.ToArray()
+                $utf8 = [Text.UTF8Encoding]::new($false, $true)
+                $encodedPrefix = '@git-bytes/'
+                $paths = [Collections.Generic.List[string]]::new()
+                $segmentStart = 0
+                for ($index = 0; $index -le $pathBytes.Length; $index++) {
+                  if ($index -lt $pathBytes.Length -and $pathBytes[$index] -ne 0) { continue }
+                  if ($index -gt $segmentStart) {
+                    [byte[]]$segment = $pathBytes[$segmentStart..($index - 1)]
+                    try {
+                      $decoded = $utf8.GetString($segment)
+                      if ($decoded.StartsWith($encodedPrefix, [StringComparison]::Ordinal)) {
+                        $decoded = $encodedPrefix + [Convert]::ToHexString($segment).ToLowerInvariant()
+                      }
+                      $paths.Add($decoded)
+                    }
+                    catch [Text.DecoderFallbackException] {
+                      $paths.Add($encodedPrefix + [Convert]::ToHexString($segment).ToLowerInvariant())
+                    }
+                  }
+                  $segmentStart = $index + 1
+                }
+                return @($paths)
               }
               finally {
                 $output.Dispose()
