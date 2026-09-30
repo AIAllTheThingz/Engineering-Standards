@@ -71,7 +71,9 @@ Describe 'Governed Python project support' {
         $timeoutMatch = [regex]::Match($script:workflow, '(?m)^\s+timeout-minutes:\s*(?<minutes>\d+)\s*$')
         $timeoutMatch.Success | Should -BeTrue
         [int]$timeoutMatch.Groups['minutes'].Value | Should -BeGreaterOrEqual 60
-        $script:workflow | Should -Match 'FAILURE_SCOPE_BASE_SHA:\s*\$\{\{ github\.event\.pull_request\.base\.sha \|\| github\.event\.before \}\}'
+        $script:workflow | Should -Match 'FAILURE_SCOPE_PR_BASE_SHA:\s*\$\{\{ github\.event\.pull_request\.base\.sha \}\}'
+        $script:workflow | Should -Match 'FAILURE_SCOPE_PUSH_BEFORE_SHA:\s*\$\{\{ github\.event\.before \}\}'
+        $script:workflow | Should -Match '\$completionScopeBaseSha = if \(-not \[string\]::IsNullOrWhiteSpace\(\$env:FAILURE_SCOPE_PR_BASE_SHA\)\)'
         $script:workflow | Should -Match "\$completionScopeBaseSha -match '\^0\{40\}\
     }
 
