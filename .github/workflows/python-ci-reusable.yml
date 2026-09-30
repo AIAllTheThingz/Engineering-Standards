@@ -829,6 +829,9 @@ jobs:
                 }
               })
             }
+            # Each route appends the commands it knows about; list every command once, and never as both executed and not executed.
+            $commandsExecuted = @($commandsExecuted | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | Select-Object -Unique)
+            $commandsNotExecuted = @($commandsNotExecuted | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) -and $_ -notin $commandsExecuted } | Select-Object -Unique)
             $failureRecords | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath (Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json') -Encoding utf8
             & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath $completionSourceRoot -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary $completionSummary -CommandsExecuted $commandsExecuted -CommandsNotExecuted $commandsNotExecuted -BlockedReason $blockedReason -ArtifactPath $failureArtifacts -ArtifactName "python-evidence-$env:GITHUB_RUN_ID" -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha $env:STANDARDS_WORKFLOW_SHA -ValidationProfile 'python-functional' -ChecksExecuted @('PythonToolchainLockClosure') -ChangedFile $completionChangedFiles
           }

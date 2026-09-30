@@ -129,6 +129,16 @@ Describe 'Governed Python project support' {
         }
     }
 
+    It 'lists each failure-receipt command once and never as both executed and not executed' {
+        $lines = [regex]::Matches($script:workflow, '(?m)^\s*(?<line>\$commands(?:Not)?Executed = @\(\$commands(?:Not)?Executed \| Where-Object .*)$') | ForEach-Object { $_.Groups['line'].Value.Trim() }
+        @($lines).Count | Should -Be 2
+        $commandsExecuted = @('lock','install','lock','pytest')
+        $commandsNotExecuted = @('lock','functional','functional','')
+        foreach ($line in $lines) { Invoke-Expression $line }
+        @($commandsExecuted) | Should -Be @('lock','install','pytest')
+        @($commandsNotExecuted) | Should -Be @('functional')
+    }
+
     It 'emits validated failure completion evidence when toolchain lock verification does not succeed' {
         $completionIndex = $script:workflow.IndexOf('Create completion evidence in trusted workspace')
         $evidenceIndex = $script:workflow.IndexOf('Validate Python completion evidence')
