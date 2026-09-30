@@ -170,22 +170,28 @@ jobs:
           Complete-LockVerificationTiming
 
       - name: Install standards-owned hash-locked toolchain
+        id: toolchain_install
         if: steps.lock_verification.outcome == 'success'
+        continue-on-error: true
         shell: pwsh
         run: |
           $toolRoot = Join-Path $env:RUNNER_TEMP 'python-tools'
           python -m venv $toolRoot
+          if ($LASTEXITCODE -ne 0) { throw 'Python toolchain virtual environment creation failed.' }
           $venvPython = Join-Path $toolRoot 'bin/python'
           & $venvPython -I -m pip install --no-input --only-binary=:all: --require-hashes --no-deps -r standards/examples/python-project/requirements-ci.lock
+          if ($LASTEXITCODE -ne 0) { throw 'Hash-locked Python toolchain package installation failed.' }
           & $venvPython -I -m pip check
+          if ($LASTEXITCODE -ne 0) { throw 'Hash-locked Python toolchain pip check failed.' }
           $toolPython = Join-Path $toolRoot 'bin/python-isolated'
           Copy-Item -LiteralPath $venvPython -Destination $toolPython
           & $toolPython -I -c "import sys; assert sys.prefix == '$toolRoot'"
+          if ($LASTEXITCODE -ne 0) { throw 'Isolated Python toolchain interpreter assertion failed.' }
           "TOOL_PYTHON=$toolPython" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Run governed functional validation
         id: functional
-        if: steps.lock_verification.outcome == 'success'
+        if: steps.lock_verification.outcome == 'success' && steps.toolchain_install.outcome == 'success'
         continue-on-error: true
         run: >-
           "$TOOL_PYTHON" -I standards/scripts/python-project-validation.py
@@ -198,7 +204,7 @@ jobs:
 
       - name: Run trusted validator regression tests
         id: regression
-        if: always() && steps.lock_verification.outcome == 'success'
+        if: always() && steps.lock_verification.outcome == 'success' && steps.toolchain_install.outcome == 'success'
         continue-on-error: true
         shell: bash
         run: |
@@ -210,7 +216,7 @@ jobs:
 
       - name: Normalize Python evidence schema
         id: normalization
-        if: always() && steps.lock_verification.outcome == 'success'
+        if: always() && steps.lock_verification.outcome == 'success' && steps.toolchain_install.outcome == 'success'
         continue-on-error: true
         run: >-
           "$TOOL_PYTHON" -I standards/scripts/Normalize-PythonFunctionalEvidence.py
@@ -224,6 +230,7 @@ jobs:
         run: |
           $inputValidationOutcome = '${{ steps.inputs.outcome }}'
           $lockVerificationOutcome = '${{ steps.lock_verification.outcome }}'
+          $toolchainInstallOutcome = '${{ steps.toolchain_install.outcome }}'
           $lockVerificationStarted = '${{ steps.lock_verification.outputs.verifier_started }}' -eq 'true'
           $lockVerificationBlocked = '${{ steps.lock_verification.outputs.verifier_blocked }}' -eq 'true'
           $lockVerificationBlockedReason = '${{ steps.lock_verification.outputs.verifier_blocked_reason }}'
@@ -256,7 +263,7 @@ jobs:
             Copy-Item -LiteralPath $durableLockLogPath -Destination $lockEvidenceLogPath -Force
           }
           $completionPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/completion-result.json'
-          if ($lockVerificationOutcome -eq 'success') {
+          if ($lockVerificationOutcome -eq 'success' -and $toolchainInstallOutcome -eq 'success') {
             if (-not (Test-Path -LiteralPath $lockEvidenceLogPath -PathType Leaf)) {
               throw 'Successful Python lock verification did not produce its durable log.'
             }
@@ -403,45 +410,72 @@ jobs:
               $lockVerifierLogMessage = if ($inputValidationOutcome -ne 'success') { 'The Python lock verifier did not start because the fixed runtime and project path validation did not succeed.' } else { 'The Python lock verifier did not start because a required prerequisite did not complete.' }
               $lockVerifierLogMessage | Set-Content -LiteralPath $lockEvidenceLogPath -Encoding utf8
             }
+            $toolchainInstallFailed = $lockVerificationOutcome -eq 'success' -and $toolchainInstallOutcome -ne 'success'
             $commandsExecuted = @()
-            $commandsNotExecuted = if ($inputValidationOutcome -ne 'success') { @('Toolchain installation and functional validation were not run because the fixed runtime and project path validation did not succeed.') } else { @('Toolchain installation and functional validation were not run because lock verification did not succeed.') }
-            if ($lockVerificationStarted) {
-              $commandsExecuted = @($lockVerificationCommand)
-            }
-            else {
-              $commandsNotExecuted += $lockVerificationCommand
-            }
-            $completionSummary = if ($inputValidationOutcome -ne 'success') { 'Python input validation did not succeed before toolchain lock verification.' } elseif ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'Python toolchain lock verification could not complete before toolchain installation.' } else { 'Python toolchain lock verification failed before toolchain installation.' }
-            $blockedReason = if ($inputValidationOutcome -ne 'success') { $lockVerificationBlockedReason } elseif (-not $lockVerificationBlocked -and $lockVerificationStarted) { $null } elseif ([string]::IsNullOrWhiteSpace($lockVerificationBlockedReason)) { 'The Python lock verifier prerequisite or package resolver was unavailable, so validation could not complete.' } else { $lockVerificationBlockedReason }
-            $lockVerificationRecord = [ordered]@{
-              schemaVersion = '1.1.0'
-              name = 'Python toolchain lock closure'
-              category = 'security'
-              status = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'Blocked' } else { 'Failed' }
-              requiredValidation = $true
-              evidenceSource = 'Automated'
-              command = $lockVerificationCommand
-              workingDirectory = 'trusted-isolated-workspace'
-              startedAtUtc = $lockVerificationStartedAtUtc
-              completedAtUtc = $lockVerificationCompletedAtUtc
-              durationSeconds = $lockVerificationDurationSeconds
-              runtime = 'CPython 3.13.2 resolver'
-              toolVersion = 'python-project-validation.py'
-              exitCode = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { $null } else { 1 }
-              summary = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'The required Python toolchain lock verification could not complete.' } else { 'The required Python toolchain lock verification did not succeed.' }
-              warnings = @()
-              failureReason = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { $null } else { 'The governed Python toolchain lock verification did not complete successfully.' }
-              blockedReason = $blockedReason
-              notApplicableRationale = $null
-              details = [ordered]@{
-                outcome = $lockVerificationOutcome
-                inputValidationOutcome = $inputValidationOutcome
-                verifierStarted = $lockVerificationStarted
-                resolverAvailable = -not ($lockVerificationBlocked -or -not $lockVerificationStarted)
-                logPath = 'evidence/lock-verification.log'
+            $commandsNotExecuted = @()
+            if ($lockVerificationStarted) { $commandsExecuted += $lockVerificationCommand } else { $commandsNotExecuted += $lockVerificationCommand }
+            if ($toolchainInstallFailed) {
+              $commandsExecuted += 'Python toolchain installation'
+              $commandsNotExecuted += 'Functional validation was not run because toolchain installation failed.'
+              $completionSummary = 'Python toolchain installation failed after successful lock verification.'
+              $blockedReason = $null
+              $failureRecord = [ordered]@{
+                schemaVersion = '1.1.0'
+                name = 'Python toolchain installation'
+                category = 'build'
+                status = 'Failed'
+                requiredValidation = $true
+                evidenceSource = 'Automated'
+                command = 'python -m venv; pip install --require-hashes --no-deps; pip check; isolated interpreter assertion'
+                workingDirectory = 'trusted-isolated-workspace'
+                startedAtUtc = $lockVerificationCompletedAtUtc
+                completedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+                durationSeconds = 0
+                runtime = 'CPython 3.12.11 functional runtime'
+                toolVersion = 'hash-locked Python toolchain'
+                exitCode = 1
+                summary = 'The standards-owned hash-locked Python toolchain installation did not succeed.'
+                warnings = @()
+                failureReason = 'Toolchain installation failed after successful lock verification.'
+                blockedReason = $null
+                notApplicableRationale = $null
+                details = [ordered]@{ toolchainInstallOutcome = $toolchainInstallOutcome }
               }
             }
-            @($lockVerificationRecord) | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath (Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json') -Encoding utf8
+            else {
+              $commandsNotExecuted += if ($inputValidationOutcome -ne 'success') { 'Toolchain installation and functional validation were not run because the fixed runtime and project path validation did not succeed.' } else { 'Toolchain installation and functional validation were not run because lock verification did not succeed.' }
+              $completionSummary = if ($inputValidationOutcome -ne 'success') { 'Python input validation did not succeed before toolchain lock verification.' } elseif ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'Python toolchain lock verification could not complete before toolchain installation.' } else { 'Python toolchain lock verification failed before toolchain installation.' }
+              $blockedReason = if ($inputValidationOutcome -ne 'success') { $lockVerificationBlockedReason } elseif (-not $lockVerificationBlocked -and $lockVerificationStarted) { $null } elseif ([string]::IsNullOrWhiteSpace($lockVerificationBlockedReason)) { 'The Python lock verifier prerequisite or package resolver was unavailable, so validation could not complete.' } else { $lockVerificationBlockedReason }
+              $failureRecord = [ordered]@{
+                schemaVersion = '1.1.0'
+                name = 'Python toolchain lock closure'
+                category = 'security'
+                status = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'Blocked' } else { 'Failed' }
+                requiredValidation = $true
+                evidenceSource = 'Automated'
+                command = $lockVerificationCommand
+                workingDirectory = 'trusted-isolated-workspace'
+                startedAtUtc = $lockVerificationStartedAtUtc
+                completedAtUtc = $lockVerificationCompletedAtUtc
+                durationSeconds = $lockVerificationDurationSeconds
+                runtime = 'CPython 3.13.2 resolver'
+                toolVersion = 'python-project-validation.py'
+                exitCode = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { $null } else { 1 }
+                summary = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'The required Python toolchain lock verification could not complete.' } else { 'The required Python toolchain lock verification did not succeed.' }
+                warnings = @()
+                failureReason = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { $null } else { 'The governed Python toolchain lock verification did not complete successfully.' }
+                blockedReason = $blockedReason
+                notApplicableRationale = $null
+                details = [ordered]@{
+                  outcome = $lockVerificationOutcome
+                  inputValidationOutcome = $inputValidationOutcome
+                  verifierStarted = $lockVerificationStarted
+                  resolverAvailable = -not ($lockVerificationBlocked -or -not $lockVerificationStarted)
+                  logPath = 'evidence/lock-verification.log'
+                }
+              }
+            }
+            @($failureRecord) | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath (Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json') -Encoding utf8
             & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath $failureCallerStage -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary $completionSummary -CommandsExecuted $commandsExecuted -CommandsNotExecuted $commandsNotExecuted -BlockedReason $blockedReason -ArtifactPath @('evidence/lock-verification.log','evidence/local-test-results.json') -ArtifactName "python-evidence-$env:GITHUB_RUN_ID" -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha '${{ job.workflow_sha }}' -ValidationProfile 'python-functional' -ChecksExecuted @('PythonToolchainLockClosure') -ChangedFile $failureChangedFiles
           }
           if (-not (Test-Path -LiteralPath $completionPath -PathType Leaf)) { throw 'Completion evidence was not created.' }
@@ -461,6 +495,7 @@ jobs:
           $outcomes = [ordered]@{
             inputs = '${{ steps.inputs.outcome }}'
             lock_verification = '${{ steps.lock_verification.outcome }}'
+            toolchain_install = '${{ steps.toolchain_install.outcome }}'
             regression = '${{ steps.regression.outcome }}'
             functional = '${{ steps.functional.outcome }}'
             normalization = '${{ steps.normalization.outcome }}'
