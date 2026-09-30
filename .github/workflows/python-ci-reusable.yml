@@ -60,14 +60,29 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: |
-          if ('${{ inputs.python-version }}' -cne '3.12.11') { throw 'python-version must be the reviewed exact version 3.12.11.' }
-          $candidate = '${{ inputs.project-path }}'
-          if ([IO.Path]::IsPathRooted($candidate) -or $candidate -match '(^|[\\/])\.\.([\\/]|$)') { throw 'project-path must be repository-relative without traversal.' }
-          $root = (Resolve-Path -LiteralPath (Join-Path $env:GITHUB_WORKSPACE 'caller')).Path
-          $projectItem = Get-Item -LiteralPath (Join-Path $root $candidate) -Force
-          if ($projectItem.LinkType -or ($projectItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'project-path must not be a link or reparse point.' }
-          $project = $projectItem.FullName
-          if (-not ($project -eq $root -or $project.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal))) { throw 'project-path escaped the caller checkout.' }
+          $inputStartedAt = (Get-Date).ToUniversalTime()
+          "started_at_utc=$($inputStartedAt.ToString('o'))" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          try {
+            if ('${{ inputs.python-version }}' -cne '3.12.11') { throw 'python-version must be the reviewed exact version 3.12.11.' }
+            $candidate = '${{ inputs.project-path }}'
+            if ([IO.Path]::IsPathRooted($candidate) -or $candidate -match '(^|[\\/])\.\.([\\/]|$)') { throw 'project-path must be repository-relative without traversal.' }
+            $root = (Resolve-Path -LiteralPath (Join-Path $env:GITHUB_WORKSPACE 'caller')).Path
+            $projectItem = Get-Item -LiteralPath (Join-Path $root $candidate) -Force
+            if ($projectItem.LinkType -or ($projectItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'project-path must not be a link or reparse point.' }
+            $project = $projectItem.FullName
+            if (-not ($project -eq $root -or $project.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal))) { throw 'project-path escaped the caller checkout.' }
+            'exit_code=0' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
+          catch {
+            "error=$($_.Exception.Message)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            'exit_code=1' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            throw
+          }
+          finally {
+            $inputCompletedAt = (Get-Date).ToUniversalTime()
+            "completed_at_utc=$($inputCompletedAt.ToString('o'))" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            "duration_seconds=$(($inputCompletedAt - $inputStartedAt).TotalSeconds.ToString('0.000', [Globalization.CultureInfo]::InvariantCulture))" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
 
       - name: Set up exact CPython 3.13.2 lock resolver
         id: lock_resolver
@@ -378,6 +393,11 @@ jobs:
         shell: pwsh
         run: |
           $inputValidationOutcome = '${{ steps.inputs.outcome }}'
+          $inputValidationStartedAtUtc = '${{ steps.inputs.outputs.started_at_utc }}'
+          $inputValidationCompletedAtUtc = '${{ steps.inputs.outputs.completed_at_utc }}'
+          $inputValidationDurationText = '${{ steps.inputs.outputs.duration_seconds }}'
+          $inputValidationError = '${{ steps.inputs.outputs.error }}'
+          $inputValidationExitCodeText = '${{ steps.inputs.outputs.exit_code }}'
           $lockVerificationOutcome = '${{ steps.lock_verification.outcome }}'
           $toolchainInstallOutcome = '${{ steps.toolchain_install.outcome }}'
           $toolchainInstallStartedAtUtc = '${{ steps.toolchain_install.outputs.started_at_utc }}'
@@ -402,21 +422,24 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($lockVerificationCommand)) {
             $lockVerificationCommand = '<CPython-3.13.2 with pip==26.2.1> -I standards/scripts/python-project-validation.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci.lock --resolver-python <CPython-3.13.2> --runtime-python <CPython-3.12.11>'
           }
-          if ($inputValidationOutcome -ne 'success') {
-            $inputValidationTimestamp = (Get-Date).ToUniversalTime().ToString('o')
-            $lockVerificationOutcome = 'skipped'
-            $lockVerificationStarted = $false
-            $lockVerificationBlocked = $true
-            $lockVerificationBlockedReason = 'The fixed runtime and project path validation did not succeed, so lock validation was not started.'
-            $lockVerificationStartedAtUtc = $inputValidationTimestamp
-            $lockVerificationCompletedAtUtc = $inputValidationTimestamp
-            $lockVerificationDurationText = '0.000'
+          if ($inputValidationOutcome -eq 'success') {
+            if ([string]::IsNullOrWhiteSpace($lockVerificationStartedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationCompletedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationDurationText)) {
+              throw 'Lock verification did not report required timing metadata.'
+            }
+            $lockVerificationDurationSeconds = [double]::Parse($lockVerificationDurationText, [Globalization.CultureInfo]::InvariantCulture)
+            if ($lockVerificationDurationSeconds -lt 0) { throw 'Lock verification reported an invalid negative duration.' }
           }
-          elseif ([string]::IsNullOrWhiteSpace($lockVerificationStartedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationCompletedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationDurationText)) {
-            throw 'Lock verification did not report required timing metadata.'
+          else {
+            if (
+              [string]::IsNullOrWhiteSpace($inputValidationStartedAtUtc) -or
+              [string]::IsNullOrWhiteSpace($inputValidationCompletedAtUtc) -or
+              [string]::IsNullOrWhiteSpace($inputValidationDurationText) -or
+              [string]::IsNullOrWhiteSpace($inputValidationError) -or
+              [string]::IsNullOrWhiteSpace($inputValidationExitCodeText)
+            ) { throw 'Input validation failure did not report required execution metadata.' }
+            $inputValidationDurationSeconds = [double]::Parse($inputValidationDurationText, [Globalization.CultureInfo]::InvariantCulture)
+            $inputValidationExitCode = [int]::Parse($inputValidationExitCodeText, [Globalization.CultureInfo]::InvariantCulture)
           }
-          $lockVerificationDurationSeconds = [double]::Parse($lockVerificationDurationText, [Globalization.CultureInfo]::InvariantCulture)
-          if ($lockVerificationDurationSeconds -lt 0) { throw 'Lock verification reported an invalid negative duration.' }
           $durableLockLogPath = Join-Path $env:RUNNER_TEMP 'python-lock-verification.log'
           $lockEvidenceLogPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/lock-verification.log'
           New-Item -ItemType Directory -Path (Split-Path -Parent $lockEvidenceLogPath) -Force | Out-Null
@@ -481,6 +504,37 @@ jobs:
             if (-not (Test-Path -LiteralPath $lockEvidenceLogPath -PathType Leaf)) {
               throw 'Successful Python lock verification did not produce its durable log.'
             }
+            if (
+              [string]::IsNullOrWhiteSpace($toolchainInstallStartedAtUtc) -or
+              [string]::IsNullOrWhiteSpace($toolchainInstallCompletedAtUtc) -or
+              [string]::IsNullOrWhiteSpace($toolchainInstallDurationText) -or
+              [string]::IsNullOrWhiteSpace($toolchainInstallExitCodeText)
+            ) { throw 'Successful Python toolchain installation did not report required execution metadata.' }
+            $toolchainInstallDurationSeconds = [double]::Parse($toolchainInstallDurationText, [Globalization.CultureInfo]::InvariantCulture)
+            $toolchainInstallExitCode = [int]::Parse($toolchainInstallExitCodeText, [Globalization.CultureInfo]::InvariantCulture)
+            $toolchainInstallCommand = 'python -m venv <runner-temp>/python-tools; <tool-python> -I -m pip install --no-input --only-binary=:all: --require-hashes --no-deps -r standards/examples/python-project/requirements-ci.lock; <tool-python> -I -m pip check; <tool-python-isolated> -I -c <prefix-assertion>'
+            $toolchainInstallRecord = [ordered]@{
+              schemaVersion = '1.1.0'
+              name = 'Python toolchain installation'
+              category = 'build'
+              status = 'Passed'
+              requiredValidation = $true
+              evidenceSource = 'Automated'
+              command = $toolchainInstallCommand
+              workingDirectory = 'trusted-isolated-workspace'
+              startedAtUtc = $toolchainInstallStartedAtUtc
+              completedAtUtc = $toolchainInstallCompletedAtUtc
+              durationSeconds = $toolchainInstallDurationSeconds
+              runtime = 'CPython 3.12.11 functional runtime'
+              toolVersion = 'hash-locked Python toolchain'
+              exitCode = $toolchainInstallExitCode
+              summary = 'The standards-owned hash-locked Python toolchain installation completed successfully.'
+              warnings = @()
+              failureReason = $null
+              blockedReason = $null
+              notApplicableRationale = $null
+              details = [ordered]@{ toolchainInstallOutcome = $toolchainInstallOutcome }
+            }
             $lockVerificationRecord = [ordered]@{
               schemaVersion = '1.1.0'
               name = 'Python toolchain lock closure'
@@ -508,7 +562,7 @@ jobs:
               }
             }
             $testResultPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json'
-            $allTestRecords = @($lockVerificationRecord, $regressionRecord) + @(Get-Content -LiteralPath $testResultPath -Raw | ConvertFrom-Json)
+            $allTestRecords = @($lockVerificationRecord, $toolchainInstallRecord, $regressionRecord) + @(Get-Content -LiteralPath $testResultPath -Raw | ConvertFrom-Json)
             $allTestRecords | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath $testResultPath -Encoding utf8
             & ./standards/scripts/New-CompletionEvidence.ps1 `
               -RepositoryPath $env:PYTHON_WORK_ROOT `
@@ -518,7 +572,7 @@ jobs:
               -GovernanceVersion 1.1.0 `
               -RiskClassification Moderate `
               -Summary 'Governed Python toolchain lock closure, static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' `
-              -CommandsExecuted @($lockVerificationCommand,'python-project-validation.py') `
+              -CommandsExecuted @($lockVerificationCommand,$toolchainInstallCommand,'python-project-validation.py') `
               -ArtifactPath @('evidence/lock-verification.log','evidence/validator-regression.log','evidence/local-test-results.json','evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json','evidence/python-toolchain-sbom.cdx.json') `
               -Repository $env:GITHUB_REPOSITORY `
               -Branch $env:GITHUB_REF_NAME `
@@ -551,7 +605,40 @@ jobs:
             $failureRecords = @()
             $failureArtifacts = @('evidence/lock-verification.log','evidence/local-test-results.json')
             if ($lockVerificationStarted) { $commandsExecuted += $lockVerificationCommand } else { $commandsNotExecuted += $lockVerificationCommand }
-            if ($toolchainInstallFailed) {
+            if ($inputValidationOutcome -ne 'success') {
+              $commandsExecuted += 'Validate fixed runtime and project path'
+              $commandsNotExecuted += $lockVerificationCommand
+              $commandsNotExecuted += 'Python toolchain installation'
+              $commandsNotExecuted += 'python-project-validation.py'
+              $completionSummary = 'Python workflow input validation failed.'
+              $blockedReason = $null
+              $failureRecords = @([ordered]@{
+                schemaVersion = '1.1.0'
+                name = 'Python workflow input validation'
+                category = 'validation'
+                status = 'Failed'
+                requiredValidation = $true
+                evidenceSource = 'Automated'
+                command = 'Validate fixed runtime and project path'
+                workingDirectory = 'trusted-isolated-workspace'
+                startedAtUtc = $inputValidationStartedAtUtc
+                completedAtUtc = $inputValidationCompletedAtUtc
+                durationSeconds = $inputValidationDurationSeconds
+                runtime = 'PowerShell'
+                toolVersion = 'GitHub Actions'
+                exitCode = $inputValidationExitCode
+                summary = 'The reusable Python workflow rejected invalid caller inputs.'
+                warnings = @()
+                failureReason = $inputValidationError
+                blockedReason = $null
+                notApplicableRationale = $null
+                details = [ordered]@{
+                  inputValidationOutcome = $inputValidationOutcome
+                  error = $inputValidationError
+                }
+              })
+            }
+            elseif ($toolchainInstallFailed) {
               if (
                 [string]::IsNullOrWhiteSpace($toolchainInstallStartedAtUtc) -or
                 [string]::IsNullOrWhiteSpace($toolchainInstallCompletedAtUtc) -or
@@ -676,7 +763,7 @@ jobs:
                 schemaVersion = '1.1.0'
                 name = 'Python toolchain lock closure'
                 category = 'security'
-                status = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'Blocked' } else { 'Failed' }
+                status = if ($lockVerificationBlocked) { 'Blocked' } else { 'Failed' }
                 requiredValidation = $true
                 evidenceSource = 'Automated'
                 command = $lockVerificationCommand
@@ -686,7 +773,7 @@ jobs:
                 durationSeconds = $lockVerificationDurationSeconds
                 runtime = 'CPython 3.13.2 resolver'
                 toolVersion = 'python-project-validation.py'
-                exitCode = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { $null } else { 1 }
+                exitCode = if ($lockVerificationBlocked) { $null } else { 1 }
                 summary = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { 'The required Python toolchain lock verification could not complete.' } else { 'The required Python toolchain lock verification did not succeed.' }
                 warnings = @()
                 failureReason = if ($lockVerificationBlocked -or -not $lockVerificationStarted) { $null } else { 'The governed Python toolchain lock verification did not complete successfully.' }

@@ -423,7 +423,7 @@ else:
     raise AssertionError("oscillating extra activation was accepted")
 """
     try:
-        result = subprocess.run(  # noqa: S603 - trusted interpreter and fixed arguments exercise timeout behavior.
+        result = subprocess.run(
             [sys.executable, "-I", "-c", child_program],
             check=False,
             capture_output=True,

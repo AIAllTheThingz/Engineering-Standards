@@ -37,10 +37,13 @@ try {
             ) {
                 $sourceLines = @(Get-Content -LiteralPath $item.filename)
                 $rowIndex = [int]$item.location.row - 1
-                if ($rowIndex -ge 0 -and $rowIndex + 1 -lt $sourceLines.Count) {
+                $startIndex = [Math]::Max(0, $rowIndex - 1)
+                $endIndex = [Math]::Min($sourceLines.Count - 1, $rowIndex + 1)
+                if ($startIndex -le $endIndex) {
+                    $sourceWindow = ($sourceLines[$startIndex..$endIndex] -join "`n")
                     $reviewedTestSubprocess = (
-                        $sourceLines[$rowIndex] -match 'result = subprocess\.run\(' -and
-                        $sourceLines[$rowIndex + 1] -match '\[sys\.executable,'
+                        $sourceWindow -match 'result = subprocess\.run\(' -and
+                        $sourceWindow -match '\[sys\.executable,\s*"-I",\s*"-c",\s*child_program\]'
                     )
                 }
             }

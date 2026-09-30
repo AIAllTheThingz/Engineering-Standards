@@ -151,8 +151,8 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'completedAtUtc = \$lockVerificationCompletedAtUtc'
         $script:workflow | Should -Match 'durationSeconds = \$lockVerificationDurationSeconds'
         $script:workflow | Should -Match '\$commandsNotExecuted \+= \$lockVerificationCommand'
-        $script:workflow | Should -Match 'status = if \(\$lockVerificationBlocked -or -not \$lockVerificationStarted\) \{ ''Blocked'' \} else \{ ''Failed'' \}'
-        $script:workflow | Should -Match 'exitCode = if \(\$lockVerificationBlocked -or -not \$lockVerificationStarted\) \{ \$null \} else \{ 1 \}'
+        $script:workflow | Should -Match 'status = if \(\$lockVerificationBlocked\) \{ ''Blocked'' \} else \{ ''Failed'' \}'
+        $script:workflow | Should -Match 'exitCode = if \(\$lockVerificationBlocked\) \{ \$null \} else \{ 1 \}'
         $script:workflow | Should -Match '\$verificationCommand = ''<CPython-3\.13\.2 with pip==26\.2\.1> -I standards/scripts/python-project-validation\.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci\.lock --resolver-python <CPython-3\.13\.2> --runtime-python <CPython-3\.12\.11>'
         $script:workflow | Should -Match '"verification_command=\$verificationCommand"'
         $script:workflow | Should -Match '\$lockVerificationCommand = ''\$\{\{ steps\.lock_verification\.outputs\.verification_command \}\}'''
@@ -167,7 +167,11 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'name = ''Python validator regression tests'''
         $script:workflow | Should -Match 'status = if \(\$regressionOutcome -eq ''success''\) \{ ''Passed'' \} else \{ ''Failed'' \}'
         $script:workflow | Should -Match 'evidence/validator-regression\.log'
-        $script:workflow | Should -Match '\$allTestRecords = @\(\$lockVerificationRecord, \$regressionRecord\)'
+        $script:workflow | Should -Match '\$allTestRecords = @\(\$lockVerificationRecord, \$toolchainInstallRecord, \$regressionRecord\)'
+        $script:workflow | Should -Match 'name = ''Python workflow input validation'''
+        $script:workflow | Should -Match 'failureReason = \$inputValidationError'
+        $script:workflow | Should -Match '\$toolchainInstallCommand'
+        $script:workflow | Should -Match '-CommandsExecuted @\(\$lockVerificationCommand,\$toolchainInstallCommand,''python-project-validation\.py''\)'
         $completionWorkflow = $script:workflow.Substring($completionIndex, $evidenceIndex - $completionIndex)
         $failureEvidence = [regex]::Match(
             $completionWorkflow,
