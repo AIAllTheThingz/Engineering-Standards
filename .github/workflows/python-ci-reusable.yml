@@ -231,6 +231,7 @@ jobs:
           $inputValidationOutcome = '${{ steps.inputs.outcome }}'
           $lockVerificationOutcome = '${{ steps.lock_verification.outcome }}'
           $toolchainInstallOutcome = '${{ steps.toolchain_install.outcome }}'
+          $regressionOutcome = '${{ steps.regression.outcome }}'
           $lockVerificationStarted = '${{ steps.lock_verification.outputs.verifier_started }}' -eq 'true'
           $lockVerificationBlocked = '${{ steps.lock_verification.outputs.verifier_blocked }}' -eq 'true'
           $lockVerificationBlockedReason = '${{ steps.lock_verification.outputs.verifier_blocked_reason }}'
@@ -293,8 +294,38 @@ jobs:
                 logPath = 'evidence/lock-verification.log'
               }
             }
+            $regressionLogPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/validator-regression.log'
+            if (-not (Test-Path -LiteralPath $regressionLogPath -PathType Leaf)) {
+              throw 'Python validator regression execution did not produce its durable log.'
+            }
+            $regressionTimestamp = (Get-Date).ToUniversalTime().ToString('o')
+            $regressionRecord = [ordered]@{
+              schemaVersion = '1.1.0'
+              name = 'Python validator regression tests'
+              category = 'test'
+              status = if ($regressionOutcome -eq 'success') { 'Passed' } else { 'Failed' }
+              requiredValidation = $true
+              evidenceSource = 'Automated'
+              command = 'pytest -c /dev/null --rootdir standards -p no:cacheprovider standards/tests/python/python_project_validation_tests.py'
+              workingDirectory = 'trusted-isolated-workspace'
+              startedAtUtc = $regressionTimestamp
+              completedAtUtc = $regressionTimestamp
+              durationSeconds = 0
+              runtime = 'standards-owned hash-locked Python toolchain'
+              toolVersion = 'pytest'
+              exitCode = if ($regressionOutcome -eq 'success') { 0 } else { 1 }
+              summary = if ($regressionOutcome -eq 'success') { 'Trusted Python validator regression tests completed successfully.' } else { 'Trusted Python validator regression tests failed.' }
+              warnings = @()
+              failureReason = if ($regressionOutcome -eq 'success') { $null } else { 'Trusted Python validator regression tests did not complete successfully.' }
+              blockedReason = $null
+              notApplicableRationale = $null
+              details = [ordered]@{
+                outcome = $regressionOutcome
+                logPath = 'evidence/validator-regression.log'
+              }
+            }
             $testResultPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json'
-            $allTestRecords = @($lockVerificationRecord) + @(Get-Content -LiteralPath $testResultPath -Raw | ConvertFrom-Json)
+            $allTestRecords = @($lockVerificationRecord, $regressionRecord) + @(Get-Content -LiteralPath $testResultPath -Raw | ConvertFrom-Json)
             $allTestRecords | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath $testResultPath -Encoding utf8
             & ./standards/scripts/New-CompletionEvidence.ps1 `
               -RepositoryPath $env:PYTHON_WORK_ROOT `
@@ -305,7 +336,7 @@ jobs:
               -RiskClassification Moderate `
               -Summary 'Governed Python toolchain lock closure, static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' `
               -CommandsExecuted @($lockVerificationCommand,'python-project-validation.py') `
-              -ArtifactPath @('evidence/lock-verification.log','evidence/local-test-results.json','evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json','evidence/python-toolchain-sbom.cdx.json') `
+              -ArtifactPath @('evidence/lock-verification.log','evidence/validator-regression.log','evidence/local-test-results.json','evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json','evidence/python-toolchain-sbom.cdx.json') `
               -Repository $env:GITHUB_REPOSITORY `
               -Branch $env:GITHUB_REF_NAME `
               -ValidatedCommitSha $env:GITHUB_SHA `
