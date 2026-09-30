@@ -30,6 +30,20 @@ try {
         if($ruff.timedOut){ throw 'Ruff timed out.' }; if($ruff.exitCode -notin @(0,1)){ throw "Ruff failed: $($ruff.stderr)" }
         foreach($item in @($ruff.stdout|ConvertFrom-Json)){
             $rel=[IO.Path]::GetRelativePath($root,$item.filename).Replace('\','/')
+            $reviewedTestSubprocess = $false
+            if (
+                $rel -eq 'tests/python/python_project_validation_tests.py' -and
+                $item.code -eq 'S603'
+            ) {
+                $sourceLines = @(Get-Content -LiteralPath $item.filename)
+                $rowIndex = [int]$item.location.row - 1
+                if ($rowIndex -ge 0 -and $rowIndex + 1 -lt $sourceLines.Count) {
+                    $reviewedTestSubprocess = (
+                        $sourceLines[$rowIndex] -match 'result = subprocess\.run\(' -and
+                        $sourceLines[$rowIndex + 1] -match '\[sys\.executable,'
+                    )
+                }
+            }
             $reviewedExecutorFinding = (
                 $Profile -eq 'standards-maintainer' -and
                 $item.code -eq 'S603' -and
@@ -40,7 +54,7 @@ try {
                         'scripts/Install-BashProjectToolchain.py:234',
                         'scripts/bash-project-validation.py:433'
                     ) -or
-                    $rel -eq 'tests/python/python_project_validation_tests.py'
+                    $reviewedTestSubprocess
                 )
             )
             $reviewedHttpsFinding = (
