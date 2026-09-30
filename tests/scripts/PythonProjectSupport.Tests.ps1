@@ -103,7 +103,7 @@ Describe 'Governed Python project support' {
         $completionIndex | Should -BeGreaterThan -1
         $evidenceIndex | Should -BeGreaterThan $completionIndex
         $script:workflow | Should -Match '(?s)id:\s*completion\s*\r?\n\s*if:\s*always\(\)'
-        $script:workflow | Should -Match 'if \(\$lockVerificationOutcome -eq ''success'' -and \$toolchainInstallOutcome -eq ''success''\)'
+        $script:workflow | Should -Match '(?s)if \(\s*\$lockVerificationOutcome -eq ''success'' -and\s*\$toolchainInstallOutcome -eq ''success'' -and\s*\$functionalOutcome -eq ''success'' -and\s*\$normalizationOutcome -eq ''success''\s*\)'
         $script:workflow | Should -Match '(?s)- name: Install standards-owned hash-locked toolchain\s*id:\s*toolchain_install\s*if:\s*steps\.lock_verification\.outcome == ''success''\s*continue-on-error:\s*true'
         $script:workflow | Should -Match 'Hash-locked Python toolchain package installation failed\.'
         $script:workflow | Should -Match 'Hash-locked Python toolchain pip check failed\.'
