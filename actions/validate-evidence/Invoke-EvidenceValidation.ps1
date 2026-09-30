@@ -84,7 +84,7 @@ function Get-RepositoryContentFingerprint {
         }
         $relativePath = $match.Groups['path'].Value
         if (
-            [string]::IsNullOrWhiteSpace($relativePath) -or
+            [string]::IsNullOrEmpty($relativePath) -or
             $relativePath.StartsWith('"', [StringComparison]::Ordinal) -or
             $relativePath -match '(^|/)\.\.(/|$)|^(?:/|[A-Za-z]:)|[\x00-\x1F]'
         ) {

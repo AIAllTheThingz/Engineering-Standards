@@ -149,7 +149,7 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match '\$verificationCommand = ''<CPython-3\.13\.2 with pip==26\.2\.1> -I standards/scripts/python-project-validation\.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci\.lock --resolver-python <CPython-3\.13\.2> --runtime-python <CPython-3\.12\.11>'
         $script:workflow | Should -Match '"verification_command=\$verificationCommand"'
         $script:workflow | Should -Match '\$lockVerificationCommand = ''\$\{\{ steps\.lock_verification\.outputs\.verification_command \}\}'''
-        $script:workflow | Should -Match '-CommandsExecuted @\(\$lockVerificationCommand,''python-project-validation\.py''\)'
+        $script:workflow | Should -Match '-CommandsExecuted @\(\$lockVerificationCommand,\$toolchainInstallCommand,''python-project-validation\.py''\)'
         $script:workflow | Should -Match 'Join-Path \$env:RUNNER_TEMP ''python-lock-verification\.log'''
         $script:workflow | Should -Match 'New-Item -ItemType File -Path \$durableLockLogPath -Force'
         $script:workflow | Should -Match 'Set-Content -LiteralPath \$durableLockLogPath -Value ''Python toolchain lock verification started\.'''

@@ -36,15 +36,16 @@ try {
                 $item.code -eq 'S603'
             ) {
                 $sourceLines = @(Get-Content -LiteralPath $item.filename)
-                $rowIndex = [int]$item.location.row - 1
-                $startIndex = [Math]::Max(0, $rowIndex - 1)
-                $endIndex = [Math]::Min($sourceLines.Count - 1, $rowIndex + 1)
-                if ($startIndex -le $endIndex) {
-                    $sourceWindow = ($sourceLines[$startIndex..$endIndex] -join "`n")
-                    $reviewedTestSubprocess = (
-                        $sourceWindow -match 'result = subprocess\.run\(' -and
-                        $sourceWindow -match '\[sys\.executable,\s*"-I",\s*"-c",\s*child_program\]'
-                    )
+                $reportedLine = [int]$item.location.row
+                for ($index = 0; $index + 1 -lt $sourceLines.Count; $index++) {
+                    if (
+                        $sourceLines[$index] -match 'result = subprocess\.run\(' -and
+                        $sourceLines[$index + 1] -match '\[sys\.executable,\s*"-I",\s*"-c",\s*child_program\]' -and
+                        $reportedLine -in @(($index + 1), ($index + 2))
+                    ) {
+                        $reviewedTestSubprocess = $true
+                        break
+                    }
                 }
             }
             $reviewedExecutorFinding = (

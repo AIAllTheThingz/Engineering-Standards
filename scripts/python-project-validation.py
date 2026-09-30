@@ -1044,10 +1044,13 @@ def pinned_lock_resolver(
     create_command = module_command(source_python, "venv", str(environment))
     create_code, create_output, _ = run(create_command, environment.parent, env, 120)
     if create_code != 0:
-        raise ValueError(
+        message = (
             f"could not create the {label} resolver environment: "
             f"{sanitize(create_output, [lock.parent, environment.parent, source_python.parent])}"
         )
+        if create_code == 124:
+            raise LockResolutionBlockedError(message)
+        raise ValueError(message)
     resolver_python = environment / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
     if not resolver_python.is_file():
         raise ValueError(f"the {label} resolver environment did not produce a Python executable")
