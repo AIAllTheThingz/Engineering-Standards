@@ -470,13 +470,7 @@ jobs:
               $completionScopeBaseSha = [string]$eventPayload.before
             }
           }
-          if ($completionScopeBaseSha -match '^0{40}$') { $completionScopeBaseSha = $null }
-          if ([string]::IsNullOrWhiteSpace($completionScopeBaseSha)) {
-            $completionParents = (& git -C $completionSourceRoot show -s --format=%P $env:GITHUB_SHA).Trim()
-            if ($LASTEXITCODE -ne 0) { throw 'Completion evidence parent metadata could not be derived from github.sha.' }
-            $completionParentShas = @($completionParents -split '\s+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-            if ($completionParentShas.Count -gt 0) { $completionScopeBaseSha = $completionParentShas[0] }
-          }
+          if ($completionScopeBaseSha -match '^0{40}
           if (-not [string]::IsNullOrWhiteSpace($completionScopeBaseSha)) {
             if ($completionScopeBaseSha -notmatch '(?i)^[0-9a-f]{40}$') { throw 'Completion evidence base is not a full commit SHA.' }
             & git -C $completionSourceRoot cat-file -e "$completionScopeBaseSha^{commit}"
