@@ -101,7 +101,8 @@ Describe 'JSON schema validation' {
             # so validate each tag against the validatedCommitTag property schema.
             $completionSchema = Get-Content -LiteralPath "$PSScriptRoot/../../schemas/completion-result.schema.json" -Raw | ConvertFrom-Json
             $tagSchema = $completionSchema.properties.validatedCommitTag | ConvertTo-Json -Depth 10
-            foreach ($tag in @('release+1','release@1','-release','release/v1.2.0')) {
+            # Git imposes no total tag length limit, so the schema must accept what git check-ref-format accepts.
+            foreach ($tag in @('release+1','release@1','-release','release/v1.2.0',('release/' + ('a' * 300)))) {
                 (ConvertTo-Json -InputObject $tag | Test-Json -Schema $tagSchema) | Should -BeTrue -Because $tag
             }
             foreach ($tag in @('@','bad..tag','bad@{tag','bad tag','bad\tag','name.lock','name.')) {

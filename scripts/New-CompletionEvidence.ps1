@@ -165,15 +165,6 @@ function Resolve-ValidatedCommitTag {
     return $tag
 }
 
-function Test-CompletionReceiptPayloadPath {
-    param([Parameter(Mandatory)][string]$RelativePath)
-
-    return (
-        $RelativePath.StartsWith('examples/python-project/evidence/', [StringComparison]::Ordinal) -or
-        $RelativePath.StartsWith('examples/bash-project/evidence/', [StringComparison]::Ordinal)
-    )
-}
-
 function Test-RawBytePrefix {
     param(
         [Parameter(Mandatory)][byte[]]$Value,
@@ -201,7 +192,11 @@ function Get-ReceiptExclusionPath {
     $relative = $receiptFull.Substring($rootFull.Length + 1).Replace('\', '/')
     $slash = $relative.LastIndexOf('/')
     if ($slash -lt 0) { return @($relative) }
-    return @($relative.Substring(0, $slash + 1))
+    $receiptDirectory = $relative.Substring(0, $slash + 1)
+    # This repository's two example receipts bind each other's trees, so each excludes both directories.
+    $centralEvidenceDirectories = @('examples/python-project/evidence/', 'examples/bash-project/evidence/')
+    if ($receiptDirectory -cin $centralEvidenceDirectories) { return $centralEvidenceDirectories }
+    return @($receiptDirectory)
 }
 
 function Test-ExcludedReceiptPath {
@@ -253,8 +248,6 @@ function Get-RawGitTreeFingerprint {
         $process.Dispose()
     }
 
-    $pythonEvidencePrefix = [Text.Encoding]::ASCII.GetBytes('examples/python-project/evidence/')
-    $bashEvidencePrefix = [Text.Encoding]::ASCII.GetBytes('examples/bash-project/evidence/')
     $receiptExclusions = @($ExtraExcludedPaths | Where-Object { -not [string]::IsNullOrEmpty($_) } | ForEach-Object { , [Text.Encoding]::UTF8.GetBytes($_) })
     $recordHex = [Collections.Generic.List[string]]::new()
     $segmentStart = 0
@@ -273,7 +266,6 @@ function Get-RawGitTreeFingerprint {
         if (-not $match.Success) { throw "$FailurePrefix contains an unsupported tree entry header." }
         [byte[]]$pathBytes = $entry[($tabIndex + 1)..($entry.Length - 1)]
         if ($pathBytes.Length -eq 0) { throw "$FailurePrefix contains an empty tree path." }
-        if ((Test-RawBytePrefix -Value $pathBytes -Prefix $pythonEvidencePrefix) -or (Test-RawBytePrefix -Value $pathBytes -Prefix $bashEvidencePrefix)) { continue }
         if ($receiptExclusions.Count -gt 0 -and (Test-ExcludedReceiptPath -Value $pathBytes -Exclusions $receiptExclusions)) { continue }
         $recordPrefix = ('{0}' + [char]0 + '{1}' + [char]0 + '{2}' + [char]0) -f $match.Groups['mode'].Value, $match.Groups['type'].Value, $match.Groups['object'].Value.ToLowerInvariant()
         [byte[]]$prefixBytes = [Text.Encoding]::ASCII.GetBytes($recordPrefix)

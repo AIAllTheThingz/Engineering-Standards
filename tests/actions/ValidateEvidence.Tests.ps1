@@ -710,6 +710,90 @@ Describe 'Validate evidence action' {
                 $source | Should -Not -Match ([regex]::Escape('`0{1}`0')) -Because $script
             }
         }
+        It 'keeps downstream files under the central example evidence paths in the content fingerprint' {
+            $identityRoot = Join-Path ([IO.Path]::GetTempPath()) ("completion-downstream-paths-" + [guid]::NewGuid())
+            $source = Join-Path $identityRoot 'source'
+            try {
+                New-Item -ItemType Directory -Path (Join-Path $source 'examples/python-project/evidence') -Force | Out-Null
+                New-Item -ItemType Directory -Path (Join-Path $source 'evidence') -Force | Out-Null
+                Set-Content -LiteralPath (Join-Path $source 'examples/python-project/evidence/fixture.json') -Value '{"v":1}' -NoNewline
+                Set-Content -LiteralPath (Join-Path $source 'evidence/report.json') -Value '{}' -NoNewline
+                & git -C $source init --quiet
+                & git -C $source config user.email 'evidence-test@example.invalid'
+                & git -C $source config user.name 'Evidence Test'
+                & git -C $source add --all
+                & git -C $source commit --quiet -m 'first'
+                $first = (& git -C $source rev-parse HEAD).Trim()
+                Set-Content -LiteralPath (Join-Path $source 'examples/python-project/evidence/fixture.json') -Value '{"v":2}' -NoNewline
+                & git -C $source add --all
+                & git -C $source commit --quiet -m 'second'
+                $second = (& git -C $source rev-parse HEAD).Trim()
+
+                $fingerprints = foreach ($commit in @($first, $second)) {
+                    & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" `
+                        -RepositoryPath $source -SourceRepositoryPath $source `
+                        -OutputPath 'evidence/local-completion-result.json' -ExecutionContext Local `
+                        -Summary 'Downstream fixture under a central-looking path.' `
+                        -ArtifactPath 'evidence/report.json' `
+                        -CommandsExecuted @('fixture') `
+                        -CommandsNotExecuted @('GitHub-hosted Governance CI workflow execution') `
+                        -ChangedFile @('examples/python-project/evidence/fixture.json') `
+                        -ValidatedCommitSha $commit | Out-Null
+                    $LASTEXITCODE | Should -Be 0
+                    (Get-Content -LiteralPath (Join-Path $source 'evidence/local-completion-result.json') -Raw | ConvertFrom-Json).validatedContentSha256
+                }
+                $fingerprints[0] | Should -Not -BeExactly $fingerprints[1]
+            }
+            finally {
+                if (Test-Path -LiteralPath $identityRoot) { Remove-Item -LiteralPath $identityRoot -Recurse -Force }
+            }
+        }
+        It 'accepts a whitespace-only changed path in the change inventory' {
+            $identityRoot = Join-Path ([IO.Path]::GetTempPath()) ("completion-whitespace-inventory-" + [guid]::NewGuid())
+            $project = Join-Path $identityRoot 'examples/python-project'
+            try {
+                New-Item -ItemType Directory -Path (Join-Path $project 'evidence') -Force | Out-Null
+                Set-Content -LiteralPath (Join-Path $project 'evidence/report.json') -Value '{}' -NoNewline
+                $outcomes = @{
+                    yaml='success'; workflow_architecture='success'; json_schemas='success'; markdown_links='success'
+                    documentation='success'; contract='success'; forbidden_patterns='success'; repository_health='success'
+                    powershell_parser='success'; pester='success'; psscriptanalyzer='success'; examples='success'
+                    evidence_validation='success'; github_execution='notrun'
+                }
+                $reports = @{
+                    yaml=''; workflow_architecture=''; json_schemas=''; markdown_links=''
+                    documentation=''; contract=''; forbidden_patterns=''; repository_health=''
+                    powershell_parser=''; pester=''; psscriptanalyzer=''; examples=''
+                    evidence_validation=''; github_execution=''
+                }
+                & "$PSScriptRoot/../../scripts/New-WorkflowTestEvidence.ps1" -RepositoryPath $project -OutputPath 'evidence/local-tests.json' -Outcomes $outcomes -Reports $reports -RunPester -RunDocumentation -RunExamples -Runtime 'Local PowerShell validation' -ToolVersion 'test'
+                $LASTEXITCODE | Should -Be 0
+                & git -C $identityRoot init --quiet
+                & git -C $identityRoot config user.email 'evidence-test@example.invalid'
+                & git -C $identityRoot config user.name 'Evidence Test'
+                & git -C $identityRoot add --all
+                & git -C $identityRoot commit --quiet -m 'fixture'
+                $LASTEXITCODE | Should -Be 0
+                $validatedCommit = (& git -C $identityRoot rev-parse HEAD).Trim()
+                & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" `
+                    -RepositoryPath $project -SourceRepositoryPath $identityRoot `
+                    -OutputPath 'evidence/receipt.json' -ExecutionContext Local `
+                    -Summary 'Whitespace-only changed path inventory.' `
+                    -TestResultPath 'evidence/local-tests.json' `
+                    -ArtifactPath 'evidence/report.json' `
+                    -CommandsExecuted @('inventory fixture') `
+                    -CommandsNotExecuted @('GitHub-hosted Governance CI workflow execution') `
+                    -ChangedFile @('   ') `
+                    -ValidatedCommitSha $validatedCommit
+                $LASTEXITCODE | Should -Be 0
+                $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $project -EvidencePath 'evidence/receipt.json' 2>&1)
+                ($output -join "`n") | Should -Match 'Evidence validation completed'
+                $LASTEXITCODE | Should -Be 0
+            }
+            finally {
+                if (Test-Path -LiteralPath $identityRoot) { Remove-Item -LiteralPath $identityRoot -Recurse -Force }
+            }
+        }
         It 'keeps a downstream receipt out of its own squash-safe content fingerprint' {
             $identityRoot = Join-Path ([IO.Path]::GetTempPath()) ("completion-downstream-receipt-" + [guid]::NewGuid())
             $source = Join-Path $identityRoot 'source'
@@ -1023,6 +1107,7 @@ Describe 'Validate evidence action' {
                 'examples/python-project/requirements-ci.lock'
                 'governance/COMPLETION_EVIDENCE.md'
                 'schemas/completion-result.schema.json'
+                'scripts/GovernanceValidation.Legacy.psm1'
                 'scripts/New-CompletionEvidence.ps1'
                 'scripts/Normalize-PythonFunctionalEvidence.py'
                 'scripts/python-project-validation.py'
@@ -1055,6 +1140,7 @@ Describe 'Validate evidence action' {
                     '.github/workflows/python-ci-reusable.yml'
                     'actions/validate-evidence/Invoke-EvidenceValidation.ps1'
                     'schemas/completion-result.schema.json'
+                    'scripts/GovernanceValidation.Legacy.psm1'
                     'scripts/New-CompletionEvidence.ps1'
                     'scripts/Normalize-PythonFunctionalEvidence.py'
                     'scripts/python-project-validation.py'

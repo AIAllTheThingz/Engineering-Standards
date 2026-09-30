@@ -611,7 +611,7 @@ function Test-RelativeRepositoryPath {
     )
 
     $results = [System.Collections.Generic.List[object]]::new()
-    if ([string]::IsNullOrWhiteSpace($Value)) {
+    if ([string]::IsNullOrEmpty($Value)) {
         $results.Add((New-ValidationResult -Status Failed -Message "$Name must not be empty." -Path $Path))
         return @($results)
     }
