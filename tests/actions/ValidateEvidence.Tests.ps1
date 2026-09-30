@@ -879,6 +879,7 @@ Describe 'Validate evidence action' {
                     'schemas/completion-result.schema.json'
                     'scripts/New-CompletionEvidence.ps1'
                     'scripts/Normalize-PythonFunctionalEvidence.py'
+                    'scripts/Test-PythonStaticAnalysis.ps1'
                     'scripts/python-project-validation.py'
                 )
                 tests = @(
@@ -925,13 +926,9 @@ Describe 'Validate evidence action' {
                 $actualChangedFiles.Count | Should -Be $expectedChangedFiles.Count
                 @(Compare-Object -ReferenceObject $expectedChangedFiles -DifferenceObject $actualChangedFiles).Count | Should -Be 0
 
-                $receipt.validatedCommitTag | Should -BeExactly 'evidence/pr-121-validated-source-v47'
-                $tagReference = "refs/tags/$($receipt.validatedCommitTag)"
-                & git -C $repositoryRoot show-ref --verify --quiet $tagReference
-                if ($LASTEXITCODE -eq 0) {
-                    ((& git -C $repositoryRoot cat-file -t $tagReference) -join '').Trim() | Should -BeExactly 'tag'
-                    ((& git -C $repositoryRoot rev-parse "$tagReference^{}") -join '').Trim() | Should -BeExactly $receipt.validatedCommitSha
-                }
+                $receipt.validatedCommitTag | Should -BeNullOrEmpty
+                $receipt.status | Should -BeExactly 'NotRun'
+                $receipt.notRunReason | Should -Match 'Local validation was not rerun after the final source fixes'
 
                 $actualCategoryNames = @($receipt.changedFileCategories.PSObject.Properties.Name | Sort-Object)
                 $actualCategoryNames.Count | Should -Be $expectedCategoryNames.Count
