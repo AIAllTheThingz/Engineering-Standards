@@ -1325,6 +1325,7 @@ def validate_requirements_lock_closure(
             supplemental_report_contexts: dict[str, dict[str, tuple[str, ...]]] = {}
             marker_request_number = 0
             requested_marker_extras: dict[str, tuple[str, ...]] = {}
+            seen_supplemental_states: set[tuple[object, ...]] = set()
             while True:
                 target_reports = [base_report, *supplemental_reports.values()]
                 install_records, resolved = collect_target_resolution(target_reports, target_name)
@@ -1339,6 +1340,30 @@ def validate_requirements_lock_closure(
                 active_extra_context = {
                     name: extras for name, extras in active_extras_by_package.items() if extras
                 }
+                supplemental_state: tuple[object, ...] = (
+                    tuple(sorted(resolved.items())),
+                    tuple(sorted((name, tuple(extras)) for name, extras in requested_marker_extras.items())),
+                    tuple(sorted((name, tuple(extras)) for name, extras in active_extra_context.items())),
+                    tuple(
+                        sorted(
+                            (
+                                name,
+                                tuple(
+                                    sorted(
+                                        (package, tuple(extras))
+                                        for package, extras in context.items()
+                                    )
+                                ),
+                            )
+                            for name, context in supplemental_report_contexts.items()
+                        )
+                    ),
+                )
+                if supplemental_state in seen_supplemental_states:
+                    raise ValueError(
+                        f"supplemental marker report state did not converge for {target_name}"
+                    )
+                seen_supplemental_states.add(supplemental_state)
                 reports_to_refilter = [
                     name
                     for name in supplemental_reports
