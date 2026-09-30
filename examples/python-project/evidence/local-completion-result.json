@@ -7,10 +7,10 @@
   "githubJob": null,
   "artifactName": null,
   "repository": "AIAllTheThingz/Engineering-Standards",
-  "commitSha": "912581e79eb9f6ad1b228224495d74040e9de359",
-  "validatedCommitSha": "912581e79eb9f6ad1b228224495d74040e9de359",
-  "validatedContentSha256": "8297e6cffbe093cd76cc17648453c3299809fff89243ec9ebfbcc8996d76bb7b",
-  "validatedCommitTag": "evidence/pr-121-validated-source-v47",
+  "commitSha": "5f8346cd1825bb3e229ca73d6fcbbffed059de6d",
+  "validatedCommitSha": "5f8346cd1825bb3e229ca73d6fcbbffed059de6d",
+  "validatedContentSha256": "237109269c72cae6af21aa04a2585309c564c8a32066a92d66b1ba4b8d73298a",
+  "validatedCommitTag": null,
   "evidenceCommitSha": null,
   "branch": "fix/python-dependency-governance-followup",
   "pullRequest": null,
@@ -21,17 +21,18 @@
   "startedAtUtc": "2026-09-29T16:09:24.2112156Z",
   "completedAtUtc": "2026-09-29T16:09:24.2113969Z",
   "durationSeconds": 0,
-  "summary": "Hash-locked Python toolchain installation and isolated validation, including build 1.6.1, hatchling 1.32.4, recursive marker-gated lock closure, target-marker coverage, target-reachable source traversal, active-extra propagation across unmarked dependency edges, target-filtered and refreshed supplemental reports, target artifact-hash enforcement, Windows platform-version coverage, resolver-throttling handling, CI-context-safe local evidence fixtures, runtime-setup and rejected-input failure evidence preservation, pre-resolution synthetic target marker environments, validated-commit content identity binding, pinned-pip lock metadata parsing, UTF-8 Git-path content identity, separate runtime and toolchain SBOMs, evidence path sanitization, activated-extra marker handling, target-excluding unmodeled-marker short-circuiting, base-aware NUL-delimited failure receipt inventories, explicit extra-activation convergence failure handling, and whitespace-preserving Git change inventories, completed against the tagged v47 source.",
+  "summary": "Python completion receipt rebound to the final repaired source tree. Historical local artifacts retain their original provenance; final validation is delegated to GitHub Actions.",
   "changedFiles": [
     ".github/workflows/python-ci-reusable.yml",
+    "CHANGELOG.md",
+    "README.md",
     "actions/validate-evidence/Invoke-EvidenceValidation.ps1",
     "actions/validate-evidence/README.md",
-    "CHANGELOG.md",
     "docs/ADOPTION_GUIDE.md",
     "docs/GOVERNANCE_ARCHITECTURE.md",
     "docs/MAINTAINER_GUIDE.md",
-    "docs/releases/unreleased.md",
     "docs/TROUBLESHOOTING.md",
+    "docs/releases/unreleased.md",
     "evidence/codex-skill-behavior.json",
     "examples/bash-project/evidence/bash-formatting.json",
     "examples/bash-project/evidence/bash-project-sbom.cdx.json",
@@ -42,6 +43,7 @@
     "examples/bash-project/evidence/bash-toolchain.json",
     "examples/bash-project/evidence/local-completion-result.json",
     "examples/bash-project/evidence/local-test-results.json",
+    "examples/python-project/README.md",
     "examples/python-project/evidence/local-completion-result.json",
     "examples/python-project/evidence/local-test-results.json",
     "examples/python-project/evidence/python-build.json",
@@ -53,14 +55,13 @@
     "examples/python-project/evidence/python-toolchain-sbom.cdx.json",
     "examples/python-project/evidence/python-type-check.json",
     "examples/python-project/pyproject.toml",
-    "examples/python-project/README.md",
     "examples/python-project/requirements-ci.in",
     "examples/python-project/requirements-ci.lock",
     "governance/COMPLETION_EVIDENCE.md",
-    "README.md",
     "schemas/completion-result.schema.json",
     "scripts/New-CompletionEvidence.ps1",
     "scripts/Normalize-PythonFunctionalEvidence.py",
+    "scripts/Test-PythonStaticAnalysis.ps1",
     "scripts/python-project-validation.py",
     "tests/actions/ValidateEvidence.Tests.ps1",
     "tests/python/python_project_validation_tests.py",
@@ -75,16 +76,16 @@
       "examples/python-project/requirements-ci.lock"
     ],
     "documentation": [
-      "actions/validate-evidence/README.md",
       "CHANGELOG.md",
+      "README.md",
+      "actions/validate-evidence/README.md",
       "docs/ADOPTION_GUIDE.md",
       "docs/GOVERNANCE_ARCHITECTURE.md",
       "docs/MAINTAINER_GUIDE.md",
-      "docs/releases/unreleased.md",
       "docs/TROUBLESHOOTING.md",
+      "docs/releases/unreleased.md",
       "examples/python-project/README.md",
-      "governance/COMPLETION_EVIDENCE.md",
-      "README.md"
+      "governance/COMPLETION_EVIDENCE.md"
     ],
     "configuration": [
       ".github/workflows/python-ci-reusable.yml",
@@ -92,6 +93,7 @@
       "schemas/completion-result.schema.json",
       "scripts/New-CompletionEvidence.ps1",
       "scripts/Normalize-PythonFunctionalEvidence.py",
+      "scripts/Test-PythonStaticAnalysis.ps1",
       "scripts/python-project-validation.py"
     ],
     "tests": [
@@ -149,7 +151,7 @@
   "dataClassification": "Internal",
   "identityUsed": "Local maintainer context",
   "credentialMode": "Local workstation credentials",
-  "notRunReason": "GitHub Actions PR validation was not run locally; it must execute after the correction branch is pushed.",
+  "notRunReason": "Local validation was not rerun after the final source fixes; GitHub Actions is the authoritative validation for the final reviewed source.",
   "blockedReason": null,
   "notApplicableRationale": null,
   "commandsExecuted": [
@@ -160,7 +162,8 @@
     "cyclonedx_py requirements requirements-ci.lock toolchain SBOM generation"
   ],
   "commandsNotExecuted": [
-    "GitHub Actions PR validation was not run locally; it must execute after the correction branch is pushed."
+    "GitHub Actions PR validation was not run locally; it must execute after the correction branch is pushed.",
+    "Local validation was not rerun after the final source fixes; GitHub Actions is the authoritative validation for the final reviewed source."
   ],
   "tests": [
     {
