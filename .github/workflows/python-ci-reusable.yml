@@ -210,9 +210,20 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p "$PYTHON_WORK_ROOT/evidence"
+          started_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          started_epoch="$(date +%s)"
           "$TOOL_PYTHON" -I -m pytest -c /dev/null --rootdir standards \
             -p no:cacheprovider standards/tests/python/python_project_validation_tests.py \
             2>&1 | tee "$PYTHON_WORK_ROOT/evidence/validator-regression.log"
+          regression_exit_code="${PIPESTATUS[0]}"
+          completed_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          completed_epoch="$(date +%s)"
+          duration_seconds="$(( completed_epoch - started_epoch ))"
+          printf 'started_at_utc=%s\n' "$started_at" >> "$GITHUB_OUTPUT"
+          printf 'completed_at_utc=%s\n' "$completed_at" >> "$GITHUB_OUTPUT"
+          printf 'duration_seconds=%s\n' "$duration_seconds" >> "$GITHUB_OUTPUT"
+          printf 'exit_code=%s\n' "$regression_exit_code" >> "$GITHUB_OUTPUT"
+          exit "$regression_exit_code"
 
       - name: Normalize Python evidence schema
         id: normalization
@@ -232,6 +243,10 @@ jobs:
           $lockVerificationOutcome = '${{ steps.lock_verification.outcome }}'
           $toolchainInstallOutcome = '${{ steps.toolchain_install.outcome }}'
           $regressionOutcome = '${{ steps.regression.outcome }}'
+          $regressionStartedAtUtc = '${{ steps.regression.outputs.started_at_utc }}'
+          $regressionCompletedAtUtc = '${{ steps.regression.outputs.completed_at_utc }}'
+          $regressionDurationText = '${{ steps.regression.outputs.duration_seconds }}'
+          $regressionExitCodeText = '${{ steps.regression.outputs.exit_code }}'
           $lockVerificationStarted = '${{ steps.lock_verification.outputs.verifier_started }}' -eq 'true'
           $lockVerificationBlocked = '${{ steps.lock_verification.outputs.verifier_blocked }}' -eq 'true'
           $lockVerificationBlockedReason = '${{ steps.lock_verification.outputs.verifier_blocked_reason }}'
@@ -298,7 +313,14 @@ jobs:
             if (-not (Test-Path -LiteralPath $regressionLogPath -PathType Leaf)) {
               throw 'Python validator regression execution did not produce its durable log.'
             }
-            $regressionTimestamp = (Get-Date).ToUniversalTime().ToString('o')
+            if (
+              [string]::IsNullOrWhiteSpace($regressionStartedAtUtc) -or
+              [string]::IsNullOrWhiteSpace($regressionCompletedAtUtc) -or
+              [string]::IsNullOrWhiteSpace($regressionDurationText) -or
+              [string]::IsNullOrWhiteSpace($regressionExitCodeText)
+            ) { throw 'Python validator regression execution did not report required metadata.' }
+            $regressionDurationSeconds = [double]::Parse($regressionDurationText, [Globalization.CultureInfo]::InvariantCulture)
+            $regressionExitCode = [int]::Parse($regressionExitCodeText, [Globalization.CultureInfo]::InvariantCulture)
             $regressionRecord = [ordered]@{
               schemaVersion = '1.1.0'
               name = 'Python validator regression tests'
@@ -308,12 +330,12 @@ jobs:
               evidenceSource = 'Automated'
               command = 'pytest -c /dev/null --rootdir standards -p no:cacheprovider standards/tests/python/python_project_validation_tests.py'
               workingDirectory = 'trusted-isolated-workspace'
-              startedAtUtc = $regressionTimestamp
-              completedAtUtc = $regressionTimestamp
-              durationSeconds = 0
+              startedAtUtc = $regressionStartedAtUtc
+              completedAtUtc = $regressionCompletedAtUtc
+              durationSeconds = $regressionDurationSeconds
               runtime = 'standards-owned hash-locked Python toolchain'
               toolVersion = 'pytest'
-              exitCode = if ($regressionOutcome -eq 'success') { 0 } else { 1 }
+              exitCode = $regressionExitCode
               summary = if ($regressionOutcome -eq 'success') { 'Trusted Python validator regression tests completed successfully.' } else { 'Trusted Python validator regression tests failed.' }
               warnings = @()
               failureReason = if ($regressionOutcome -eq 'success') { $null } else { 'Trusted Python validator regression tests did not complete successfully.' }
