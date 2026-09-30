@@ -60,11 +60,45 @@ function Test-RawBytePrefix {
     return $true
 }
 
+function Get-ReceiptExclusionPath {
+    # Repository-relative location of the receipt: its directory (trailing slash) or, for a receipt at the
+    # repository root, the file itself. A receipt outside the source tree excludes nothing.
+    param(
+        [Parameter(Mandatory)][string]$GitRoot,
+        [AllowNull()][string]$ReceiptFullPath
+    )
+    if ([string]::IsNullOrWhiteSpace($ReceiptFullPath)) { return @() }
+    $rootFull = [IO.Path]::GetFullPath($GitRoot).TrimEnd([char]'\', [char]'/')
+    $receiptFull = [IO.Path]::GetFullPath($ReceiptFullPath)
+    $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+    if (-not $receiptFull.StartsWith($rootFull + [IO.Path]::DirectorySeparatorChar, $comparison)) { return @() }
+    $relative = $receiptFull.Substring($rootFull.Length + 1).Replace('\', '/')
+    $slash = $relative.LastIndexOf('/')
+    if ($slash -lt 0) { return @($relative) }
+    return @($relative.Substring(0, $slash + 1))
+}
+
+function Test-ExcludedReceiptPath {
+    param(
+        [Parameter(Mandatory)][byte[]]$Value,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Exclusions
+    )
+    foreach ($exclusion in $Exclusions) {
+        [byte[]]$bytes = $exclusion
+        if ($bytes[$bytes.Length - 1] -eq 47) {
+            if (Test-RawBytePrefix -Value $Value -Prefix $bytes) { return $true }
+        }
+        elseif ($Value.Length -eq $bytes.Length -and (Test-RawBytePrefix -Value $Value -Prefix $bytes)) { return $true }
+    }
+    return $false
+}
+
 function Get-RawGitTreeFingerprint {
     param(
         [Parameter(Mandatory)][string]$RepositoryRoot,
         [Parameter(Mandatory)][string]$CommitSha,
-        [Parameter(Mandatory)][string]$FailurePrefix
+        [Parameter(Mandatory)][string]$FailurePrefix,
+        [string[]]$ExtraExcludedPaths = @()
     )
 
     $gitCommand = @(Get-Command git -CommandType Application -ErrorAction Stop)[0]
@@ -95,6 +129,7 @@ function Get-RawGitTreeFingerprint {
 
     $pythonEvidencePrefix = [Text.Encoding]::ASCII.GetBytes('examples/python-project/evidence/')
     $bashEvidencePrefix = [Text.Encoding]::ASCII.GetBytes('examples/bash-project/evidence/')
+    $receiptExclusions = @($ExtraExcludedPaths | Where-Object { -not [string]::IsNullOrEmpty($_) } | ForEach-Object { , [Text.Encoding]::UTF8.GetBytes($_) })
     $recordHex = [Collections.Generic.List[string]]::new()
     $segmentStart = 0
     for ($index = 0; $index -le $treeBytes.Length; $index++) {
@@ -113,6 +148,7 @@ function Get-RawGitTreeFingerprint {
         [byte[]]$pathBytes = $entry[($tabIndex + 1)..($entry.Length - 1)]
         if ($pathBytes.Length -eq 0) { throw "$FailurePrefix contains an empty tree path." }
         if ((Test-RawBytePrefix -Value $pathBytes -Prefix $pythonEvidencePrefix) -or (Test-RawBytePrefix -Value $pathBytes -Prefix $bashEvidencePrefix)) { continue }
+        if ($receiptExclusions.Count -gt 0 -and (Test-ExcludedReceiptPath -Value $pathBytes -Exclusions $receiptExclusions)) { continue }
         $recordPrefix = ('{0}' + [char]0 + '{1}' + [char]0 + '{2}' + [char]0) -f $match.Groups['mode'].Value, $match.Groups['type'].Value, $match.Groups['object'].Value.ToLowerInvariant()
         [byte[]]$prefixBytes = [Text.Encoding]::ASCII.GetBytes($recordPrefix)
         [byte[]]$recordBytes = New-Object byte[] ($prefixBytes.Length + $pathBytes.Length)
@@ -142,7 +178,8 @@ function Get-RawGitTreeFingerprint {
 function Get-RepositoryContentFingerprint {
     param(
         [Parameter(Mandatory)][string]$RepositoryPath,
-        [Parameter(Mandatory)][string]$CommitReference
+        [Parameter(Mandatory)][string]$CommitReference,
+        [AllowNull()][string]$ReceiptFullPath
     )
     $gitRootOutput = @(& git -C $RepositoryPath rev-parse --show-toplevel 2>$null)
     if ($LASTEXITCODE -ne 0 -or -not $gitRootOutput) { throw 'Could not resolve the Git root for completion-evidence content identity.' }
@@ -151,7 +188,7 @@ function Get-RepositoryContentFingerprint {
     if ($LASTEXITCODE -ne 0 -or -not $commitOutput) { throw "Could not resolve commit '$CommitReference' for completion-evidence content identity." }
     $commitSha = ($commitOutput -join '').Trim()
     if ($commitSha -notmatch '^[A-Fa-f0-9]{40,64}$') { throw "Commit '$CommitReference' did not resolve to a Git object identifier." }
-    return Get-RawGitTreeFingerprint -RepositoryRoot $gitRoot -CommitSha $commitSha -FailurePrefix "Commit '$commitSha'"
+    return Get-RawGitTreeFingerprint -RepositoryRoot $gitRoot -CommitSha $commitSha -FailurePrefix "Commit '$commitSha'" -ExtraExcludedPaths @(Get-ReceiptExclusionPath -GitRoot $gitRoot -ReceiptFullPath $ReceiptFullPath)
 }
 
 try {
@@ -255,7 +292,7 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
                     if ($workingTreeChanges.Count -gt 0) {
                         throw 'squash-safe Local content validation requires a clean working tree.'
                     }
-                    $currentContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference 'HEAD'
+                    $currentContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference 'HEAD' -ReceiptFullPath $full
                     if ($currentContentSha256 -ine $validatedContentSha256) {
                         throw 'validatedContentSha256 does not match the current repository content.'
                     }
@@ -270,7 +307,7 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
         }
         elseif ($validatedContentSha256) {
             try {
-                $validatedCommitContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference $validatedSha
+                $validatedCommitContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference $validatedSha -ReceiptFullPath $full
                 if ($validatedCommitContentSha256 -ine $validatedContentSha256) {
                     throw 'validatedContentSha256 does not match the named validatedCommitSha content.'
                 }

@@ -710,6 +710,66 @@ Describe 'Validate evidence action' {
                 $source | Should -Not -Match ([regex]::Escape('`0{1}`0')) -Because $script
             }
         }
+        It 'keeps a downstream receipt out of its own squash-safe content fingerprint' {
+            $identityRoot = Join-Path ([IO.Path]::GetTempPath()) ("completion-downstream-receipt-" + [guid]::NewGuid())
+            $source = Join-Path $identityRoot 'source'
+            $squashed = Join-Path $identityRoot 'squashed'
+            try {
+                New-Item -ItemType Directory -Path (Join-Path $source 'evidence') -Force | Out-Null
+                Set-Content -LiteralPath (Join-Path $source 'app.py') -Value 'VALUE = 1' -NoNewline
+                & git -C $source init --quiet
+                & git -C $source config user.email 'evidence-test@example.invalid'
+                & git -C $source config user.name 'Evidence Test'
+                & git -C $source add --all
+                & git -C $source commit --quiet -m 'validated source'
+                $LASTEXITCODE | Should -Be 0
+                $validatedCommit = (& git -C $source rev-parse HEAD).Trim()
+
+                $outcomes = @{
+                    yaml='success'; workflow_architecture='success'; json_schemas='success'; markdown_links='success'
+                    documentation='success'; contract='success'; forbidden_patterns='success'; repository_health='success'
+                    powershell_parser='success'; pester='success'; psscriptanalyzer='success'; examples='success'
+                    evidence_validation='success'; github_execution='notrun'
+                }
+                $reports = @{
+                    yaml=''; workflow_architecture=''; json_schemas=''; markdown_links=''
+                    documentation=''; contract=''; forbidden_patterns=''; repository_health=''
+                    powershell_parser=''; pester=''; psscriptanalyzer=''; examples=''
+                    evidence_validation=''; github_execution=''
+                }
+                & "$PSScriptRoot/../../scripts/New-WorkflowTestEvidence.ps1" -RepositoryPath $source -OutputPath 'evidence/local-tests.json' -Outcomes $outcomes -Reports $reports -RunPester -RunDocumentation -RunExamples -Runtime 'Local PowerShell validation' -ToolVersion 'test'
+                $LASTEXITCODE | Should -Be 0
+                & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" `
+                    -RepositoryPath $source -SourceRepositoryPath $source `
+                    -OutputPath 'evidence/local-completion-result.json' -ExecutionContext Local `
+                    -Summary 'Downstream receipt stored at the standard evidence path.' `
+                    -TestResultPath 'evidence/local-tests.json' `
+                    -ArtifactPath 'evidence/local-tests.json' `
+                    -CommandsExecuted @('local test command') `
+                    -CommandsNotExecuted @('GitHub-hosted Governance CI workflow execution') `
+                    -ChangedFile @('app.py') `
+                    -ValidatedCommitSha $validatedCommit
+                $LASTEXITCODE | Should -Be 0
+
+                # A squash merge keeps the content and the receipt but not the validated commit object.
+                New-Item -ItemType Directory -Path $squashed -Force | Out-Null
+                Copy-Item -LiteralPath (Join-Path $source 'app.py') -Destination $squashed
+                Copy-Item -LiteralPath (Join-Path $source 'evidence') -Destination $squashed -Recurse
+                & git -C $squashed init --quiet
+                & git -C $squashed config user.email 'evidence-test@example.invalid'
+                & git -C $squashed config user.name 'Evidence Test'
+                & git -C $squashed add --all
+                & git -C $squashed commit --quiet -m 'squashed'
+                $LASTEXITCODE | Should -Be 0
+
+                $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $squashed -EvidencePath 'evidence/local-completion-result.json' 2>&1)
+                ($output -join "`n") | Should -Match 'Evidence validation completed'
+                $LASTEXITCODE | Should -Be 0
+            }
+            finally {
+                if (Test-Path -LiteralPath $identityRoot) { Remove-Item -LiteralPath $identityRoot -Recurse -Force }
+            }
+        }
         It 'distinguishes non-UTF8 Git path bytes in content fingerprints' {
             if ($IsWindows) {
                 Set-ItResult -Skipped -Because 'The raw-byte pathname fixture is Linux-only.'

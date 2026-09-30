@@ -186,11 +186,45 @@ function Test-RawBytePrefix {
     return $true
 }
 
+function Get-ReceiptExclusionPath {
+    # Repository-relative location of the receipt: its directory (trailing slash) or, for a receipt at the
+    # repository root, the file itself. A receipt outside the source tree excludes nothing.
+    param(
+        [Parameter(Mandatory)][string]$GitRoot,
+        [AllowNull()][string]$ReceiptFullPath
+    )
+    if ([string]::IsNullOrWhiteSpace($ReceiptFullPath)) { return @() }
+    $rootFull = [IO.Path]::GetFullPath($GitRoot).TrimEnd([char]'\', [char]'/')
+    $receiptFull = [IO.Path]::GetFullPath($ReceiptFullPath)
+    $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+    if (-not $receiptFull.StartsWith($rootFull + [IO.Path]::DirectorySeparatorChar, $comparison)) { return @() }
+    $relative = $receiptFull.Substring($rootFull.Length + 1).Replace('\', '/')
+    $slash = $relative.LastIndexOf('/')
+    if ($slash -lt 0) { return @($relative) }
+    return @($relative.Substring(0, $slash + 1))
+}
+
+function Test-ExcludedReceiptPath {
+    param(
+        [Parameter(Mandatory)][byte[]]$Value,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Exclusions
+    )
+    foreach ($exclusion in $Exclusions) {
+        [byte[]]$bytes = $exclusion
+        if ($bytes[$bytes.Length - 1] -eq 47) {
+            if (Test-RawBytePrefix -Value $Value -Prefix $bytes) { return $true }
+        }
+        elseif ($Value.Length -eq $bytes.Length -and (Test-RawBytePrefix -Value $Value -Prefix $bytes)) { return $true }
+    }
+    return $false
+}
+
 function Get-RawGitTreeFingerprint {
     param(
         [Parameter(Mandatory)][string]$RepositoryRoot,
         [Parameter(Mandatory)][string]$CommitSha,
-        [Parameter(Mandatory)][string]$FailurePrefix
+        [Parameter(Mandatory)][string]$FailurePrefix,
+        [string[]]$ExtraExcludedPaths = @()
     )
 
     $gitCommand = @(Get-Command git -CommandType Application -ErrorAction Stop)[0]
@@ -221,6 +255,7 @@ function Get-RawGitTreeFingerprint {
 
     $pythonEvidencePrefix = [Text.Encoding]::ASCII.GetBytes('examples/python-project/evidence/')
     $bashEvidencePrefix = [Text.Encoding]::ASCII.GetBytes('examples/bash-project/evidence/')
+    $receiptExclusions = @($ExtraExcludedPaths | Where-Object { -not [string]::IsNullOrEmpty($_) } | ForEach-Object { , [Text.Encoding]::UTF8.GetBytes($_) })
     $recordHex = [Collections.Generic.List[string]]::new()
     $segmentStart = 0
     for ($index = 0; $index -le $treeBytes.Length; $index++) {
@@ -239,6 +274,7 @@ function Get-RawGitTreeFingerprint {
         [byte[]]$pathBytes = $entry[($tabIndex + 1)..($entry.Length - 1)]
         if ($pathBytes.Length -eq 0) { throw "$FailurePrefix contains an empty tree path." }
         if ((Test-RawBytePrefix -Value $pathBytes -Prefix $pythonEvidencePrefix) -or (Test-RawBytePrefix -Value $pathBytes -Prefix $bashEvidencePrefix)) { continue }
+        if ($receiptExclusions.Count -gt 0 -and (Test-ExcludedReceiptPath -Value $pathBytes -Exclusions $receiptExclusions)) { continue }
         $recordPrefix = ('{0}' + [char]0 + '{1}' + [char]0 + '{2}' + [char]0) -f $match.Groups['mode'].Value, $match.Groups['type'].Value, $match.Groups['object'].Value.ToLowerInvariant()
         [byte[]]$prefixBytes = [Text.Encoding]::ASCII.GetBytes($recordPrefix)
         [byte[]]$recordBytes = New-Object byte[] ($prefixBytes.Length + $pathBytes.Length)
@@ -268,7 +304,8 @@ function Get-RawGitTreeFingerprint {
 function Get-ValidatedContentFingerprint {
     param(
         [Parameter(Mandatory)][string]$RepositoryRoot,
-        [Parameter(Mandatory)][string]$CommitSha
+        [Parameter(Mandatory)][string]$CommitSha,
+        [AllowNull()][string]$ReceiptFullPath
     )
     if ($CommitSha -eq 'unknown') { return $null }
     if ($CommitSha -notmatch '^[A-Fa-f0-9]{40,64}$') { throw "Validated commit '$CommitSha' must be a Git object identifier." }
@@ -276,11 +313,13 @@ function Get-ValidatedContentFingerprint {
     if ($LASTEXITCODE -ne 0 -or ($gitProbe -join '').Trim() -cne 'true') { return $null }
     & git -C $RepositoryRoot cat-file -e "$CommitSha^{commit}" 2>$null
     if ($LASTEXITCODE -ne 0) { throw "Validated commit '$CommitSha' is not available in SourceRepositoryPath." }
-    return Get-RawGitTreeFingerprint -RepositoryRoot $RepositoryRoot -CommitSha $CommitSha -FailurePrefix "Validated commit '$CommitSha'"
+    $gitTopLevel = (@(& git -C $RepositoryRoot rev-parse --show-toplevel 2>$null) -join '').Trim()
+    $receiptExclusions = if ($LASTEXITCODE -eq 0 -and $gitTopLevel) { @(Get-ReceiptExclusionPath -GitRoot $gitTopLevel -ReceiptFullPath $ReceiptFullPath) } else { @() }
+    return Get-RawGitTreeFingerprint -RepositoryRoot $RepositoryRoot -CommitSha $CommitSha -FailurePrefix "Validated commit '$CommitSha'" -ExtraExcludedPaths $receiptExclusions
 }
 
 $validatedCommitTag = Resolve-ValidatedCommitTag -TagName $ValidatedCommitTag -RepositoryRoot $sourceRoot -CommitSha $validatedCommit
-$validatedContentSha256 = Get-ValidatedContentFingerprint -RepositoryRoot $sourceRoot -CommitSha $validatedCommit
+$validatedContentSha256 = Get-ValidatedContentFingerprint -RepositoryRoot $sourceRoot -CommitSha $validatedCommit -ReceiptFullPath (Join-Path $root $OutputPath)
 $effectiveBranch = $env:GITHUB_REF_NAME
 if ($Branch) {
     $effectiveBranch = $Branch
