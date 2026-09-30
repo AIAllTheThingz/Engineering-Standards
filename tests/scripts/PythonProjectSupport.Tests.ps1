@@ -92,7 +92,10 @@ Describe 'Governed Python project support' {
             $step.Groups['body'].Value | Should -Match "if:\s*steps\.inputs\.outcome\s*==\s*'success'"
         }
         $script:workflow | Should -Match '\$inputValidationOutcome = ''\$\{\{ steps\.inputs\.outcome \}\}'''
-        $script:workflow | Should -Match 'The fixed runtime and project path validation did not succeed, so lock validation was not started\.'
+        $script:workflow | Should -Match '(?s)- name: Prepare Python phase evidence\s+id:\s*phase_evidence'
+        $script:workflow | Should -Match 'name=''Python workflow input validation'''
+        $script:workflow | Should -Match 'status=''Failed'''
+        $script:workflow | Should -Match 'failureReason=\$inputError'
         $script:workflow | Should -Match 'inputs = ''\$\{\{ steps\.inputs\.outcome \}\}'''
         $script:workflow | Should -Match 'inputValidationOutcome = \$inputValidationOutcome'
     }
