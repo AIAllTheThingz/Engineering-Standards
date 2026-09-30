@@ -153,6 +153,8 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match '(?s)\$failureRecords \+= \$regressionRecord\s*\$commandsExecuted \+= \[string\]\$regressionRecord\.command'
         $script:workflow | Should -Match '\$candidate -split ''/'''
         $script:workflow | Should -Not -Match '\$candidate -split ''\[\\\\/\]'''
+        $script:workflow | Should -Match 'details=\[ordered\]@\{ outcome=\$env:NORMALIZATION_OUTCOME \}'
+        $script:workflow | Should -Not -Match 'details=\[ordered\]@\{ outcome=''failure'' \}'
         $script:workflow | Should -Match '\$toolchainInstallOutcome = \[string\]\$env:TOOL_OUTCOME'
         $script:workflow | Should -Match 'started_at_utc=\$installStartedAtUtc'
         $script:workflow | Should -Match 'completed_at_utc=\$completedAtUtc'
