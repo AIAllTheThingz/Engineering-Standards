@@ -103,7 +103,14 @@ Describe 'Governed Python project support' {
         $completionIndex | Should -BeGreaterThan -1
         $evidenceIndex | Should -BeGreaterThan $completionIndex
         $script:workflow | Should -Match '(?s)id:\s*completion\s*\r?\n\s*if:\s*always\(\)'
-        $script:workflow | Should -Match 'if \(\$lockVerificationOutcome -eq ''success''\)'
+        $script:workflow | Should -Match 'if \(\$lockVerificationOutcome -eq ''success'' -and \$toolchainInstallOutcome -eq ''success''\)'
+        $script:workflow | Should -Match '(?s)- name: Install standards-owned hash-locked toolchain\s*id:\s*toolchain_install\s*if:\s*steps\.lock_verification\.outcome == ''success''\s*continue-on-error:\s*true'
+        $script:workflow | Should -Match 'Hash-locked Python toolchain package installation failed\.'
+        $script:workflow | Should -Match 'Hash-locked Python toolchain pip check failed\.'
+        $script:workflow | Should -Match 'Isolated Python toolchain interpreter assertion failed\.'
+        $script:workflow | Should -Match '\$toolchainInstallOutcome = ''\$\{\{ steps\.toolchain_install\.outcome \}\}'''
+        $script:workflow | Should -Match 'name = ''Python toolchain installation'''
+        $script:workflow | Should -Match 'Toolchain installation failed after successful lock verification\.'
         $script:workflow | Should -Match '(?s)id:\s*lock_resolver\s*\r?\n\s*continue-on-error:\s*true'
         $script:workflow | Should -Match 'The exact CPython 3\.13\.2 lock resolver was unavailable; no toolchain was installed\.'
         $readme = Get-Content -LiteralPath (Join-Path $script:example 'README.md') -Raw
@@ -144,7 +151,7 @@ Describe 'Governed Python project support' {
         $completionWorkflow = $script:workflow.Substring($completionIndex, $evidenceIndex - $completionIndex)
         $failureEvidence = [regex]::Match(
             $completionWorkflow,
-            '(?s)if \(\$lockVerificationOutcome -eq ''success''\) \{.*?\r?\n\s*\}\r?\n\s*else \{\s*(?<body>.*?)\r?\n\s*\}\r?\n\s*if \(-not \(Test-Path -LiteralPath \$completionPath'
+            '(?s)if \(\$lockVerificationOutcome -eq ''success'' -and \$toolchainInstallOutcome -eq ''success''\) \{.*?\r?\n\s*\}\r?\n\s*else \{\s*(?<body>.*?)\r?\n\s*\}\r?\n\s*if \(-not \(Test-Path -LiteralPath \$completionPath'
         )
         $failureEvidence.Success | Should -BeTrue
         $failureEvidence.Groups['body'].Value | Should -Match '\$callerStage = Join-Path \$env:GITHUB_WORKSPACE ''caller'''
