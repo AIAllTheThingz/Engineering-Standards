@@ -233,53 +233,12 @@ jobs:
           "$TOOL_PYTHON" -I standards/scripts/Normalize-PythonFunctionalEvidence.py
           --evidence "$PYTHON_WORK_ROOT/evidence"
 
-      - name: Create completion evidence in trusted workspace
-        id: completion
+      - name: Stage Python completion source metadata
+        id: source_metadata
         if: always()
         continue-on-error: true
         shell: pwsh
         run: |
-          $inputValidationOutcome = '${{ steps.inputs.outcome }}'
-          $lockVerificationOutcome = '${{ steps.lock_verification.outcome }}'
-          $toolchainInstallOutcome = '${{ steps.toolchain_install.outcome }}'
-          $functionalOutcome = '${{ steps.functional.outcome }}'
-          $normalizationOutcome = '${{ steps.normalization.outcome }}'
-          $regressionOutcome = '${{ steps.regression.outcome }}'
-          $regressionStartedAtUtc = '${{ steps.regression.outputs.started_at_utc }}'
-          $regressionCompletedAtUtc = '${{ steps.regression.outputs.completed_at_utc }}'
-          $regressionDurationText = '${{ steps.regression.outputs.duration_seconds }}'
-          $regressionExitCodeText = '${{ steps.regression.outputs.exit_code }}'
-          $lockVerificationStarted = '${{ steps.lock_verification.outputs.verifier_started }}' -eq 'true'
-          $lockVerificationBlocked = '${{ steps.lock_verification.outputs.verifier_blocked }}' -eq 'true'
-          $lockVerificationBlockedReason = '${{ steps.lock_verification.outputs.verifier_blocked_reason }}'
-          $lockVerificationCommand = '${{ steps.lock_verification.outputs.verification_command }}'
-          $lockVerificationStartedAtUtc = '${{ steps.lock_verification.outputs.verification_started_at_utc }}'
-          $lockVerificationCompletedAtUtc = '${{ steps.lock_verification.outputs.verification_completed_at_utc }}'
-          $lockVerificationDurationText = '${{ steps.lock_verification.outputs.verification_duration_seconds }}'
-          if ([string]::IsNullOrWhiteSpace($lockVerificationCommand)) {
-            $lockVerificationCommand = '<CPython-3.13.2 with pip==26.2.1> -I standards/scripts/python-project-validation.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci.lock --resolver-python <CPython-3.13.2> --runtime-python <CPython-3.12.11>'
-          }
-          if ($inputValidationOutcome -ne 'success') {
-            $inputValidationTimestamp = (Get-Date).ToUniversalTime().ToString('o')
-            $lockVerificationOutcome = 'skipped'
-            $lockVerificationStarted = $false
-            $lockVerificationBlocked = $true
-            $lockVerificationBlockedReason = 'The fixed runtime and project path validation did not succeed, so lock validation was not started.'
-            $lockVerificationStartedAtUtc = $inputValidationTimestamp
-            $lockVerificationCompletedAtUtc = $inputValidationTimestamp
-            $lockVerificationDurationText = '0.000'
-          }
-          elseif ([string]::IsNullOrWhiteSpace($lockVerificationStartedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationCompletedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationDurationText)) {
-            throw 'Lock verification did not report required timing metadata.'
-          }
-          $lockVerificationDurationSeconds = [double]::Parse($lockVerificationDurationText, [Globalization.CultureInfo]::InvariantCulture)
-          if ($lockVerificationDurationSeconds -lt 0) { throw 'Lock verification reported an invalid negative duration.' }
-          $durableLockLogPath = Join-Path $env:RUNNER_TEMP 'python-lock-verification.log'
-          $lockEvidenceLogPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/lock-verification.log'
-          New-Item -ItemType Directory -Path (Split-Path -Parent $lockEvidenceLogPath) -Force | Out-Null
-          if (Test-Path -LiteralPath $durableLockLogPath -PathType Leaf) {
-            Copy-Item -LiteralPath $durableLockLogPath -Destination $lockEvidenceLogPath -Force
-          }
           $callerStage = Join-Path $env:GITHUB_WORKSPACE 'caller'
           if (-not (Test-Path -LiteralPath $callerStage -PathType Container)) { throw 'Completion evidence caller checkout is unavailable.' }
           $callerStageItem = Get-Item -LiteralPath $callerStage -Force
@@ -375,6 +334,62 @@ jobs:
           }
           $completionChangedFiles = @(Get-CompletionChangedFiles -RepositoryPath $completionSourceRoot -ValidatedCommit $env:GITHUB_SHA -BaseCommit $completionScopeBaseSha)
           if ($completionChangedFiles.Count -eq 0) { throw 'Completion evidence change inventory is empty for github.sha.' }
+          $completionChangedFiles | ConvertTo-Json -AsArray | Set-Content -LiteralPath "$env:PYTHON_WORK_ROOT/evidence/changed-files.json" -Encoding utf8
+
+      - name: Create completion evidence in trusted workspace
+        id: completion
+        if: always()
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $inputValidationOutcome = '${{ steps.inputs.outcome }}'
+          $lockVerificationOutcome = '${{ steps.lock_verification.outcome }}'
+          $toolchainInstallOutcome = '${{ steps.toolchain_install.outcome }}'
+          $functionalOutcome = '${{ steps.functional.outcome }}'
+          $normalizationOutcome = '${{ steps.normalization.outcome }}'
+          $regressionOutcome = '${{ steps.regression.outcome }}'
+          $regressionStartedAtUtc = '${{ steps.regression.outputs.started_at_utc }}'
+          $regressionCompletedAtUtc = '${{ steps.regression.outputs.completed_at_utc }}'
+          $regressionDurationText = '${{ steps.regression.outputs.duration_seconds }}'
+          $regressionExitCodeText = '${{ steps.regression.outputs.exit_code }}'
+          $lockVerificationStarted = '${{ steps.lock_verification.outputs.verifier_started }}' -eq 'true'
+          $lockVerificationBlocked = '${{ steps.lock_verification.outputs.verifier_blocked }}' -eq 'true'
+          $lockVerificationBlockedReason = '${{ steps.lock_verification.outputs.verifier_blocked_reason }}'
+          $lockVerificationCommand = '${{ steps.lock_verification.outputs.verification_command }}'
+          $lockVerificationStartedAtUtc = '${{ steps.lock_verification.outputs.verification_started_at_utc }}'
+          $lockVerificationCompletedAtUtc = '${{ steps.lock_verification.outputs.verification_completed_at_utc }}'
+          $lockVerificationDurationText = '${{ steps.lock_verification.outputs.verification_duration_seconds }}'
+          if ([string]::IsNullOrWhiteSpace($lockVerificationCommand)) {
+            $lockVerificationCommand = '<CPython-3.13.2 with pip==26.2.1> -I standards/scripts/python-project-validation.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci.lock --resolver-python <CPython-3.13.2> --runtime-python <CPython-3.12.11>'
+          }
+          if ($inputValidationOutcome -ne 'success') {
+            $inputValidationTimestamp = (Get-Date).ToUniversalTime().ToString('o')
+            $lockVerificationOutcome = 'skipped'
+            $lockVerificationStarted = $false
+            $lockVerificationBlocked = $true
+            $lockVerificationBlockedReason = 'The fixed runtime and project path validation did not succeed, so lock validation was not started.'
+            $lockVerificationStartedAtUtc = $inputValidationTimestamp
+            $lockVerificationCompletedAtUtc = $inputValidationTimestamp
+            $lockVerificationDurationText = '0.000'
+          }
+          elseif ([string]::IsNullOrWhiteSpace($lockVerificationStartedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationCompletedAtUtc) -or [string]::IsNullOrWhiteSpace($lockVerificationDurationText)) {
+            throw 'Lock verification did not report required timing metadata.'
+          }
+          $lockVerificationDurationSeconds = [double]::Parse($lockVerificationDurationText, [Globalization.CultureInfo]::InvariantCulture)
+          if ($lockVerificationDurationSeconds -lt 0) { throw 'Lock verification reported an invalid negative duration.' }
+          $durableLockLogPath = Join-Path $env:RUNNER_TEMP 'python-lock-verification.log'
+          $lockEvidenceLogPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/lock-verification.log'
+          New-Item -ItemType Directory -Path (Split-Path -Parent $lockEvidenceLogPath) -Force | Out-Null
+          if (Test-Path -LiteralPath $durableLockLogPath -PathType Leaf) {
+            Copy-Item -LiteralPath $durableLockLogPath -Destination $lockEvidenceLogPath -Force
+          }
+          $sourceMetadataOutcome = '${{ steps.source_metadata.outcome }}'
+          if ($sourceMetadataOutcome -ne 'success') { throw 'Python completion source metadata staging did not succeed.' }
+          $completionSourceRoot = Join-Path $env:PYTHON_WORK_ROOT 'caller'
+          $changedFilesPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/changed-files.json'
+          if (-not (Test-Path -LiteralPath $changedFilesPath -PathType Leaf)) { throw 'Python completion changed-file inventory is unavailable.' }
+          $completionChangedFiles = @(Get-Content -LiteralPath $changedFilesPath -Raw | ConvertFrom-Json)
+          if ($completionChangedFiles.Count -eq 0) { throw 'Python completion changed-file inventory is empty.' }
           $completionPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/completion-result.json'
           if (
             $lockVerificationOutcome -eq 'success' -and
@@ -640,6 +655,7 @@ jobs:
             regression = '${{ steps.regression.outcome }}'
             functional = '${{ steps.functional.outcome }}'
             normalization = '${{ steps.normalization.outcome }}'
+            source_metadata = '${{ steps.source_metadata.outcome }}'
             completion = '${{ steps.completion.outcome }}'
             evidence = '${{ steps.evidence.outcome }}'
           }
@@ -664,6 +680,7 @@ jobs:
             regression = '${{ steps.regression.outcome }}'
             functional = '${{ steps.functional.outcome }}'
             normalization = '${{ steps.normalization.outcome }}'
+            source_metadata = '${{ steps.source_metadata.outcome }}'
             completion = '${{ steps.completion.outcome }}'
             evidence = '${{ steps.evidence.outcome }}'
           }
