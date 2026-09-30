@@ -330,6 +330,68 @@ Describe 'Governed Python project support' {
         }
     }
 
+    It 'inventories every pushed commit when a new branch is pushed, and the whole tree when nothing precedes it' {
+        $functionText = [regex]::Match($script:workflow, '(?ms)^ {12}function Get-CompletionChangedFiles \{.*?^ {12}\}\s*$').Value
+        $selectionText = [regex]::Match($script:workflow, '(?ms)^ {10}\$completionScopeBaseSha = \$null.*?^ {10}if \(\$completionChangedFiles\.Count -eq 0\)[^\r\n]*').Value
+        $functionText | Should -Not -BeNullOrEmpty
+        $selectionText | Should -Not -BeNullOrEmpty
+        $runner = [scriptblock]::Create("param(`$completionSourceRoot, `$callerStage)`n$functionText`n$selectionText`n`$completionChangedFiles")
+
+        function New-CommitFile {
+            param($Repository, $Name, $Message)
+            [IO.File]::WriteAllText((Join-Path $Repository $Name), $Name, [Text.UTF8Encoding]::new($false))
+            & git -C $Repository add --all
+            & git -C $Repository commit --quiet -m $Message
+            (& git -C $Repository rev-parse HEAD).Trim()
+        }
+        function Invoke-Selection {
+            param($Repository, $Sha, $EventName, $Before, $DefaultBranch)
+            $eventPath = Join-Path $TestDrive ("event-" + [guid]::NewGuid() + '.json')
+            [ordered]@{ before = $Before; repository = [ordered]@{ default_branch = $DefaultBranch } } | ConvertTo-Json | Set-Content -LiteralPath $eventPath -Encoding utf8
+            $saved = @{ P = $env:GITHUB_EVENT_PATH; N = $env:GITHUB_EVENT_NAME; S = $env:GITHUB_SHA }
+            try {
+                $env:GITHUB_EVENT_PATH = $eventPath; $env:GITHUB_EVENT_NAME = $EventName; $env:GITHUB_SHA = $Sha
+                @(& $runner $Repository $Repository)
+            }
+            finally { $env:GITHUB_EVENT_PATH = $saved.P; $env:GITHUB_EVENT_NAME = $saved.N; $env:GITHUB_SHA = $saved.S }
+        }
+        $zeros = '0' * 40
+
+        # New branch with three commits on top of main: every pushed file is inventoried, not only the tip's.
+        $repository = Join-Path $TestDrive 'new-branch-push'
+        New-Item -ItemType Directory -Path $repository -Force | Out-Null
+        & git -C $repository init --quiet --initial-branch=main
+        & git -C $repository config user.email 'evidence-test@example.invalid'
+        & git -C $repository config user.name 'Evidence Test'
+        $main = New-CommitFile $repository 'main-only.txt' 'main'
+        & git -C $repository update-ref refs/remotes/origin/main $main
+        $null = New-CommitFile $repository 'first.txt' 'first'
+        $null = New-CommitFile $repository 'second.txt' 'second'
+        $tip = New-CommitFile $repository 'third.txt' 'third'
+        $files = Invoke-Selection $repository $tip 'push' $zeros 'main'
+        @($files | Sort-Object) | Should -Be @('first.txt','second.txt','third.txt')
+
+        # New branch that adds nothing beyond main: falls back to the tip's own change rather than failing.
+        & git -C $repository update-ref refs/remotes/origin/main $tip
+        $files = Invoke-Selection $repository $tip 'push' $zeros 'main'
+        @($files) | Should -Be @('third.txt')
+
+        # First push of the default branch: there is no default-branch ancestor, so inventory the whole tree.
+        $initial = Join-Path $TestDrive 'initial-push'
+        New-Item -ItemType Directory -Path $initial -Force | Out-Null
+        & git -C $initial init --quiet --initial-branch=main
+        & git -C $initial config user.email 'evidence-test@example.invalid'
+        & git -C $initial config user.name 'Evidence Test'
+        $null = New-CommitFile $initial 'one.txt' 'one'
+        $initialTip = New-CommitFile $initial 'two.txt' 'two'
+        $files = Invoke-Selection $initial $initialTip 'push' $zeros 'main'
+        @($files | Sort-Object) | Should -Be @('one.txt','two.txt')
+
+        # An ordinary push keeps diffing against the previous tip.
+        $files = Invoke-Selection $repository $tip 'push' $main 'main'
+        @($files | Sort-Object) | Should -Be @('first.txt','second.txt','third.txt')
+    }
+
     It 'preserves failure evidence when the functional runtime setup is unavailable' {
         $workspaceIndex = $script:workflow.IndexOf('Initialize Python evidence workspace')
         $resolverIndex = $script:workflow.IndexOf('Set up exact CPython 3.13.2 lock resolver')
