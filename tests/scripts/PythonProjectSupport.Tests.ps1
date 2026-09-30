@@ -158,6 +158,9 @@ Describe 'Governed Python project support' {
         $failureEvidence.Groups['body'].Value | Should -Match "'-z'"
         $failureEvidence.Groups['body'].Value | Should -Match 'ArgumentList\.Add\(\$argument\)'
         $failureEvidence.Groups['body'].Value | Should -Match '\[Text\.UTF8Encoding\]::new\(\$false, \$true\)'
+        $failureEvidence.Groups['body'].Value | Should -Match "\$encodedPrefix = '@git-bytes/'"
+        $failureEvidence.Groups['body'].Value | Should -Match '\[Convert\]::ToHexString\(\$segment\)\.ToLowerInvariant\(\)'
+        $failureEvidence.Groups['body'].Value | Should -Match 'catch \[Text\.DecoderFallbackException\]'
         $failureEvidence.Groups['body'].Value | Should -Not -Match 'diff-tree --root'
         $failureEvidence.Groups['body'].Value | Should -Match '-ChangedFile \$failureChangedFiles'
         $failureEvidence.Groups['body'].Value | Should -Not -Match 'New-Item -ItemType Directory -Path \$callerStage'
