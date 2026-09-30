@@ -148,6 +148,11 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'Copy-Item -LiteralPath \$durableLockLogPath -Destination \$lockEvidenceLogPath'
         $script:workflow | Should -Match "status = 'Passed'"
         $script:workflow | Should -Match 'Python toolchain lock closure completed successfully\.'
+        $script:workflow | Should -Match '\$regressionOutcome = ''\$\{\{ steps\.regression\.outcome \}\}'''
+        $script:workflow | Should -Match 'name = ''Python validator regression tests'''
+        $script:workflow | Should -Match 'status = if \(\$regressionOutcome -eq ''success''\) \{ ''Passed'' \} else \{ ''Failed'' \}'
+        $script:workflow | Should -Match 'evidence/validator-regression\.log'
+        $script:workflow | Should -Match '\$allTestRecords = @\(\$lockVerificationRecord, \$regressionRecord\)'
         $completionWorkflow = $script:workflow.Substring($completionIndex, $evidenceIndex - $completionIndex)
         $failureEvidence = [regex]::Match(
             $completionWorkflow,
