@@ -672,6 +672,7 @@ Describe 'Validate evidence action' {
                     -Summary 'Whitespace-only Git pathname content identity fixture.' `
                     -ArtifactPath 'evidence/report.json' `
                     -CommandsExecuted @('content identity fixture') `
+                    -ChangedFile @('examples/python-project/source.py') `
                     -ValidatedCommitSha $validatedCommit
                 $LASTEXITCODE | Should -Be 0
 
@@ -826,6 +827,16 @@ Describe 'Validate evidence action' {
             $generated.changedFileCategories.tests | Should -Contain 'tests/app.Tests.ps1'
         }
 
+        It 'preserves literal backslashes in Git changed-file paths' {
+            & $script:NewTempEvidence
+            $changedFiles = @('src/a\b.py','src/a/b.py')
+            & "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'Literal backslash Git path inventory fixture.' -ArtifactPath 'evidence/report.json' -ChangedFile $changedFiles
+            $LASTEXITCODE | Should -Be 0
+            $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/generated.json') -Raw | ConvertFrom-Json
+            @($generated.changedFiles).Count | Should -Be 2
+            @($generated.changedFiles) | Should -Contain 'src/a\b.py'
+            @($generated.changedFiles) | Should -Contain 'src/a/b.py'
+        }
         It 'preserves whitespace in explicit changed-file paths and categories' {
             & $script:NewTempEvidence
             $changedFiles = @(

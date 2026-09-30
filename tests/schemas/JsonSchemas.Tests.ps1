@@ -96,6 +96,20 @@ Describe 'JSON schema validation' {
             ($incompleteCurrent | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeFalse
         }
 
+        It 'accepts Git-valid completion evidence tag names emitted by the generator' {
+            $schema = Resolve-Path "$PSScriptRoot/../../schemas/completion-result.schema.json"
+            $source = Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/completion-result.json" -Raw | ConvertFrom-Json
+            foreach ($tag in @('release+1','release@1','-release','release/v1.2.0')) {
+                $record = $source | ConvertTo-Json -Depth 30 | ConvertFrom-Json
+                $record.validatedCommitTag = $tag
+                ($record | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeTrue -Because $tag
+            }
+            foreach ($tag in @('@','bad..tag','bad@{tag','bad tag','bad\tag','name.lock','name.')) {
+                $record = $source | ConvertTo-Json -Depth 30 | ConvertFrom-Json
+                $record.validatedCommitTag = $tag
+                ($record | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeFalse -Because $tag
+            }
+        }
         It 'accepts GitHub-valid verified-run branches and rejects reserved or malformed names' {
             $schema = Resolve-Path "$PSScriptRoot/../../schemas/verified-run.schema.json"
             $source = Get-Content -LiteralPath "$PSScriptRoot/../../evidence/latest-verified-run.json" -Raw | ConvertFrom-Json
