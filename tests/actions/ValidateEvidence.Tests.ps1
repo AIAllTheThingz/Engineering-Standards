@@ -645,6 +645,46 @@ Describe 'Validate evidence action' {
             }
         }
 
+        It 'accepts whitespace-only Git pathnames in content fingerprints' {
+            if ($IsWindows) {
+                Set-ItResult -Skipped -Because 'Windows does not support a whitespace-only filename fixture.'
+                return
+            }
+
+            $identityRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("completion-whitespace-path-" + [guid]::NewGuid())
+            $sourceRoot = Join-Path $identityRoot 'source'
+            $project = Join-Path $sourceRoot 'examples/python-project'
+            try {
+                New-Item -ItemType Directory -Path (Join-Path $project 'evidence') -Force | Out-Null
+                Set-Content -LiteralPath (Join-Path $project 'evidence/report.json') -Value '{}' -NoNewline
+                [IO.File]::WriteAllText((Join-Path $sourceRoot '   '), 'spaces', [Text.UTF8Encoding]::new($false))
+                & git -C $sourceRoot init --quiet
+                & git -C $sourceRoot config user.email 'evidence-test@example.invalid'
+                & git -C $sourceRoot config user.name 'Evidence Test'
+                & git -C $sourceRoot add --all
+                & git -C $sourceRoot commit --quiet -m 'whitespace path'
+                $LASTEXITCODE | Should -Be 0
+                $validatedCommit = (& git -C $sourceRoot rev-parse HEAD).Trim()
+
+                & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" `
+                    -RepositoryPath $project -SourceRepositoryPath $sourceRoot `
+                    -OutputPath 'evidence/receipt.json' -ExecutionContext Local `
+                    -Summary 'Whitespace-only Git pathname content identity fixture.' `
+                    -ArtifactPath 'evidence/report.json' `
+                    -CommandsExecuted @('content identity fixture') `
+                    -ValidatedCommitSha $validatedCommit
+                $LASTEXITCODE | Should -Be 0
+
+                $output = @(& pwsh -NoProfile -File "$PSScriptRoot/../../actions/validate-evidence/Invoke-EvidenceValidation.ps1" -Path $project -EvidencePath 'evidence/receipt.json' 2>&1)
+                $LASTEXITCODE | Should -Be 0
+                ($output -join "`n") | Should -Match 'Evidence validation completed'
+            }
+            finally {
+                if (Test-Path -LiteralPath $identityRoot) {
+                    Remove-Item -LiteralPath $identityRoot -Recurse -Force
+                }
+            }
+        }
         It 'binds an available Local content fingerprint to its named validated commit' {
             $identityRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("completion-named-identity-" + [guid]::NewGuid())
             $sourceRoot = Join-Path $identityRoot 'source'

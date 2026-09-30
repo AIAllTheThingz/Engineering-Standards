@@ -768,6 +768,36 @@ def test_pinned_lock_resolver_bootstraps_the_hash_pinned_pip(tmp_path: Path, mon
     require(f"--hash=sha256:{second_hash}" in bootstrap_text, "second governed pip hash was omitted")
 
 
+def test_pinned_lock_resolver_classifies_venv_timeout_as_blocked(tmp_path: Path, monkeypatch) -> None:
+    """A timed-out resolver environment bootstrap is an unavailable prerequisite."""
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "pip==26.2.1 \\\n"
+        f"    --hash=sha256:{'4' * 64}\n",
+        encoding="utf-8",
+    )
+    source_python = tmp_path / "source-python"
+    source_python.touch()
+    environment = tmp_path / "resolver"
+
+    def fake_run(command: list[str], cwd: Path, env: dict[str, str], timeout: int = 300) -> tuple[int, str, float]:
+        require(command[2:4] == ["-m", "venv"], "unexpected command before resolver venv timeout")
+        return 124, "command timed out after 120 seconds", 120.0
+
+    monkeypatch.setattr(validator, "run", fake_run)
+    try:
+        validator.pinned_lock_resolver(
+            source_python,
+            "test resolver",
+            lock,
+            environment,
+            validator.trusted_env(tmp_path / "home"),
+        )
+    except validator.LockResolutionBlockedError as exc:
+        require("could not create the test resolver resolver environment" in str(exc), "venv timeout diagnostic was lost")
+    else:
+        raise AssertionError("resolver venv timeout was not classified as blocked")
+
 def test_pinned_lock_resolver_rejects_an_unhashed_pip_pin(tmp_path: Path) -> None:
     """The lock cannot delegate resolver integrity to an unhashed pip pin."""
     lock = tmp_path / "requirements-ci.lock"
