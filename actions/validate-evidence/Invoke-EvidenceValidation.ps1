@@ -113,7 +113,7 @@ function Get-RawGitTreeFingerprint {
         [byte[]]$pathBytes = $entry[($tabIndex + 1)..($entry.Length - 1)]
         if ($pathBytes.Length -eq 0) { throw "$FailurePrefix contains an empty tree path." }
         if ((Test-RawBytePrefix -Value $pathBytes -Prefix $pythonEvidencePrefix) -or (Test-RawBytePrefix -Value $pathBytes -Prefix $bashEvidencePrefix)) { continue }
-        $recordPrefix = '{0}`0{1}`0{2}`0' -f $match.Groups['mode'].Value, $match.Groups['type'].Value, $match.Groups['object'].Value.ToLowerInvariant()
+        $recordPrefix = ('{0}' + [char]0 + '{1}' + [char]0 + '{2}' + [char]0) -f $match.Groups['mode'].Value, $match.Groups['type'].Value, $match.Groups['object'].Value.ToLowerInvariant()
         [byte[]]$prefixBytes = [Text.Encoding]::ASCII.GetBytes($recordPrefix)
         [byte[]]$recordBytes = New-Object byte[] ($prefixBytes.Length + $pathBytes.Length)
         [Array]::Copy($prefixBytes, 0, $recordBytes, 0, $prefixBytes.Length)

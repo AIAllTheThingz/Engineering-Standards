@@ -703,6 +703,13 @@ Describe 'Validate evidence action' {
                 }
             }
         }
+        It 'separates content fingerprint record fields with real NUL bytes in both implementations' {
+            foreach ($script in @('scripts/New-CompletionEvidence.ps1','actions/validate-evidence/Invoke-EvidenceValidation.ps1')) {
+                $source = Get-Content -LiteralPath (Join-Path "$PSScriptRoot/../.." $script) -Raw
+                $source | Should -Match ([regex]::Escape("('{0}' + [char]0 + '{1}' + [char]0 + '{2}' + [char]0) -f")) -Because $script
+                $source | Should -Not -Match ([regex]::Escape('`0{1}`0')) -Because $script
+            }
+        }
         It 'distinguishes non-UTF8 Git path bytes in content fingerprints' {
             if ($IsWindows) {
                 Set-ItResult -Skipped -Because 'The raw-byte pathname fixture is Linux-only.'
@@ -958,10 +965,10 @@ Describe 'Validate evidence action' {
                 'schemas/completion-result.schema.json'
                 'scripts/New-CompletionEvidence.ps1'
                 'scripts/Normalize-PythonFunctionalEvidence.py'
-                'scripts/Test-PythonStaticAnalysis.ps1'
                 'scripts/python-project-validation.py'
                 'tests/actions/ValidateEvidence.Tests.ps1'
                 'tests/python/python_project_validation_tests.py'
+                'tests/schemas/JsonSchemas.Tests.ps1'
                 'tests/scripts/BashProjectSupport.Tests.ps1'
                 'tests/scripts/PythonProjectSupport.Tests.ps1'
                 'tests/scripts/StaticAnalysis.Tests.ps1'
@@ -990,12 +997,12 @@ Describe 'Validate evidence action' {
                     'schemas/completion-result.schema.json'
                     'scripts/New-CompletionEvidence.ps1'
                     'scripts/Normalize-PythonFunctionalEvidence.py'
-                    'scripts/Test-PythonStaticAnalysis.ps1'
                     'scripts/python-project-validation.py'
                 )
                 tests = @(
                     'tests/actions/ValidateEvidence.Tests.ps1'
                     'tests/python/python_project_validation_tests.py'
+                    'tests/schemas/JsonSchemas.Tests.ps1'
                     'tests/scripts/BashProjectSupport.Tests.ps1'
                     'tests/scripts/PythonProjectSupport.Tests.ps1'
                     'tests/scripts/StaticAnalysis.Tests.ps1'

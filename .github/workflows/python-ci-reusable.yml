@@ -90,6 +90,10 @@ jobs:
           catch {
             $inputExitCode = 1
             $inputError = [string]$_.Exception.Message
+            foreach ($privateRoot in @($env:GITHUB_WORKSPACE, $env:RUNNER_TEMP)) {
+              if (-not [string]::IsNullOrEmpty($privateRoot)) { $inputError = $inputError.Replace($privateRoot, '<workspace>') }
+            }
+            $inputError = [regex]::Replace($inputError, '/home/runner/[^\s''"]*', '<runner-path>')
             throw
           }
           finally {
