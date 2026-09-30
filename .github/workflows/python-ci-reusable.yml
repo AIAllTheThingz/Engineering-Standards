@@ -470,7 +470,13 @@ jobs:
               $completionScopeBaseSha = [string]$eventPayload.before
             }
           }
-          if ($completionScopeBaseSha -match '^0{40}
+          if ($completionScopeBaseSha -match '^0{40}$') { $completionScopeBaseSha = $null }
+          if ([string]::IsNullOrWhiteSpace($completionScopeBaseSha)) {
+            $completionParents = (& git -C $completionSourceRoot show -s --format=%P $env:GITHUB_SHA).Trim()
+            if ($LASTEXITCODE -ne 0) { throw 'Completion evidence parent metadata could not be derived from github.sha.' }
+            $completionParentShas = @($completionParents -split '\s+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+            if ($completionParentShas.Count -gt 0) { $completionScopeBaseSha = $completionParentShas[0] }
+          }
           if (-not [string]::IsNullOrWhiteSpace($completionScopeBaseSha)) {
             if ($completionScopeBaseSha -notmatch '(?i)^[0-9a-f]{40}$') { throw 'Completion evidence base is not a full commit SHA.' }
             & git -C $completionSourceRoot cat-file -e "$completionScopeBaseSha^{commit}"
@@ -479,7 +485,6 @@ jobs:
           $completionChangedFiles = @(Get-CompletionChangedFiles -RepositoryPath $completionSourceRoot -ValidatedCommit $env:GITHUB_SHA -BaseCommit $completionScopeBaseSha)
           if ($completionChangedFiles.Count -eq 0) { throw 'Completion evidence change inventory is empty for github.sha.' }
           $completionChangedFiles | ConvertTo-Json -AsArray | Set-Content -LiteralPath "$env:PYTHON_WORK_ROOT/evidence/changed-files.json" -Encoding utf8
-
       - name: Create completion evidence in trusted workspace
         id: completion
         if: always()
@@ -879,18 +884,3 @@ jobs:
             $summary = ($failed | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ', '
             throw "Mandatory governed Python validation failed: $summary"
           }
-) { $completionScopeBaseSha = $null }
-          if ([string]::IsNullOrWhiteSpace($completionScopeBaseSha)) {
-            $completionParents = (& git -C $completionSourceRoot show -s --format=%P $env:GITHUB_SHA).Trim()
-            if ($LASTEXITCODE -ne 0) { throw 'Completion evidence parent metadata could not be derived from github.sha.' }
-            $completionParentShas = @($completionParents -split '\s+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-            if ($completionParentShas.Count -gt 0) { $completionScopeBaseSha = $completionParentShas[0] }
-          }
-          if (-not [string]::IsNullOrWhiteSpace($completionScopeBaseSha)) {
-            if ($completionScopeBaseSha -notmatch '(?i)^[0-9a-f]{40}$') { throw 'Completion evidence base is not a full commit SHA.' }
-            & git -C $completionSourceRoot cat-file -e "$completionScopeBaseSha^{commit}"
-            if ($LASTEXITCODE -ne 0) { throw 'Completion evidence Git metadata does not contain the scope base.' }
-          }
-          $completionChangedFiles = @(Get-CompletionChangedFiles -RepositoryPath $completionSourceRoot -ValidatedCommit $env:GITHUB_SHA -BaseCommit $completionScopeBaseSha)
-          if ($completionChangedFiles.Count -eq 0) { throw 'Completion evidence change inventory is empty for github.sha.' }
-          $completionChangedFiles | ConvertTo-Json -AsArray | Set-Content -LiteralPath "$env:PYTHON_WORK_ROOT/evidence/changed-files.json" -Encoding utf8
