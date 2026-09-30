@@ -1161,6 +1161,93 @@ def test_requirements_lock_closure_replaces_reports_when_activated_extras_expand
     )
 
 
+def test_requirements_lock_closure_rejects_supplemental_report_cycles(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """A supplemental root that toggles its introducing marker must fail closed."""
+    requirements_input = tmp_path / "requirements-ci.in"
+    requirements_input.write_text("root==1.0.0\n", encoding="utf-8")
+    lock = tmp_path / "requirements-ci.lock"
+    lock.write_text(
+        "root==1.0.0 \\\n"
+        "    --hash=sha256:" + "0" * 64 + "\n"
+        "    # via -r requirements-ci.in\n"
+        "a==1.0.0 \\\n"
+        "    --hash=sha256:" + "1" * 64 + "\n"
+        "    # via root\n",
+        encoding="utf-8",
+    )
+    resolver_python = tmp_path / "resolver-python"
+    runtime_python = tmp_path / "runtime-python"
+    resolver_python.touch()
+    runtime_python.touch()
+
+    def fake_run(
+        command: list[str],
+        cwd: Path,
+        env: dict[str, str],
+        timeout: int = 300,
+    ) -> tuple[int, str, float]:
+        if command[2] == "-c":
+            expected = "cpython 3.13.2" if command[0] == str(resolver_python) else "cpython 3.12.11"
+            return 0, expected + "\n", 0.0
+        report = Path(command[command.index("--report") + 1])
+        requested = Path(command[command.index("-r") + 1]).read_text(encoding="utf-8").strip()
+        if requested == "root==1.0.0":
+            installs = [
+                {
+                    "metadata": {
+                        "name": "root",
+                        "version": "1.0.0",
+                        "requires_dist": ["a==1.0.0; extra != 'feature'"],
+                    }
+                }
+            ]
+        elif requested == "a==1.0.0":
+            installs = [
+                {
+                    "metadata": {
+                        "name": "a",
+                        "version": "1.0.0",
+                        "requires_dist": ["root[feature]==1.0.0"],
+                    }
+                },
+                {
+                    "metadata": {
+                        "name": "root",
+                        "version": "1.0.0",
+                        "requires_dist": ["a==1.0.0; extra != 'feature'"],
+                    }
+                },
+            ]
+        else:
+            raise AssertionError(f"unexpected marker resolution request: {requested}")
+        report.write_text(json.dumps({"install": installs}), encoding="utf-8")
+        return 0, "", 0.0
+
+    monkeypatch.setattr(validator, "run", fake_run)
+    monkeypatch.setattr(
+        validator,
+        "pinned_lock_resolver",
+        lambda python, _label, _lock, _environment, _env: python,
+    )
+    try:
+        validator.validate_requirements_lock_closure(
+            requirements_input,
+            lock,
+            resolver_python,
+            runtime_python,
+            tmp_path / "work",
+        )
+    except ValueError as exc:
+        require(
+            "supplemental marker report state did not converge" in str(exc),
+            f"unexpected supplemental-cycle error: {exc}",
+        )
+    else:
+        raise AssertionError("supplemental report cycle was not rejected")
+
+
 def test_requirements_lock_closure_rebuilds_reports_when_unmarked_dependencies_expand_extras(
     tmp_path: Path, monkeypatch
 ) -> None:
