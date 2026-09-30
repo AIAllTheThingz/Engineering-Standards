@@ -315,6 +315,22 @@ jobs:
             $toolRecord | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'phase-toolchain-installation.json') -Encoding utf8
           }
 
+          if ('${{ steps.lock_verification.outcome }}' -eq 'success') {
+            $lockCommand = '${{ steps.lock_verification.outputs.verification_command }}'
+            if ([string]::IsNullOrWhiteSpace($lockCommand)) { $lockCommand = '<CPython-3.13.2 with pip==26.2.1> -I standards/scripts/python-project-validation.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci.lock --resolver-python <CPython-3.13.2> --runtime-python <CPython-3.12.11>' }
+            $lockStarted = '${{ steps.lock_verification.outputs.verification_started_at_utc }}'
+            $lockCompleted = '${{ steps.lock_verification.outputs.verification_completed_at_utc }}'
+            $lockDurationText = '${{ steps.lock_verification.outputs.verification_duration_seconds }}'
+            if ([string]::IsNullOrWhiteSpace($lockStarted) -or [string]::IsNullOrWhiteSpace($lockCompleted) -or [string]::IsNullOrWhiteSpace($lockDurationText)) { throw 'Successful Python lock verification did not report required execution metadata.' }
+            $lockRecord = [ordered]@{ schemaVersion='1.1.0'; name='Python toolchain lock closure'; category='security'; status='Passed'; requiredValidation=$true; evidenceSource='Automated'; command=$lockCommand; workingDirectory='trusted-isolated-workspace'; startedAtUtc=$lockStarted; completedAtUtc=$lockCompleted; durationSeconds=[double]::Parse($lockDurationText,[Globalization.CultureInfo]::InvariantCulture); runtime='CPython 3.13.2 resolver and CPython 3.12.11 functional runtime'; toolVersion='python-project-validation.py'; exitCode=0; summary='Python toolchain lock closure completed successfully.'; warnings=@(); failureReason=$null; blockedReason=$null; notApplicableRationale=$null; details=[ordered]@{ outcome='success'; resolverAvailable=$true; logPath='evidence/lock-verification.log' } }
+            $lockRecord | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'phase-lock-verification.json') -Encoding utf8
+          }
+          if ('${{ steps.normalization.outcome }}' -eq 'failure') {
+            $normalizationTimestamp = (Get-Date).ToUniversalTime().ToString('o')
+            $normalizationRecord = [ordered]@{ schemaVersion='1.1.0'; name='Python evidence normalization'; category='test'; status='Failed'; requiredValidation=$true; evidenceSource='Automated'; command='Normalize-PythonFunctionalEvidence.py'; workingDirectory='trusted-isolated-workspace'; startedAtUtc=$normalizationTimestamp; completedAtUtc=$normalizationTimestamp; durationSeconds=0; runtime='standards-owned hash-locked Python toolchain'; toolVersion='Normalize-PythonFunctionalEvidence.py'; exitCode=1; summary='Python functional evidence normalization did not complete successfully.'; warnings=@(); failureReason='Evidence normalization failed.'; blockedReason=$null; notApplicableRationale=$null; details=[ordered]@{ outcome='failure' } }
+            $normalizationRecord | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'phase-normalization-failure.json') -Encoding utf8
+          }
+
       - name: Stage Python completion source metadata
         id: source_metadata
         if: always()
@@ -517,32 +533,9 @@ jobs:
             if (-not (Test-Path -LiteralPath $toolchainRecordPath -PathType Leaf)) { throw 'Successful Python toolchain installation record is unavailable.' }
             $toolchainInstallRecord = Get-Content -LiteralPath $toolchainRecordPath -Raw | ConvertFrom-Json
             $toolchainInstallCommand = [string]$toolchainInstallRecord.command
-            $lockVerificationRecord = [ordered]@{
-              schemaVersion = '1.1.0'
-              name = 'Python toolchain lock closure'
-              category = 'security'
-              status = 'Passed'
-              requiredValidation = $true
-              evidenceSource = 'Automated'
-              command = $lockVerificationCommand
-              workingDirectory = 'trusted-isolated-workspace'
-              startedAtUtc = $lockVerificationStartedAtUtc
-              completedAtUtc = $lockVerificationCompletedAtUtc
-              durationSeconds = $lockVerificationDurationSeconds
-              runtime = 'CPython 3.13.2 resolver and CPython 3.12.11 functional runtime'
-              toolVersion = 'python-project-validation.py'
-              exitCode = 0
-              summary = 'Python toolchain lock closure completed successfully.'
-              warnings = @()
-              failureReason = $null
-              blockedReason = $null
-              notApplicableRationale = $null
-              details = [ordered]@{
-                outcome = 'success'
-                resolverAvailable = $true
-                logPath = 'evidence/lock-verification.log'
-              }
-            }
+            $lockRecordPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-lock-verification.json'
+            if (-not (Test-Path -LiteralPath $lockRecordPath -PathType Leaf)) { throw 'Successful Python lock-verification record is unavailable.' }
+            $lockVerificationRecord = Get-Content -LiteralPath $lockRecordPath -Raw | ConvertFrom-Json
             $testResultPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json'
             $allTestRecords = @($lockVerificationRecord, $toolchainInstallRecord, $regressionRecord) + @(Get-Content -LiteralPath $testResultPath -Raw | ConvertFrom-Json)
             $allTestRecords | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath $testResultPath -Encoding utf8
@@ -586,6 +579,17 @@ jobs:
             $commandsNotExecuted = @()
             $failureRecords = @()
             $failureArtifacts = @('evidence/lock-verification.log','evidence/local-test-results.json')
+            $prerequisiteRecords = @()
+            $prerequisiteCommands = @()
+            if ($lockVerificationOutcome -eq 'success' -and $toolchainInstallOutcome -eq 'success') {
+              $lockRecordPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-lock-verification.json'
+              $toolRecordPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-toolchain-installation.json'
+              if (-not (Test-Path -LiteralPath $lockRecordPath -PathType Leaf) -or -not (Test-Path -LiteralPath $toolRecordPath -PathType Leaf)) { throw 'Successful prerequisite phase evidence is unavailable.' }
+              $lockPrerequisiteRecord = Get-Content -LiteralPath $lockRecordPath -Raw | ConvertFrom-Json
+              $toolPrerequisiteRecord = Get-Content -LiteralPath $toolRecordPath -Raw | ConvertFrom-Json
+              $prerequisiteRecords = @($lockPrerequisiteRecord,$toolPrerequisiteRecord)
+              $prerequisiteCommands = @([string]$lockPrerequisiteRecord.command,[string]$toolPrerequisiteRecord.command)
+            }
             if ($lockVerificationStarted) { $commandsExecuted += $lockVerificationCommand } else { $commandsNotExecuted += $lockVerificationCommand }
             if ($inputValidationOutcome -ne 'success') {
               $inputRecordPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-input-validation.json'
@@ -639,6 +643,15 @@ jobs:
                   details = [ordered]@{ outcome = $functionalOutcome }
                 })
               }
+              if ($prerequisiteRecords.Count -gt 0) {
+                $failureRecords = $prerequisiteRecords + $failureRecords
+                $commandsExecuted += $prerequisiteCommands
+              }
+              $normalizationFailurePath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-normalization-failure.json'
+              if (Test-Path -LiteralPath $normalizationFailurePath -PathType Leaf) {
+                $failureRecords += (Get-Content -LiteralPath $normalizationFailurePath -Raw | ConvertFrom-Json)
+                $commandsExecuted += 'Normalize-PythonFunctionalEvidence.py'
+              }
               if ($null -ne $regressionRecord) {
                 $failureRecords += $regressionRecord
                 $failureArtifacts += 'evidence/validator-regression.log'
@@ -675,6 +688,10 @@ jobs:
               $functionalResultsPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json'
               if (Test-Path -LiteralPath $functionalResultsPath -PathType Leaf) {
                 $failureRecords = @(Get-Content -LiteralPath $functionalResultsPath -Raw | ConvertFrom-Json) + $failureRecords
+              if ($prerequisiteRecords.Count -gt 0) {
+                $failureRecords = $prerequisiteRecords + $failureRecords
+                $commandsExecuted += $prerequisiteCommands
+              }
               }
               if ($null -ne $regressionRecord) {
                 $failureRecords += $regressionRecord
