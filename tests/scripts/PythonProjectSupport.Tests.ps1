@@ -156,28 +156,24 @@ Describe 'Governed Python project support' {
         $completionWorkflow = $script:workflow.Substring($completionIndex, $evidenceIndex - $completionIndex)
         $failureEvidence = [regex]::Match(
             $completionWorkflow,
-            '(?s)if \(\$lockVerificationOutcome -eq ''success'' -and \$toolchainInstallOutcome -eq ''success''\) \{.*?\r?\n\s*\}\r?\n\s*else \{\s*(?<body>.*?)\r?\n\s*\}\r?\n\s*if \(-not \(Test-Path -LiteralPath \$completionPath'
+            '(?s)if \(\s*\$lockVerificationOutcome -eq ''success'' -and\s*\$toolchainInstallOutcome -eq ''success'' -and\s*\$functionalOutcome -eq ''success'' -and\s*\$normalizationOutcome -eq ''success''\s*\) \{.*?\r?\n\s*\}\r?\n\s*else \{\s*(?<body>.*?)\r?\n\s*\}\r?\n\s*if \(-not \(Test-Path -LiteralPath \$completionPath'
         )
         $failureEvidence.Success | Should -BeTrue
-        $failureEvidence.Groups['body'].Value | Should -Match '\$callerStage = Join-Path \$env:GITHUB_WORKSPACE ''caller'''
-        $failureEvidence.Groups['body'].Value | Should -Match '\$failureCallerStage = Join-Path \$env:PYTHON_WORK_ROOT ''caller'''
-        $failureEvidence.Groups['body'].Value | Should -Match 'git -c protocol\.file\.allow=always clone --no-local --no-checkout --no-tags \$callerStage \$failureCallerStage'
-        $failureEvidence.Groups['body'].Value | Should -Not -Match 'checkout --detach'
-        $failureEvidence.Groups['body'].Value | Should -Match '\$failureChangedFiles = @\('
-        $script:workflow | Should -Match '(?s)- name: Checkout caller without credentials.*?fetch-depth:\s*0'
-        $failureEvidence.Groups['body'].Value | Should -Match '\$failureScopeBaseSha = \$env:FAILURE_SCOPE_BASE_SHA'
-        $failureEvidence.Groups['body'].Value | Should -Match 'function Get-FailureChangedFiles'
-        $failureEvidence.Groups['body'].Value | Should -Match "'-z'"
-        $failureEvidence.Groups['body'].Value | Should -Match 'ArgumentList\.Add\(\$argument\)'
-        $failureEvidence.Groups['body'].Value | Should -Match '\[Text\.UTF8Encoding\]::new\(\$false, \$true\)'
-        $failureEvidence.Groups['body'].Value | Should -Match "\$encodedPrefix = '@git-bytes/'"
-        $failureEvidence.Groups['body'].Value | Should -Match '\[Convert\]::ToHexString\(\$segment\)\.ToLowerInvariant\(\)'
-        $failureEvidence.Groups['body'].Value | Should -Match 'catch \[Text\.DecoderFallbackException\]'
-        $failureEvidence.Groups['body'].Value | Should -Not -Match 'diff-tree --root'
-        $failureEvidence.Groups['body'].Value | Should -Match '-ChangedFile \$failureChangedFiles'
-        $failureEvidence.Groups['body'].Value | Should -Not -Match 'New-Item -ItemType Directory -Path \$callerStage'
-        $failureEvidence.Groups['body'].Value | Should -Not -Match '-SourceRepositoryPath \$callerStage'
-        $failureEvidence.Groups['body'].Value | Should -Match '-SourceRepositoryPath \$failureCallerStage'
+        $failureBody = $failureEvidence.Groups['body'].Value
+        $failureBody | Should -Match '\$failureRecords = @\(\)'
+        $failureBody | Should -Match '\$failureArtifacts = @\(''evidence/lock-verification\.log'',''evidence/local-test-results\.json''\)'
+        $failureBody | Should -Match '\$functionalResultsPath = Join-Path \$env:PYTHON_WORK_ROOT ''evidence/local-test-results\.json'''
+        $failureBody | Should -Match '\$failureRecords = @\(Get-Content -LiteralPath \$functionalResultsPath -Raw \| ConvertFrom-Json\)'
+        $failureBody | Should -Match 'Functional validation failed before detailed test records were available\.'
+        $failureBody | Should -Match '\$failureRecords \+= \$regressionRecord'
+        $failureBody | Should -Match "\$failureArtifacts \+= 'evidence/validator-regression\.log'"
+        $failureBody | Should -Match '\$failureRecords = @\(Get-Content -LiteralPath \$functionalResultsPath -Raw \| ConvertFrom-Json\) \+ \$failureRecords'
+        $failureBody | Should -Match '\$failureRecords \| ConvertTo-Json -Depth 10 -AsArray'
+        $failureBody | Should -Match '-ArtifactPath \$failureArtifacts'
+        $failureBody | Should -Match '-SourceRepositoryPath \$completionSourceRoot'
+        $failureBody | Should -Match '-ChangedFile \$completionChangedFiles'
+        $script:workflow | Should -Match '(?s)- name: Stage Python completion source metadata\s+id:\s*source_metadata'
+        $script:workflow | Should -Match '\$completionChangedFiles \| ConvertTo-Json -AsArray'
         $script:workflow | Should -Match '(?s)id:\s*evidence\s*\r?\n\s*if:\s*always\(\) && steps\.completion\.outcome == ''success'''
     }
 
