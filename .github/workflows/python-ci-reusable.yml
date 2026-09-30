@@ -29,8 +29,6 @@ jobs:
       PYTHONSAFEPATH: "1"
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
-      FAILURE_SCOPE_PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-      FAILURE_SCOPE_PUSH_BEFORE_SHA: ${{ github.event.before }}
     steps:
       - name: Checkout caller without credentials
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -462,8 +460,18 @@ jobs:
               }
             }
 
-          $completionScopeBaseSha = $env:FAILURE_SCOPE_BASE_SHA
-          if ($completionScopeBaseSha -match '^0{40}
+          $completionScopeBaseSha = $null
+          if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_EVENT_PATH) -and (Test-Path -LiteralPath $env:GITHUB_EVENT_PATH -PathType Leaf)) {
+            $eventPayload = Get-Content -LiteralPath $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
+            if ($env:GITHUB_EVENT_NAME -eq 'pull_request' -and $null -ne $eventPayload.pull_request) {
+              $completionScopeBaseSha = [string]$eventPayload.pull_request.base.sha
+            }
+            elseif ($env:GITHUB_EVENT_NAME -eq 'push') {
+              $completionScopeBaseSha = [string]$eventPayload.before
+            }
+          }
+          if ($completionScopeBaseSha -match '^0{40}$') { $completionScopeBaseSha = $null }
+          if ([string]::IsNullOrWhiteSpace($completionScopeBaseSha)) {
             $completionParents = (& git -C $completionSourceRoot show -s --format=%P $env:GITHUB_SHA).Trim()
             if ($LASTEXITCODE -ne 0) { throw 'Completion evidence parent metadata could not be derived from github.sha.' }
             $completionParentShas = @($completionParents -split '\s+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
