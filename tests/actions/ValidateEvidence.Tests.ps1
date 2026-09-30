@@ -666,10 +666,26 @@ Describe 'Validate evidence action' {
                 $LASTEXITCODE | Should -Be 0
                 $validatedCommit = (& git -C $sourceRoot rev-parse HEAD).Trim()
 
+                $outcomes = @{
+                    yaml='success'; workflow_architecture='success'; json_schemas='success'; markdown_links='success'
+                    documentation='success'; contract='success'; forbidden_patterns='success'; repository_health='success'
+                    powershell_parser='success'; pester='success'; psscriptanalyzer='success'; examples='success'
+                    evidence_validation='success'; github_execution='notrun'
+                }
+                $reports = @{
+                    yaml=''; workflow_architecture=''; json_schemas=''; markdown_links=''
+                    documentation=''; contract=''; forbidden_patterns=''; repository_health=''
+                    powershell_parser=''; pester=''; psscriptanalyzer=''; examples=''
+                    evidence_validation=''; github_execution=''
+                }
+                & "$PSScriptRoot/../../scripts/New-WorkflowTestEvidence.ps1" -RepositoryPath $project -OutputPath 'evidence/local-tests.json' -Outcomes $outcomes -Reports $reports -RunPester -RunDocumentation -RunExamples -Runtime 'Local PowerShell validation' -ToolVersion 'test'
+                $LASTEXITCODE | Should -Be 0
+
                 & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" `
                     -RepositoryPath $project -SourceRepositoryPath $sourceRoot `
                     -OutputPath 'evidence/receipt.json' -ExecutionContext Local `
                     -Summary 'Whitespace-only Git pathname content identity fixture.' `
+                    -TestResultPath 'evidence/local-tests.json' `
                     -ArtifactPath 'evidence/report.json' `
                     -CommandsExecuted @('content identity fixture') `
                     -CommandsNotExecuted @('GitHub-hosted Governance CI workflow execution') `

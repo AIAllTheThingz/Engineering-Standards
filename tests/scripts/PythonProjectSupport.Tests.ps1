@@ -225,7 +225,7 @@ Describe 'Governed Python project support' {
         $failureBody | Should -Match '\$failureRecords = @\(Get-Content -LiteralPath \$functionalResultsPath -Raw \| ConvertFrom-Json\)'
         $failureBody | Should -Match 'Functional validation failed before detailed test records were available\.'
         $failureBody | Should -Match '\$failureRecords \+= \$regressionRecord'
-        $failureBody | Should -Match "\$failureArtifacts \+= 'evidence/validator-regression\.log'"
+        $failureBody | Should -Match '\$failureArtifacts \+= ''evidence/validator-regression\.log'''
         $failureBody | Should -Match '\$failureRecords = @\(Get-Content -LiteralPath \$functionalResultsPath -Raw \| ConvertFrom-Json\) \+ \$failureRecords'
         $failureBody | Should -Match '\$failureRecords \| ConvertTo-Json -Depth 10 -AsArray'
         $failureBody | Should -Match '-ArtifactPath \$failureArtifacts'
