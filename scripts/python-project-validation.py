@@ -358,6 +358,9 @@ def write_toolchain_sbom_pyproject(work_root: Path) -> Path:
     metadata_dir = work_root.resolve(strict=True) / "toolchain-sbom-metadata"
     metadata_dir.mkdir(mode=0o700, exist_ok=True)
     metadata_path = metadata_dir / "pyproject.toml"
+    if metadata_path.exists():
+        metadata_path.chmod(0o600)
+        metadata_path.unlink()
     metadata_path.write_text(
         "[project]\n"
         f'name = "{TOOLCHAIN_SBOM_PROJECT_NAME}"\n'
@@ -366,6 +369,7 @@ def write_toolchain_sbom_pyproject(work_root: Path) -> Path:
         'requires-python = ">=3.13,<3.14"\n',
         encoding="utf-8",
     )
+    metadata_path.chmod(0o400)
     return metadata_path
 
 
@@ -1513,6 +1517,65 @@ def write_record(evidence_dir: Path, filename: str, record: Any) -> None:
     (evidence_dir / filename).write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
 
 
+def generate_sbom_record(
+    *,
+    name: str,
+    filename: str,
+    source_lock: Path,
+    source_lock_name: str,
+    sbom_pyproject: Path,
+    root_component: str,
+    tool_python: Path,
+    evidence_dir: Path,
+    work_root: Path,
+    env: dict[str, str],
+    version: str,
+    roots: list[Path],
+) -> tuple[dict[str, Any], bool]:
+    """Generate one CycloneDX SBOM and return its evidence record and whether it failed."""
+    sbom_path = evidence_dir / filename
+    sbom_command = module_command(
+        tool_python,
+        "cyclonedx_py",
+        "requirements",
+        str(source_lock),
+        "--pyproject",
+        str(sbom_pyproject),
+        "--sv",
+        "1.5",
+        "--output-reproducible",
+        "--output-file",
+        str(sbom_path),
+    )
+    sbom_code, sbom_output, sbom_duration = run(sbom_command, work_root, env)
+    details: dict[str, Any] = {
+        "sourceLock": source_lock_name,
+        "specVersion": "1.5",
+        "rootComponent": root_component,
+    }
+    if sbom_code == 0:
+        try:
+            attach_sbom_root_dependencies(sbom_path)
+            # Recorded at creation so later modification of the file is detectable against this record.
+            details["sha256"] = sha256(sbom_path)
+        except ValueError as exc:
+            sbom_code = 1
+            sbom_output = f"{sbom_output}\nSBOM dependency graph validation failed: {exc}".strip()
+    record = make_evidence(
+        name,
+        "security",
+        sbom_command,
+        sbom_code,
+        sbom_output,
+        sbom_duration,
+        "cyclonedx-bom",
+        version,
+        roots,
+        details,
+    )
+    return record, sbom_code != 0
+
+
 def validate(args: argparse.Namespace) -> int:
     original_project = args.project.absolute()
     if not original_project.exists() or not (original_project / "project-manifest.json").is_file():
@@ -1545,6 +1608,26 @@ def validate(args: argparse.Namespace) -> int:
     env = trusted_env(args.work_root / "home")
     versions = tool_versions(tool_python, env, args.work_root)
     records: list[dict[str, Any]] = []
+    failed = False
+
+    # The toolchain SBOM describes only standards-owned inputs, so generate it before any caller
+    # code (lint configuration, build hooks, tests) can run and alter those inputs or the environment.
+    toolchain_sbom_record, toolchain_sbom_failed = generate_sbom_record(
+        name="Python toolchain SBOM",
+        filename="python-toolchain-sbom.cdx.json",
+        source_lock=tool_lock,
+        source_lock_name="requirements-ci.lock",
+        sbom_pyproject=toolchain_sbom_pyproject,
+        root_component=TOOLCHAIN_SBOM_PROJECT_NAME,
+        tool_python=tool_python,
+        evidence_dir=evidence_dir,
+        work_root=args.work_root,
+        env=env,
+        version=versions["cyclonedx_py"],
+        roots=roots,
+    )
+    records.append(toolchain_sbom_record)
+    failed |= toolchain_sbom_failed
 
     checks = [
         (
@@ -1569,7 +1652,6 @@ def validate(args: argparse.Namespace) -> int:
             module_command(tool_python, "mypy", "--config-file", str(mypy_config), str(project / "src")),
         ),
     ]
-    failed = False
     for name, category, filename, tool, command in checks:
         code, output, duration = run(command, args.work_root, env)
         record = make_evidence(name, category, command, code, output, duration, tool, versions[tool], roots)
@@ -1652,63 +1734,22 @@ def validate(args: argparse.Namespace) -> int:
             build_records.append(smoke_record)
             failed |= smoke_code != 0
 
-        for name, filename, source_lock, source_lock_name, sbom_pyproject, root_component in (
-            (
-                "Python project SBOM",
-                "python-project-sbom.cdx.json",
-                runtime_lock,
-                "requirements-runtime.lock",
-                project / "pyproject.toml",
-                metadata["distribution"],
-            ),
-            (
-                "Python toolchain SBOM",
-                "python-toolchain-sbom.cdx.json",
-                tool_lock,
-                "requirements-ci.lock",
-                toolchain_sbom_pyproject,
-                TOOLCHAIN_SBOM_PROJECT_NAME,
-            ),
-        ):
-            sbom_path = evidence_dir / filename
-            sbom_command = module_command(
-                tool_python,
-                "cyclonedx_py",
-                "requirements",
-                str(source_lock),
-                "--pyproject",
-                str(sbom_pyproject),
-                "--sv",
-                "1.5",
-                "--output-reproducible",
-                "--output-file",
-                str(sbom_path),
-            )
-            sbom_code, sbom_output, sbom_duration = run(sbom_command, args.work_root, env)
-            if sbom_code == 0:
-                try:
-                    attach_sbom_root_dependencies(sbom_path)
-                except ValueError as exc:
-                    sbom_code = 1
-                    sbom_output = f"{sbom_output}\nSBOM dependency graph validation failed: {exc}".strip()
-            sbom_record = make_evidence(
-                name,
-                "security",
-                sbom_command,
-                sbom_code,
-                sbom_output,
-                sbom_duration,
-                "cyclonedx-bom",
-                versions["cyclonedx_py"],
-                roots,
-                {
-                    "sourceLock": source_lock_name,
-                    "specVersion": "1.5",
-                    "rootComponent": root_component,
-                },
-            )
-            records.append(sbom_record)
-            failed |= sbom_code != 0
+        project_sbom_record, project_sbom_failed = generate_sbom_record(
+            name="Python project SBOM",
+            filename="python-project-sbom.cdx.json",
+            source_lock=runtime_lock,
+            source_lock_name="requirements-runtime.lock",
+            sbom_pyproject=project / "pyproject.toml",
+            root_component=metadata["distribution"],
+            tool_python=tool_python,
+            evidence_dir=evidence_dir,
+            work_root=args.work_root,
+            env=env,
+            version=versions["cyclonedx_py"],
+            roots=roots,
+        )
+        records.append(project_sbom_record)
+        failed |= project_sbom_failed
 
     write_record(evidence_dir, "python-build.json", build_records)
     records.extend(build_records)

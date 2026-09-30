@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import inspect
 import json
 import re
 import runpy
@@ -2119,3 +2120,21 @@ def test_project_metadata_requires_governed_hatchling_version(tmp_path: Path) ->
         require("hatchling==1.32.4" in str(exc), "old Hatchling error omitted governed version")
     else:
         raise AssertionError("ungoverned Hatchling version was accepted")
+
+
+def test_toolchain_sbom_is_generated_before_any_caller_code_runs() -> None:
+    """The toolchain SBOM must not be produced after caller code could alter its inputs."""
+    source = inspect.getsource(validator.validate)
+    toolchain = source.index('name="Python toolchain SBOM"')
+    for caller_code_step in ("checks = [", "build_command = ", "pytest_command = ", 'name="Python project SBOM"'):
+        require(
+            toolchain < source.index(caller_code_step),
+            f"toolchain SBOM is generated after {caller_code_step!r}",
+        )
+
+
+def test_toolchain_sbom_metadata_is_read_only_and_replaceable(tmp_path: Path) -> None:
+    first = validator.write_toolchain_sbom_pyproject(tmp_path)
+    second = validator.write_toolchain_sbom_pyproject(tmp_path)
+    require(first == second and second.is_file(), "metadata was not rewritten in place")
+    require(not second.stat().st_mode & stat.S_IWUSR, "standards-owned SBOM metadata must be read-only")

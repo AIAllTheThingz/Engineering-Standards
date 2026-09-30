@@ -43,7 +43,7 @@ Tests explicitly marked `requiredValidation: false` do not determine the aggrega
 
 `validatedCommitSha` is the required commit identity. `validatedCommitTag` is optional audit metadata: validation must remain usable in a commit-only or no-tags checkout without fetching tags. If the named tag is available locally, it must be an annotated tag that resolves to `validatedCommitSha`.
 
-Local checked-in receipts may also carry `validatedContentSha256`, a canonical source-tree fingerprint. The validator recomputes it from the current Git tree, excluding only the self-referential Python and Bash receipt payload directories. If a squash merge has removed the original validated commit object, equivalent Local content remains valid only when this fingerprint matches exactly; a changed tree still fails. GitHub Actions artifact evidence continues to require its exact commit identity.
+Local checked-in receipts may also carry `validatedContentSha256`, a canonical source-tree fingerprint. The validator recomputes it from the current Git tree, excluding only the receipt's own directory (derived from the receipt path; just the receipt file for a receipt at the repository root). For this repository's two example receipts, both example evidence directories are excluded because those receipts bind each other's trees. See `governance/COMPLETION_EVIDENCE.md` for the full rule. If a squash merge has removed the original validated commit object, equivalent Local content remains valid only when this fingerprint matches exactly; a changed tree still fails. GitHub Actions artifact evidence continues to require its exact commit identity.
 
 The action rejects:
 
