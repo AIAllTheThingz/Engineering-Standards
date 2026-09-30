@@ -175,18 +175,53 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: |
+          $installStartedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+          $installStopwatch = [Diagnostics.Stopwatch]::StartNew()
+          function Complete-ToolchainInstallMetadata {
+            param(
+              [Parameter(Mandatory)][string]$Command,
+              [AllowNull()][Nullable[int]]$ExitCode
+            )
+            $installStopwatch.Stop()
+            $completedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+            "started_at_utc=$installStartedAtUtc" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            "completed_at_utc=$completedAtUtc" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            "duration_seconds=$($installStopwatch.Elapsed.TotalSeconds.ToString('0.000', [Globalization.CultureInfo]::InvariantCulture))" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            "failed_command=$Command" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            if ($null -ne $ExitCode) {
+              "exit_code=$ExitCode" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            }
+          }
+
           $toolRoot = Join-Path $env:RUNNER_TEMP 'python-tools'
           python -m venv $toolRoot
-          if ($LASTEXITCODE -ne 0) { throw 'Python toolchain virtual environment creation failed.' }
+          $venvExitCode = $LASTEXITCODE
+          if ($venvExitCode -ne 0) {
+            Complete-ToolchainInstallMetadata -Command 'python -m venv <runner-temp>/python-tools' -ExitCode $venvExitCode
+            throw 'Python toolchain virtual environment creation failed.'
+          }
           $venvPython = Join-Path $toolRoot 'bin/python'
           & $venvPython -I -m pip install --no-input --only-binary=:all: --require-hashes --no-deps -r standards/examples/python-project/requirements-ci.lock
-          if ($LASTEXITCODE -ne 0) { throw 'Hash-locked Python toolchain package installation failed.' }
+          $pipInstallExitCode = $LASTEXITCODE
+          if ($pipInstallExitCode -ne 0) {
+            Complete-ToolchainInstallMetadata -Command '<tool-python> -I -m pip install --no-input --only-binary=:all: --require-hashes --no-deps -r standards/examples/python-project/requirements-ci.lock' -ExitCode $pipInstallExitCode
+            throw 'Hash-locked Python toolchain package installation failed.'
+          }
           & $venvPython -I -m pip check
-          if ($LASTEXITCODE -ne 0) { throw 'Hash-locked Python toolchain pip check failed.' }
+          $pipCheckExitCode = $LASTEXITCODE
+          if ($pipCheckExitCode -ne 0) {
+            Complete-ToolchainInstallMetadata -Command '<tool-python> -I -m pip check' -ExitCode $pipCheckExitCode
+            throw 'Hash-locked Python toolchain pip check failed.'
+          }
           $toolPython = Join-Path $toolRoot 'bin/python-isolated'
           Copy-Item -LiteralPath $venvPython -Destination $toolPython
           & $toolPython -I -c "import sys; assert sys.prefix == '$toolRoot'"
-          if ($LASTEXITCODE -ne 0) { throw 'Isolated Python toolchain interpreter assertion failed.' }
+          $assertionExitCode = $LASTEXITCODE
+          if ($assertionExitCode -ne 0) {
+            Complete-ToolchainInstallMetadata -Command '<tool-python-isolated> -I -c <prefix-assertion>' -ExitCode $assertionExitCode
+            throw 'Isolated Python toolchain interpreter assertion failed.'
+          }
+          Complete-ToolchainInstallMetadata -Command 'completed' -ExitCode 0
           "TOOL_PYTHON=$toolPython" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Run governed functional validation
@@ -345,6 +380,11 @@ jobs:
           $inputValidationOutcome = '${{ steps.inputs.outcome }}'
           $lockVerificationOutcome = '${{ steps.lock_verification.outcome }}'
           $toolchainInstallOutcome = '${{ steps.toolchain_install.outcome }}'
+          $toolchainInstallStartedAtUtc = '${{ steps.toolchain_install.outputs.started_at_utc }}'
+          $toolchainInstallCompletedAtUtc = '${{ steps.toolchain_install.outputs.completed_at_utc }}'
+          $toolchainInstallDurationText = '${{ steps.toolchain_install.outputs.duration_seconds }}'
+          $toolchainInstallFailedCommand = '${{ steps.toolchain_install.outputs.failed_command }}'
+          $toolchainInstallExitCodeText = '${{ steps.toolchain_install.outputs.exit_code }}'
           $functionalOutcome = '${{ steps.functional.outcome }}'
           $normalizationOutcome = '${{ steps.normalization.outcome }}'
           $regressionOutcome = '${{ steps.regression.outcome }}'
@@ -512,7 +552,17 @@ jobs:
             $failureArtifacts = @('evidence/lock-verification.log','evidence/local-test-results.json')
             if ($lockVerificationStarted) { $commandsExecuted += $lockVerificationCommand } else { $commandsNotExecuted += $lockVerificationCommand }
             if ($toolchainInstallFailed) {
-              $commandsExecuted += 'Python toolchain installation'
+              if (
+                [string]::IsNullOrWhiteSpace($toolchainInstallStartedAtUtc) -or
+                [string]::IsNullOrWhiteSpace($toolchainInstallCompletedAtUtc) -or
+                [string]::IsNullOrWhiteSpace($toolchainInstallDurationText) -or
+                [string]::IsNullOrWhiteSpace($toolchainInstallFailedCommand) -or
+                [string]::IsNullOrWhiteSpace($toolchainInstallExitCodeText)
+              ) { throw 'Python toolchain installation failure did not report required execution metadata.' }
+              $toolchainInstallDurationSeconds = [double]::Parse($toolchainInstallDurationText, [Globalization.CultureInfo]::InvariantCulture)
+              $toolchainInstallExitCode = [int]::Parse($toolchainInstallExitCodeText, [Globalization.CultureInfo]::InvariantCulture)
+              if ($toolchainInstallDurationSeconds -lt 0) { throw 'Python toolchain installation reported an invalid negative duration.' }
+              $commandsExecuted += $toolchainInstallFailedCommand
               $commandsNotExecuted += 'Functional validation was not run because toolchain installation failed.'
               $completionSummary = 'Python toolchain installation failed after successful lock verification.'
               $blockedReason = $null
@@ -523,20 +573,23 @@ jobs:
                 status = 'Failed'
                 requiredValidation = $true
                 evidenceSource = 'Automated'
-                command = 'python -m venv; pip install --require-hashes --no-deps; pip check; isolated interpreter assertion'
+                command = $toolchainInstallFailedCommand
                 workingDirectory = 'trusted-isolated-workspace'
-                startedAtUtc = $lockVerificationCompletedAtUtc
-                completedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
-                durationSeconds = 0
+                startedAtUtc = $toolchainInstallStartedAtUtc
+                completedAtUtc = $toolchainInstallCompletedAtUtc
+                durationSeconds = $toolchainInstallDurationSeconds
                 runtime = 'CPython 3.12.11 functional runtime'
                 toolVersion = 'hash-locked Python toolchain'
-                exitCode = 1
+                exitCode = $toolchainInstallExitCode
                 summary = 'The standards-owned hash-locked Python toolchain installation did not succeed.'
                 warnings = @()
                 failureReason = 'Toolchain installation failed after successful lock verification.'
                 blockedReason = $null
                 notApplicableRationale = $null
-                details = [ordered]@{ toolchainInstallOutcome = $toolchainInstallOutcome }
+                details = [ordered]@{
+                  toolchainInstallOutcome = $toolchainInstallOutcome
+                  failedCommand = $toolchainInstallFailedCommand
+                }
               })
             }
             elseif ($functionalFailed) {
