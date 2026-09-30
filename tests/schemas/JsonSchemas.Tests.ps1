@@ -105,7 +105,7 @@ Describe 'JSON schema validation' {
             foreach ($tag in @('release+1','release@1','-release','release/v1.2.0',('release/' + ('a' * 300)))) {
                 (ConvertTo-Json -InputObject $tag | Test-Json -Schema $tagSchema) | Should -BeTrue -Because $tag
             }
-            foreach ($tag in @('@','bad..tag','bad@{tag','bad tag','bad\tag','name.lock','name.')) {
+            foreach ($tag in @('@','/release','release/','bad..tag','bad@{tag','bad tag','bad\tag','name.lock','name.')) {
                 (ConvertTo-Json -InputObject $tag | Test-Json -Schema $tagSchema) | Should -BeFalse -Because $tag
             }
         }

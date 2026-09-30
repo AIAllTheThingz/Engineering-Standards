@@ -111,7 +111,7 @@
       ],
       "description": "Optional audit tag for validatedCommitSha. Validation permits an unavailable local tag in a commit-only or no-tags checkout; if the named ref is available locally, it must be an annotated tag that resolves to validatedCommitSha.",
       "minLength": 1,
-      "pattern": "^(?!@$)(?!.*\\.\\.)(?!.*//)(?!.*@\\{)(?!.*(?:^|/)\\.)(?!.*(?:^|/)[^/]*\\.lock(?:/|$))(?!.*\\.$)(?!.*[\\u0000-\\u0020\\u007F~^:?*\\[\\\\]).+$"
+      "pattern": "^(?!@$)(?!/)(?!.*/$)(?!.*\\.\\.)(?!.*//)(?!.*@\\{)(?!.*(?:^|/)\\.)(?!.*(?:^|/)[^/]*\\.lock(?:/|$))(?!.*\\.$)(?!.*[\\u0000-\\u0020\\u007F~^:?*\\[\\\\]).+$"
     },
     "evidenceCommitSha": {
       "type": [

@@ -279,18 +279,31 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: |
-          $validatedProjectPathFile = Join-Path $env:PYTHON_WORK_ROOT 'evidence/validated-project-path.txt'
-          if (-not (Test-Path -LiteralPath $validatedProjectPathFile -PathType Leaf)) { throw 'Validated project path file is unavailable.' }
-          $validatedProjectPath = [IO.File]::ReadAllText($validatedProjectPathFile, [Text.UTF8Encoding]::new($false))
-          if ([string]::IsNullOrEmpty($validatedProjectPath)) { throw 'Validated project path is empty.' }
-          & $env:TOOL_PYTHON -I standards/scripts/python-project-validation.py `
-            --project $validatedProjectPath `
-            --work-root $env:PYTHON_WORK_ROOT `
-            --tool-python $env:TOOL_PYTHON `
-            --tool-lock standards/examples/python-project/requirements-ci.lock `
-            --runtime-lock requirements-runtime.lock `
-            --mypy-config standards/scripts/python-mypy.ini
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $functionalStartedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+          $functionalStopwatch = [Diagnostics.Stopwatch]::StartNew()
+          $functionalExitCode = 1
+          try {
+            $validatedProjectPathFile = Join-Path $env:PYTHON_WORK_ROOT 'evidence/validated-project-path.txt'
+            if (-not (Test-Path -LiteralPath $validatedProjectPathFile -PathType Leaf)) { throw 'Validated project path file is unavailable.' }
+            $validatedProjectPath = [IO.File]::ReadAllText($validatedProjectPathFile, [Text.UTF8Encoding]::new($false))
+            if ([string]::IsNullOrEmpty($validatedProjectPath)) { throw 'Validated project path is empty.' }
+            & $env:TOOL_PYTHON -I standards/scripts/python-project-validation.py `
+              --project $validatedProjectPath `
+              --work-root $env:PYTHON_WORK_ROOT `
+              --tool-python $env:TOOL_PYTHON `
+              --tool-lock standards/examples/python-project/requirements-ci.lock `
+              --runtime-lock requirements-runtime.lock `
+              --mypy-config standards/scripts/python-mypy.ini
+            $functionalExitCode = $LASTEXITCODE
+          }
+          finally {
+            $functionalStopwatch.Stop()
+            "started_at_utc=$functionalStartedAtUtc" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            "completed_at_utc=$((Get-Date).ToUniversalTime().ToString('o'))" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            "duration_seconds=$($functionalStopwatch.Elapsed.TotalSeconds.ToString('0.000', [Globalization.CultureInfo]::InvariantCulture))" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            "exit_code=$functionalExitCode" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
+          if ($functionalExitCode -ne 0) { exit $functionalExitCode }
 
       - name: Run trusted validator regression tests
         id: regression
@@ -527,6 +540,10 @@ jobs:
           LOCK_OUTCOME: ${{ steps.lock_verification.outcome }}
           TOOL_OUTCOME: ${{ steps.toolchain_install.outcome }}
           FUNCTIONAL_OUTCOME: ${{ steps.functional.outcome }}
+          FUNCTIONAL_STARTED_AT_UTC: ${{ steps.functional.outputs.started_at_utc }}
+          FUNCTIONAL_COMPLETED_AT_UTC: ${{ steps.functional.outputs.completed_at_utc }}
+          FUNCTIONAL_DURATION_SECONDS: ${{ steps.functional.outputs.duration_seconds }}
+          FUNCTIONAL_EXIT_CODE: ${{ steps.functional.outputs.exit_code }}
           NORMALIZATION_OUTCOME: ${{ steps.normalization.outcome }}
           REGRESSION_OUTCOME: ${{ steps.regression.outcome }}
           REGRESSION_STARTED_AT_UTC: ${{ steps.regression.outputs.started_at_utc }}
@@ -730,7 +747,11 @@ jobs:
                 $failureRecords = @(Get-Content -LiteralPath $functionalResultsPath -Raw | ConvertFrom-Json)
               }
               if ($failureRecords.Count -eq 0) {
-                $functionalTimestamp = (Get-Date).ToUniversalTime().ToString('o')
+                $functionalStarted = [string]$env:FUNCTIONAL_STARTED_AT_UTC
+                $functionalCompleted = [string]$env:FUNCTIONAL_COMPLETED_AT_UTC
+                $functionalDurationText = [string]$env:FUNCTIONAL_DURATION_SECONDS
+                $functionalExitText = [string]$env:FUNCTIONAL_EXIT_CODE
+                if ([string]::IsNullOrWhiteSpace($functionalStarted) -or [string]::IsNullOrWhiteSpace($functionalCompleted) -or [string]::IsNullOrWhiteSpace($functionalDurationText) -or [string]::IsNullOrWhiteSpace($functionalExitText)) { throw 'Python functional validation did not report required execution metadata.' }
                 $failureRecords = @([ordered]@{
                   schemaVersion = '1.1.0'
                   name = 'Governed Python functional validation'
@@ -740,12 +761,12 @@ jobs:
                   evidenceSource = 'Automated'
                   command = 'python-project-validation.py'
                   workingDirectory = 'trusted-isolated-workspace'
-                  startedAtUtc = $functionalTimestamp
-                  completedAtUtc = $functionalTimestamp
-                  durationSeconds = 0
+                  startedAtUtc = $functionalStarted
+                  completedAtUtc = $functionalCompleted
+                  durationSeconds = [double]::Parse($functionalDurationText, [Globalization.CultureInfo]::InvariantCulture)
                   runtime = 'CPython 3.12.11 functional runtime'
                   toolVersion = 'python-project-validation.py'
-                  exitCode = 1
+                  exitCode = [int]::Parse($functionalExitText, [Globalization.CultureInfo]::InvariantCulture)
                   summary = 'Governed Python functional validation did not complete successfully.'
                   warnings = @()
                   failureReason = 'Functional validation failed before detailed test records were available.'
