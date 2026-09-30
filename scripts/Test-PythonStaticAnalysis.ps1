@@ -30,15 +30,6 @@ try {
         if($ruff.timedOut){ throw 'Ruff timed out.' }; if($ruff.exitCode -notin @(0,1)){ throw "Ruff failed: $($ruff.stderr)" }
         foreach($item in @($ruff.stdout|ConvertFrom-Json)){
             $rel=[IO.Path]::GetRelativePath($root,$item.filename).Replace('\','/')
-            $reviewedTestSubprocess = $false
-            if (
-                $rel -eq 'tests/python/python_project_validation_tests.py' -and
-                $item.code -eq 'S603'
-            ) {
-                $sourceLines = @(Get-Content -LiteralPath $item.filename)
-                $reportedLine = [int]$item.location.row
-                $callMatches = @($sourceLines | Select-String -Pattern '^\s*result = subprocess\.run\(
-            }
             $reviewedExecutorFinding = (
                 $Profile -eq 'standards-maintainer' -and
                 $item.code -eq 'S603' -and
@@ -47,82 +38,8 @@ try {
                     "${rel}:$($item.location.row)" -in @(
                         'scripts/python-project-validation.py:126',
                         'scripts/Install-BashProjectToolchain.py:234',
-                        'scripts/bash-project-validation.py:433'
-                    ) -or
-                    $reviewedTestSubprocess
-                )
-            )
-            $reviewedHttpsFinding = (
-                $Profile -eq 'standards-maintainer' -and
-                $item.code -eq 'S310' -and
-                $rel -eq 'scripts/Install-BashProjectToolchain.py' -and
-                $item.location.row -eq 210 -and
-                $item.message -eq 'Audit URL open for permitted schemes. Allowing use of `file:` or custom schemes is often unexpected.'
-            )
-            if($reviewedExecutorFinding -or $reviewedHttpsFinding){ continue }
-            $findings.Add([ordered]@{tool='Ruff';rule=$item.code;path=$rel;line=$item.location.row;message=$item.message})
-        }
-    }
-    $tools.python=[ordered]@{pathHash=(Get-FileHash -LiteralPath $PythonPath -Algorithm SHA256).Hash.ToLowerInvariant()}; $tools.ruff=[ordered]@{version='0.15.22';sha256=(Get-FileHash -LiteralPath $RuffPath -Algorithm SHA256).Hash.ToLowerInvariant()}
-    $status=if($findings.Count){'Failed'}else{'Passed'}
-} catch { $findings.Add([ordered]@{tool='Validator';rule='PYV001';path='.';line=0;message=$_.Exception.Message}); $status=if($_.Exception.Message -match 'unavailable|timed out'){'Blocked'}else{'Failed'} }
-$report=[ordered]@{schemaVersion='1.0.0';status=$status;profile=$Profile;files=@($files|ForEach-Object{[ordered]@{path=$_.relativePath;bytes=$_.bytes;excluded=$_.excluded}});exclusions=@($exclusions);tools=$tools;findings=@($findings|Select-Object -First 500)}
-if($OutputJson){$out=if([IO.Path]::IsPathRooted($OutputJson)){[IO.Path]::GetFullPath($OutputJson)}else{[IO.Path]::GetFullPath((Join-Path $root $OutputJson))};$outputRoot=if($AllowedOutputRoot){[IO.Path]::GetFullPath($AllowedOutputRoot)}else{$root};if(-not $out.StartsWith($outputRoot.TrimEnd([IO.Path]::DirectorySeparatorChar)+[IO.Path]::DirectorySeparatorChar,[StringComparison]::Ordinal)){throw 'OutputJson must remain beneath the allowed output root.'}; New-Item -ItemType Directory -Path (Split-Path $out -Parent) -Force|Out-Null; $report|ConvertTo-Json -Depth 12|Set-Content -LiteralPath $out -Encoding utf8}
-"[$status] PythonStaticAnalysis: $($findings.Count) finding(s)."; if($status -eq 'Passed'){exit 0}; if($status -eq 'Blocked'){exit 3}; exit 1
-)
-                if ($callMatches.Count -eq 1) {
-                    $callLine = [int]$callMatches[0].LineNumber
-                    $argumentLineIndex = $callLine
-                    if (
-                        $argumentLineIndex -lt $sourceLines.Count -and
-                        $sourceLines[$argumentLineIndex] -match '^\s*\[sys\.executable,\s*"-I",\s*"-c",\s*child_program\],?\s*
-            }
-            $reviewedExecutorFinding = (
-                $Profile -eq 'standards-maintainer' -and
-                $item.code -eq 'S603' -and
-                $item.message -eq '`subprocess` call: check for execution of untrusted input' -and
-                (
-                    "${rel}:$($item.location.row)" -in @(
-                        'scripts/python-project-validation.py:126',
-                        'scripts/Install-BashProjectToolchain.py:234',
-                        'scripts/bash-project-validation.py:433'
-                    ) -or
-                    $reviewedTestSubprocess
-                )
-            )
-            $reviewedHttpsFinding = (
-                $Profile -eq 'standards-maintainer' -and
-                $item.code -eq 'S310' -and
-                $rel -eq 'scripts/Install-BashProjectToolchain.py' -and
-                $item.location.row -eq 210 -and
-                $item.message -eq 'Audit URL open for permitted schemes. Allowing use of `file:` or custom schemes is often unexpected.'
-            )
-            if($reviewedExecutorFinding -or $reviewedHttpsFinding){ continue }
-            $findings.Add([ordered]@{tool='Ruff';rule=$item.code;path=$rel;line=$item.location.row;message=$item.message})
-        }
-    }
-    $tools.python=[ordered]@{pathHash=(Get-FileHash -LiteralPath $PythonPath -Algorithm SHA256).Hash.ToLowerInvariant()}; $tools.ruff=[ordered]@{version='0.15.22';sha256=(Get-FileHash -LiteralPath $RuffPath -Algorithm SHA256).Hash.ToLowerInvariant()}
-    $status=if($findings.Count){'Failed'}else{'Passed'}
-} catch { $findings.Add([ordered]@{tool='Validator';rule='PYV001';path='.';line=0;message=$_.Exception.Message}); $status=if($_.Exception.Message -match 'unavailable|timed out'){'Blocked'}else{'Failed'} }
-$report=[ordered]@{schemaVersion='1.0.0';status=$status;profile=$Profile;files=@($files|ForEach-Object{[ordered]@{path=$_.relativePath;bytes=$_.bytes;excluded=$_.excluded}});exclusions=@($exclusions);tools=$tools;findings=@($findings|Select-Object -First 500)}
-if($OutputJson){$out=if([IO.Path]::IsPathRooted($OutputJson)){[IO.Path]::GetFullPath($OutputJson)}else{[IO.Path]::GetFullPath((Join-Path $root $OutputJson))};$outputRoot=if($AllowedOutputRoot){[IO.Path]::GetFullPath($AllowedOutputRoot)}else{$root};if(-not $out.StartsWith($outputRoot.TrimEnd([IO.Path]::DirectorySeparatorChar)+[IO.Path]::DirectorySeparatorChar,[StringComparison]::Ordinal)){throw 'OutputJson must remain beneath the allowed output root.'}; New-Item -ItemType Directory -Path (Split-Path $out -Parent) -Force|Out-Null; $report|ConvertTo-Json -Depth 12|Set-Content -LiteralPath $out -Encoding utf8}
-"[$status] PythonStaticAnalysis: $($findings.Count) finding(s)."; if($status -eq 'Passed'){exit 0}; if($status -eq 'Blocked'){exit 3}; exit 1
- -and
-                        $reportedLine -in @($callLine, ($callLine + 1))
-                    ) {
-                        $reviewedTestSubprocess = $true
-                    }
-                }
-            }
-            $reviewedExecutorFinding = (
-                $Profile -eq 'standards-maintainer' -and
-                $item.code -eq 'S603' -and
-                $item.message -eq '`subprocess` call: check for execution of untrusted input' -and
-                (
-                    "${rel}:$($item.location.row)" -in @(
-                        'scripts/python-project-validation.py:126',
-                        'scripts/Install-BashProjectToolchain.py:234',
-                        'scripts/bash-project-validation.py:433'
+                        'scripts/bash-project-validation.py:433',
+                        'tests/python/python_project_validation_tests.py:426'
                     ) -or
                     $reviewedTestSubprocess
                 )
