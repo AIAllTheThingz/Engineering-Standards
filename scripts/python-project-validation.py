@@ -22,7 +22,7 @@ import time
 import tomllib
 import venv
 import zipfile
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -1477,6 +1477,11 @@ def make_evidence(
     effective = status or ("Passed" if code == 0 else "Failed")
     sanitized = sanitize(output, roots)
     reason = sanitized[-1000:] or "Required validation did not complete."
+    # Callers record this immediately after the command returns, so the measured
+    # duration places the start; stamping both ends here would report a multi-second
+    # run with near-identical timestamps.
+    completed_at = datetime.now(UTC)
+    started_at = completed_at - timedelta(seconds=duration)
     return {
         "schemaVersion": "1.1.0",
         "name": name,
@@ -1486,8 +1491,8 @@ def make_evidence(
         "evidenceSource": "Automated",
         "command": sanitize(" ".join(command), roots),
         "workingDirectory": "trusted-isolated-workspace",
-        "startedAtUtc": utc(),
-        "completedAtUtc": utc(),
+        "startedAtUtc": started_at.isoformat().replace("+00:00", "Z"),
+        "completedAtUtc": completed_at.isoformat().replace("+00:00", "Z"),
         "durationSeconds": round(duration, 3),
         "runtime": f"CPython {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
         "toolName": tool_name,

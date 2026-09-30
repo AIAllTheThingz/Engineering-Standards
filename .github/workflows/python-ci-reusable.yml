@@ -71,12 +71,12 @@ jobs:
             if ($env:CALLER_PYTHON_VERSION -cne '3.12.11') { throw 'python-version must be the reviewed exact version 3.12.11.' }
             $candidate = [string]$env:CALLER_PROJECT_PATH
             if ([string]::IsNullOrWhiteSpace($candidate)) { throw 'project-path must not be empty.' }
-            if ([IO.Path]::IsPathRooted($candidate) -or $candidate -match '(^|[\\/])\.\.([\\/]|$)') { throw 'project-path must be repository-relative without traversal.' }
+            if ([IO.Path]::IsPathRooted($candidate) -or $candidate -match '(^|/)\.\.(/|$)') { throw 'project-path must be repository-relative without traversal.' }
             $rootItem = Get-Item -LiteralPath (Join-Path $env:GITHUB_WORKSPACE 'caller') -Force
             if ($rootItem.LinkType -or ($rootItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'caller checkout root must not be a link or reparse point.' }
             $root = $rootItem.FullName
             $current = $root
-            foreach ($component in @($candidate -split '[\\/]')) {
+            foreach ($component in @($candidate -split '/')) {
               if ([string]::IsNullOrEmpty($component) -or $component -eq '.') { continue }
               $current = Join-Path $current $component
               $componentItem = Get-Item -LiteralPath $current -Force
@@ -389,14 +389,16 @@ jobs:
             $lockRecord = [ordered]@{ schemaVersion='1.1.0'; name='Python toolchain lock closure'; category='security'; status='Passed'; requiredValidation=$true; evidenceSource='Automated'; command=$lockCommand; workingDirectory='trusted-isolated-workspace'; startedAtUtc=$lockStarted; completedAtUtc=$lockCompleted; durationSeconds=[double]::Parse($lockDurationText,[Globalization.CultureInfo]::InvariantCulture); runtime='CPython 3.13.2 resolver and CPython 3.12.11 functional runtime'; toolVersion='python-project-validation.py'; exitCode=0; summary='Python toolchain lock closure completed successfully.'; warnings=@(); failureReason=$null; blockedReason=$null; notApplicableRationale=$null; details=[ordered]@{ outcome='success'; resolverAvailable=$true; logPath='evidence/lock-verification.log' } }
             $lockRecord | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'phase-lock-verification.json') -Encoding utf8
           }
-          if ($env:NORMALIZATION_OUTCOME -eq 'failure') {
+          if ($env:NORMALIZATION_OUTCOME -in @('success','failure')) {
+            $normalizationPassed = $env:NORMALIZATION_OUTCOME -eq 'success'
             $normalizationStarted = [string]$env:NORMALIZATION_STARTED_AT_UTC
             $normalizationCompleted = [string]$env:NORMALIZATION_COMPLETED_AT_UTC
             $normalizationDurationText = [string]$env:NORMALIZATION_DURATION_SECONDS
             $normalizationExitText = [string]$env:NORMALIZATION_EXIT_CODE
             if ([string]::IsNullOrWhiteSpace($normalizationStarted) -or [string]::IsNullOrWhiteSpace($normalizationCompleted) -or [string]::IsNullOrWhiteSpace($normalizationDurationText) -or [string]::IsNullOrWhiteSpace($normalizationExitText)) { throw 'Python evidence normalization did not report required execution metadata.' }
-            $normalizationRecord = [ordered]@{ schemaVersion='1.1.0'; name='Python evidence normalization'; category='test'; status='Failed'; requiredValidation=$true; evidenceSource='Automated'; command='Normalize-PythonFunctionalEvidence.py'; workingDirectory='trusted-isolated-workspace'; startedAtUtc=$normalizationStarted; completedAtUtc=$normalizationCompleted; durationSeconds=[double]::Parse($normalizationDurationText,[Globalization.CultureInfo]::InvariantCulture); runtime='standards-owned hash-locked Python toolchain'; toolVersion='Normalize-PythonFunctionalEvidence.py'; exitCode=[int]::Parse($normalizationExitText,[Globalization.CultureInfo]::InvariantCulture); summary='Python functional evidence normalization did not complete successfully.'; warnings=@(); failureReason='Evidence normalization failed.'; blockedReason=$null; notApplicableRationale=$null; details=[ordered]@{ outcome='failure' } }
-            $normalizationRecord | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'phase-normalization-failure.json') -Encoding utf8
+            $normalizationRecord = [ordered]@{ schemaVersion='1.1.0'; name='Python evidence normalization'; category='test'; status=$(if($normalizationPassed){'Passed'}else{'Failed'}); requiredValidation=$true; evidenceSource='Automated'; command='Normalize-PythonFunctionalEvidence.py'; workingDirectory='trusted-isolated-workspace'; startedAtUtc=$normalizationStarted; completedAtUtc=$normalizationCompleted; durationSeconds=[double]::Parse($normalizationDurationText,[Globalization.CultureInfo]::InvariantCulture); runtime='standards-owned hash-locked Python toolchain'; toolVersion='Normalize-PythonFunctionalEvidence.py'; exitCode=[int]::Parse($normalizationExitText,[Globalization.CultureInfo]::InvariantCulture); summary=$(if($normalizationPassed){'Python functional evidence normalization completed successfully.'}else{'Python functional evidence normalization did not complete successfully.'}); warnings=@(); failureReason=$(if($normalizationPassed){$null}else{'Evidence normalization failed.'}); blockedReason=$null; notApplicableRationale=$null; details=[ordered]@{ outcome='failure' } }
+            $normalizationRecordName = if ($normalizationPassed) { 'phase-normalization.json' } else { 'phase-normalization-failure.json' }
+            $normalizationRecord | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidenceRoot $normalizationRecordName) -Encoding utf8
           }
 
       - name: Stage Python completion source metadata
@@ -634,7 +636,11 @@ jobs:
             if (-not (Test-Path -LiteralPath $lockRecordPath -PathType Leaf)) { throw 'Successful Python lock-verification record is unavailable.' }
             $lockVerificationRecord = Get-Content -LiteralPath $lockRecordPath -Raw | ConvertFrom-Json
             $testResultPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json'
-            $allTestRecords = @($lockVerificationRecord, $toolchainInstallRecord, $regressionRecord) + @(Get-Content -LiteralPath $testResultPath -Raw | ConvertFrom-Json)
+            $normalizationPassPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-normalization.json'
+            if (-not (Test-Path -LiteralPath $normalizationPassPath -PathType Leaf)) { throw 'Successful Python evidence normalization record is unavailable.' }
+            if ($null -eq $regressionRecord) { throw 'Successful Python validator regression record is unavailable.' }
+            $normalizationRecord = Get-Content -LiteralPath $normalizationPassPath -Raw | ConvertFrom-Json
+            $allTestRecords = @($lockVerificationRecord, $toolchainInstallRecord, $regressionRecord, $normalizationRecord) + @(Get-Content -LiteralPath $testResultPath -Raw | ConvertFrom-Json)
             $allTestRecords | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath $testResultPath -Encoding utf8
             & ./standards/scripts/New-CompletionEvidence.ps1 `
               -RepositoryPath $env:PYTHON_WORK_ROOT `
@@ -644,7 +650,7 @@ jobs:
               -GovernanceVersion 1.1.0 `
               -RiskClassification Moderate `
               -Summary 'Governed Python toolchain lock closure, static analysis, tests, type checking, dependency audit, build, archive inspection, installation, smoke test, and SBOM validation completed.' `
-              -CommandsExecuted @($lockVerificationCommand,$toolchainInstallCommand,'python-project-validation.py') `
+              -CommandsExecuted @($lockVerificationCommand,$toolchainInstallCommand,'python-project-validation.py',[string]$regressionRecord.command,'Normalize-PythonFunctionalEvidence.py') `
               -ArtifactPath @('evidence/lock-verification.log','evidence/validator-regression.log','evidence/local-test-results.json','evidence/python-tests.json','evidence/python-type-check.json','evidence/python-dependency-audit.json','evidence/python-build.json','evidence/python-project-sbom.cdx.json','evidence/python-toolchain-sbom.cdx.json') `
               -Repository $env:GITHUB_REPOSITORY `
               -Branch $env:GITHUB_REF_NAME `
@@ -753,8 +759,14 @@ jobs:
                 $failureRecords += (Get-Content -LiteralPath $normalizationFailurePath -Raw | ConvertFrom-Json)
                 $commandsExecuted += 'Normalize-PythonFunctionalEvidence.py'
               }
+              $normalizationPassPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-normalization.json'
+              if (Test-Path -LiteralPath $normalizationPassPath -PathType Leaf) {
+                $failureRecords += (Get-Content -LiteralPath $normalizationPassPath -Raw | ConvertFrom-Json)
+                $commandsExecuted += 'Normalize-PythonFunctionalEvidence.py'
+              }
               if ($null -ne $regressionRecord) {
                 $failureRecords += $regressionRecord
+                $commandsExecuted += [string]$regressionRecord.command
                 $failureArtifacts += 'evidence/validator-regression.log'
               }
             }
@@ -776,6 +788,7 @@ jobs:
               }
               if ($null -ne $regressionRecord) {
                 $failureRecords += $regressionRecord
+                $commandsExecuted += [string]$regressionRecord.command
                 $failureArtifacts += 'evidence/validator-regression.log'
               }
             }

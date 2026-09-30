@@ -72,7 +72,7 @@ Describe 'Governed Python project support' {
         $timeoutMatch.Success | Should -BeTrue
         [int]$timeoutMatch.Groups['minutes'].Value | Should -BeGreaterOrEqual 60
         $script:workflow | Should -Match '\$env:GITHUB_EVENT_PATH'
-        $script:workflow | Should -Match "\$env:GITHUB_EVENT_NAME -eq 'push'"
+        $script:workflow | Should -Match '\$env:GITHUB_EVENT_NAME -eq ''push'''
         $script:workflow | Should -Match '\$eventPayload\.before'
         $script:workflow | Should -Match '\$eventPayload\.pull_request\.base\.sha'
     }
@@ -147,6 +147,12 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'startedAtUtc=\$normalizationStarted; completedAtUtc=\$normalizationCompleted; durationSeconds=\[double\]::Parse\(\$normalizationDurationText'
         $script:workflow | Should -Match 'exitCode=\[int\]::Parse\(\$normalizationExitText'
         $script:workflow | Should -Not -Match 'normalizationTimestamp'
+        $script:workflow | Should -Match 'status=\$\(if\(\$normalizationPassed\)\{''Passed''\}else\{''Failed''\}\)'
+        $script:workflow | Should -Match 'phase-normalization\.json'
+        $script:workflow | Should -Match '\$allTestRecords = @\(\$lockVerificationRecord, \$toolchainInstallRecord, \$regressionRecord, \$normalizationRecord\)'
+        $script:workflow | Should -Match '(?s)\$failureRecords \+= \$regressionRecord\s*\$commandsExecuted \+= \[string\]\$regressionRecord\.command'
+        $script:workflow | Should -Match '\$candidate -split ''/'''
+        $script:workflow | Should -Not -Match '\$candidate -split ''\[\\\\/\]'''
         $script:workflow | Should -Match '\$toolchainInstallOutcome = \[string\]\$env:TOOL_OUTCOME'
         $script:workflow | Should -Match 'started_at_utc=\$installStartedAtUtc'
         $script:workflow | Should -Match 'completed_at_utc=\$completedAtUtc'
@@ -187,7 +193,7 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match '\$verificationCommand = ''<CPython-3\.13\.2 with pip==26\.2\.1> -I standards/scripts/python-project-validation\.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci\.lock --resolver-python <CPython-3\.13\.2> --runtime-python <CPython-3\.12\.11>'
         $script:workflow | Should -Match '"verification_command=\$verificationCommand"'
         $script:workflow | Should -Match '\$lockVerificationCommand = \[string\]\$env:LOCK_COMMAND'
-        $script:workflow | Should -Match '-CommandsExecuted @\(\$lockVerificationCommand,\$toolchainInstallCommand,''python-project-validation\.py''\)'
+        $script:workflow | Should -Match '-CommandsExecuted @\(\$lockVerificationCommand,\$toolchainInstallCommand,''python-project-validation\.py'',\[string\]\$regressionRecord\.command,''Normalize-PythonFunctionalEvidence\.py''\)'
         $script:workflow | Should -Match 'Join-Path \$env:RUNNER_TEMP ''python-lock-verification\.log'''
         $script:workflow | Should -Match 'New-Item -ItemType File -Path \$durableLockLogPath -Force'
         $script:workflow | Should -Match 'Set-Content -LiteralPath \$durableLockLogPath -Value ''Python toolchain lock verification started\.'''
@@ -206,7 +212,7 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match '\$failureRecords \+= \(Get-Content -LiteralPath \$normalizationFailurePath -Raw \| ConvertFrom-Json\)'
         $script:workflow | Should -Match 'name\s*=\s*''Python workflow input validation'''
         $script:workflow | Should -Match 'phase-toolchain-installation\.json'
-        $script:workflow | Should -Match '-CommandsExecuted @\(\$lockVerificationCommand,\$toolchainInstallCommand,''python-project-validation\.py''\)'
+        $script:workflow | Should -Match '-CommandsExecuted @\(\$lockVerificationCommand,\$toolchainInstallCommand,''python-project-validation\.py'',\[string\]\$regressionRecord\.command,''Normalize-PythonFunctionalEvidence\.py''\)'
         $completionWorkflow = $script:workflow.Substring($completionIndex, $evidenceIndex - $completionIndex)
         $failureBody = $completionWorkflow
         $inputFailureIndex = $failureBody.IndexOf("if (`$inputValidationOutcome -ne 'success')")
