@@ -50,7 +50,7 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match '\$lockParserPython -I standards/scripts/python-project-validation\.py'
         $script:workflow | Should -Match '--resolver-python'
         $script:workflow | Should -Match '--runtime-python'
-        $script:workflow | Should -Match '\$runtimePython = ''\$\{\{ steps\.runtime\.outputs\.python-path \}\}'''
+        $script:workflow | Should -Match '\$runtimePython = \[string\]\$env:FUNCTIONAL_RUNTIME_PYTHON'
         $script:workflow | Should -Not -Match 'Get-Command python -CommandType Application'
         $script:driver | Should -Match '"--dry-run"'
         $script:driver | Should -Match '"--ignore-installed"'
@@ -93,10 +93,6 @@ Describe 'Governed Python project support' {
         $inputValidation.Groups['body'].Value | Should -Match 'input-validation-metadata\.json'
         $inputValidation.Groups['body'].Value | Should -Match 'validated-project-path\.txt'
         $inputValidation.Groups['body'].Value | Should -Not -Match 'GITHUB_OUTPUT'
-        $inputValidation.Groups['body'].Value | Should -Match 'CALLER_PYTHON_VERSION:\s*\$\{\{ inputs\.python-version \}\}'
-        $inputValidation.Groups['body'].Value | Should -Match 'CALLER_PROJECT_PATH:\s*\$\{\{ inputs\.project-path \}\}'
-        $inputValidation.Groups['body'].Value | Should -Match '\$env:CALLER_PYTHON_VERSION'
-        $inputValidation.Groups['body'].Value | Should -Match '\$env:CALLER_PROJECT_PATH'
         $inputValidation.Groups['body'].Value | Should -Match 'project-path must not contain a link or reparse-point component\.'
         $inputValidation.Groups['body'].Value | Should -Match '\$resolvedProject\.StartsWith\(\$resolvedRoot'
         $inputValidation.Groups['body'].Value | Should -Not -Match "'\$\{\{ inputs\.python-version \}\}'"
@@ -106,17 +102,18 @@ Describe 'Governed Python project support' {
             $step.Success | Should -BeTrue
             $step.Groups['body'].Value | Should -Match "if:\s*steps\.inputs\.outcome\s*==\s*'success'"
         }
-        $script:workflow | Should -Match '\$inputValidationOutcome = ''\$\{\{ steps\.inputs\.outcome \}\}'''
+        $script:workflow | Should -Match '\$inputValidationOutcome = \[string\]\$env:INPUT_OUTCOME'
         $script:workflow | Should -Match '(?s)- name: Prepare Python phase evidence\s+id:\s*phase_evidence'
         $script:workflow | Should -Match 'name=''Python workflow input validation'''
         $script:workflow | Should -Match 'status=''Failed'''
-        $script:workflow | Should -Match 'failureReason=\$inputError'
-        $script:workflow | Should -Match 'inputs = ''\$\{\{ steps\.inputs\.outcome \}\}'''
+        $script:workflow | Should -Match 'failureReason=\[string\]\$inputMetadata\.error'
+        $script:workflow | Should -Match 'inputs = \[string\]\$env:INPUT_OUTCOME'
         $script:workflow | Should -Match 'inputValidationOutcome = \$inputValidationOutcome'
         $functional = [regex]::Match($script:workflow, '(?s)- name: Run governed functional validation\s*(?<body>.*?)(?=\r?\n\s*- name:)')
         $functional.Success | Should -BeTrue
-        $functional.Groups['body'].Value | Should -Match 'VALIDATED_PROJECT_PATH:\s*\$\{\{ steps\.inputs\.outputs\.project_path \}\}'
-        $functional.Groups['body'].Value | Should -Match '--project "\$VALIDATED_PROJECT_PATH"'
+        $functional.Groups['body'].Value | Should -Match 'validated-project-path\.txt'
+        $functional.Groups['body'].Value | Should -Match '\[IO\.File\]::ReadAllText'
+        $functional.Groups['body'].Value | Should -Match '--project \$validatedProjectPath'
         $functional.Groups['body'].Value | Should -Not -Match '\$\{\{ inputs\.project-path \}\}'
     }
 
@@ -139,7 +136,7 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'Hash-locked Python toolchain package installation failed\.'
         $script:workflow | Should -Match 'Hash-locked Python toolchain pip check failed\.'
         $script:workflow | Should -Match 'Isolated Python toolchain interpreter assertion failed\.'
-        $script:workflow | Should -Match '\$toolchainInstallOutcome = ''\$\{\{ steps\.toolchain_install\.outcome \}\}'''
+        $script:workflow | Should -Match '\$toolchainInstallOutcome = \[string\]\$env:TOOL_OUTCOME'
         $script:workflow | Should -Match 'started_at_utc=\$installStartedAtUtc'
         $script:workflow | Should -Match 'completed_at_utc=\$completedAtUtc'
         $script:workflow | Should -Match 'duration_seconds='
@@ -165,8 +162,8 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'verification_started_at_utc='
         $script:workflow | Should -Match 'verification_completed_at_utc='
         $script:workflow | Should -Match 'verification_duration_seconds='
-        $script:workflow | Should -Match '\$lockVerificationStartedAtUtc = ''\$\{\{ steps\.lock_verification\.outputs\.verification_started_at_utc \}\}'''
-        $script:workflow | Should -Match '\$lockVerificationCompletedAtUtc = ''\$\{\{ steps\.lock_verification\.outputs\.verification_completed_at_utc \}\}'''
+        $script:workflow | Should -Match '\$lockVerificationStartedAtUtc = \[string\]\$env:LOCK_STARTED_AT_UTC'
+        $script:workflow | Should -Match '\$lockVerificationCompletedAtUtc = \[string\]\$env:LOCK_COMPLETED_AT_UTC'
         $script:workflow | Should -Match '\$lockVerificationDurationSeconds = \[double\]::Parse\('
         $script:workflow | Should -Match 'startedAtUtc = \$lockVerificationStartedAtUtc'
         $script:workflow | Should -Match 'completedAtUtc = \$lockVerificationCompletedAtUtc'
@@ -176,7 +173,7 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'exitCode = if \(\$lockVerificationBlocked\) \{ \$null \} else \{ 1 \}'
         $script:workflow | Should -Match '\$verificationCommand = ''<CPython-3\.13\.2 with pip==26\.2\.1> -I standards/scripts/python-project-validation\.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci\.lock --resolver-python <CPython-3\.13\.2> --runtime-python <CPython-3\.12\.11>'
         $script:workflow | Should -Match '"verification_command=\$verificationCommand"'
-        $script:workflow | Should -Match '\$lockVerificationCommand = ''\$\{\{ steps\.lock_verification\.outputs\.verification_command \}\}'''
+        $script:workflow | Should -Match '\$lockVerificationCommand = \[string\]\$env:LOCK_COMMAND'
         $script:workflow | Should -Match '-CommandsExecuted @\(\$lockVerificationCommand,\$toolchainInstallCommand,''python-project-validation\.py''\)'
         $script:workflow | Should -Match 'Join-Path \$env:RUNNER_TEMP ''python-lock-verification\.log'''
         $script:workflow | Should -Match 'New-Item -ItemType File -Path \$durableLockLogPath -Force'
@@ -184,7 +181,7 @@ Describe 'Governed Python project support' {
         $script:workflow | Should -Match 'Copy-Item -LiteralPath \$durableLockLogPath -Destination \$lockEvidenceLogPath'
         $script:workflow | Should -Match "status = 'Passed'"
         $script:workflow | Should -Match 'Python toolchain lock closure completed successfully\.'
-        $script:workflow | Should -Match '\$regressionOutcome = ''\$\{\{ steps\.regression\.outcome \}\}'''
+        $script:workflow | Should -Match '\$regressionOutcome = \[string\]\$env:REGRESSION_OUTCOME'
         $script:workflow | Should -Match 'name = ''Python validator regression tests'''
         $script:workflow | Should -Match 'status = if \(\$regressionOutcome -eq ''success''\) \{ ''Passed'' \} else \{ ''Failed'' \}'
         $script:workflow | Should -Match 'evidence/validator-regression\.log'
