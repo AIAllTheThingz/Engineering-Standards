@@ -1517,6 +1517,22 @@ def write_record(evidence_dir: Path, filename: str, record: Any) -> None:
     (evidence_dir / filename).write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
 
 
+def verify_sbom_integrity(record: dict[str, Any], sbom_path: Path) -> bool:
+    """Fail a Passed SBOM record whose file was altered or removed after it was generated."""
+    if record.get("status") != "Passed":
+        return True
+    recorded = record.get("details", {}).get("sha256")
+    if sbom_path.is_file() and not sbom_path.is_symlink() and isinstance(recorded, str) and sha256(sbom_path) == recorded:
+        record["details"]["sha256Verified"] = True
+        return True
+    record["status"] = "Failed"
+    record["exitCode"] = 1
+    record["summary"] = f"{record['name']} failed."
+    record["failureReason"] = "The SBOM file was modified or removed after it was generated, so it no longer matches its recorded digest."
+    record["details"]["sha256Verified"] = False
+    return False
+
+
 def generate_sbom_record(
     *,
     name: str,
@@ -1772,6 +1788,10 @@ def validate(args: argparse.Namespace) -> int:
         audit_record = make_evidence("Python dependency audit", "security", ["pip-audit", "requirements-runtime.lock"], None, "No third-party runtime dependencies are declared.", 0, "pip-audit", versions["pip_audit"], roots, {"dependencyCount": 0}, "NotApplicable")
     records.append(audit_record)
     write_record(evidence_dir, "python-dependency-audit.json", audit_record)
+
+    # Every step that executes caller code has finished; confirm the early toolchain SBOM is still the file recorded.
+    if not verify_sbom_integrity(toolchain_sbom_record, evidence_dir / "python-toolchain-sbom.cdx.json"):
+        failed = True
 
     hosted = os.environ.get("GITHUB_ACTIONS") == "true"
     hosted_record = make_evidence("GitHub-hosted workflow execution", "workflow", ["GitHub Actions governed Python job"], 0 if hosted else None, "Hosted execution is active." if hosted else "Hosted execution was not performed locally.", 0, "GitHub Actions", os.environ.get("RUNNER_OS", "local"), roots, status="Passed" if hosted else "NotRun")

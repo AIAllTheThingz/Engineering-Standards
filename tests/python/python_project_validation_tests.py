@@ -2138,3 +2138,45 @@ def test_toolchain_sbom_metadata_is_read_only_and_replaceable(tmp_path: Path) ->
     second = validator.write_toolchain_sbom_pyproject(tmp_path)
     require(first == second and second.is_file(), "metadata was not rewritten in place")
     require(not second.stat().st_mode & stat.S_IWUSR, "standards-owned SBOM metadata must be read-only")
+
+
+def _sbom_record(digest: str | None) -> dict[str, object]:
+    details: dict[str, object] = {"sourceLock": "requirements-ci.lock"}
+    if digest is not None:
+        details["sha256"] = digest
+    return {"name": "Python toolchain SBOM", "status": "Passed", "exitCode": 0, "details": details}
+
+
+def test_sbom_integrity_accepts_the_unmodified_file(tmp_path: Path) -> None:
+    sbom = tmp_path / "python-toolchain-sbom.cdx.json"
+    sbom.write_text('{"bomFormat": "CycloneDX"}', encoding="utf-8")
+    record = _sbom_record(validator.sha256(sbom))
+    require(validator.verify_sbom_integrity(record, sbom), "unmodified SBOM was rejected")
+    require(record["status"] == "Passed" and record["details"]["sha256Verified"] is True, "verified SBOM record changed")
+
+
+def test_sbom_integrity_rejects_a_modified_removed_or_undigested_file(tmp_path: Path) -> None:
+    sbom = tmp_path / "python-toolchain-sbom.cdx.json"
+    sbom.write_text('{"bomFormat": "CycloneDX"}', encoding="utf-8")
+    digest = validator.sha256(sbom)
+    sbom.write_text('{"bomFormat": "tampered"}', encoding="utf-8")
+    modified = _sbom_record(digest)
+    require(not validator.verify_sbom_integrity(modified, sbom), "modified SBOM was accepted")
+    require(modified["status"] == "Failed" and modified["exitCode"] == 1, "modified SBOM did not fail its record")
+    sbom.unlink()
+    removed = _sbom_record(digest)
+    require(not validator.verify_sbom_integrity(removed, sbom), "removed SBOM was accepted")
+    sbom.write_text("{}", encoding="utf-8")
+    require(not validator.verify_sbom_integrity(_sbom_record(None), sbom), "SBOM without a recorded digest was accepted")
+    already_failed = {"name": "x", "status": "Failed", "details": {}}
+    require(validator.verify_sbom_integrity(already_failed, sbom), "a record that already failed must be left as is")
+
+
+def test_toolchain_sbom_integrity_is_verified_after_all_caller_code_has_run() -> None:
+    source = inspect.getsource(validator.validate)
+    verification = source.index("verify_sbom_integrity(toolchain_sbom_record")
+    for caller_code_step in ("build_command = ", "pytest_command = ", "smoke_command = "):
+        require(
+            source.index(caller_code_step) < verification,
+            f"SBOM integrity is verified before {caller_code_step!r}",
+        )
