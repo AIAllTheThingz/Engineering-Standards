@@ -685,6 +685,48 @@ Describe 'Validate evidence action' {
                 }
             }
         }
+        It 'distinguishes non-UTF8 Git path bytes in content fingerprints' {
+            if ($IsWindows) {
+                Set-ItResult -Skipped -Because 'The raw-byte pathname fixture is Linux-only.'
+                return
+            }
+            $identityRoot = Join-Path ([IO.Path]::GetTempPath()) ("completion-nonutf8-path-" + [guid]::NewGuid())
+            $sourceRoot = Join-Path $identityRoot 'source'
+            $project = Join-Path $sourceRoot 'examples/python-project'
+            try {
+                New-Item -ItemType Directory -Path (Join-Path $project 'evidence') -Force | Out-Null
+                Set-Content -LiteralPath (Join-Path $project 'evidence/report.json') -Value '{}' -NoNewline
+                & git -C $sourceRoot init --quiet
+                & git -C $sourceRoot config user.email 'evidence-test@example.invalid'
+                & git -C $sourceRoot config user.name 'Evidence Test'
+                $python = (Get-Command python -CommandType Application | Select-Object -First 1).Source
+                $createCode = 'import os,sys; root=os.fsencode(sys.argv[1]); fd=os.open(root+b"/raw-\\xff", os.O_WRONLY|os.O_CREAT, 0o600); os.write(fd,b"one"); os.close(fd)'
+                & $python -I -c $createCode $sourceRoot
+                $LASTEXITCODE | Should -Be 0
+                & git -C $sourceRoot add --all
+                & git -C $sourceRoot commit --quiet -m 'raw pathname one'
+                $LASTEXITCODE | Should -Be 0
+                $firstCommit = (& git -C $sourceRoot rev-parse HEAD).Trim()
+                & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $project -SourceRepositoryPath $sourceRoot -OutputPath 'evidence/first.json' -ExecutionContext Local -Summary 'Raw path fingerprint one.' -ArtifactPath 'evidence/report.json' -CommandsExecuted @('raw path fixture') -ValidatedCommitSha $firstCommit
+                $LASTEXITCODE | Should -Be 0
+                $first = Get-Content -LiteralPath (Join-Path $project 'evidence/first.json') -Raw | ConvertFrom-Json
+
+                $replaceCode = 'import os,sys; root=os.fsencode(sys.argv[1]); os.unlink(root+b"/raw-\\xff"); fd=os.open(root+b"/raw-\\xfe", os.O_WRONLY|os.O_CREAT, 0o600); os.write(fd,b"one"); os.close(fd)'
+                & $python -I -c $replaceCode $sourceRoot
+                $LASTEXITCODE | Should -Be 0
+                & git -C $sourceRoot add --all
+                & git -C $sourceRoot commit --quiet -m 'raw pathname two'
+                $LASTEXITCODE | Should -Be 0
+                $secondCommit = (& git -C $sourceRoot rev-parse HEAD).Trim()
+                & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $project -SourceRepositoryPath $sourceRoot -OutputPath 'evidence/second.json' -ExecutionContext Local -Summary 'Raw path fingerprint two.' -ArtifactPath 'evidence/report.json' -CommandsExecuted @('raw path fixture') -ValidatedCommitSha $secondCommit
+                $LASTEXITCODE | Should -Be 0
+                $second = Get-Content -LiteralPath (Join-Path $project 'evidence/second.json') -Raw | ConvertFrom-Json
+                $first.validatedContentSha256 | Should -Not -BeExactly $second.validatedContentSha256
+            }
+            finally {
+                if (Test-Path -LiteralPath $identityRoot) { Remove-Item -LiteralPath $identityRoot -Recurse -Force }
+            }
+        }
         It 'binds an available Local content fingerprint to its named validated commit' {
             $identityRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("completion-named-identity-" + [guid]::NewGuid())
             $sourceRoot = Join-Path $identityRoot 'source'

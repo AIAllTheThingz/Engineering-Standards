@@ -174,62 +174,109 @@ function Test-CompletionReceiptPayloadPath {
     )
 }
 
+function Test-RawBytePrefix {
+    param(
+        [Parameter(Mandatory)][byte[]]$Value,
+        [Parameter(Mandatory)][byte[]]$Prefix
+    )
+    if ($Value.Length -lt $Prefix.Length) { return $false }
+    for ($index = 0; $index -lt $Prefix.Length; $index++) {
+        if ($Value[$index] -ne $Prefix[$index]) { return $false }
+    }
+    return $true
+}
+
+function Get-RawGitTreeFingerprint {
+    param(
+        [Parameter(Mandatory)][string]$RepositoryRoot,
+        [Parameter(Mandatory)][string]$CommitSha,
+        [Parameter(Mandatory)][string]$FailurePrefix
+    )
+
+    $gitCommand = @(Get-Command git -CommandType Application -ErrorAction Stop)[0]
+    $startInfo = [Diagnostics.ProcessStartInfo]::new($gitCommand.Source)
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.CreateNoWindow = $true
+    foreach ($argument in @('-C', $RepositoryRoot, 'ls-tree', '-r', '--full-tree', '-z', $CommitSha)) {
+        [void]$startInfo.ArgumentList.Add($argument)
+    }
+    $process = [Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    $output = [IO.MemoryStream]::new()
+    try {
+        if (-not $process.Start()) { throw "$FailurePrefix could not start Git tree enumeration." }
+        $standardErrorTask = $process.StandardError.ReadToEndAsync()
+        $process.StandardOutput.BaseStream.CopyTo($output)
+        $process.WaitForExit()
+        $standardError = $standardErrorTask.GetAwaiter().GetResult()
+        if ($process.ExitCode -ne 0) { throw "$FailurePrefix could not enumerate Git tree content: $standardError" }
+        [byte[]]$treeBytes = $output.ToArray()
+    }
+    finally {
+        $output.Dispose()
+        $process.Dispose()
+    }
+
+    $pythonEvidencePrefix = [Text.Encoding]::ASCII.GetBytes('examples/python-project/evidence/')
+    $bashEvidencePrefix = [Text.Encoding]::ASCII.GetBytes('examples/bash-project/evidence/')
+    $recordHex = [Collections.Generic.List[string]]::new()
+    $segmentStart = 0
+    for ($index = 0; $index -le $treeBytes.Length; $index++) {
+        if ($index -lt $treeBytes.Length -and $treeBytes[$index] -ne 0) { continue }
+        if ($index -eq $segmentStart) {
+            $segmentStart = $index + 1
+            continue
+        }
+        [byte[]]$entry = $treeBytes[$segmentStart..($index - 1)]
+        $segmentStart = $index + 1
+        $tabIndex = [Array]::IndexOf($entry, [byte]9)
+        if ($tabIndex -le 0 -or $tabIndex -ge ($entry.Length - 1)) { throw "$FailurePrefix contains an unsupported tree entry." }
+        $header = [Text.Encoding]::ASCII.GetString($entry[0..($tabIndex - 1)])
+        $match = [regex]::Match($header, '^(?<mode>[0-7]{6}) (?<type>blob|commit) (?<object>[A-Fa-f0-9]{40}|[A-Fa-f0-9]{64})$')
+        if (-not $match.Success) { throw "$FailurePrefix contains an unsupported tree entry header." }
+        [byte[]]$pathBytes = $entry[($tabIndex + 1)..($entry.Length - 1)]
+        if ($pathBytes.Length -eq 0) { throw "$FailurePrefix contains an empty tree path." }
+        if ((Test-RawBytePrefix -Value $pathBytes -Prefix $pythonEvidencePrefix) -or (Test-RawBytePrefix -Value $pathBytes -Prefix $bashEvidencePrefix)) { continue }
+        $recordPrefix = '{0}`0{1}`0{2}`0' -f $match.Groups['mode'].Value, $match.Groups['type'].Value, $match.Groups['object'].Value.ToLowerInvariant()
+        [byte[]]$prefixBytes = [Text.Encoding]::ASCII.GetBytes($recordPrefix)
+        [byte[]]$recordBytes = New-Object byte[] ($prefixBytes.Length + $pathBytes.Length)
+        [Array]::Copy($prefixBytes, 0, $recordBytes, 0, $prefixBytes.Length)
+        [Array]::Copy($pathBytes, 0, $recordBytes, $prefixBytes.Length, $pathBytes.Length)
+        $recordHex.Add([Convert]::ToHexString($recordBytes).ToLowerInvariant())
+    }
+
+    $canonicalHex = $recordHex.ToArray()
+    [Array]::Sort($canonicalHex, [StringComparer]::Ordinal)
+    $payload = [IO.MemoryStream]::new()
+    try {
+        [byte[]]$headerBytes = [Text.Encoding]::ASCII.GetBytes("completion-evidence-content-v1`n")
+        $payload.Write($headerBytes, 0, $headerBytes.Length)
+        foreach ($hex in $canonicalHex) {
+            [byte[]]$recordBytes = [Convert]::FromHexString($hex)
+            $payload.Write($recordBytes, 0, $recordBytes.Length)
+            $payload.WriteByte(10)
+        }
+        return [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($payload.ToArray())).ToLowerInvariant()
+    }
+    finally {
+        $payload.Dispose()
+    }
+}
+
 function Get-ValidatedContentFingerprint {
     param(
         [Parameter(Mandatory)][string]$RepositoryRoot,
         [Parameter(Mandatory)][string]$CommitSha
     )
-
     if ($CommitSha -eq 'unknown') { return $null }
-    if ($CommitSha -notmatch '^[A-Fa-f0-9]{40,64}$') {
-        throw "Validated commit '$CommitSha' must be a Git object identifier."
-    }
+    if ($CommitSha -notmatch '^[A-Fa-f0-9]{40,64}$') { throw "Validated commit '$CommitSha' must be a Git object identifier." }
     $gitProbe = @(& git -C $RepositoryRoot rev-parse --is-inside-work-tree 2>$null)
-    if ($LASTEXITCODE -ne 0 -or ($gitProbe -join '').Trim() -cne 'true') {
-        return $null
-    }
+    if ($LASTEXITCODE -ne 0 -or ($gitProbe -join '').Trim() -cne 'true') { return $null }
     & git -C $RepositoryRoot cat-file -e "$CommitSha^{commit}" 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        throw "Validated commit '$CommitSha' is not available in SourceRepositoryPath."
-    }
-    $treeOutput = @(& git -C $RepositoryRoot ls-tree -r --full-tree -z $CommitSha 2>$null)
-    if ($LASTEXITCODE -ne 0) {
-        throw "Could not enumerate validated commit '$CommitSha' for content identity."
-    }
-    $treeEntries = (($treeOutput -join "`n") -split "`0")
-    $records = [System.Collections.Generic.List[string]]::new()
-    foreach ($entry in $treeEntries) {
-        if ([string]::IsNullOrEmpty([string]$entry)) { continue }
-        $match = [regex]::Match(
-            [string]$entry,
-            '^(?<mode>[0-7]{6}) (?<type>blob|commit) (?<object>[A-Fa-f0-9]{40}|[A-Fa-f0-9]{64})\t(?<path>.+)$'
-        )
-        if (-not $match.Success) {
-            throw "Validated commit '$CommitSha' contains an unsupported tree entry."
-        }
-        $relativePath = $match.Groups['path'].Value
-        if (
-            [string]::IsNullOrEmpty($relativePath) -or
-            $relativePath.StartsWith('"', [StringComparison]::Ordinal) -or
-            $relativePath -match '(^|/)\.\.(/|$)|^(?:/|[A-Za-z]:)|[\x00-\x1F]'
-        ) {
-            throw "Validated commit '$CommitSha' contains an unsafe tree path."
-        }
-        if (Test-CompletionReceiptPayloadPath -RelativePath $relativePath) { continue }
-        $records.Add((
-            '{0}`0{1}`0{2}`0{3}' -f
-            $match.Groups['mode'].Value,
-            $match.Groups['type'].Value,
-            $match.Groups['object'].Value.ToLowerInvariant(),
-            $relativePath
-        ))
-    }
-    $canonicalRecords = $records.ToArray()
-    [Array]::Sort($canonicalRecords, [StringComparer]::Ordinal)
-    $payload = "completion-evidence-content-v1`n$($canonicalRecords -join "`n")`n"
-    return [Convert]::ToHexString(
-        [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($payload))
-    ).ToLowerInvariant()
+    if ($LASTEXITCODE -ne 0) { throw "Validated commit '$CommitSha' is not available in SourceRepositoryPath." }
+    return Get-RawGitTreeFingerprint -RepositoryRoot $RepositoryRoot -CommitSha $CommitSha -FailurePrefix "Validated commit '$CommitSha'"
 }
 
 $validatedCommitTag = Resolve-ValidatedCommitTag -TagName $ValidatedCommitTag -RepositoryRoot $sourceRoot -CommitSha $validatedCommit
