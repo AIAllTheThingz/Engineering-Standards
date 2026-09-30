@@ -90,6 +90,13 @@ Describe 'Governed Python project support' {
         $inputValidation.Groups['body'].Value | Should -Match 'CALLER_PROJECT_PATH:\s*\$\{\{ inputs\.project-path \}\}'
         $inputValidation.Groups['body'].Value | Should -Match '\$env:CALLER_PYTHON_VERSION'
         $inputValidation.Groups['body'].Value | Should -Match '\$env:CALLER_PROJECT_PATH'
+        $inputValidation.Groups['body'].Value | Should -Match 'input-validation-metadata\.json'
+        $inputValidation.Groups['body'].Value | Should -Match 'validated-project-path\.txt'
+        $inputValidation.Groups['body'].Value | Should -Not -Match 'GITHUB_OUTPUT'
+        $inputValidation.Groups['body'].Value | Should -Match 'CALLER_PYTHON_VERSION:\s*\$\{\{ inputs\.python-version \}\}'
+        $inputValidation.Groups['body'].Value | Should -Match 'CALLER_PROJECT_PATH:\s*\$\{\{ inputs\.project-path \}\}'
+        $inputValidation.Groups['body'].Value | Should -Match '\$env:CALLER_PYTHON_VERSION'
+        $inputValidation.Groups['body'].Value | Should -Match '\$env:CALLER_PROJECT_PATH'
         $inputValidation.Groups['body'].Value | Should -Match 'project-path must not contain a link or reparse-point component\.'
         $inputValidation.Groups['body'].Value | Should -Match '\$resolvedProject\.StartsWith\(\$resolvedRoot'
         $inputValidation.Groups['body'].Value | Should -Not -Match "'\$\{\{ inputs\.python-version \}\}'"
@@ -111,6 +118,14 @@ Describe 'Governed Python project support' {
         $functional.Groups['body'].Value | Should -Match 'VALIDATED_PROJECT_PATH:\s*\$\{\{ steps\.inputs\.outputs\.project_path \}\}'
         $functional.Groups['body'].Value | Should -Match '--project "\$VALIDATED_PROJECT_PATH"'
         $functional.Groups['body'].Value | Should -Not -Match '\$\{\{ inputs\.project-path \}\}'
+    }
+
+    It 'keeps GitHub expressions out of executable shell bodies' {
+        $runBlocks = [regex]::Matches($script:workflow, '(?ms)^\s*run:\s*(?:\||>|>-|\|-)\s*\r?\n(?<body>(?:\s{10,}.*\r?\n?)*)')
+        $runBlocks.Count | Should -BeGreaterThan 0
+        foreach ($runBlock in $runBlocks) {
+            $runBlock.Groups['body'].Value | Should -Not -Match '\$\{\{'
+        }
     }
 
     It 'emits validated failure completion evidence when toolchain lock verification does not succeed' {

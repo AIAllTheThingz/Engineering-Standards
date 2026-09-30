@@ -64,7 +64,10 @@ jobs:
           CALLER_PROJECT_PATH: ${{ inputs.project-path }}
         run: |
           $inputStartedAt = (Get-Date).ToUniversalTime()
-          "started_at_utc=$($inputStartedAt.ToString('o'))" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          $inputError = $null
+          $inputExitCode = 0
+          $metadataPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/input-validation-metadata.json'
+          $projectPathFile = Join-Path $env:PYTHON_WORK_ROOT 'evidence/validated-project-path.txt'
           try {
             if ($env:CALLER_PYTHON_VERSION -cne '3.12.11') { throw 'python-version must be the reviewed exact version 3.12.11.' }
             $candidate = [string]$env:CALLER_PROJECT_PATH
@@ -83,18 +86,22 @@ jobs:
             $resolvedRoot = (Resolve-Path -LiteralPath $root).Path
             $resolvedProject = (Resolve-Path -LiteralPath $current).Path
             if (-not ($resolvedProject -eq $resolvedRoot -or $resolvedProject.StartsWith($resolvedRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal))) { throw 'project-path escaped the caller checkout.' }
-            "project_path=$resolvedProject" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-            'exit_code=0' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            [IO.File]::WriteAllText($projectPathFile, $resolvedProject, [Text.UTF8Encoding]::new($false))
           }
           catch {
-            "error=$($_.Exception.Message)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-            'exit_code=1' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            $inputExitCode = 1
+            $inputError = [string]$_.Exception.Message
             throw
           }
           finally {
             $inputCompletedAt = (Get-Date).ToUniversalTime()
-            "completed_at_utc=$($inputCompletedAt.ToString('o'))" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-            "duration_seconds=$(($inputCompletedAt - $inputStartedAt).TotalSeconds.ToString('0.000', [Globalization.CultureInfo]::InvariantCulture))" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            [ordered]@{
+              startedAtUtc = $inputStartedAt.ToString('o')
+              completedAtUtc = $inputCompletedAt.ToString('o')
+              durationSeconds = [Math]::Round(($inputCompletedAt - $inputStartedAt).TotalSeconds, 3)
+              exitCode = $inputExitCode
+              error = $inputError
+            } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $metadataPath -Encoding utf8
           }
 
       - name: Set up exact CPython 3.13.2 lock resolver
@@ -118,8 +125,11 @@ jobs:
         continue-on-error: true
         if: steps.inputs.outcome == 'success'
         shell: pwsh
+        env:
+          LOCK_RESOLVER_PYTHON: ${{ steps.lock_resolver.outputs.python-path }}
+          FUNCTIONAL_RUNTIME_PYTHON: ${{ steps.runtime.outputs.python-path }}
         run: |
-          $resolverPython = '${{ steps.lock_resolver.outputs.python-path }}'
+          $resolverPython = [string]$env:LOCK_RESOLVER_PYTHON
           $lockVerificationStartedAt = (Get-Date).ToUniversalTime()
           $lockVerificationStartedAtUtc = $lockVerificationStartedAt.ToString('o')
           "verification_started_at_utc=$lockVerificationStartedAtUtc" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
@@ -144,7 +154,7 @@ jobs:
             Complete-LockVerificationTiming
             throw 'The exact CPython 3.13.2 lock resolver is unavailable.'
           }
-          $runtimePython = '${{ steps.runtime.outputs.python-path }}'
+          $runtimePython = [string]$env:FUNCTIONAL_RUNTIME_PYTHON
           if ([string]::IsNullOrWhiteSpace($runtimePython) -or -not (Test-Path -LiteralPath $runtimePython -PathType Leaf)) {
             'verifier_started=false' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             'verifier_blocked=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
@@ -202,6 +212,8 @@ jobs:
         if: steps.lock_verification.outcome == 'success'
         continue-on-error: true
         shell: pwsh
+        env:
+          FUNCTIONAL_RUNTIME_PYTHON: ${{ steps.runtime.outputs.python-path }}
         run: |
           $installStartedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
           $installStopwatch = [Diagnostics.Stopwatch]::StartNew()
@@ -222,7 +234,7 @@ jobs:
           }
 
           $toolRoot = Join-Path $env:RUNNER_TEMP 'python-tools'
-          python -m venv $toolRoot
+          & $env:FUNCTIONAL_RUNTIME_PYTHON -m venv $toolRoot
           $venvExitCode = $LASTEXITCODE
           if ($venvExitCode -ne 0) {
             Complete-ToolchainInstallMetadata -Command 'python -m venv <runner-temp>/python-tools' -ExitCode $venvExitCode
@@ -256,16 +268,20 @@ jobs:
         id: functional
         if: steps.lock_verification.outcome == 'success' && steps.toolchain_install.outcome == 'success'
         continue-on-error: true
-        env:
-          VALIDATED_PROJECT_PATH: ${{ steps.inputs.outputs.project_path }}
-        run: >-
-          "$TOOL_PYTHON" -I standards/scripts/python-project-validation.py
-          --project "$VALIDATED_PROJECT_PATH"
-          --work-root "$PYTHON_WORK_ROOT"
-          --tool-python "$TOOL_PYTHON"
-          --tool-lock standards/examples/python-project/requirements-ci.lock
-          --runtime-lock requirements-runtime.lock
-          --mypy-config standards/scripts/python-mypy.ini
+        shell: pwsh
+        run: |
+          $validatedProjectPathFile = Join-Path $env:PYTHON_WORK_ROOT 'evidence/validated-project-path.txt'
+          if (-not (Test-Path -LiteralPath $validatedProjectPathFile -PathType Leaf)) { throw 'Validated project path file is unavailable.' }
+          $validatedProjectPath = [IO.File]::ReadAllText($validatedProjectPathFile, [Text.UTF8Encoding]::new($false))
+          if ([string]::IsNullOrEmpty($validatedProjectPath)) { throw 'Validated project path is empty.' }
+          & $env:TOOL_PYTHON -I standards/scripts/python-project-validation.py `
+            --project $validatedProjectPath `
+            --work-root $env:PYTHON_WORK_ROOT `
+            --tool-python $env:TOOL_PYTHON `
+            --tool-lock standards/examples/python-project/requirements-ci.lock `
+            --runtime-lock requirements-runtime.lock `
+            --mypy-config standards/scripts/python-mypy.ini
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Run trusted validator regression tests
         id: regression
@@ -303,44 +319,56 @@ jobs:
         if: always()
         continue-on-error: true
         shell: pwsh
+        env:
+          INPUT_OUTCOME: ${{ steps.inputs.outcome }}
+          LOCK_OUTCOME: ${{ steps.lock_verification.outcome }}
+          TOOL_OUTCOME: ${{ steps.toolchain_install.outcome }}
+          TOOL_STARTED_AT_UTC: ${{ steps.toolchain_install.outputs.started_at_utc }}
+          TOOL_COMPLETED_AT_UTC: ${{ steps.toolchain_install.outputs.completed_at_utc }}
+          TOOL_DURATION_SECONDS: ${{ steps.toolchain_install.outputs.duration_seconds }}
+          TOOL_EXIT_CODE: ${{ steps.toolchain_install.outputs.exit_code }}
+          TOOL_FAILED_COMMAND: ${{ steps.toolchain_install.outputs.failed_command }}
+          LOCK_COMMAND: ${{ steps.lock_verification.outputs.verification_command }}
+          LOCK_STARTED_AT_UTC: ${{ steps.lock_verification.outputs.verification_started_at_utc }}
+          LOCK_COMPLETED_AT_UTC: ${{ steps.lock_verification.outputs.verification_completed_at_utc }}
+          LOCK_DURATION_SECONDS: ${{ steps.lock_verification.outputs.verification_duration_seconds }}
+          NORMALIZATION_OUTCOME: ${{ steps.normalization.outcome }}
         run: |
           $evidenceRoot = Join-Path $env:PYTHON_WORK_ROOT 'evidence'
           New-Item -ItemType Directory -Path $evidenceRoot -Force | Out-Null
-          $inputOutcome = '${{ steps.inputs.outcome }}'
+          $inputOutcome = [string]$env:INPUT_OUTCOME
           if ($inputOutcome -ne 'success') {
-            $inputStarted = '${{ steps.inputs.outputs.started_at_utc }}'
-            $inputCompleted = '${{ steps.inputs.outputs.completed_at_utc }}'
-            $inputDurationText = '${{ steps.inputs.outputs.duration_seconds }}'
-            $inputError = '${{ steps.inputs.outputs.error }}'
-            $inputExitText = '${{ steps.inputs.outputs.exit_code }}'
-            if ([string]::IsNullOrWhiteSpace($inputStarted) -or [string]::IsNullOrWhiteSpace($inputCompleted) -or [string]::IsNullOrWhiteSpace($inputDurationText) -or [string]::IsNullOrWhiteSpace($inputError) -or [string]::IsNullOrWhiteSpace($inputExitText)) { throw 'Input validation failure did not report required execution metadata.' }
-            $inputRecord = [ordered]@{ schemaVersion='1.1.0'; name='Python workflow input validation'; category='validation'; status='Failed'; requiredValidation=$true; evidenceSource='Automated'; command='Validate fixed runtime and project path'; workingDirectory='trusted-isolated-workspace'; startedAtUtc=$inputStarted; completedAtUtc=$inputCompleted; durationSeconds=[double]::Parse($inputDurationText,[Globalization.CultureInfo]::InvariantCulture); runtime='PowerShell'; toolVersion='GitHub Actions'; exitCode=[int]::Parse($inputExitText,[Globalization.CultureInfo]::InvariantCulture); summary='The reusable Python workflow rejected invalid caller inputs.'; warnings=@(); failureReason=$inputError; blockedReason=$null; notApplicableRationale=$null; details=[ordered]@{ inputValidationOutcome=$inputOutcome; error=$inputError } }
+            $inputMetadataPath = Join-Path $evidenceRoot 'input-validation-metadata.json'
+            if (-not (Test-Path -LiteralPath $inputMetadataPath -PathType Leaf)) { throw 'Input validation metadata file is unavailable.' }
+            $inputMetadata = Get-Content -LiteralPath $inputMetadataPath -Raw | ConvertFrom-Json
+            if ($null -eq $inputMetadata.error -or [string]::IsNullOrWhiteSpace([string]$inputMetadata.startedAtUtc) -or [string]::IsNullOrWhiteSpace([string]$inputMetadata.completedAtUtc)) { throw 'Input validation failure metadata is incomplete.' }
+            $inputRecord = [ordered]@{ schemaVersion='1.1.0'; name='Python workflow input validation'; category='validation'; status='Failed'; requiredValidation=$true; evidenceSource='Automated'; command='Validate fixed runtime and project path'; workingDirectory='trusted-isolated-workspace'; startedAtUtc=[string]$inputMetadata.startedAtUtc; completedAtUtc=[string]$inputMetadata.completedAtUtc; durationSeconds=[double]$inputMetadata.durationSeconds; runtime='PowerShell'; toolVersion='GitHub Actions'; exitCode=[int]$inputMetadata.exitCode; summary='The reusable Python workflow rejected invalid caller inputs.'; warnings=@(); failureReason=[string]$inputMetadata.error; blockedReason=$null; notApplicableRationale=$null; details=[ordered]@{ inputValidationOutcome=$inputOutcome; error=[string]$inputMetadata.error } }
             $inputRecord | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'phase-input-validation.json') -Encoding utf8
           }
-          $toolOutcome = '${{ steps.toolchain_install.outcome }}'
-          if ('${{ steps.lock_verification.outcome }}' -eq 'success' -and $toolOutcome -in @('success','failure')) {
-            $toolStarted = '${{ steps.toolchain_install.outputs.started_at_utc }}'
-            $toolCompleted = '${{ steps.toolchain_install.outputs.completed_at_utc }}'
-            $toolDurationText = '${{ steps.toolchain_install.outputs.duration_seconds }}'
-            $toolExitText = '${{ steps.toolchain_install.outputs.exit_code }}'
+          $toolOutcome = [string]$env:TOOL_OUTCOME
+          if ($env:LOCK_OUTCOME -eq 'success' -and $toolOutcome -in @('success','failure')) {
+            $toolStarted = [string]$env:TOOL_STARTED_AT_UTC
+            $toolCompleted = [string]$env:TOOL_COMPLETED_AT_UTC
+            $toolDurationText = [string]$env:TOOL_DURATION_SECONDS
+            $toolExitText = [string]$env:TOOL_EXIT_CODE
             if ([string]::IsNullOrWhiteSpace($toolStarted) -or [string]::IsNullOrWhiteSpace($toolCompleted) -or [string]::IsNullOrWhiteSpace($toolDurationText) -or [string]::IsNullOrWhiteSpace($toolExitText)) { throw 'Python toolchain installation did not report required execution metadata.' }
-            $toolCommand = if ($toolOutcome -eq 'success') { 'python -m venv <runner-temp>/python-tools; <tool-python> -I -m pip install --no-input --only-binary=:all: --require-hashes --no-deps -r standards/examples/python-project/requirements-ci.lock; <tool-python> -I -m pip check; <tool-python-isolated> -I -c <prefix-assertion>' } else { '${{ steps.toolchain_install.outputs.failed_command }}' }
+            $toolCommand = if ($toolOutcome -eq 'success') { 'python -m venv <runner-temp>/python-tools; <tool-python> -I -m pip install --no-input --only-binary=:all: --require-hashes --no-deps -r standards/examples/python-project/requirements-ci.lock; <tool-python> -I -m pip check; <tool-python-isolated> -I -c <prefix-assertion>' } else { [string]$env:TOOL_FAILED_COMMAND }
             if ([string]::IsNullOrWhiteSpace($toolCommand)) { throw 'Python toolchain installation did not report the executed command.' }
             $toolRecord = [ordered]@{ schemaVersion='1.1.0'; name='Python toolchain installation'; category='build'; status=$(if($toolOutcome -eq 'success'){'Passed'}else{'Failed'}); requiredValidation=$true; evidenceSource='Automated'; command=$toolCommand; workingDirectory='trusted-isolated-workspace'; startedAtUtc=$toolStarted; completedAtUtc=$toolCompleted; durationSeconds=[double]::Parse($toolDurationText,[Globalization.CultureInfo]::InvariantCulture); runtime='CPython 3.12.11 functional runtime'; toolVersion='hash-locked Python toolchain'; exitCode=[int]::Parse($toolExitText,[Globalization.CultureInfo]::InvariantCulture); summary=$(if($toolOutcome -eq 'success'){'The standards-owned hash-locked Python toolchain installation completed successfully.'}else{'The standards-owned hash-locked Python toolchain installation did not succeed.'}); warnings=@(); failureReason=$(if($toolOutcome -eq 'success'){$null}else{'Toolchain installation failed after successful lock verification.'}); blockedReason=$null; notApplicableRationale=$null; details=[ordered]@{ toolchainInstallOutcome=$toolOutcome } }
             $toolRecord | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'phase-toolchain-installation.json') -Encoding utf8
           }
 
-          if ('${{ steps.lock_verification.outcome }}' -eq 'success') {
-            $lockCommand = '${{ steps.lock_verification.outputs.verification_command }}'
+          if ($env:LOCK_OUTCOME -eq 'success') {
+            $lockCommand = [string]$env:LOCK_COMMAND
             if ([string]::IsNullOrWhiteSpace($lockCommand)) { $lockCommand = '<CPython-3.13.2 with pip==26.2.1> -I standards/scripts/python-project-validation.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci.lock --resolver-python <CPython-3.13.2> --runtime-python <CPython-3.12.11>' }
-            $lockStarted = '${{ steps.lock_verification.outputs.verification_started_at_utc }}'
-            $lockCompleted = '${{ steps.lock_verification.outputs.verification_completed_at_utc }}'
-            $lockDurationText = '${{ steps.lock_verification.outputs.verification_duration_seconds }}'
+            $lockStarted = [string]$env:LOCK_STARTED_AT_UTC
+            $lockCompleted = [string]$env:LOCK_COMPLETED_AT_UTC
+            $lockDurationText = [string]$env:LOCK_DURATION_SECONDS
             if ([string]::IsNullOrWhiteSpace($lockStarted) -or [string]::IsNullOrWhiteSpace($lockCompleted) -or [string]::IsNullOrWhiteSpace($lockDurationText)) { throw 'Successful Python lock verification did not report required execution metadata.' }
             $lockRecord = [ordered]@{ schemaVersion='1.1.0'; name='Python toolchain lock closure'; category='security'; status='Passed'; requiredValidation=$true; evidenceSource='Automated'; command=$lockCommand; workingDirectory='trusted-isolated-workspace'; startedAtUtc=$lockStarted; completedAtUtc=$lockCompleted; durationSeconds=[double]::Parse($lockDurationText,[Globalization.CultureInfo]::InvariantCulture); runtime='CPython 3.13.2 resolver and CPython 3.12.11 functional runtime'; toolVersion='python-project-validation.py'; exitCode=0; summary='Python toolchain lock closure completed successfully.'; warnings=@(); failureReason=$null; blockedReason=$null; notApplicableRationale=$null; details=[ordered]@{ outcome='success'; resolverAvailable=$true; logPath='evidence/lock-verification.log' } }
             $lockRecord | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'phase-lock-verification.json') -Encoding utf8
           }
-          if ('${{ steps.normalization.outcome }}' -eq 'failure') {
+          if ($env:NORMALIZATION_OUTCOME -eq 'failure') {
             $normalizationTimestamp = (Get-Date).ToUniversalTime().ToString('o')
             $normalizationRecord = [ordered]@{ schemaVersion='1.1.0'; name='Python evidence normalization'; category='test'; status='Failed'; requiredValidation=$true; evidenceSource='Automated'; command='Normalize-PythonFunctionalEvidence.py'; workingDirectory='trusted-isolated-workspace'; startedAtUtc=$normalizationTimestamp; completedAtUtc=$normalizationTimestamp; durationSeconds=0; runtime='standards-owned hash-locked Python toolchain'; toolVersion='Normalize-PythonFunctionalEvidence.py'; exitCode=1; summary='Python functional evidence normalization did not complete successfully.'; warnings=@(); failureReason='Evidence normalization failed.'; blockedReason=$null; notApplicableRationale=$null; details=[ordered]@{ outcome='failure' } }
             $normalizationRecord | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'phase-normalization-failure.json') -Encoding utf8
@@ -454,24 +482,44 @@ jobs:
         if: always()
         continue-on-error: true
         shell: pwsh
+        env:
+          INPUT_OUTCOME: ${{ steps.inputs.outcome }}
+          LOCK_OUTCOME: ${{ steps.lock_verification.outcome }}
+          TOOL_OUTCOME: ${{ steps.toolchain_install.outcome }}
+          FUNCTIONAL_OUTCOME: ${{ steps.functional.outcome }}
+          NORMALIZATION_OUTCOME: ${{ steps.normalization.outcome }}
+          REGRESSION_OUTCOME: ${{ steps.regression.outcome }}
+          REGRESSION_STARTED_AT_UTC: ${{ steps.regression.outputs.started_at_utc }}
+          REGRESSION_COMPLETED_AT_UTC: ${{ steps.regression.outputs.completed_at_utc }}
+          REGRESSION_DURATION_SECONDS: ${{ steps.regression.outputs.duration_seconds }}
+          REGRESSION_EXIT_CODE: ${{ steps.regression.outputs.exit_code }}
+          LOCK_STARTED: ${{ steps.lock_verification.outputs.verifier_started }}
+          LOCK_BLOCKED: ${{ steps.lock_verification.outputs.verifier_blocked }}
+          LOCK_BLOCKED_REASON: ${{ steps.lock_verification.outputs.verifier_blocked_reason }}
+          LOCK_COMMAND: ${{ steps.lock_verification.outputs.verification_command }}
+          LOCK_STARTED_AT_UTC: ${{ steps.lock_verification.outputs.verification_started_at_utc }}
+          LOCK_COMPLETED_AT_UTC: ${{ steps.lock_verification.outputs.verification_completed_at_utc }}
+          LOCK_DURATION_SECONDS: ${{ steps.lock_verification.outputs.verification_duration_seconds }}
+          SOURCE_METADATA_OUTCOME: ${{ steps.source_metadata.outcome }}
+          STANDARDS_WORKFLOW_SHA: ${{ job.workflow_sha }}
         run: |
-          $inputValidationOutcome = '${{ steps.inputs.outcome }}'
-          $lockVerificationOutcome = '${{ steps.lock_verification.outcome }}'
-          $toolchainInstallOutcome = '${{ steps.toolchain_install.outcome }}'
-          $functionalOutcome = '${{ steps.functional.outcome }}'
-          $normalizationOutcome = '${{ steps.normalization.outcome }}'
-          $regressionOutcome = '${{ steps.regression.outcome }}'
-          $regressionStartedAtUtc = '${{ steps.regression.outputs.started_at_utc }}'
-          $regressionCompletedAtUtc = '${{ steps.regression.outputs.completed_at_utc }}'
-          $regressionDurationText = '${{ steps.regression.outputs.duration_seconds }}'
-          $regressionExitCodeText = '${{ steps.regression.outputs.exit_code }}'
-          $lockVerificationStarted = '${{ steps.lock_verification.outputs.verifier_started }}' -eq 'true'
-          $lockVerificationBlocked = '${{ steps.lock_verification.outputs.verifier_blocked }}' -eq 'true'
-          $lockVerificationBlockedReason = '${{ steps.lock_verification.outputs.verifier_blocked_reason }}'
-          $lockVerificationCommand = '${{ steps.lock_verification.outputs.verification_command }}'
-          $lockVerificationStartedAtUtc = '${{ steps.lock_verification.outputs.verification_started_at_utc }}'
-          $lockVerificationCompletedAtUtc = '${{ steps.lock_verification.outputs.verification_completed_at_utc }}'
-          $lockVerificationDurationText = '${{ steps.lock_verification.outputs.verification_duration_seconds }}'
+          $inputValidationOutcome = [string]$env:INPUT_OUTCOME
+          $lockVerificationOutcome = [string]$env:LOCK_OUTCOME
+          $toolchainInstallOutcome = [string]$env:TOOL_OUTCOME
+          $functionalOutcome = [string]$env:FUNCTIONAL_OUTCOME
+          $normalizationOutcome = [string]$env:NORMALIZATION_OUTCOME
+          $regressionOutcome = [string]$env:REGRESSION_OUTCOME
+          $regressionStartedAtUtc = [string]$env:REGRESSION_STARTED_AT_UTC
+          $regressionCompletedAtUtc = [string]$env:REGRESSION_COMPLETED_AT_UTC
+          $regressionDurationText = [string]$env:REGRESSION_DURATION_SECONDS
+          $regressionExitCodeText = [string]$env:REGRESSION_EXIT_CODE
+          $lockVerificationStarted = [string]$env:LOCK_STARTED -eq 'true'
+          $lockVerificationBlocked = [string]$env:LOCK_BLOCKED -eq 'true'
+          $lockVerificationBlockedReason = [string]$env:LOCK_BLOCKED_REASON
+          $lockVerificationCommand = [string]$env:LOCK_COMMAND
+          $lockVerificationStartedAtUtc = [string]$env:LOCK_STARTED_AT_UTC
+          $lockVerificationCompletedAtUtc = [string]$env:LOCK_COMPLETED_AT_UTC
+          $lockVerificationDurationText = [string]$env:LOCK_DURATION_SECONDS
           if ([string]::IsNullOrWhiteSpace($lockVerificationCommand)) {
             $lockVerificationCommand = '<CPython-3.13.2 with pip==26.2.1> -I standards/scripts/python-project-validation.py --verify-tool-lock --work-root <runner-temp>/python-lock-resolution --tool-lock standards/examples/python-project/requirements-ci.lock --resolver-python <CPython-3.13.2> --runtime-python <CPython-3.12.11>'
           }
@@ -486,7 +534,7 @@ jobs:
           if (Test-Path -LiteralPath $durableLockLogPath -PathType Leaf) {
             Copy-Item -LiteralPath $durableLockLogPath -Destination $lockEvidenceLogPath -Force
           }
-          $sourceMetadataOutcome = '${{ steps.source_metadata.outcome }}'
+          $sourceMetadataOutcome = [string]$env:SOURCE_METADATA_OUTCOME
           if ($sourceMetadataOutcome -ne 'success') { throw 'Python completion source metadata staging did not succeed.' }
           $completionSourceRoot = Join-Path $env:PYTHON_WORK_ROOT 'caller'
           $changedFilesPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/changed-files.json'
@@ -568,7 +616,7 @@ jobs:
               -Branch $env:GITHUB_REF_NAME `
               -ValidatedCommitSha $env:GITHUB_SHA `
               -StandardsRepository 'AIAllTheThingz/Engineering-Standards' `
-              -StandardsWorkflowSha '${{ job.workflow_sha }}' `
+              -StandardsWorkflowSha $env:STANDARDS_WORKFLOW_SHA `
               -ValidationProfile 'python-functional' `
               -ChecksExecuted @('PythonToolchainLockClosure') `
               -ChangedFile $completionChangedFiles
@@ -703,6 +751,7 @@ jobs:
               $functionalResultsPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json'
               if (Test-Path -LiteralPath $functionalResultsPath -PathType Leaf) {
                 $failureRecords = @(Get-Content -LiteralPath $functionalResultsPath -Raw | ConvertFrom-Json) + $failureRecords
+              }
               if ($prerequisiteRecords.Count -gt 0) {
                 $failureRecords = $prerequisiteRecords + $failureRecords
                 $commandsExecuted += $prerequisiteCommands
@@ -747,7 +796,7 @@ jobs:
               })
             }
             $failureRecords | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath (Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json') -Encoding utf8
-            & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath $completionSourceRoot -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary $completionSummary -CommandsExecuted $commandsExecuted -CommandsNotExecuted $commandsNotExecuted -BlockedReason $blockedReason -ArtifactPath $failureArtifacts -ArtifactName "python-evidence-$env:GITHUB_RUN_ID" -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha '${{ job.workflow_sha }}' -ValidationProfile 'python-functional' -ChecksExecuted @('PythonToolchainLockClosure') -ChangedFile $completionChangedFiles
+            & ./standards/scripts/New-CompletionEvidence.ps1 -RepositoryPath $env:PYTHON_WORK_ROOT -SourceRepositoryPath $completionSourceRoot -OutputPath 'evidence/completion-result.json' -TestResultPath 'evidence/local-test-results.json' -GovernanceVersion 1.1.0 -RiskClassification Moderate -Summary $completionSummary -CommandsExecuted $commandsExecuted -CommandsNotExecuted $commandsNotExecuted -BlockedReason $blockedReason -ArtifactPath $failureArtifacts -ArtifactName "python-evidence-$env:GITHUB_RUN_ID" -Repository $env:GITHUB_REPOSITORY -Branch $env:GITHUB_REF_NAME -ValidatedCommitSha $env:GITHUB_SHA -StandardsRepository 'AIAllTheThingz/Engineering-Standards' -StandardsWorkflowSha $env:STANDARDS_WORKFLOW_SHA -ValidationProfile 'python-functional' -ChecksExecuted @('PythonToolchainLockClosure') -ChangedFile $completionChangedFiles
           }
           if (-not (Test-Path -LiteralPath $completionPath -PathType Leaf)) { throw 'Completion evidence was not created.' }
           $global:LASTEXITCODE = 0
@@ -762,19 +811,30 @@ jobs:
       - name: Record Python validation outcomes
         if: always()
         shell: pwsh
+        env:
+          INPUT_OUTCOME: ${{ steps.inputs.outcome }}
+          LOCK_OUTCOME: ${{ steps.lock_verification.outcome }}
+          TOOL_OUTCOME: ${{ steps.toolchain_install.outcome }}
+          REGRESSION_OUTCOME: ${{ steps.regression.outcome }}
+          FUNCTIONAL_OUTCOME: ${{ steps.functional.outcome }}
+          NORMALIZATION_OUTCOME: ${{ steps.normalization.outcome }}
+          PHASE_EVIDENCE_OUTCOME: ${{ steps.phase_evidence.outcome }}
+          SOURCE_METADATA_OUTCOME: ${{ steps.source_metadata.outcome }}
+          COMPLETION_OUTCOME: ${{ steps.completion.outcome }}
+          EVIDENCE_OUTCOME: ${{ steps.evidence.outcome }}
         run: |
-          $outcomes = [ordered]@{
-            inputs = '${{ steps.inputs.outcome }}'
-            lock_verification = '${{ steps.lock_verification.outcome }}'
-            toolchain_install = '${{ steps.toolchain_install.outcome }}'
-            regression = '${{ steps.regression.outcome }}'
-            functional = '${{ steps.functional.outcome }}'
-            normalization = '${{ steps.normalization.outcome }}'
-            source_metadata = '${{ steps.source_metadata.outcome }}'
-            completion = '${{ steps.completion.outcome }}'
-            evidence = '${{ steps.evidence.outcome }}'
-          }
-          $outcomes | ConvertTo-Json | Set-Content -LiteralPath "$env:PYTHON_WORK_ROOT/evidence/step-outcomes.json" -Encoding utf8
+          [ordered]@{
+            inputs = [string]$env:INPUT_OUTCOME
+            lock_verification = [string]$env:LOCK_OUTCOME
+            toolchain_install = [string]$env:TOOL_OUTCOME
+            regression = [string]$env:REGRESSION_OUTCOME
+            functional = [string]$env:FUNCTIONAL_OUTCOME
+            normalization = [string]$env:NORMALIZATION_OUTCOME
+            phase_evidence = [string]$env:PHASE_EVIDENCE_OUTCOME
+            source_metadata = [string]$env:SOURCE_METADATA_OUTCOME
+            completion = [string]$env:COMPLETION_OUTCOME
+            evidence = [string]$env:EVIDENCE_OUTCOME
+          } | ConvertTo-Json | Set-Content -LiteralPath "$env:PYTHON_WORK_ROOT/evidence/step-outcomes.json" -Encoding utf8
 
       - name: Upload Python evidence before enforcement
         if: always()
@@ -788,16 +848,29 @@ jobs:
       - name: Enforce Python validation
         if: always()
         shell: pwsh
+        env:
+          INPUT_OUTCOME: ${{ steps.inputs.outcome }}
+          LOCK_OUTCOME: ${{ steps.lock_verification.outcome }}
+          TOOL_OUTCOME: ${{ steps.toolchain_install.outcome }}
+          REGRESSION_OUTCOME: ${{ steps.regression.outcome }}
+          FUNCTIONAL_OUTCOME: ${{ steps.functional.outcome }}
+          NORMALIZATION_OUTCOME: ${{ steps.normalization.outcome }}
+          PHASE_EVIDENCE_OUTCOME: ${{ steps.phase_evidence.outcome }}
+          SOURCE_METADATA_OUTCOME: ${{ steps.source_metadata.outcome }}
+          COMPLETION_OUTCOME: ${{ steps.completion.outcome }}
+          EVIDENCE_OUTCOME: ${{ steps.evidence.outcome }}
         run: |
           $outcomes = [ordered]@{
-            inputs = '${{ steps.inputs.outcome }}'
-            lock_verification = '${{ steps.lock_verification.outcome }}'
-            regression = '${{ steps.regression.outcome }}'
-            functional = '${{ steps.functional.outcome }}'
-            normalization = '${{ steps.normalization.outcome }}'
-            source_metadata = '${{ steps.source_metadata.outcome }}'
-            completion = '${{ steps.completion.outcome }}'
-            evidence = '${{ steps.evidence.outcome }}'
+            inputs = [string]$env:INPUT_OUTCOME
+            lock_verification = [string]$env:LOCK_OUTCOME
+            toolchain_install = [string]$env:TOOL_OUTCOME
+            regression = [string]$env:REGRESSION_OUTCOME
+            functional = [string]$env:FUNCTIONAL_OUTCOME
+            normalization = [string]$env:NORMALIZATION_OUTCOME
+            phase_evidence = [string]$env:PHASE_EVIDENCE_OUTCOME
+            source_metadata = [string]$env:SOURCE_METADATA_OUTCOME
+            completion = [string]$env:COMPLETION_OUTCOME
+            evidence = [string]$env:EVIDENCE_OUTCOME
           }
           $failed = @($outcomes.GetEnumerator() | Where-Object Value -ne 'success')
           if ($failed.Count -gt 0) {
