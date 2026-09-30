@@ -42,10 +42,9 @@ function Resolve-ExistingEvidencePathCasing {
 function Test-CompletionReceiptPayloadPath {
     param([Parameter(Mandatory)][string]$RelativePath)
 
-    $normalized = $RelativePath.Replace('\','/')
     return (
-        $normalized.StartsWith('examples/python-project/evidence/', [StringComparison]::Ordinal) -or
-        $normalized.StartsWith('examples/bash-project/evidence/', [StringComparison]::Ordinal)
+        $RelativePath.StartsWith('examples/python-project/evidence/', [StringComparison]::Ordinal) -or
+        $RelativePath.StartsWith('examples/bash-project/evidence/', [StringComparison]::Ordinal)
     )
 }
 
