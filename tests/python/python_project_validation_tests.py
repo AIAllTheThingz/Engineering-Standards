@@ -5,7 +5,6 @@ import json
 import re
 import runpy
 import stat
-import subprocess
 import sys
 import tomllib
 import zipfile
@@ -395,7 +394,7 @@ def test_marker_closure_does_not_evaluate_empty_extra_when_an_extra_is_active() 
     )
 
 
-def test_marker_closure_rejects_oscillating_extra_activation() -> None:
+def test_marker_closure_rejects_oscillating_extra_activation(tmp_path: Path) -> None:
     """A self-requested extra must fail explicitly rather than spin until workflow timeout."""
     child_program = f"""
 import runpy
@@ -422,21 +421,17 @@ except ValueError as exc:
 else:
     raise AssertionError("oscillating extra activation was accepted")
 """
-    try:
-        result = subprocess.run(
-            [sys.executable, "-I", "-c", child_program],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=3,
-        )
-    except subprocess.TimeoutExpired as exc:
-        raise AssertionError("oscillating extra activation did not terminate") from exc
+    code, output, _ = validator.run(
+        [sys.executable, "-I", "-c", child_program],
+        tmp_path,
+        validator.trusted_env(tmp_path / "home"),
+        3,
+    )
 
+    require(code != 124, "oscillating extra activation did not terminate")
     require(
-        result.returncode == 0,
-        "oscillating extra activation was not rejected explicitly:\n"
-        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
+        code == 0,
+        f"oscillating extra activation was not rejected explicitly:\n{output}",
     )
 
 

@@ -97,17 +97,15 @@ Describe 'JSON schema validation' {
         }
 
         It 'accepts Git-valid completion evidence tag names emitted by the generator' {
-            $schema = Resolve-Path "$PSScriptRoot/../../schemas/completion-result.schema.json"
-            $source = Get-Content -LiteralPath "$PSScriptRoot/../fixtures/valid/completion-result.json" -Raw | ConvertFrom-Json
+            # The completion-result schema references sibling schemas by URN, which Test-Json cannot resolve on its own,
+            # so validate each tag against the validatedCommitTag property schema.
+            $completionSchema = Get-Content -LiteralPath "$PSScriptRoot/../../schemas/completion-result.schema.json" -Raw | ConvertFrom-Json
+            $tagSchema = $completionSchema.properties.validatedCommitTag | ConvertTo-Json -Depth 10
             foreach ($tag in @('release+1','release@1','-release','release/v1.2.0')) {
-                $record = $source | ConvertTo-Json -Depth 30 | ConvertFrom-Json
-                $record.validatedCommitTag = $tag
-                ($record | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeTrue -Because $tag
+                (ConvertTo-Json -InputObject $tag | Test-Json -Schema $tagSchema) | Should -BeTrue -Because $tag
             }
             foreach ($tag in @('@','bad..tag','bad@{tag','bad tag','bad\tag','name.lock','name.')) {
-                $record = $source | ConvertTo-Json -Depth 30 | ConvertFrom-Json
-                $record.validatedCommitTag = $tag
-                ($record | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeFalse -Because $tag
+                (ConvertTo-Json -InputObject $tag | Test-Json -Schema $tagSchema) | Should -BeFalse -Because $tag
             }
         }
         It 'accepts GitHub-valid verified-run branches and rejects reserved or malformed names' {

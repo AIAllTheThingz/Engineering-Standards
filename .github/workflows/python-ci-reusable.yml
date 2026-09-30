@@ -253,7 +253,13 @@ jobs:
             throw 'Hash-locked Python toolchain pip check failed.'
           }
           $toolPython = Join-Path $toolRoot 'bin/python-isolated'
-          Copy-Item -LiteralPath $venvPython -Destination $toolPython
+          try {
+            Copy-Item -LiteralPath $venvPython -Destination $toolPython
+          }
+          catch {
+            Complete-ToolchainInstallMetadata -Command 'Copy-Item <tool-python> <tool-python-isolated>' -ExitCode 1
+            throw 'Isolated Python toolchain interpreter copy failed.'
+          }
           & $toolPython -I -c "import sys; assert sys.prefix == '$toolRoot'"
           $assertionExitCode = $LASTEXITCODE
           if ($assertionExitCode -ne 0) {
@@ -309,9 +315,21 @@ jobs:
         id: normalization
         if: always() && steps.lock_verification.outcome == 'success' && steps.toolchain_install.outcome == 'success'
         continue-on-error: true
-        run: >-
-          "$TOOL_PYTHON" -I standards/scripts/Normalize-PythonFunctionalEvidence.py
-          --evidence "$PYTHON_WORK_ROOT/evidence"
+        shell: bash
+        run: |
+          started_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          started_epoch="$(date +%s)"
+          normalization_exit_code=0
+          "$TOOL_PYTHON" -I standards/scripts/Normalize-PythonFunctionalEvidence.py \
+            --evidence "$PYTHON_WORK_ROOT/evidence" || normalization_exit_code=$?
+          completed_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          completed_epoch="$(date +%s)"
+          duration_seconds="$(( completed_epoch - started_epoch ))"
+          printf 'started_at_utc=%s\n' "$started_at" >> "$GITHUB_OUTPUT"
+          printf 'completed_at_utc=%s\n' "$completed_at" >> "$GITHUB_OUTPUT"
+          printf 'duration_seconds=%s\n' "$duration_seconds" >> "$GITHUB_OUTPUT"
+          printf 'exit_code=%s\n' "$normalization_exit_code" >> "$GITHUB_OUTPUT"
+          exit "$normalization_exit_code"
 
       - name: Prepare Python phase evidence
         id: phase_evidence
@@ -332,6 +350,10 @@ jobs:
           LOCK_COMPLETED_AT_UTC: ${{ steps.lock_verification.outputs.verification_completed_at_utc }}
           LOCK_DURATION_SECONDS: ${{ steps.lock_verification.outputs.verification_duration_seconds }}
           NORMALIZATION_OUTCOME: ${{ steps.normalization.outcome }}
+          NORMALIZATION_STARTED_AT_UTC: ${{ steps.normalization.outputs.started_at_utc }}
+          NORMALIZATION_COMPLETED_AT_UTC: ${{ steps.normalization.outputs.completed_at_utc }}
+          NORMALIZATION_DURATION_SECONDS: ${{ steps.normalization.outputs.duration_seconds }}
+          NORMALIZATION_EXIT_CODE: ${{ steps.normalization.outputs.exit_code }}
         run: |
           $evidenceRoot = Join-Path $env:PYTHON_WORK_ROOT 'evidence'
           New-Item -ItemType Directory -Path $evidenceRoot -Force | Out-Null
@@ -368,8 +390,12 @@ jobs:
             $lockRecord | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'phase-lock-verification.json') -Encoding utf8
           }
           if ($env:NORMALIZATION_OUTCOME -eq 'failure') {
-            $normalizationTimestamp = (Get-Date).ToUniversalTime().ToString('o')
-            $normalizationRecord = [ordered]@{ schemaVersion='1.1.0'; name='Python evidence normalization'; category='test'; status='Failed'; requiredValidation=$true; evidenceSource='Automated'; command='Normalize-PythonFunctionalEvidence.py'; workingDirectory='trusted-isolated-workspace'; startedAtUtc=$normalizationTimestamp; completedAtUtc=$normalizationTimestamp; durationSeconds=0; runtime='standards-owned hash-locked Python toolchain'; toolVersion='Normalize-PythonFunctionalEvidence.py'; exitCode=1; summary='Python functional evidence normalization did not complete successfully.'; warnings=@(); failureReason='Evidence normalization failed.'; blockedReason=$null; notApplicableRationale=$null; details=[ordered]@{ outcome='failure' } }
+            $normalizationStarted = [string]$env:NORMALIZATION_STARTED_AT_UTC
+            $normalizationCompleted = [string]$env:NORMALIZATION_COMPLETED_AT_UTC
+            $normalizationDurationText = [string]$env:NORMALIZATION_DURATION_SECONDS
+            $normalizationExitText = [string]$env:NORMALIZATION_EXIT_CODE
+            if ([string]::IsNullOrWhiteSpace($normalizationStarted) -or [string]::IsNullOrWhiteSpace($normalizationCompleted) -or [string]::IsNullOrWhiteSpace($normalizationDurationText) -or [string]::IsNullOrWhiteSpace($normalizationExitText)) { throw 'Python evidence normalization did not report required execution metadata.' }
+            $normalizationRecord = [ordered]@{ schemaVersion='1.1.0'; name='Python evidence normalization'; category='test'; status='Failed'; requiredValidation=$true; evidenceSource='Automated'; command='Normalize-PythonFunctionalEvidence.py'; workingDirectory='trusted-isolated-workspace'; startedAtUtc=$normalizationStarted; completedAtUtc=$normalizationCompleted; durationSeconds=[double]::Parse($normalizationDurationText,[Globalization.CultureInfo]::InvariantCulture); runtime='standards-owned hash-locked Python toolchain'; toolVersion='Normalize-PythonFunctionalEvidence.py'; exitCode=[int]::Parse($normalizationExitText,[Globalization.CultureInfo]::InvariantCulture); summary='Python functional evidence normalization did not complete successfully.'; warnings=@(); failureReason='Evidence normalization failed.'; blockedReason=$null; notApplicableRationale=$null; details=[ordered]@{ outcome='failure' } }
             $normalizationRecord | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'phase-normalization-failure.json') -Encoding utf8
           }
 
@@ -737,29 +763,9 @@ jobs:
               $commandsNotExecuted += 'Successful completion evidence assembly was not run because evidence normalization failed.'
               $completionSummary = 'Python functional evidence normalization failed.'
               $blockedReason = $null
-              $normalizationTimestamp = (Get-Date).ToUniversalTime().ToString('o')
-              $failureRecords = @([ordered]@{
-                schemaVersion = '1.1.0'
-                name = 'Python evidence normalization'
-                category = 'test'
-                status = 'Failed'
-                requiredValidation = $true
-                evidenceSource = 'Automated'
-                command = 'Normalize-PythonFunctionalEvidence.py'
-                workingDirectory = 'trusted-isolated-workspace'
-                startedAtUtc = $normalizationTimestamp
-                completedAtUtc = $normalizationTimestamp
-                durationSeconds = 0
-                runtime = 'standards-owned hash-locked Python toolchain'
-                toolVersion = 'Normalize-PythonFunctionalEvidence.py'
-                exitCode = 1
-                summary = 'Python functional evidence normalization did not complete successfully.'
-                warnings = @()
-                failureReason = 'Evidence normalization failed.'
-                blockedReason = $null
-                notApplicableRationale = $null
-                details = [ordered]@{ outcome = $normalizationOutcome }
-              })
+              $normalizationFailurePath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/phase-normalization-failure.json'
+              if (-not (Test-Path -LiteralPath $normalizationFailurePath -PathType Leaf)) { throw 'Python evidence normalization failure record is unavailable.' }
+              $failureRecords = @(Get-Content -LiteralPath $normalizationFailurePath -Raw | ConvertFrom-Json)
               $functionalResultsPath = Join-Path $env:PYTHON_WORK_ROOT 'evidence/local-test-results.json'
               if (Test-Path -LiteralPath $functionalResultsPath -PathType Leaf) {
                 $failureRecords = @(Get-Content -LiteralPath $functionalResultsPath -Raw | ConvertFrom-Json) + $failureRecords

@@ -672,6 +672,7 @@ Describe 'Validate evidence action' {
                     -Summary 'Whitespace-only Git pathname content identity fixture.' `
                     -ArtifactPath 'evidence/report.json' `
                     -CommandsExecuted @('content identity fixture') `
+                    -CommandsNotExecuted @('GitHub-hosted Governance CI workflow execution') `
                     -ChangedFile @('examples/python-project/source.py') `
                     -ValidatedCommitSha $validatedCommit
                 $LASTEXITCODE | Should -Be 0
