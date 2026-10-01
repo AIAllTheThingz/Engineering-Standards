@@ -112,7 +112,7 @@ def trusted_env(home: Path) -> dict[str, str]:
             "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
         }
     )
-    return env
+    return env | run_marker_env()
 
 
 def run(
@@ -137,6 +137,48 @@ def run(
         return result.returncode, result.stdout[-12000:], time.monotonic() - started
     except subprocess.TimeoutExpired as exc:
         return 124, f"Command exceeded {timeout} seconds: {exc}", time.monotonic() - started
+
+
+VALIDATION_RUN_MARKER = "STANDARDS_VALIDATION_RUN_ID"
+VALIDATION_RUN_ID = os.urandom(16).hex()
+SIGKILL = 9  # POSIX signal number; the /proc scan below only runs where /proc exists.
+
+
+def run_marker_env() -> dict[str, str]:
+    """Tag every process started for this run so stragglers can be found later."""
+    return {VALIDATION_RUN_MARKER: VALIDATION_RUN_ID}
+
+
+def read_process_environment(entry: Path) -> list[bytes]:
+    """Return a process's environment entries, or none when it is gone or unreadable."""
+    try:
+        return (entry / "environ").read_bytes().split(b"\0")
+    except OSError:
+        return []
+
+
+def kill_process(pid: int) -> int:
+    """Kill one process; return 1 when it was signalled and 0 when it had already exited."""
+    try:
+        os.kill(pid, SIGKILL)
+    except OSError:
+        return 0
+    return 1
+
+
+def terminate_marked_processes(run_id: str | None = None, proc_root: Path = Path("/proc")) -> int:
+    """Kill any process still carrying this run's marker, such as a child a caller detached."""
+    if not proc_root.is_dir():
+        return 0
+    marker = f"{VALIDATION_RUN_MARKER}={run_id or VALIDATION_RUN_ID}".encode()
+    terminated = 0
+    for entry in proc_root.iterdir():
+        if not entry.name.isdigit() or int(entry.name) == os.getpid():
+            continue
+        if marker not in read_process_environment(entry):
+            continue
+        terminated += kill_process(int(entry.name))
+    return terminated
 
 
 def sanitize_path_variants(value: str, path: str) -> str:
@@ -1791,7 +1833,9 @@ def validate(args: argparse.Namespace) -> int:
     records.append(audit_record)
     write_record(evidence_dir, "python-dependency-audit.json", audit_record)
 
-    # Every step that executes caller code has finished; confirm each early SBOM is still the file recorded.
+    # Every step that executes caller code has finished: stop anything it detached, then confirm each early SBOM
+    # is still the file recorded.
+    terminate_marked_processes()
     for sbom_record, sbom_filename in (
         (toolchain_sbom_record, "python-toolchain-sbom.cdx.json"),
         (project_sbom_record, "python-project-sbom.cdx.json"),

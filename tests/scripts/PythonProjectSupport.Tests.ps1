@@ -67,6 +67,16 @@ Describe 'Governed Python project support' {
         $script:driver | Should -Not -Match 'original_default_environment'
     }
 
+    It 'rechecks both SBOM digests in the trusted completion step before generating the receipt' {
+        $recheckIndex = $script:workflow.IndexOf('no longer matches the digest recorded when it was generated')
+        $generatorIndex = $script:workflow.IndexOf('& ./standards/scripts/New-CompletionEvidence.ps1', $recheckIndex)
+        $recheckIndex | Should -BeGreaterThan 0
+        $generatorIndex | Should -BeGreaterThan $recheckIndex
+        $script:workflow | Should -Match "'Python toolchain SBOM', 'Python project SBOM'"
+        $script:workflow | Should -Match '\$recordedSbomHash = \[string\]\$sbomRecord\[0\]\.details\.sha256'
+        $script:workflow | Should -Match '\(Get-FileHash -LiteralPath \$sbomPath -Algorithm SHA256\)\.Hash\.ToLowerInvariant\(\) -ne \$recordedSbomHash\.ToLowerInvariant\(\)'
+    }
+
     It 'reserves enough job time for serial lock closure and durable evidence' {
         $timeoutMatch = [regex]::Match($script:workflow, '(?m)^\s+timeout-minutes:\s*(?<minutes>\d+)\s*$')
         $timeoutMatch.Success | Should -BeTrue

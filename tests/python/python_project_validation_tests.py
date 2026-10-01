@@ -2181,3 +2181,67 @@ def test_sbom_integrity_is_verified_after_all_caller_code_has_run() -> None:
         )
     for record in ("toolchain_sbom_record", "project_sbom_record"):
         require(record in source[verification - 300 : verification], f"{record} is not verified")
+
+
+def test_trusted_env_marks_every_started_process(tmp_path: Path) -> None:
+    env = validator.trusted_env(tmp_path / "home")
+    require(env[validator.VALIDATION_RUN_MARKER] == validator.VALIDATION_RUN_ID, "the run marker is not in the environment")
+
+
+def test_detached_caller_processes_are_terminated_before_sbom_verification() -> None:
+    source = inspect.getsource(validator.validate)
+    termination = source.index("terminate_marked_processes()")
+    require(termination < source.index("verify_sbom_integrity(sbom_record"), "stragglers are stopped after SBOM verification")
+    for caller_code_step in ("build_command = ", "pytest_command = ", "smoke_command = "):
+        require(source.index(caller_code_step) < termination, f"stragglers are stopped before {caller_code_step!r}")
+
+
+def test_terminate_marked_processes_kills_only_marked_processes(tmp_path: Path) -> None:
+    import os
+    import threading
+    import time
+
+    if not Path("/proc").is_dir():
+        require(validator.terminate_marked_processes() == 0, "a platform without /proc must report nothing terminated")
+        return
+    sleeper = [sys.executable, "-c", "import time; time.sleep(120)"]
+    outcomes: dict[str, int] = {}
+
+    def start(name: str, marker: dict[str, str]) -> threading.Thread:
+        def target() -> None:
+            outcomes[name] = validator.run(sleeper, tmp_path, {**os.environ, **marker}, timeout=60)[0]
+
+        worker = threading.Thread(target=target)
+        worker.start()
+        return worker
+
+    marked = start("marked", validator.run_marker_env())
+    unmarked = start("unmarked", {validator.VALIDATION_RUN_MARKER: "another-run"})
+    try:
+        deadline = time.monotonic() + 30
+        while time.monotonic() < deadline:
+            running = sum(
+                1
+                for entry in Path("/proc").iterdir()
+                if entry.name.isdigit() and b"time.sleep(120)" in _cmdline(entry)
+            )
+            if running >= 2:
+                break
+            time.sleep(0.1)
+        require(validator.terminate_marked_processes() == 1, "exactly one marked process should be terminated")
+        marked.join(timeout=30)
+        require(outcomes.get("marked") not in (None, 0), "the marked process was not killed")
+        require("unmarked" not in outcomes, "an unmarked process must be left alone")
+    finally:
+        for entry in Path("/proc").iterdir():
+            if entry.name.isdigit() and b"time.sleep(120)" in _cmdline(entry):
+                validator.kill_process(int(entry.name))
+        unmarked.join(timeout=30)
+        marked.join(timeout=30)
+
+
+def _cmdline(entry: Path) -> bytes:
+    try:
+        return (entry / "cmdline").read_bytes()
+    except OSError:
+        return b""

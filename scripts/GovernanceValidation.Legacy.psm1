@@ -607,11 +607,13 @@ function Test-RelativeRepositoryPath {
         [AllowNull()][string]$Value,
         [Parameter(Mandatory)][string]$Name,
         [Parameter(Mandatory)][string]$Path,
-        [string]$RequiredExtension
+        [string]$RequiredExtension,
+        # Exact Git pathnames may be whitespace-only; every other path keeps the blank-path rejection.
+        [switch]$AllowWhitespaceOnly
     )
 
     $results = [System.Collections.Generic.List[object]]::new()
-    if ([string]::IsNullOrEmpty($Value)) {
+    if (($AllowWhitespaceOnly -and [string]::IsNullOrEmpty($Value)) -or (-not $AllowWhitespaceOnly -and [string]::IsNullOrWhiteSpace($Value))) {
         $results.Add((New-ValidationResult -Status Failed -Message "$Name must not be empty." -Path $Path))
         return @($results)
     }
@@ -891,7 +893,7 @@ function Test-GovernanceJsonDocument {
         foreach ($item in @(Test-UniqueValues -Items @($json.knownLimitations) -Name 'knownLimitations' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.remainingRisks) -Name 'remainingRisks' -Path $Path)) { $results.Add($item) }
         foreach ($changed in @($json.changedFiles)) {
-            foreach ($item in @(Test-RelativeRepositoryPath -Value $changed -Name 'changedFiles item' -Path $Path)) { $results.Add($item) }
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $changed -Name 'changedFiles item' -Path $Path -AllowWhitespaceOnly)) { $results.Add($item) }
         }
         foreach ($test in @($json.tests)) {
             foreach ($item in @(Test-TestEvidenceObject -Test $test -Path $Path)) { $results.Add($item) }

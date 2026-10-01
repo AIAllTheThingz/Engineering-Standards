@@ -684,7 +684,19 @@ jobs:
             if (-not (Test-Path -LiteralPath $normalizationPassPath -PathType Leaf)) { throw 'Successful Python evidence normalization record is unavailable.' }
             if ($null -eq $regressionRecord) { throw 'Successful Python validator regression record is unavailable.' }
             $normalizationRecord = Get-Content -LiteralPath $normalizationPassPath -Raw | ConvertFrom-Json
-            $allTestRecords = @($lockVerificationRecord, $toolchainInstallRecord, $regressionRecord, $normalizationRecord) + @(Get-Content -LiteralPath $testResultPath -Raw | ConvertFrom-Json)
+            $functionalRecords = @(Get-Content -LiteralPath $testResultPath -Raw | ConvertFrom-Json)
+            # Caller code may have left a process running; the SBOMs must still be exactly the bytes recorded when they were generated.
+            foreach ($sbomName in @('Python toolchain SBOM', 'Python project SBOM')) {
+              $sbomRecord = @($functionalRecords | Where-Object { $_.name -eq $sbomName -and $_.status -eq 'Passed' })
+              if ($sbomRecord.Count -ne 1) { throw "Exactly one passed '$sbomName' record is required before completion evidence is generated." }
+              $sbomFile = if ($sbomName -eq 'Python toolchain SBOM') { 'python-toolchain-sbom.cdx.json' } else { 'python-project-sbom.cdx.json' }
+              $sbomPath = Join-Path $env:PYTHON_WORK_ROOT "evidence/$sbomFile"
+              $recordedSbomHash = [string]$sbomRecord[0].details.sha256
+              if (-not (Test-Path -LiteralPath $sbomPath -PathType Leaf) -or (Get-FileHash -LiteralPath $sbomPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $recordedSbomHash.ToLowerInvariant()) {
+                throw "$sbomName no longer matches the digest recorded when it was generated."
+              }
+            }
+            $allTestRecords = @($lockVerificationRecord, $toolchainInstallRecord, $regressionRecord, $normalizationRecord) + $functionalRecords
             $allTestRecords | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath $testResultPath -Encoding utf8
             & ./standards/scripts/New-CompletionEvidence.ps1 `
               -RepositoryPath $env:PYTHON_WORK_ROOT `

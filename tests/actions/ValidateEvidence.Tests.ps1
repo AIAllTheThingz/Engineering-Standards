@@ -1122,6 +1122,9 @@ Describe 'Validate evidence action' {
                 @(Test-RelativeRepositoryPath -Value $bad -Name 'changedFiles item' -Path 'r.json').Count | Should -BeGreaterThan 0 -Because $bad
             }
             @(Test-UniqueValues -Items @('src/Foo.py', 'src/foo.py') -Name 'changedFiles' -Path 'r.json' -CaseSensitive).Count | Should -Be 0
+            @(Test-RelativeRepositoryPath -Value '   ' -Name 'evidencePath' -Path 'r.json').Count | Should -BeGreaterThan 0
+            @(Test-RelativeRepositoryPath -Value '   ' -Name 'changedFiles item' -Path 'r.json' -AllowWhitespaceOnly).Count | Should -Be 0
+            @(Test-RelativeRepositoryPath -Value '' -Name 'changedFiles item' -Path 'r.json' -AllowWhitespaceOnly).Count | Should -BeGreaterThan 0
             @(Test-UniqueValues -Items @('src/Foo.py', 'src/Foo.py') -Name 'changedFiles' -Path 'r.json' -CaseSensitive).Count | Should -Be 1
             @(Test-UniqueValues -Items @('Alpha', 'alpha') -Name 'owners' -Path 'r.json').Count | Should -Be 1
         }
