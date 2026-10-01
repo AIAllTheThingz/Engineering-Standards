@@ -197,9 +197,14 @@ function Get-ReceiptExclusionPath {
     # This repository's two example receipts bind each other's trees. Pair their directories only for those exact
     # receipt files in this repository; any other receipt, even inside those directories, excludes only its own directory.
     $centralEvidenceDirectories = @('examples/python-project/evidence/', 'examples/bash-project/evidence/')
-    $centralReceiptPaths = @('examples/python-project/evidence/local-completion-result.json', 'examples/bash-project/evidence/local-completion-result.json')
-    $isCentralRepository = [string]::Equals($Repository, 'AIAllTheThingz/Engineering-Standards', [StringComparison]::Ordinal)
-    $isCentralReceipt = $isCentralRepository -and @($centralReceiptPaths | Where-Object { [string]::Equals($_, $relative, $comparison) }).Count -gt 0
+    # Each central receipt is paired with the repository identity it records.
+    $centralReceipts = @(
+        @{ Path = 'examples/python-project/evidence/local-completion-result.json'; Repository = 'AIAllTheThingz/Engineering-Standards' },
+        @{ Path = 'examples/bash-project/evidence/local-completion-result.json'; Repository = 'example-org/bash-project' }
+    )
+    $isCentralReceipt = @($centralReceipts | Where-Object {
+        [string]::Equals($_.Path, $relative, $comparison) -and [string]::Equals($_.Repository, $Repository, [StringComparison]::Ordinal)
+    }).Count -gt 0
     if ($isCentralReceipt) { return $centralEvidenceDirectories }
     $slash = $relative.LastIndexOf('/')
     if ($slash -lt 0) { return @($relative) }

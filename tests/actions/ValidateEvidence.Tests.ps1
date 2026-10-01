@@ -773,9 +773,10 @@ Describe 'Validate evidence action' {
         It 'pairs the two example evidence directories only for the exact central receipts in this repository' {
             $cases = @(
                 @{ Receipt = 'examples/python-project/evidence/local-completion-result.json'; Repository = 'AIAllTheThingz/Engineering-Standards'; SiblingChangeIgnored = $true },
-                @{ Receipt = 'examples/bash-project/evidence/local-completion-result.json'; Repository = 'AIAllTheThingz/Engineering-Standards'; SiblingChangeIgnored = $true; SiblingDirectory = 'examples/python-project/evidence' },
+                @{ Receipt = 'examples/bash-project/evidence/local-completion-result.json'; Repository = 'example-org/bash-project'; SiblingChangeIgnored = $true; SiblingDirectory = 'examples/python-project/evidence' },
                 @{ Receipt = 'examples/python-project/evidence/alternate-receipt.json'; Repository = 'AIAllTheThingz/Engineering-Standards'; SiblingChangeIgnored = $false },
-                @{ Receipt = 'examples/python-project/evidence/local-completion-result.json'; Repository = 'other-owner/Other-Repository'; SiblingChangeIgnored = $false }
+                @{ Receipt = 'examples/python-project/evidence/local-completion-result.json'; Repository = 'other-owner/Other-Repository'; SiblingChangeIgnored = $false },
+                @{ Receipt = 'examples/bash-project/evidence/local-completion-result.json'; Repository = 'AIAllTheThingz/Engineering-Standards'; SiblingChangeIgnored = $false; SiblingDirectory = 'examples/python-project/evidence' }
             )
             foreach ($case in $cases) {
                 $sibling = if ($case.ContainsKey('SiblingDirectory')) { $case.SiblingDirectory } else { 'examples/bash-project/evidence' }
