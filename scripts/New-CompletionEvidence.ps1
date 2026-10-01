@@ -481,7 +481,9 @@ function Convert-ChangedFilePath {
     while ($normalized.StartsWith('./', [StringComparison]::Ordinal)) {
         $normalized = $normalized.Substring(2)
     }
-    if ($normalized.Length -eq 0 -or $normalized -eq 'unknown' -or $normalized -match '^(?:[A-Za-z]:|/|//)' -or $normalized -match '(?:^|/)\.\.(?:/|$)') {
+    # A drive prefix is only a root on Windows; on Unix 'C:module.py' is an ordinary relative filename.
+    $rooted = $normalized.StartsWith('/', [StringComparison]::Ordinal) -or ($IsWindows -and $normalized -match '^[A-Za-z]:')
+    if ($normalized.Length -eq 0 -or $rooted -or $normalized -match '(?:^|/)\.\.(?:/|$)') {
         throw "ChangedFile '$Path' must be a non-empty repository-relative path without traversal."
     }
     return $normalized
@@ -498,7 +500,7 @@ function Get-ChangedFileCategories {
         generatedBuildOutput = @()
     }
     foreach ($file in @($Files)) {
-        if ($null -eq $file -or $file.Length -eq 0 -or $file -eq 'unknown') { continue }
+        if ($null -eq $file -or $file.Length -eq 0) { continue }
         $path = $file
         if (Test-GeneratedBuildOutputPath -Path $path) { $categories.generatedBuildOutput += $path; continue }
         if ($path -match '^evidence/' -or $path -match '/evidence/') { $categories.generatedEvidence += $path; continue }
@@ -523,8 +525,10 @@ if ($changedFiles.Count -eq 0 -and $commit -ne 'unknown') {
     $changedFiles = @(& git -C $sourceRoot diff-tree --no-commit-id --name-only -r $commit 2>$null | ForEach-Object { $_ })
 }
 $changedFiles = @($changedFiles | Where-Object { -not (Test-GeneratedBuildOutputPath -Path $_) } | Sort-Object -Unique -CaseSensitive)
-if ($changedFiles.Count -eq 0) { $changedFiles = @('unknown') }
-$changedFileCategories = Get-ChangedFileCategories -Files $changedFiles
+# 'unknown' is only the placeholder for an empty change set; a real file with that name is an ordinary path.
+$changedFilesUnknown = $changedFiles.Count -eq 0
+if ($changedFilesUnknown) { $changedFiles = @('unknown') }
+$changedFileCategories = Get-ChangedFileCategories -Files $(if ($changedFilesUnknown) { @() } else { $changedFiles })
 $evidence = [ordered]@{
     schemaVersion = '1.1.0'
     executionContext = $EvidenceExecutionContext

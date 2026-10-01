@@ -1099,6 +1099,17 @@ Describe 'Validate evidence action' {
             }
         }
 
+        It 'preserves legal Git filenames that only look reserved' {
+            & $script:NewTempEvidence
+            $changedFiles = @('docs/v1..v2.md', 'unknown', 'src/app.py')
+            if (-not $IsWindows) { $changedFiles += 'C:module.py' }
+            & "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'Legal reserved-looking path fixture.' -ArtifactPath 'evidence/report.json' -CommandsExecuted @('fixture') -ChangedFile $changedFiles
+            $? | Should -BeTrue
+            $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/generated.json') -Raw | ConvertFrom-Json
+            foreach ($changedFile in $changedFiles) { @($generated.changedFiles) | Should -Contain $changedFile }
+            @($generated.changedFileCategories.source) | Should -Contain 'unknown'
+        }
+
         It 'uses an explicit complete change inventory when supplied' {
             & $script:NewTempEvidence
             $changedFiles = @(

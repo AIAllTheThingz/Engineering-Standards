@@ -109,6 +109,16 @@ Describe 'JSON schema validation' {
                 (ConvertTo-Json -InputObject $tag | Test-Json -Schema $tagSchema) | Should -BeFalse -Because $tag
             }
         }
+        It 'accepts exact Git changed-file paths and rejects only traversal and roots' {
+            $completionSchema = Get-Content -LiteralPath "$PSScriptRoot/../../schemas/completion-result.schema.json" -Raw | ConvertFrom-Json
+            $pathSchema = $completionSchema.properties.changedFiles.items | ConvertTo-Json -Depth 10
+            foreach ($path in @('docs/v1..v2.md', 'a..b', "line`nfeed.md", 'C:module.py', 'unknown', 'a b/c.md', '..hidden/x')) {
+                (ConvertTo-Json -InputObject $path | Test-Json -Schema $pathSchema) | Should -BeTrue -Because $path
+            }
+            foreach ($path in @('../x', 'a/../b', 'a/..', '..', '/abs', 'C:/x')) {
+                (ConvertTo-Json -InputObject $path | Test-Json -Schema $pathSchema -ErrorAction SilentlyContinue) | Should -BeFalse -Because $path
+            }
+        }
         It 'accepts GitHub-valid verified-run branches and rejects reserved or malformed names' {
             $schema = Resolve-Path "$PSScriptRoot/../../schemas/verified-run.schema.json"
             $source = Get-Content -LiteralPath "$PSScriptRoot/../../evidence/latest-verified-run.json" -Raw | ConvertFrom-Json
