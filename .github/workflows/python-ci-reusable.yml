@@ -522,7 +522,7 @@ jobs:
           $completionFullTree = $false
           if ($completionScopeBaseSha -match '^0{40}$') {
             # A newly created branch has no previous tip. Scope it against the default branch so every pushed
-            # commit is inventoried; with no default-branch ancestor, inventory the whole pushed tree.
+            # commit is inventoried.
             $completionScopeBaseSha = $null
             $defaultBranch = if ($null -ne $eventPayload -and $null -ne $eventPayload.repository) { [string]$eventPayload.repository.default_branch } else { '' }
             $mergeBase = ''
@@ -533,8 +533,10 @@ jobs:
                 if ($LASTEXITCODE -ne 0) { $mergeBase = '' }
               }
             }
+            # A branch created exactly at the default-branch tip (merge-base equals the tip) introduces no delta, and a
+            # missing default branch has no ancestor to diff against; both inventory the whole validated tree.
             if ($mergeBase -match '^[0-9a-f]{40}$' -and $mergeBase -ne $env:GITHUB_SHA) { $completionScopeBaseSha = $mergeBase }
-            elseif ($mergeBase -notmatch '^[0-9a-f]{40}$') { $completionFullTree = $true }
+            else { $completionFullTree = $true }
           }
           if ([string]::IsNullOrWhiteSpace($completionScopeBaseSha) -and -not $completionFullTree) {
             $completionParents = (& git -C $completionSourceRoot show -s --format=%P $env:GITHUB_SHA).Trim()

@@ -182,7 +182,8 @@ function Get-ReceiptExclusionPath {
     # repository root, the file itself. A receipt outside the source tree excludes nothing.
     param(
         [Parameter(Mandatory)][string]$GitRoot,
-        [AllowNull()][string]$ReceiptFullPath
+        [AllowNull()][string]$ReceiptFullPath,
+        [AllowNull()][string]$Repository
     )
     if ([string]::IsNullOrWhiteSpace($ReceiptFullPath)) { return @() }
     # Only Windows treats a backslash as a separator; on Linux it is a legal filename character.
@@ -193,14 +194,16 @@ function Get-ReceiptExclusionPath {
     if (-not $receiptFull.StartsWith($rootFull + [IO.Path]::DirectorySeparatorChar, $comparison)) { return @() }
     $relative = $receiptFull.Substring($rootFull.Length + 1)
     if ($IsWindows) { $relative = $relative.Replace('\', '/') }
+    # This repository's two example receipts bind each other's trees. Pair their directories only for those exact
+    # receipt files in this repository; any other receipt, even inside those directories, excludes only its own directory.
+    $centralEvidenceDirectories = @('examples/python-project/evidence/', 'examples/bash-project/evidence/')
+    $centralReceiptPaths = @('examples/python-project/evidence/local-completion-result.json', 'examples/bash-project/evidence/local-completion-result.json')
+    $isCentralRepository = [string]::Equals($Repository, 'AIAllTheThingz/Engineering-Standards', [StringComparison]::Ordinal)
+    $isCentralReceipt = $isCentralRepository -and @($centralReceiptPaths | Where-Object { [string]::Equals($_, $relative, $comparison) }).Count -gt 0
+    if ($isCentralReceipt) { return $centralEvidenceDirectories }
     $slash = $relative.LastIndexOf('/')
     if ($slash -lt 0) { return @($relative) }
-    $receiptDirectory = $relative.Substring(0, $slash + 1)
-    # This repository's two example receipts bind each other's trees, so each excludes both directories.
-    $centralEvidenceDirectories = @('examples/python-project/evidence/', 'examples/bash-project/evidence/')
-    $isCentralDirectory = @($centralEvidenceDirectories | Where-Object { [string]::Equals($_, $receiptDirectory, $comparison) }).Count -gt 0
-    if ($isCentralDirectory) { return $centralEvidenceDirectories }
-    return @($receiptDirectory)
+    return @($relative.Substring(0, $slash + 1))
 }
 
 function Test-ExcludedReceiptPath {
@@ -301,7 +304,8 @@ function Get-ValidatedContentFingerprint {
     param(
         [Parameter(Mandatory)][string]$RepositoryRoot,
         [Parameter(Mandatory)][string]$CommitSha,
-        [AllowNull()][string]$ReceiptFullPath
+        [AllowNull()][string]$ReceiptFullPath,
+        [AllowNull()][string]$ReceiptRepository
     )
     if ($CommitSha -eq 'unknown') { return $null }
     if ($CommitSha -notmatch '^[A-Fa-f0-9]{40,64}$') { throw "Validated commit '$CommitSha' must be a Git object identifier." }
@@ -310,12 +314,11 @@ function Get-ValidatedContentFingerprint {
     & git -C $RepositoryRoot cat-file -e "$CommitSha^{commit}" 2>$null
     if ($LASTEXITCODE -ne 0) { throw "Validated commit '$CommitSha' is not available in SourceRepositoryPath." }
     $gitTopLevel = (@(& git -C $RepositoryRoot rev-parse --show-toplevel 2>$null) -join '').Trim()
-    $receiptExclusions = if ($LASTEXITCODE -eq 0 -and $gitTopLevel) { @(Get-ReceiptExclusionPath -GitRoot $gitTopLevel -ReceiptFullPath $ReceiptFullPath) } else { @() }
+    $receiptExclusions = if ($LASTEXITCODE -eq 0 -and $gitTopLevel) { @(Get-ReceiptExclusionPath -GitRoot $gitTopLevel -ReceiptFullPath $ReceiptFullPath -Repository $ReceiptRepository) } else { @() }
     return Get-RawGitTreeFingerprint -RepositoryRoot $RepositoryRoot -CommitSha $CommitSha -FailurePrefix "Validated commit '$CommitSha'" -ExtraExcludedPaths $receiptExclusions
 }
 
 $resolvedCommitTag = Resolve-ValidatedCommitTag -TagName $ValidatedCommitTag -RepositoryRoot $sourceRoot -CommitSha $validatedCommit
-$validatedContentSha256 = Get-ValidatedContentFingerprint -RepositoryRoot $sourceRoot -CommitSha $validatedCommit -ReceiptFullPath (Join-Path $root $OutputPath)
 $effectiveBranch = $env:GITHUB_REF_NAME
 if ($Branch) {
     $effectiveBranch = $Branch
@@ -442,6 +445,9 @@ function Get-OriginRepositoryName {
     if ($value -match 'github\.com[:/]([^/]+)/([^/.]+)(\.git)?$') { return "$($Matches[1])/$($Matches[2])" }
     return 'AIAllTheThingz/Engineering-Standards'
 }
+
+$receiptRepository = $(if ($Repository) { $Repository } elseif ($env:GITHUB_REPOSITORY) { $env:GITHUB_REPOSITORY } else { Get-OriginRepositoryName -RepositoryRoot $sourceRoot })
+$validatedContentSha256 = Get-ValidatedContentFingerprint -RepositoryRoot $sourceRoot -CommitSha $validatedCommit -ReceiptFullPath (Join-Path $root $OutputPath) -ReceiptRepository $receiptRepository
 
 function Test-GeneratedBuildOutputPath {
     param([string]$Path)

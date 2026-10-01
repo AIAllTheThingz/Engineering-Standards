@@ -56,7 +56,8 @@ function Get-ReceiptExclusionPath {
     # repository root, the file itself. A receipt outside the source tree excludes nothing.
     param(
         [Parameter(Mandatory)][string]$GitRoot,
-        [AllowNull()][string]$ReceiptFullPath
+        [AllowNull()][string]$ReceiptFullPath,
+        [AllowNull()][string]$Repository
     )
     if ([string]::IsNullOrWhiteSpace($ReceiptFullPath)) { return @() }
     # Only Windows treats a backslash as a separator; on Linux it is a legal filename character.
@@ -67,14 +68,16 @@ function Get-ReceiptExclusionPath {
     if (-not $receiptFull.StartsWith($rootFull + [IO.Path]::DirectorySeparatorChar, $comparison)) { return @() }
     $relative = $receiptFull.Substring($rootFull.Length + 1)
     if ($IsWindows) { $relative = $relative.Replace('\', '/') }
+    # This repository's two example receipts bind each other's trees. Pair their directories only for those exact
+    # receipt files in this repository; any other receipt, even inside those directories, excludes only its own directory.
+    $centralEvidenceDirectories = @('examples/python-project/evidence/', 'examples/bash-project/evidence/')
+    $centralReceiptPaths = @('examples/python-project/evidence/local-completion-result.json', 'examples/bash-project/evidence/local-completion-result.json')
+    $isCentralRepository = [string]::Equals($Repository, 'AIAllTheThingz/Engineering-Standards', [StringComparison]::Ordinal)
+    $isCentralReceipt = $isCentralRepository -and @($centralReceiptPaths | Where-Object { [string]::Equals($_, $relative, $comparison) }).Count -gt 0
+    if ($isCentralReceipt) { return $centralEvidenceDirectories }
     $slash = $relative.LastIndexOf('/')
     if ($slash -lt 0) { return @($relative) }
-    $receiptDirectory = $relative.Substring(0, $slash + 1)
-    # This repository's two example receipts bind each other's trees, so each excludes both directories.
-    $centralEvidenceDirectories = @('examples/python-project/evidence/', 'examples/bash-project/evidence/')
-    $isCentralDirectory = @($centralEvidenceDirectories | Where-Object { [string]::Equals($_, $receiptDirectory, $comparison) }).Count -gt 0
-    if ($isCentralDirectory) { return $centralEvidenceDirectories }
-    return @($receiptDirectory)
+    return @($relative.Substring(0, $slash + 1))
 }
 
 function Test-ExcludedReceiptPath {
@@ -175,7 +178,8 @@ function Get-RepositoryContentFingerprint {
     param(
         [Parameter(Mandatory)][string]$RepositoryPath,
         [Parameter(Mandatory)][string]$CommitReference,
-        [AllowNull()][string]$ReceiptFullPath
+        [AllowNull()][string]$ReceiptFullPath,
+        [AllowNull()][string]$ReceiptRepository
     )
     $gitRootOutput = @(& git -C $RepositoryPath rev-parse --show-toplevel 2>$null)
     if ($LASTEXITCODE -ne 0 -or -not $gitRootOutput) { throw 'Could not resolve the Git root for completion-evidence content identity.' }
@@ -184,7 +188,7 @@ function Get-RepositoryContentFingerprint {
     if ($LASTEXITCODE -ne 0 -or -not $commitOutput) { throw "Could not resolve commit '$CommitReference' for completion-evidence content identity." }
     $commitSha = ($commitOutput -join '').Trim()
     if ($commitSha -notmatch '^[A-Fa-f0-9]{40,64}$') { throw "Commit '$CommitReference' did not resolve to a Git object identifier." }
-    return Get-RawGitTreeFingerprint -RepositoryRoot $gitRoot -CommitSha $commitSha -FailurePrefix "Commit '$commitSha'" -ExtraExcludedPaths @(Get-ReceiptExclusionPath -GitRoot $gitRoot -ReceiptFullPath $ReceiptFullPath)
+    return Get-RawGitTreeFingerprint -RepositoryRoot $gitRoot -CommitSha $commitSha -FailurePrefix "Commit '$commitSha'" -ExtraExcludedPaths @(Get-ReceiptExclusionPath -GitRoot $gitRoot -ReceiptFullPath $ReceiptFullPath -Repository $ReceiptRepository)
 }
 
 try {
@@ -288,7 +292,7 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
                     if ($workingTreeChanges.Count -gt 0) {
                         throw 'squash-safe Local content validation requires a clean working tree.'
                     }
-                    $currentContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference 'HEAD' -ReceiptFullPath $full
+                    $currentContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference 'HEAD' -ReceiptFullPath $full -ReceiptRepository ([string]$evidence.repository)
                     if ($currentContentSha256 -ine $validatedContentSha256) {
                         throw 'validatedContentSha256 does not match the current repository content.'
                     }
@@ -303,7 +307,7 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
         }
         elseif ($validatedContentSha256) {
             try {
-                $validatedCommitContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference $validatedSha -ReceiptFullPath $full
+                $validatedCommitContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference $validatedSha -ReceiptFullPath $full -ReceiptRepository ([string]$evidence.repository)
                 if ($validatedCommitContentSha256 -ine $validatedContentSha256) {
                     throw 'validatedContentSha256 does not match the named validatedCommitSha content.'
                 }

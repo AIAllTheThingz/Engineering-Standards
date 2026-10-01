@@ -770,6 +770,54 @@ Describe 'Validate evidence action' {
                 }
             }
         }
+        It 'pairs the two example evidence directories only for the exact central receipts in this repository' {
+            $cases = @(
+                @{ Receipt = 'examples/python-project/evidence/local-completion-result.json'; Repository = 'AIAllTheThingz/Engineering-Standards'; SiblingChangeIgnored = $true },
+                @{ Receipt = 'examples/bash-project/evidence/local-completion-result.json'; Repository = 'AIAllTheThingz/Engineering-Standards'; SiblingChangeIgnored = $true; SiblingDirectory = 'examples/python-project/evidence' },
+                @{ Receipt = 'examples/python-project/evidence/alternate-receipt.json'; Repository = 'AIAllTheThingz/Engineering-Standards'; SiblingChangeIgnored = $false },
+                @{ Receipt = 'examples/python-project/evidence/local-completion-result.json'; Repository = 'other-owner/Other-Repository'; SiblingChangeIgnored = $false }
+            )
+            foreach ($case in $cases) {
+                $sibling = if ($case.ContainsKey('SiblingDirectory')) { $case.SiblingDirectory } else { 'examples/bash-project/evidence' }
+                $identityRoot = Join-Path ([IO.Path]::GetTempPath()) ("completion-central-pairing-" + [guid]::NewGuid())
+                $source = Join-Path $identityRoot 'source'
+                try {
+                    New-Item -ItemType Directory -Path (Join-Path $source $sibling) -Force | Out-Null
+                    New-Item -ItemType Directory -Path (Join-Path $source (Split-Path -Parent $case.Receipt)) -Force | Out-Null
+                    Set-Content -LiteralPath (Join-Path $source "$sibling/data.json") -Value '{"v":1}' -NoNewline
+                    Set-Content -LiteralPath (Join-Path $source (Join-Path (Split-Path -Parent $case.Receipt) 'report.json')) -Value '{}' -NoNewline
+                    & git -C $source init --quiet
+                    & git -C $source config user.email 'evidence-test@example.invalid'
+                    & git -C $source config user.name 'Evidence Test'
+                    & git -C $source add --all
+                    & git -C $source commit --quiet -m 'first'
+                    $first = (& git -C $source rev-parse HEAD).Trim()
+                    Set-Content -LiteralPath (Join-Path $source "$sibling/data.json") -Value '{"v":2}' -NoNewline
+                    & git -C $source add --all
+                    & git -C $source commit --quiet -m 'second'
+                    $second = (& git -C $source rev-parse HEAD).Trim()
+                    $fingerprints = foreach ($commit in @($first, $second)) {
+                        & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" `
+                            -RepositoryPath $source -SourceRepositoryPath $source `
+                            -OutputPath $case.Receipt -ExecutionContext Local `
+                            -Summary 'Central receipt pairing fixture.' `
+                            -ArtifactPath ((Split-Path -Parent $case.Receipt) + '/report.json') `
+                            -CommandsExecuted @('fixture') `
+                            -CommandsNotExecuted @('GitHub-hosted Governance CI workflow execution') `
+                            -ChangedFile @('app.py') -Repository $case.Repository `
+                            -ValidatedCommitSha $commit | Out-Null
+                        $LASTEXITCODE | Should -Be 0
+                        (Get-Content -LiteralPath (Join-Path $source $case.Receipt) -Raw | ConvertFrom-Json).validatedContentSha256
+                    }
+                    $label = "$($case.Receipt) in $($case.Repository)"
+                    if ($case.SiblingChangeIgnored) { $fingerprints[0] | Should -BeExactly $fingerprints[1] -Because $label }
+                    else { $fingerprints[0] | Should -Not -BeExactly $fingerprints[1] -Because $label }
+                }
+                finally {
+                    if (Test-Path -LiteralPath $identityRoot) { Remove-Item -LiteralPath $identityRoot -Recurse -Force }
+                }
+            }
+        }
         It 'keeps downstream files under the central example evidence paths in the content fingerprint' {
             $identityRoot = Join-Path ([IO.Path]::GetTempPath()) ("completion-downstream-paths-" + [guid]::NewGuid())
             $source = Join-Path $identityRoot 'source'

@@ -371,10 +371,11 @@ Describe 'Governed Python project support' {
         $files = Invoke-Selection $repository $tip 'push' $zeros 'main'
         @($files | Sort-Object) | Should -Be @('first.txt','second.txt','third.txt')
 
-        # New branch that adds nothing beyond main: falls back to the tip's own change rather than failing.
+        # New branch created exactly at the default-branch tip: no tree delta exists, so the existing tip commit's
+        # files must not be reported as changes; the whole validated tree is inventoried instead.
         & git -C $repository update-ref refs/remotes/origin/main $tip
         $files = Invoke-Selection $repository $tip 'push' $zeros 'main'
-        @($files) | Should -Be @('third.txt')
+        @($files | Sort-Object) | Should -Be @('first.txt','main-only.txt','second.txt','third.txt')
 
         # First push of the default branch: there is no default-branch ancestor, so inventory the whole tree.
         $initial = Join-Path $TestDrive 'initial-push'
