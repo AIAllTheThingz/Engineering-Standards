@@ -338,6 +338,11 @@ jobs:
             $functionalExitCode = $LASTEXITCODE
           }
           finally {
+            # Caller code may have appended to the runner's command files to change later steps' PATH or environment (for
+            # example a replacement git); empty them before this step ends so Actions applies nothing.
+            foreach ($commandFile in @($env:GITHUB_PATH, $env:GITHUB_ENV, $env:GITHUB_STATE)) {
+              if (-not [string]::IsNullOrWhiteSpace($commandFile)) { [IO.File]::WriteAllBytes($commandFile, [byte[]]@()) }
+            }
             $functionalStopwatch.Stop()
             "started_at_utc=$functionalStartedAtUtc" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             "completed_at_utc=$((Get-Date).ToUniversalTime().ToString('o'))" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append

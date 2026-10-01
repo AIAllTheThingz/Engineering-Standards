@@ -112,7 +112,7 @@ def trusted_env(home: Path) -> dict[str, str]:
             "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
         }
     )
-    return env | {"PYTHONDONTWRITEBYTECODE": "1"}
+    return {key: value for key, value in env.items() if key not in ACTIONS_COMMAND_FILE_VARIABLES} | {"PYTHONDONTWRITEBYTECODE": "1"}
 
 
 def run(
@@ -141,6 +141,8 @@ def run(
         return 124, f"Command exceeded {timeout} seconds: {exc}", time.monotonic() - started
 
 
+# Actions reads these files after a step ends to change later steps' PATH and environment; caller code must not learn them.
+ACTIONS_COMMAND_FILE_VARIABLES = frozenset({"GITHUB_PATH", "GITHUB_ENV", "GITHUB_OUTPUT", "GITHUB_STATE", "GITHUB_STEP_SUMMARY"})
 SIGKILL = 9  # POSIX signal number; the process scan below only runs where /proc exists.
 PR_SET_CHILD_SUBREAPER = 36
 

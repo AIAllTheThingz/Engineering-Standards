@@ -2318,3 +2318,13 @@ def test_runtime_lock_is_restored_before_each_later_use_and_failures_are_recorde
     require(source.index("build_command = ") < first < source.index("runtime_install = "), "the lock is not restored before installation")
     require(second < source.index("audit_command = "), "the lock is not restored before the audit")
     require('"Python runtime lock integrity"' in source and "if runtime_lock_altered:" in source, "tampering needs a Failed record")
+
+
+def test_caller_environment_withholds_the_actions_command_files(tmp_path: Path, monkeypatch) -> None:
+    for name in ("GITHUB_PATH", "GITHUB_ENV", "GITHUB_OUTPUT", "GITHUB_STATE", "GITHUB_STEP_SUMMARY"):
+        monkeypatch.setenv(name, str(tmp_path / name))
+    monkeypatch.setenv("GITHUB_SHA", "kept")
+    env = validator.trusted_env(tmp_path / "home")
+    for name in ("GITHUB_PATH", "GITHUB_ENV", "GITHUB_OUTPUT", "GITHUB_STATE", "GITHUB_STEP_SUMMARY"):
+        require(name not in env, f"{name} reached caller code")
+    require(env["GITHUB_SHA"] == "kept", "unrelated workflow variables must be kept")

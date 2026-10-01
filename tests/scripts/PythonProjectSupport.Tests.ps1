@@ -67,6 +67,15 @@ Describe 'Governed Python project support' {
         $script:driver | Should -Not -Match 'original_default_environment'
     }
 
+    It 'empties the runner command files before the functional step ends' {
+        $step = [regex]::Match($script:workflow, '(?ms)- name: Run governed functional validation.*?(?=^ {6}- name:)').Value
+        $step | Should -Not -BeNullOrEmpty
+        $step | Should -Match 'foreach \(\$commandFile in @\(\$env:GITHUB_PATH, \$env:GITHUB_ENV, \$env:GITHUB_STATE\)\)'
+        $step | Should -Match '\[IO\.File\]::WriteAllBytes\(\$commandFile, \[byte\[\]\]@\(\)\)'
+        $step.IndexOf('WriteAllBytes') | Should -BeLessThan $step.IndexOf('$functionalStopwatch.Stop()')
+        $step.IndexOf('WriteAllBytes') | Should -BeGreaterThan $step.IndexOf('python-project-validation.py')
+    }
+
     It 'rechecks both SBOM digests in the trusted completion step before generating the receipt' {
         $recheckIndex = $script:workflow.IndexOf('no longer matches the digest recorded when it was generated')
         $generatorIndex = $script:workflow.IndexOf('& ./standards/scripts/New-CompletionEvidence.ps1', $recheckIndex)
