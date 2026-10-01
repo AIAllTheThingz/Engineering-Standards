@@ -96,6 +96,29 @@ Describe 'JSON schema validation' {
             ($incompleteCurrent | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $schema) | Should -BeFalse
         }
 
+        It 'accepts Git-valid completion evidence tag names emitted by the generator' {
+            # The completion-result schema references sibling schemas by URN, which Test-Json cannot resolve on its own,
+            # so validate each tag against the validatedCommitTag property schema.
+            $completionSchema = Get-Content -LiteralPath "$PSScriptRoot/../../schemas/completion-result.schema.json" -Raw | ConvertFrom-Json
+            $tagSchema = $completionSchema.properties.validatedCommitTag | ConvertTo-Json -Depth 10
+            # Git imposes no total tag length limit, so the schema must accept what git check-ref-format accepts.
+            foreach ($tag in @('release+1','release@1','-release','release/v1.2.0',('release/' + ('a' * 300)))) {
+                (ConvertTo-Json -InputObject $tag | Test-Json -Schema $tagSchema) | Should -BeTrue -Because $tag
+            }
+            foreach ($tag in @('@','/release','release/','bad..tag','bad@{tag','bad tag','bad\tag','name.lock','name.')) {
+                (ConvertTo-Json -InputObject $tag | Test-Json -Schema $tagSchema) | Should -BeFalse -Because $tag
+            }
+        }
+        It 'accepts exact Git changed-file paths and rejects only traversal and roots' {
+            $completionSchema = Get-Content -LiteralPath "$PSScriptRoot/../../schemas/completion-result.schema.json" -Raw | ConvertFrom-Json
+            $pathSchema = $completionSchema.properties.changedFiles.items | ConvertTo-Json -Depth 10
+            foreach ($path in @('docs/v1..v2.md', 'a..b', "line`nfeed.md", 'C:module.py', 'C:/module.py', 'unknown', 'a b/c.md', '..hidden/x')) {
+                (ConvertTo-Json -InputObject $path | Test-Json -Schema $pathSchema) | Should -BeTrue -Because $path
+            }
+            foreach ($path in @('../x', 'a/../b', 'a/..', '..', '/abs')) {
+                (ConvertTo-Json -InputObject $path | Test-Json -Schema $pathSchema -ErrorAction SilentlyContinue) | Should -BeFalse -Because $path
+            }
+        }
         It 'accepts GitHub-valid verified-run branches and rejects reserved or malformed names' {
             $schema = Resolve-Path "$PSScriptRoot/../../schemas/verified-run.schema.json"
             $source = Get-Content -LiteralPath "$PSScriptRoot/../../evidence/latest-verified-run.json" -Raw | ConvertFrom-Json

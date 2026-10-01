@@ -5,19 +5,21 @@
   "status": "Passed",
   "requiredValidation": true,
   "evidenceSource": "Automated",
-  "command": "python -m ruff format --check --no-cache --isolated src tests",
-  "workingDirectory": "examples/python-project",
-  "startedAtUtc": "2026-07-20T22:08:33.136693Z",
-  "completedAtUtc": "2026-07-20T22:08:33.136707Z",
-  "durationSeconds": 0.2,
-  "runtime": "CPython 3.13.2",
-  "toolVersion": "governed-python-validator/1.0.0",
+  "command": ". -I -m ruff format --check --no-cache --isolated ./caller/src ./caller/tests",
+  "workingDirectory": "trusted-isolated-workspace",
+  "startedAtUtc": "2026-10-01T00:16:33.911805Z",
+  "completedAtUtc": "2026-10-01T00:16:33.957290Z",
+  "durationSeconds": 0.045,
+  "runtime": "CPython 3.12.3",
+  "toolVersion": "ruff/0.15.22",
   "exitCode": 0,
   "summary": "Python formatting completed successfully.",
   "warnings": [],
   "failureReason": null,
   "blockedReason": null,
   "details": {
-    "sanitizedOutput": "4 files already formatted\n"
+    "sanitizedOutput": "4 files already formatted\n",
+    "toolName": "ruff",
+    "toolVersion": "0.15.22"
   }
 }

@@ -127,7 +127,7 @@ function Test-BashExampleWrapperControls {
 }
 
 function Get-BashCompletionEvidenceInputChanges {
-    param([Parameter(Mandatory)][string[]]$ChangedPaths)
+    param([Parameter(Mandatory)][AllowEmptyCollection()][string[]]$ChangedPaths)
 
     $validatorDependencies = @(
         'scripts/GovernanceValidation.psm1',
@@ -321,6 +321,8 @@ Describe 'Governed Bash project support' {
         $completion = Get-Content -LiteralPath $completionPath -Raw | ConvertFrom-Json
         $completion.commitSha | Should -Match '^[0-9a-f]{40}$'
         $completion.validatedCommitSha | Should -BeExactly $completion.commitSha
+        $completion.validatedCommitTag | Should -BeNullOrEmpty
+        $completion.notRunReason | Should -Match 'Local validation was not rerun after the final source fixes'
         $completion.status | Should -BeExactly 'NotRun'
         @($completion.commandsNotExecuted) | Should -Contain 'GitHub-hosted Bash workflow execution'
         @($completion.artifacts.path) | Should -Contain 'evidence/bash-toolchain-bootstrap.json'

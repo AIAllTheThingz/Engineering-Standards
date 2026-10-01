@@ -1,31 +1,83 @@
 [
   {
     "schemaVersion": "1.1.0",
+    "name": "Python package build",
+    "category": "build",
+    "status": "Passed",
+    "requiredValidation": true,
+    "evidenceSource": "Automated",
+    "command": ". -I -m build --no-isolation --wheel --sdist --outdir ./dist ./caller",
+    "workingDirectory": "trusted-isolated-workspace",
+    "startedAtUtc": "2026-10-01T00:16:35.407006Z",
+    "completedAtUtc": "2026-10-01T00:16:36.048641Z",
+    "durationSeconds": 0.642,
+    "runtime": "CPython 3.12.3",
+    "toolVersion": "build/1.6.1",
+    "exitCode": 0,
+    "summary": "Python package build completed successfully.",
+    "warnings": [],
+    "failureReason": null,
+    "blockedReason": null,
+    "details": {
+      "sanitizedOutput": "* Getting build dependencies for wheel...\n* Building wheel...\n* Getting build dependencies for sdist...\n* Building sdist...\nSuccessfully built governed_paths_example-1.0.0-py3-none-any.whl and governed_paths_example-1.0.0.tar.gz\n",
+      "toolName": "build",
+      "toolVersion": "1.6.1"
+    }
+  },
+  {
+    "schemaVersion": "1.1.0",
     "name": "Python archive inspection",
     "category": "build",
     "status": "Passed",
     "requiredValidation": true,
     "evidenceSource": "Automated",
     "command": "trusted-archive-inspection",
-    "workingDirectory": "examples/python-project",
-    "startedAtUtc": "2026-07-20T22:08:39.425384Z",
-    "completedAtUtc": "2026-07-20T22:08:39.425396Z",
+    "workingDirectory": "trusted-isolated-workspace",
+    "startedAtUtc": "2026-10-01T00:16:36.053671Z",
+    "completedAtUtc": "2026-10-01T00:16:36.053671Z",
     "durationSeconds": 0,
-    "runtime": "CPython 3.13.2",
-    "toolVersion": "governed-python-validator/1.0.0",
+    "runtime": "CPython 3.12.3",
+    "toolVersion": "python-standard-library/3.12.3",
     "exitCode": 0,
     "summary": "Python archive inspection completed successfully.",
     "warnings": [],
     "failureReason": null,
     "blockedReason": null,
     "details": {
-      "sanitizedOutput": "Archive members are safe.",
-      "hashes": {
-        "governed_paths_example-1.0.0-py3-none-any.whl": "ddc708afc2b72edbaf84ed23e6cb04a9afba9295b195d9b2f85d9c8e627d49d7",
-        "governed_paths_example-1.0.0.tar.gz": "d9a461cb7c1644683aa58a1bfe18bb0bf4fbee1c748ef58a4ad466df48312da6"
+      "sanitizedOutput": "Archive members and package metadata are safe.",
+      "artifacts": {
+        "governed_paths_example-1.0.0-py3-none-any.whl": "9b845033126a9f2d903280bb0902b4a3703b67a87c20b8f877e7e52f927e409f",
+        "governed_paths_example-1.0.0.tar.gz": "b242071187d4326ba3a18ac7fc0214fcfacf413d455e0b8ed1397de46e06b4d4"
       },
       "wheelMembers": 8,
-      "sdistMembers": 9
+      "sdistMembers": 8,
+      "toolName": "python-standard-library",
+      "toolVersion": "3.12.3"
+    }
+  },
+  {
+    "schemaVersion": "1.1.0",
+    "name": "Installed wheel environment",
+    "category": "integration",
+    "status": "Passed",
+    "requiredValidation": true,
+    "evidenceSource": "Automated",
+    "command": "./test-venv/bin/python -I -m pip install --no-input --only-binary=:all: --require-hashes --no-deps -r .",
+    "workingDirectory": "trusted-isolated-workspace",
+    "startedAtUtc": "2026-10-01T00:16:39.605423Z",
+    "completedAtUtc": "2026-10-01T00:16:59.131019Z",
+    "durationSeconds": 19.526,
+    "runtime": "CPython 3.12.3",
+    "toolVersion": "pip/26.2.1",
+    "exitCode": 0,
+    "summary": "Installed wheel environment completed successfully.",
+    "warnings": [],
+    "failureReason": null,
+    "blockedReason": null,
+    "details": {
+      "sanitizedOutput": "Processing ./dist/governed_paths_example-1.0.0-py3-none-any.whl\nInstalling collected packages: governed-paths-example\nSuccessfully installed governed-paths-example-1.0.0\n",
+      "toolName": "pip",
+      "toolVersion": "26.2.1"
     }
   },
   {
@@ -35,20 +87,23 @@
     "status": "Passed",
     "requiredValidation": true,
     "evidenceSource": "Automated",
-    "command": "examples/python-project/.smoke-venv/Scripts/python.exe -I -c import governed_paths",
-    "workingDirectory": "examples/python-project",
-    "startedAtUtc": "2026-07-20T22:08:53.235634Z",
-    "completedAtUtc": "2026-07-20T22:08:53.235647Z",
-    "durationSeconds": 3.697,
-    "runtime": "CPython 3.13.2",
-    "toolVersion": "governed-python-validator/1.0.0",
+    "command": "./test-venv/bin/python -I -c import importlib, pathlib; m=importlib.import_module('governed_paths'); p=pathlib.Path(m.__file__).resolve(); print(p); assert './caller/src' not in str(p)",
+    "workingDirectory": "trusted-isolated-workspace",
+    "startedAtUtc": "2026-10-01T00:16:59.364851Z",
+    "completedAtUtc": "2026-10-01T00:16:59.392774Z",
+    "durationSeconds": 0.028,
+    "runtime": "CPython 3.12.3",
+    "toolVersion": "governed-paths-example/1.0.0",
     "exitCode": 0,
     "summary": "Installed wheel smoke test completed successfully.",
     "warnings": [],
     "failureReason": null,
     "blockedReason": null,
     "details": {
-      "sanitizedOutput": "src/app.py\n"
+      "sanitizedOutput": "./test-venv/lib/python3.12/site-packages/governed_paths/__init__.py\n",
+      "importName": "governed_paths",
+      "toolName": "governed-paths-example",
+      "toolVersion": "1.0.0"
     }
   }
 ]

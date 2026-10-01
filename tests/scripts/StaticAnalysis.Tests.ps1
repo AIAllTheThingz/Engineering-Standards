@@ -54,3 +54,18 @@ Describe 'Static validator prerequisite honesty' {
         (Get-Content (Join-Path $root 'result.json') -Raw|ConvertFrom-Json).status | Should -BeExactly 'Blocked'
     }
 }
+
+Describe 'Reviewed Python subprocess boundary' {
+    It 'keeps the governed S603 exception anchored to the shell-free validator command boundary' {
+        $validatorSource = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/python-project-validation.py')
+        $boundaryLines = @($validatorSource | Select-String -SimpleMatch 'result = subprocess.run(' | Select-Object -ExpandProperty LineNumber)
+
+        $boundaryLines.Count | Should -Be 1
+        $boundaryLines[0] | Should -Be 126
+        ($validatorSource -join "`n") | Should -Match '(?m)^\s+shell=False,$'
+
+        $staticAnalysisPolicy = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/Test-PythonStaticAnalysis.ps1') -Raw
+        $expectedLocation = "'scripts/python-project-validation.py:$($boundaryLines[0])'"
+        $staticAnalysisPolicy | Should -Match ([regex]::Escape($expectedLocation))
+    }
+}

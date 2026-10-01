@@ -22,7 +22,7 @@ import time
 import tomllib
 import venv
 import zipfile
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -82,7 +82,7 @@ def sanitize(value: str, roots: list[Path]) -> str:
     result = value
     for root in sorted(roots, key=lambda item: len(str(item)), reverse=True):
         text = str(root)
-        result = result.replace(text, ".").replace(text.replace("\\", "/"), ".")
+        result = sanitize_path_variants(result, text)
     return result.replace(str(sys.executable), "python")
 
 
@@ -112,7 +112,7 @@ def trusted_env(home: Path) -> dict[str, str]:
             "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
         }
     )
-    return env
+    return {key: value for key, value in env.items() if key not in ACTIONS_COMMAND_FILE_VARIABLES} | {"PYTHONDONTWRITEBYTECODE": "1"}
 
 
 def run(
@@ -123,7 +123,7 @@ def run(
 ) -> tuple[int, str, float]:
     started = time.monotonic()
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # noqa: S603 - commands use standards-validated executables and paths.
             command,
             cwd=cwd,
             env=env,
@@ -132,10 +132,321 @@ def run(
             stderr=subprocess.STDOUT,
             timeout=timeout,
             check=False,
+            shell=False,
         )
+        terminate_descendants()
         return result.returncode, result.stdout[-12000:], time.monotonic() - started
     except subprocess.TimeoutExpired as exc:
+        terminate_descendants()
         return 124, f"Command exceeded {timeout} seconds: {exc}", time.monotonic() - started
+
+
+# Actions reads these files after a step ends to change later steps' PATH and environment; caller code must not learn them.
+ACTIONS_COMMAND_FILE_VARIABLES = frozenset({"GITHUB_PATH", "GITHUB_ENV", "GITHUB_OUTPUT", "GITHUB_STATE", "GITHUB_STEP_SUMMARY"})
+SIGKILL = 9  # POSIX signal number; the process scan below only runs where /proc exists.
+PR_SET_CHILD_SUBREAPER = 36
+
+
+def become_subreaper() -> bool:
+    """Make this process adopt every orphaned descendant, so a detached caller process cannot escape the process tree."""
+    if not sys.platform.startswith("linux"):
+        return False
+    import ctypes
+
+    return ctypes.CDLL(None, use_errno=True).prctl(PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0) == 0
+
+
+def read_process_parent(entry: Path) -> tuple[int, str] | None:
+    """Return a process's parent id and state, or None when it is gone or unreadable."""
+    try:
+        fields = (entry / "stat").read_text(encoding="utf-8", errors="replace").rsplit(")", 1)[1].split()
+        return int(fields[1]), fields[0]
+    except (OSError, IndexError, ValueError):
+        return None
+
+
+def live_descendants(proc_root: Path, root_pid: int) -> set[int]:
+    """Return every non-zombie process below root_pid, however deeply or recently it was detached."""
+    parents: dict[int, int] = {}
+    for entry in proc_root.iterdir():
+        parent = read_process_parent(entry) if entry.name.isdigit() else None
+        if parent is not None and parent[1] != "Z":
+            parents[int(entry.name)] = parent[0]
+    found: set[int] = set()
+    frontier = {root_pid}
+    while frontier:
+        frontier = {pid for pid, parent in parents.items() if parent in frontier and pid not in found}
+        found |= frontier
+    return found
+
+
+def kill_process(pid: int) -> int:
+    """Kill one process; return 1 when it was signalled and 0 when it had already exited."""
+    try:
+        os.kill(pid, SIGKILL)
+    except OSError:
+        return 0
+    return 1
+
+
+def reap_children() -> None:
+    """Collect every exited child so adopted zombies do not linger."""
+    while True:
+        try:
+            if os.waitpid(-1, os.WNOHANG)[0] == 0:
+                return
+        except ChildProcessError:
+            return
+
+
+def terminate_descendants(proc_root: Path = Path("/proc"), root_pid: int | None = None, attempts: int = 100) -> int:
+    """Kill all descendants, including detached ones adopted by this subreaper; return how many remain alive."""
+    if not proc_root.is_dir():
+        return 0
+    root = os.getpid() if root_pid is None else root_pid
+    remaining = live_descendants(proc_root, root)
+    for _ in range(attempts):
+        if not remaining:
+            break
+        for pid in remaining:
+            kill_process(pid)
+        time.sleep(0.05)
+        reap_children()
+        remaining = live_descendants(proc_root, root)
+    return len(remaining)
+
+
+def tree_digest(root: Path) -> str:
+    """Digest every path, link target, mode and file content below root, ignoring only a top-level .git."""
+    digest = hashlib.sha256()
+    for directory, dirnames, filenames in os.walk(root):
+        dirnames.sort()
+        if Path(directory) == root:
+            dirnames[:] = [name for name in dirnames if name != ".git"]
+        for name in sorted(dirnames + filenames):
+            path = Path(directory) / name
+            try:
+                info = path.lstat()
+                if stat.S_ISLNK(info.st_mode):
+                    kind = f"link:{os.readlink(path)}"
+                elif stat.S_ISREG(info.st_mode):
+                    kind = f"file:{info.st_mode & 0o7777:o}:{sha256(path)}"
+                else:
+                    kind = f"other:{stat.S_IFMT(info.st_mode):o}"
+            except OSError as exc:
+                kind = f"unreadable:{exc.errno}"
+            digest.update(json.dumps([path.relative_to(root).as_posix(), kind]).encode("utf-8") + b"\n")
+    return digest.hexdigest()
+
+
+def trusted_tool_roots() -> list[Path]:
+    """Return the directories whose executables every trusted check runs: the toolchain, the standard library and standards."""
+    import sysconfig
+
+    candidates = [Path(__file__).resolve().parents[1], Path(sysconfig.get_path("stdlib")), Path(sysconfig.get_path("platstdlib"))]
+    if sys.prefix != sys.base_prefix:
+        candidates.append(Path(sys.prefix))
+    roots: list[Path] = []
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved.is_dir() and resolved not in roots:
+            roots.append(resolved)
+    return roots
+
+
+def restore_trusted_file(path: Path, original: bytes) -> bool:
+    """Rewrite a file caller code may have changed back to its original bytes; return True when it had been altered."""
+    if path.is_file() and not path.is_symlink() and path.read_bytes() == original:
+        return False
+    if path.is_dir() and not path.is_symlink():
+        shutil.rmtree(path)
+    else:
+        path.unlink(missing_ok=True)
+    path.write_bytes(original)
+    return True
+
+
+def compile_trusted_bytecode() -> None:
+    """Pre-compile the interpreter's libraries so no isolated child has bytecode left to write into them later."""
+    import compileall
+
+    standards = Path(__file__).resolve().parents[1]
+    for root in trusted_tool_roots():
+        if root != standards:
+            compileall.compile_dir(root, quiet=2, workers=0)
+
+
+def trusted_tool_digests() -> dict[str, str]:
+    return {str(root): tree_digest(root) for root in trusted_tool_roots()}
+
+
+def changed_trusted_tools(before: dict[str, str]) -> list[str]:
+    """Return the trusted directories whose content differs from the digests taken before caller code ran."""
+    after = trusted_tool_digests()
+    return sorted(root for root in set(before) | set(after) if before.get(root) != after.get(root))
+
+
+def sanitize_path_variants(value: str, path: str) -> str:
+    for candidate in (path, path.replace("\\", "/"), path.replace("\\", "\\\\")):
+        value = value.replace(candidate, ".")
+    return value
+
+
+def sanitize_evidence_value(value: Any, roots: list[Path]) -> Any:
+    if isinstance(value, str):
+        return sanitize(value, roots)
+    if isinstance(value, Path):
+        return sanitize(str(value), roots)
+    if isinstance(value, list):
+        return [sanitize_evidence_value(item, roots) for item in value]
+    if isinstance(value, dict):
+        return {
+            sanitize(key, roots) if isinstance(key, str) else str(key): sanitize_evidence_value(item, roots)
+            for key, item in value.items()
+        }
+    return value
+
+
+LOCK_RESOLUTION_TARGETS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "linux-cpython-3.13.2-x86_64",
+        (
+            "--platform",
+            "manylinux_2_17_x86_64",
+            "--implementation",
+            "cp",
+            "--python-version",
+            "3.13.2",
+            "--abi",
+            "cp313",
+        ),
+    ),
+    (
+        "windows-cpython-3.13.2-x86_64",
+        (
+            "--platform",
+            "win_amd64",
+            "--implementation",
+            "cp",
+            "--python-version",
+            "3.13.2",
+            "--abi",
+            "cp313",
+        ),
+    ),
+    (
+        "macos-cpython-3.13.2-x86_64",
+        (
+            "--platform",
+            "macosx_13_0_x86_64",
+            "--implementation",
+            "cp",
+            "--python-version",
+            "3.13.2",
+            "--abi",
+            "cp313",
+        ),
+    ),
+)
+LOCK_RESOLUTION_PIP_NAME = "pip"
+LOCK_RESOLUTION_PIP_VERSION = "26.2.1"
+# The declared win_amd64 target uses the supported Windows 10 22H2 AMD64
+# marker baseline. PEP 508 exposes platform.version() separately from
+# platform.release(), so both must be concrete rather than treating
+# version-gated dependencies as inactive.
+WINDOWS_10_PLATFORM_RELEASE = "10"
+WINDOWS_10_PLATFORM_VERSION = "10.0.19045"
+# The declared macosx_13_0_x86_64 target is the released Intel macOS 13.0
+# baseline.  PEP 508 exposes these values verbatim through platform.release()
+# and platform.version(), so keep the marker environment aligned with that
+# target instead of silently treating release-gated requirements as inactive.
+MACOS_13_0_PLATFORM_RELEASE = "22.1.0"
+MACOS_13_0_PLATFORM_VERSION = (
+    "Darwin Kernel Version 22.1.0: Sun Oct 9 20:14:54 PDT 2022; "
+    "root:xnu-8792.41.9~2/RELEASE_X86_64"
+)
+# Pip's cross-platform options select compatible wheels but do not apply PEP 508
+# platform markers. These environments mirror the targets resolved above and are
+# injected into Pip before each base or supplemental target resolution.
+LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS: tuple[dict[str, str], ...] = (
+    {
+        "implementation_name": "cpython",
+        "implementation_version": "3.13.2",
+        "os_name": "posix",
+        "platform_machine": "x86_64",
+        "platform_python_implementation": "CPython",
+        "platform_release": "",
+        "platform_system": "Linux",
+        "platform_version": "",
+        "python_full_version": "3.13.2",
+        "python_version": "3.13",
+        "sys_platform": "linux",
+        "extra": "",
+    },
+    {
+        "implementation_name": "cpython",
+        "implementation_version": "3.13.2",
+        "os_name": "nt",
+        "platform_machine": "AMD64",
+        "platform_python_implementation": "CPython",
+        "platform_release": WINDOWS_10_PLATFORM_RELEASE,
+        "platform_system": "Windows",
+        "platform_version": WINDOWS_10_PLATFORM_VERSION,
+        "python_full_version": "3.13.2",
+        "python_version": "3.13",
+        "sys_platform": "win32",
+        "extra": "",
+    },
+    {
+        "implementation_name": "cpython",
+        "implementation_version": "3.13.2",
+        "os_name": "posix",
+        "platform_machine": "x86_64",
+        "platform_python_implementation": "CPython",
+        "platform_release": MACOS_13_0_PLATFORM_RELEASE,
+        "platform_system": "Darwin",
+        "platform_version": MACOS_13_0_PLATFORM_VERSION,
+        "python_full_version": "3.13.2",
+        "python_version": "3.13",
+        "sys_platform": "darwin",
+        "extra": "",
+    },
+)
+FUNCTIONAL_RUNTIME_MARKER_ENVIRONMENT: dict[str, str] = {
+    "implementation_name": "cpython",
+    "implementation_version": "3.12.11",
+    "os_name": "posix",
+    "platform_machine": "x86_64",
+    "platform_python_implementation": "CPython",
+    "platform_release": "",
+    "platform_system": "Linux",
+    "platform_version": "",
+    "python_full_version": "3.12.11",
+    "python_version": "3.12",
+    "sys_platform": "linux",
+    "extra": "",
+}
+TARGET_MARKER_PIP_WRAPPER = """\
+import json
+import sys
+
+from pip._vendor.packaging import markers
+
+target_environment = json.loads(sys.argv[1])
+
+
+def target_marker_environment():
+    return dict(target_environment)
+
+
+markers.default_environment = target_marker_environment
+
+from pip._internal.cli.main import main
+
+raise SystemExit(main(sys.argv[2:]))
+"""
+TOOLCHAIN_SBOM_PROJECT_NAME = "engineering-standards-python-toolchain"
+TOOLCHAIN_SBOM_PROJECT_VERSION = "1.0.0"
 
 
 def module_command(python: Path, module: str, *args: str) -> list[str]:
@@ -189,14 +500,75 @@ def prepare_work_root(project: Path, work_root: Path) -> tuple[Path, Path, Path]
     return caller, evidence_dir, dist_dir
 
 
+def write_toolchain_sbom_pyproject(work_root: Path) -> Path:
+    """Write standards-owned metadata for the validation-toolchain SBOM root."""
+    metadata_dir = work_root.resolve(strict=True) / "toolchain-sbom-metadata"
+    metadata_dir.mkdir(mode=0o700, exist_ok=True)
+    metadata_path = metadata_dir / "pyproject.toml"
+    if metadata_path.exists():
+        metadata_path.chmod(0o600)
+        metadata_path.unlink()
+    metadata_path.write_text(
+        "[project]\n"
+        f'name = "{TOOLCHAIN_SBOM_PROJECT_NAME}"\n'
+        f'version = "{TOOLCHAIN_SBOM_PROJECT_VERSION}"\n'
+        'description = "Standards-owned Python validation toolchain"\n'
+        'requires-python = ">=3.13,<3.14"\n',
+        encoding="utf-8",
+    )
+    metadata_path.chmod(0o400)
+    return metadata_path
+
+
+def attach_sbom_root_dependencies(sbom_path: Path) -> None:
+    """Connect an SBOM root to every governed component in its closure."""
+    try:
+        document = json.loads(sbom_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"could not read generated SBOM: {exc}") from exc
+    if not isinstance(document, dict):
+        raise ValueError("generated SBOM must be a JSON object")
+    metadata = document.get("metadata")
+    root_component = metadata.get("component") if isinstance(metadata, dict) else None
+    root_ref = root_component.get("bom-ref") if isinstance(root_component, dict) else None
+    if not isinstance(root_ref, str) or not root_ref:
+        raise ValueError("generated SBOM is missing its root component reference")
+    components = document.get("components", [])
+    if not isinstance(components, list):
+        raise ValueError("generated SBOM components must be a list")
+    component_refs: list[str] = []
+    for component in components:
+        ref = component.get("bom-ref") if isinstance(component, dict) else None
+        if not isinstance(ref, str) or not ref:
+            raise ValueError("generated SBOM contains a component without a reference")
+        if ref in component_refs:
+            raise ValueError(f"generated SBOM contains duplicate component reference '{ref}'")
+        component_refs.append(ref)
+    dependencies = document.get("dependencies")
+    if not isinstance(dependencies, list) or any(not isinstance(item, dict) for item in dependencies):
+        raise ValueError("generated SBOM contains invalid dependency records")
+    root_records = [item for item in dependencies if item.get("ref") == root_ref]
+    if len(root_records) != 1:
+        raise ValueError("generated SBOM must contain exactly one root dependency record")
+    root_records[0]["dependsOn"] = component_refs
+    try:
+        sbom_path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    except OSError as exc:
+        raise ValueError(f"could not write generated SBOM: {exc}") from exc
+
+
+GOVERNED_HATCHLING_VERSION = "1.32.4"
+
+
 def parse_project_metadata(project: Path) -> dict[str, Any]:
     pyproject = project / "pyproject.toml"
     data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
     build_system = data.get("build-system", {})
     if build_system.get("build-backend") != "hatchling.build":
         raise ValueError("only the reviewed hatchling.build backend is supported")
-    if build_system.get("requires") != ["hatchling==1.32.0"]:
-        raise ValueError("build-system requirements must be exactly hatchling==1.32.0")
+    expected_hatchling = f"hatchling=={GOVERNED_HATCHLING_VERSION}"
+    if build_system.get("requires") != [expected_hatchling]:
+        raise ValueError(f"build-system requirements must be exactly {expected_hatchling}")
     if "backend-path" in build_system:
         raise ValueError("build-system backend-path is not permitted")
     project_table = data.get("project", {})
@@ -300,6 +672,935 @@ def package_lines(lock: Path) -> list[tuple[str, str]]:
     return packages
 
 
+def normalized_requirement_name(name: str) -> str:
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def pinned_requirements(path: Path) -> dict[str, str]:
+    requirements: dict[str, str] = {}
+    for line_number, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        line = raw_line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        match = re.fullmatch(r"([A-Za-z0-9][A-Za-z0-9_.-]*)==([^\s]+)", line)
+        if not match:
+            raise ValueError(f"{path.name} line {line_number} must contain an exact name==version pin")
+        name = normalized_requirement_name(match.group(1))
+        if name in requirements:
+            raise ValueError(f"{path.name} contains duplicate requirement '{match.group(1)}'")
+        requirements[name] = match.group(2)
+    if not requirements:
+        raise ValueError(f"{path.name} does not contain any requirements")
+    return requirements
+
+
+def locked_requirements(path: Path) -> dict[str, str]:
+    requirements: dict[str, str] = {}
+    for name, version in package_lines(path):
+        normalized_name = normalized_requirement_name(name)
+        if normalized_name in requirements:
+            raise ValueError(f"{path.name} contains duplicate locked requirement '{name}'")
+        requirements[normalized_name] = version
+    if not requirements:
+        raise ValueError(f"{path.name} does not contain any locked requirements")
+    return requirements
+
+
+def locked_requirement_hashes(path: Path, name: str, version: str) -> tuple[str, ...]:
+    """Return the hash options for one exact package pin in a pip-compile lock."""
+    target_name = normalized_requirement_name(name)
+    pinned_version: str | None = None
+    hashes: list[str] = []
+    collecting_hashes = False
+    hash_pattern = re.compile(r"^\s*--hash=sha256:([0-9a-fA-F]{64})(?:\s+\\)?\s*$")
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        package_match = re.match(r"^([A-Za-z0-9_.-]+)==([^\s\\]+)", raw_line.strip())
+        if package_match:
+            package_name = normalized_requirement_name(package_match.group(1))
+            package_version = package_match.group(2)
+            collecting_hashes = package_name == target_name
+            if collecting_hashes:
+                if pinned_version is not None:
+                    raise ValueError(f"{path.name} contains duplicate locked requirement '{name}'")
+                pinned_version = package_version
+            continue
+        if not collecting_hashes:
+            continue
+        hash_match = hash_pattern.fullmatch(raw_line)
+        if hash_match:
+            hashes.append(f"--hash=sha256:{hash_match.group(1).lower()}")
+    if pinned_version is None:
+        raise ValueError(f"{path.name} must lock {name}=={version} for resolver verification")
+    if pinned_version != version:
+        raise ValueError(
+            f"{path.name} must lock {name}=={version} for resolver verification "
+            f"(found {name}=={pinned_version})"
+        )
+    if not hashes:
+        raise ValueError(f"{path.name} must hash-pin {name}=={version} for resolver verification")
+    return tuple(hashes)
+
+
+def direct_locked_requirements(path: Path, requirements_input: Path) -> dict[str, str]:
+    requirements: dict[str, str] = {}
+    current: tuple[str, str] | None = None
+    inline_direct_marker = re.compile(rf"^\s*# via -r .*{re.escape(requirements_input.name)}\s*$")
+    multiline_provenance_marker = re.compile(r"^\s*# via\s*$")
+    multiline_direct_marker = re.compile(rf"^\s*#\s+-r\s+.*{re.escape(requirements_input.name)}\s*$")
+    in_multiline_provenance = False
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        match = re.match(r"^([A-Za-z0-9_.-]+)==([^\s\\]+)", raw_line.strip())
+        if match:
+            current = (normalized_requirement_name(match.group(1)), match.group(2))
+            in_multiline_provenance = False
+            continue
+        if current is None:
+            continue
+        if inline_direct_marker.fullmatch(raw_line) or (
+            in_multiline_provenance and multiline_direct_marker.fullmatch(raw_line)
+        ):
+            name, version = current
+            if name in requirements:
+                raise ValueError(f"{path.name} contains duplicate direct requirement '{name}'")
+            requirements[name] = version
+        if multiline_provenance_marker.fullmatch(raw_line):
+            in_multiline_provenance = True
+    return requirements
+
+
+def validate_requirements_lock(requirements_input: Path, lock: Path) -> None:
+    requested = pinned_requirements(requirements_input)
+    locked = locked_requirements(lock)
+    direct_locked = direct_locked_requirements(lock, requirements_input)
+    missing = sorted(name for name in requested if name not in locked or name not in direct_locked)
+    extra = sorted(name for name in direct_locked if name not in requested)
+    mismatched = sorted(
+        f"{name}=={requested[name]} (lock has {direct_locked[name]})"
+        for name in requested
+        if name in direct_locked and requested[name] != direct_locked[name]
+    )
+    if missing or extra or mismatched:
+        details: list[str] = []
+        if missing:
+            details.append(f"missing from lock: {', '.join(missing)}")
+        if extra:
+            details.append(f"extra direct pins in lock: {', '.join(extra)}")
+        if mismatched:
+            details.append(f"version mismatch: {', '.join(mismatched)}")
+        raise ValueError(
+            f"requirements input and lock are out of sync ({'; '.join(details)}). "
+            "Regenerate the lock with the documented pip-compile command."
+        )
+
+
+def resolution_install_records(report: Path) -> list[dict[str, Any]]:
+    try:
+        document = json.loads(report.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"could not read the pip resolution report: {exc}") from exc
+    installs = document.get("install")
+    if not isinstance(installs, list) or not installs:
+        raise ValueError("pip resolution report does not contain a non-empty install closure")
+    if any(not isinstance(item, dict) for item in installs):
+        raise ValueError("pip resolution report contains an invalid install record")
+    return installs
+
+
+def resolved_requirements(install_records: list[dict[str, Any]]) -> dict[str, str]:
+    requirements: dict[str, str] = {}
+    for item in install_records:
+        if not isinstance(item.get("metadata"), dict):
+            raise ValueError("pip resolution report contains an invalid install record")
+        name = item["metadata"].get("name")
+        version = item["metadata"].get("version")
+        if not isinstance(name, str) or not isinstance(version, str) or not name or not version:
+            raise ValueError("pip resolution report contains a package without a name and version")
+        normalized_name = normalized_requirement_name(name)
+        if normalized_name in requirements:
+            raise ValueError(f"pip resolution report contains duplicate package '{name}'")
+        requirements[normalized_name] = version
+    return requirements
+
+
+def package_dependency_requirements(install_records: list[dict[str, Any]]) -> list[tuple[str, Any]]:
+    """Parse the complete package dependency graph from a pip resolution report."""
+    try:
+        from pip._vendor.packaging.requirements import InvalidRequirement, Requirement
+    except ImportError as exc:
+        raise ValueError("pip's bundled PEP 508 requirement parser is unavailable") from exc
+
+    dependencies: list[tuple[str, Any]] = []
+    for item in install_records:
+        metadata = item.get("metadata")
+        if not isinstance(metadata, dict):
+            raise ValueError("pip resolution report contains an invalid install record")
+        source_name = metadata.get("name")
+        if not isinstance(source_name, str) or not source_name:
+            raise ValueError("pip resolution report contains a package without a name")
+        source_package = normalized_requirement_name(source_name)
+        requires_dist = metadata.get("requires_dist")
+        if requires_dist is None:
+            continue
+        if not isinstance(requires_dist, list) or any(not isinstance(raw, str) for raw in requires_dist):
+            raise ValueError("pip resolution report contains invalid package dependency metadata")
+        for raw_requirement in requires_dist:
+            try:
+                requirement = Requirement(raw_requirement)
+            except InvalidRequirement as exc:
+                raise ValueError(
+                    f"pip resolution report contains an invalid dependency declaration: {raw_requirement!r}"
+                ) from exc
+            if requirement.url is not None:
+                raise ValueError(
+                    "pip resolution report contains an unsupported direct URL dependency declaration: "
+                    f"{raw_requirement!r}"
+                )
+            dependencies.append((source_package, requirement))
+    return dependencies
+
+
+def marker_variable_names(marker: Any) -> set[str]:
+    """Return PEP 508 marker variables from pip's governed parser representation."""
+    try:
+        from pip._vendor.packaging.markers import Variable
+    except ImportError as exc:
+        raise ValueError("pip's bundled PEP 508 marker parser is unavailable") from exc
+
+    variables: set[str] = set()
+
+    def visit(value: Any) -> None:
+        if isinstance(value, Variable):
+            variables.add(value.value)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                visit(item)
+
+    visit(marker._markers)
+    return variables
+
+
+def marker_may_apply_to_target(
+    marker: Any,
+    target_environment: dict[str, str],
+    activated_extras: tuple[str, ...],
+    unmodeled_fields: set[str],
+) -> bool:
+    """Return whether a marker can apply without assuming values for unmodeled fields."""
+    try:
+        from pip._vendor.packaging.markers import Variable, _eval_op, _normalize
+    except ImportError as exc:
+        raise ValueError("pip's bundled PEP 508 marker parser is unavailable") from exc
+
+    def evaluate_condition(condition: tuple[Any, Any, Any], environment: dict[str, Any]) -> bool | None:
+        lhs, operator, rhs = condition
+        if isinstance(lhs, Variable):
+            environment_key = lhs.value
+            if environment_key in unmodeled_fields:
+                return None
+            lhs_value = environment[environment_key]
+            rhs_value = rhs.value
+        else:
+            environment_key = rhs.value
+            if environment_key in unmodeled_fields:
+                return None
+            lhs_value = lhs.value
+            rhs_value = environment[environment_key]
+        normalized_lhs, normalized_rhs = _normalize(lhs_value, rhs_value, key=environment_key)
+        return _eval_op(normalized_lhs, operator, normalized_rhs, key=environment_key)
+
+    def evaluate_expression(expression: list[Any], environment: dict[str, Any]) -> bool | None:
+        groups: list[list[bool | None]] = [[]]
+        for item in expression:
+            if isinstance(item, list):
+                groups[-1].append(evaluate_expression(item, environment))
+            elif isinstance(item, tuple):
+                groups[-1].append(evaluate_condition(item, environment))
+            elif item == "or":
+                groups.append([])
+            elif item != "and":
+                raise ValueError("pip resolution report contains an unsupported marker expression")
+        group_results: list[bool | None] = []
+        for group in groups:
+            if any(result is False for result in group):
+                group_results.append(False)
+            elif all(result is True for result in group):
+                group_results.append(True)
+            else:
+                group_results.append(None)
+        if any(result is True for result in group_results):
+            return True
+        if all(result is False for result in group_results):
+            return False
+        return None
+
+    for extra in activated_extras or ("",):
+        environment = {**target_environment, "extra": extra}
+        if evaluate_expression(marker._markers, environment) is not False:
+            return True
+    return False
+
+
+def marker_applies_to_target(
+    marker: Any,
+    target_environment: dict[str, str],
+    target_name: str,
+    activated_extras: tuple[str, ...],
+) -> bool:
+    """Evaluate markers fail-closed only when unmodeled fields can affect the target."""
+    unmodeled_fields = sorted(
+        field
+        for field in ("platform_release", "platform_version")
+        if field in marker_variable_names(marker) and not target_environment.get(field)
+    )
+    if unmodeled_fields and marker_may_apply_to_target(
+        marker,
+        target_environment,
+        activated_extras,
+        set(unmodeled_fields),
+    ):
+        raise ValueError(
+            "requirements lock closure cannot safely evaluate unmodeled "
+            f"{', '.join(unmodeled_fields)} marker(s) for {target_name}"
+        )
+    if unmodeled_fields:
+        return False
+    extra_contexts = activated_extras or ("",)
+    return any(
+        marker.evaluate({**target_environment, "extra": extra})
+        for extra in extra_contexts
+    )
+
+
+def target_reachable_packages_and_extras_for_target(
+    dependencies: list[tuple[str, Any]],
+    target_environment: dict[str, str],
+    target_name: str,
+    root_packages: set[str] | None = None,
+    initially_activated_extras: dict[str, tuple[str, ...]] | None = None,
+) -> tuple[set[str], dict[str, tuple[str, ...]]]:
+    """Traverse only target-reachable dependency edges and propagate their requested extras."""
+    initially_activated_extras = initially_activated_extras or {}
+    initial_extras: dict[str, set[str]] = {
+        normalized_requirement_name(package): set(extras)
+        for package, extras in initially_activated_extras.items()
+        if extras
+    }
+    activated = {package: set(extras) for package, extras in initial_extras.items()}
+    seen_activated_states = {
+        tuple(sorted((package, tuple(sorted(extras))) for package, extras in activated.items()))
+    }
+    while True:
+        reachable = (
+            {normalized_requirement_name(package) for package in root_packages}
+            if root_packages is not None
+            else {source_package for source_package, _ in dependencies}
+        )
+        reachable.update(
+            normalized_requirement_name(package)
+            for package in initially_activated_extras
+        )
+        next_activated = {package: set(extras) for package, extras in initial_extras.items()}
+        changed = True
+        while changed:
+            changed = False
+            for source_package, requirement in dependencies:
+                if source_package not in reachable:
+                    continue
+                source_extras = activated.get(source_package, ())
+                if requirement.marker is not None and not marker_applies_to_target(
+                    requirement.marker,
+                    target_environment,
+                    target_name,
+                    source_extras,
+                ):
+                    continue
+                target_package = normalized_requirement_name(requirement.name)
+                if target_package not in reachable:
+                    reachable.add(target_package)
+                    changed = True
+                if requirement.extras:
+                    target_extras = next_activated.setdefault(target_package, set())
+                    previous_count = len(target_extras)
+                    target_extras.update(requirement.extras)
+                    changed = changed or len(target_extras) != previous_count
+        if next_activated == activated:
+            return reachable, {package: tuple(sorted(extras)) for package, extras in activated.items()}
+        next_activated_state = tuple(
+            sorted((package, tuple(sorted(extras))) for package, extras in next_activated.items())
+        )
+        if next_activated_state in seen_activated_states:
+            raise ValueError(
+                "requirements lock closure extra activation state did not converge for "
+                f"{target_name}"
+            )
+        seen_activated_states.add(next_activated_state)
+        activated = next_activated
+
+
+def marker_gated_requirements_for_target(
+    install_records: list[dict[str, Any]],
+    locked: dict[str, str],
+    target_environment: dict[str, str],
+    target_name: str,
+    activated_extras_by_package: dict[str, tuple[str, ...]] | None = None,
+    root_packages: set[str] | None = None,
+) -> dict[str, tuple[str, tuple[str, ...]]]:
+    """Return lock pins reached by target-active dependency edges and activated extras."""
+    dependencies = package_dependency_requirements(install_records)
+    reachable_packages, activated_extras_by_package = target_reachable_packages_and_extras_for_target(
+        dependencies,
+        target_environment,
+        target_name,
+        root_packages,
+        activated_extras_by_package,
+    )
+    marker_gated: dict[str, tuple[str, tuple[str, ...]]] = {}
+    for source_package, requirement in dependencies:
+        if source_package not in reachable_packages:
+            continue
+        activated_extras = activated_extras_by_package.get(source_package, ())
+        if requirement.marker is None:
+            continue
+        if not marker_applies_to_target(
+            requirement.marker,
+            target_environment,
+            target_name,
+            activated_extras,
+        ):
+            continue
+        name = normalized_requirement_name(requirement.name)
+        version = locked.get(name)
+        if version is None:
+            raise ValueError(
+                f"requirements lock is missing marker-gated package '{name}' required for {target_name}"
+            )
+        if not requirement.specifier.contains(version, prereleases=True):
+            raise ValueError(
+                f"requirements lock pin {name}=={version} does not satisfy the marker-gated "
+                f"dependency declared for {target_name}"
+            )
+        extras = tuple(sorted(requirement.extras))
+        prior = marker_gated.get(name)
+        if prior is not None:
+            prior_version, prior_extras = prior
+            if prior_version != version:
+                raise ValueError(
+                    f"marker-gated package {name} has incompatible locked versions "
+                    f"for {target_name}"
+                )
+            extras = tuple(sorted(set(prior_extras).union(extras)))
+        marker_gated[name] = (version, extras)
+    return marker_gated
+
+
+def marker_resolution_requirement(name: str, version: str, extras: tuple[str, ...]) -> str:
+    """Format a constrained supplemental request without discarding extras."""
+    suffix = f"[{','.join(extras)}]" if extras else ""
+    return f"{name}{suffix}=={version}"
+
+
+def validate_resolved_requirements_lock(
+    requirements_input: Path,
+    lock: Path,
+    reports: Path | tuple[Path, ...],
+) -> None:
+    """Require the lock to match the resolver closure on every applicable platform."""
+    validate_requirements_lock(requirements_input, lock)
+    locked = locked_requirements(lock)
+    report_paths = (reports,) if isinstance(reports, Path) else reports
+    if not report_paths:
+        raise ValueError("requirements lock closure must include at least one resolution report")
+    resolved: dict[str, str] = {}
+    for report in report_paths:
+        report_records = resolution_install_records(report)
+        for name, version in resolved_requirements(report_records).items():
+            prior_version = resolved.get(name)
+            if prior_version is not None and prior_version != version:
+                raise ValueError(
+                    f"requirements lock resolution differs across supported targets for {name}: "
+                    f"{prior_version} and {version}"
+                )
+            resolved[name] = version
+    unexpected = sorted(
+        f"{name}=={locked[name]}"
+        for name in locked
+        if name not in resolved
+    )
+    missing = sorted(
+        f"{name}=={resolved[name]}" for name in resolved if name not in locked
+    )
+    mismatched = sorted(
+        f"{name}=={resolved[name]} (lock has {locked[name]})"
+        for name in resolved
+        if name in locked and resolved[name] != locked[name]
+    )
+    if unexpected or missing or mismatched:
+        details: list[str] = []
+        if unexpected:
+            details.append(f"unexpected locked packages: {', '.join(unexpected)}")
+        if missing:
+            details.append(f"missing resolved packages: {', '.join(missing)}")
+        if mismatched:
+            details.append(f"resolution version mismatch: {', '.join(mismatched)}")
+        raise ValueError(
+            f"requirements lock does not match the complete constrained resolver closure ({'; '.join(details)}). "
+            "Regenerate the lock with the documented pip-compile command."
+        )
+
+
+class LockResolutionBlockedError(ValueError):
+    """The package resolver could not reach the required external service."""
+
+
+def require_pinned_lock_metadata_parser() -> None:
+    """Reject PEP 508 parsing unless this process uses the governed pip build."""
+    try:
+        import pip
+    except ImportError as exc:
+        raise ValueError(
+            f"requirements lock metadata parsing requires {LOCK_RESOLUTION_PIP_NAME}=={LOCK_RESOLUTION_PIP_VERSION}"
+        ) from exc
+    if getattr(pip, "__version__", None) != LOCK_RESOLUTION_PIP_VERSION:
+        raise ValueError(
+            "requirements lock metadata parsing must run under "
+            f"{LOCK_RESOLUTION_PIP_NAME}=={LOCK_RESOLUTION_PIP_VERSION}"
+        )
+
+
+def is_transient_lock_resolution_failure(exit_code: int, output: str) -> bool:
+    """Classify resolver outages without hiding invalid or stale lock failures."""
+    if exit_code == 124:
+        return True
+    return bool(
+        re.search(
+            r"(?:could not fetch url|read timed? out|timed out|connection (?:reset|refused|aborted|error)|"
+            r"failed to establish a new connection|network is unreachable|temporary failure in name resolution|"
+            r"name or service not known|service unavailable|http error (?:429|5\d{2})|"
+            r"(?:429|5\d{2}) (?:client|server) error|too many requests|503 server error)",
+            output,
+            flags=re.IGNORECASE,
+        )
+    )
+
+
+def pinned_lock_resolver(
+    source_python: Path,
+    label: str,
+    lock: Path,
+    environment: Path,
+    env: dict[str, str],
+) -> Path:
+    """Create a temporary resolver environment with the lock-pinned pip version."""
+    hashes = locked_requirement_hashes(lock, LOCK_RESOLUTION_PIP_NAME, LOCK_RESOLUTION_PIP_VERSION)
+    create_command = module_command(source_python, "venv", str(environment))
+    create_code, create_output, _ = run(create_command, environment.parent, env, 120)
+    if create_code != 0:
+        message = (
+            f"could not create the {label} resolver environment: "
+            f"{sanitize(create_output, [lock.parent, environment.parent, source_python.parent])}"
+        )
+        if create_code == 124:
+            raise LockResolutionBlockedError(message)
+        raise ValueError(message)
+    resolver_python = environment / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    if not resolver_python.is_file():
+        raise ValueError(f"the {label} resolver environment did not produce a Python executable")
+    bootstrap_requirements = environment / "bootstrap-pip.requirements"
+    bootstrap_lines = [f"{LOCK_RESOLUTION_PIP_NAME}=={LOCK_RESOLUTION_PIP_VERSION} \\"]
+    for index, hash_option in enumerate(hashes):
+        continuation = " \\" if index < len(hashes) - 1 else ""
+        bootstrap_lines.append(f"    {hash_option}{continuation}")
+    bootstrap_requirements.write_text("\n".join(bootstrap_lines) + "\n", encoding="utf-8")
+    bootstrap_command = module_command(
+        resolver_python,
+        "pip",
+        "--isolated",
+        "install",
+        "--disable-pip-version-check",
+        "--no-input",
+        "--no-deps",
+        "--upgrade",
+        "--force-reinstall",
+        "--only-binary=:all:",
+        "--no-cache-dir",
+        "--require-hashes",
+        "--index-url",
+        "https://pypi.org/simple",
+        "-r",
+        str(bootstrap_requirements),
+    )
+    bootstrap_code, bootstrap_output, _ = run(bootstrap_command, environment.parent, env, 300)
+    if bootstrap_code != 0:
+        message = (
+            f"could not install the locked resolver pip for {label}: "
+            f"{sanitize(bootstrap_output, [lock.parent, environment.parent, source_python.parent])}"
+        )
+        if is_transient_lock_resolution_failure(bootstrap_code, bootstrap_output):
+            raise LockResolutionBlockedError(message)
+        raise ValueError(message)
+    version_command = [
+        str(resolver_python),
+        "-I",
+        "-c",
+        "import pip; print(pip.__version__)",
+    ]
+    version_code, version_output, _ = run(version_command, environment.parent, env, 60)
+    if version_code != 0 or version_output.strip() != LOCK_RESOLUTION_PIP_VERSION:
+        raise ValueError(
+            f"the {label} resolver must use {LOCK_RESOLUTION_PIP_NAME}=={LOCK_RESOLUTION_PIP_VERSION}"
+        )
+    print(f"Lock-closure resolver for {label}: {LOCK_RESOLUTION_PIP_NAME}=={LOCK_RESOLUTION_PIP_VERSION}")
+    return resolver_python
+
+
+def bootstrap_pinned_lock_metadata_parser(
+    source_python: Path,
+    lock: Path,
+    work_root: Path,
+    output_path: Path,
+) -> None:
+    """Create a verified pip-pinned interpreter for lock metadata parsing."""
+    source_python = source_python.resolve(strict=True)
+    lock = lock.resolve(strict=True)
+    work_root = work_root.absolute()
+    output_path = output_path.absolute()
+    parser_python = pinned_lock_resolver(
+        source_python,
+        "lock metadata parser",
+        lock,
+        work_root / "lock-metadata-parser",
+        trusted_env(work_root / "lock-metadata-parser-home"),
+    )
+    if not parser_python.is_file():
+        raise ValueError("the verified lock metadata parser did not produce a Python executable")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(str(parser_python.resolve()) + "\n", encoding="utf-8")
+
+
+def validate_requirements_lock_closure(
+    requirements_input: Path,
+    lock: Path,
+    resolver_python: Path,
+    runtime_python: Path,
+    work_root: Path,
+) -> None:
+    """Resolve the lock for every supported target before installation."""
+    import tempfile
+
+    require_pinned_lock_metadata_parser()
+    requirements_input = requirements_input.resolve(strict=True)
+    lock = lock.resolve(strict=True)
+    resolver_python = resolver_python.resolve(strict=True)
+    runtime_python = runtime_python.resolve(strict=True)
+    resolver_root = work_root.absolute() / "lock-resolution"
+    resolver_root.mkdir(parents=True, exist_ok=True)
+    env = trusted_env(resolver_root / "home")
+
+    def verify_python_version(python: Path, expected: str, label: str) -> None:
+        version_command = [
+            str(python),
+            "-I",
+            "-c",
+            "import sys; print(f'{sys.implementation.name} {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')",
+        ]
+        version_code, version_output, _ = run(version_command, resolver_root, env, 60)
+        if version_code != 0 or version_output.strip() != expected:
+            raise ValueError(f"requirements lock closure must use {label}")
+
+    verify_python_version(resolver_python, "cpython 3.13.2", "CPython 3.13.2")
+    verify_python_version(runtime_python, "cpython 3.12.11", "the functional CPython 3.12.11 runtime")
+    with tempfile.TemporaryDirectory(prefix="lock-resolution-", dir=resolver_root) as directory:
+        reports: list[Path] = []
+        locked = locked_requirements(lock)
+        direct_requirement_names = set(pinned_requirements(requirements_input))
+        resolver_pip = pinned_lock_resolver(
+            resolver_python,
+            "CPython 3.13.2",
+            lock,
+            Path(directory) / "resolver-cpython-3.13.2",
+            env,
+        )
+        runtime_pip = pinned_lock_resolver(
+            runtime_python,
+            "CPython 3.12.11",
+            lock,
+            Path(directory) / "runtime-cpython-3.12.11",
+            env,
+        )
+        target_marker_wrapper = Path(directory) / "target-marker-pip.py"
+        target_marker_wrapper.write_text(TARGET_MARKER_PIP_WRAPPER, encoding="utf-8")
+
+        def resolve_target(
+            python: Path,
+            target_name: str,
+            target_args: tuple[str, ...],
+            target_environment: dict[str, str],
+            resolution_input: Path,
+            report_name: str,
+        ) -> Path:
+            report = Path(directory) / f"{report_name}.json"
+            command = [
+                str(python),
+                "-I",
+                str(target_marker_wrapper),
+                json.dumps(target_environment, sort_keys=True, separators=(",", ":")),
+                "--isolated",
+                "install",
+                "--disable-pip-version-check",
+                "--no-input",
+                "--only-binary=:all:",
+                "--no-cache-dir",
+                "--require-hashes",
+                "--dry-run",
+                "--ignore-installed",
+                "--report",
+                str(report),
+                "--index-url",
+                "https://pypi.org/simple",
+                *target_args,
+                "-r",
+                str(resolution_input),
+                "-c",
+                str(lock),
+            ]
+            code, output, _ = run(command, resolver_root, env, 300)
+            if code != 0:
+                sanitized = sanitize(
+                    output,
+                    [
+                        requirements_input.parent,
+                        lock.parent,
+                        resolver_root,
+                        resolver_python.parent,
+                        runtime_python.parent,
+                    ],
+                )
+                message = f"could not resolve the requirements lock closure for {target_name}: {sanitized}"
+                if is_transient_lock_resolution_failure(code, output):
+                    raise LockResolutionBlockedError(message)
+                raise ValueError(message)
+            if not report.is_file():
+                raise ValueError(f"pip did not produce the required {target_name} resolution report")
+            return report
+
+        def collect_target_resolution(target_reports: list[Path], target_name: str) -> tuple[list[dict[str, Any]], dict[str, str]]:
+            install_records: list[dict[str, Any]] = []
+            resolved: dict[str, str] = {}
+            for report in target_reports:
+                report_records = resolution_install_records(report)
+                install_records.extend(report_records)
+                for name, version in resolved_requirements(report_records).items():
+                    prior_version = resolved.get(name)
+                    if prior_version is not None and prior_version != version:
+                        raise ValueError(
+                            f"requirements lock resolution differs within {target_name} for {name}: "
+                            f"{prior_version} and {version}"
+                        )
+                    resolved[name] = version
+            return install_records, resolved
+
+        def filter_supplemental_report_for_target(
+            report: Path,
+            root_name: str,
+            root_extras: tuple[str, ...],
+            target_environment: dict[str, str],
+            target_name: str,
+            activated_extras_by_package: dict[str, tuple[str, ...]] | None = None,
+        ) -> Path:
+            """Keep only the requested root and dependencies active for the synthetic target."""
+            try:
+                document = json.loads(report.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                raise ValueError(f"could not read the pip resolution report: {exc}") from exc
+            if not isinstance(document, dict):
+                raise ValueError("pip resolution report must be a JSON object")
+            install_records = resolution_install_records(report)
+            resolved_requirements(install_records)
+            dependencies = package_dependency_requirements(install_records)
+            records_by_package = {
+                normalized_requirement_name(record["metadata"]["name"]): record
+                for record in install_records
+            }
+            root_package = normalized_requirement_name(root_name)
+            if root_package not in records_by_package:
+                raise ValueError(
+                    f"marker-gated package {root_name} was not resolved for {target_name}"
+                )
+            active_extra_context = {
+                normalized_requirement_name(package): tuple(sorted(set(extras)))
+                for package, extras in (activated_extras_by_package or {}).items()
+                if extras
+            }
+            active_extra_context[root_package] = tuple(
+                sorted(set(active_extra_context.get(root_package, ())).union(root_extras))
+            )
+            active_packages, _ = target_reachable_packages_and_extras_for_target(
+                dependencies,
+                target_environment,
+                target_name,
+                {root_package},
+                active_extra_context,
+            )
+            document["install"] = [
+                record
+                for record in install_records
+                if normalized_requirement_name(record["metadata"]["name"]) in active_packages
+            ]
+            filtered_report = report.with_name(f"{report.stem}-target-filtered.json")
+            filtered_report.write_text(json.dumps(document), encoding="utf-8")
+            return filtered_report
+
+        if len(LOCK_RESOLUTION_TARGETS) != len(LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS):
+            raise RuntimeError("lock-resolution targets and marker environments are not aligned")
+        target_specs = [
+            (resolver_pip, target_name, target_args, target_environment)
+            for (target_name, target_args), target_environment in zip(
+                LOCK_RESOLUTION_TARGETS,
+                LOCK_RESOLUTION_TARGET_MARKER_ENVIRONMENTS,
+                strict=True,
+            )
+        ]
+        target_specs.append(
+            (runtime_pip, "runtime-cpython-3.12.11", (), FUNCTIONAL_RUNTIME_MARKER_ENVIRONMENT)
+        )
+
+        for python, target_name, target_args, target_environment in target_specs:
+            target_root_packages = set(direct_requirement_names)
+            base_report = resolve_target(
+                python,
+                target_name,
+                target_args,
+                target_environment,
+                requirements_input,
+                f"{target_name}-base",
+            )
+            supplemental_reports: dict[str, Path] = {}
+            supplemental_raw_reports: dict[str, Path] = {}
+            supplemental_report_contexts: dict[str, dict[str, tuple[str, ...]]] = {}
+            marker_request_number = 0
+            requested_marker_extras: dict[str, tuple[str, ...]] = {}
+            seen_supplemental_states: set[tuple[object, ...]] = set()
+            while True:
+                target_reports = [base_report, *supplemental_reports.values()]
+                install_records, resolved = collect_target_resolution(target_reports, target_name)
+                dependencies = package_dependency_requirements(install_records)
+                _, active_extras_by_package = target_reachable_packages_and_extras_for_target(
+                    dependencies,
+                    target_environment,
+                    target_name,
+                    target_root_packages,
+                    requested_marker_extras,
+                )
+                active_extra_context = {
+                    name: extras for name, extras in active_extras_by_package.items() if extras
+                }
+                supplemental_state: tuple[object, ...] = (
+                    tuple(sorted(resolved.items())),
+                    tuple(sorted((name, tuple(extras)) for name, extras in requested_marker_extras.items())),
+                    tuple(sorted((name, tuple(extras)) for name, extras in active_extra_context.items())),
+                    tuple(
+                        sorted(
+                            (
+                                name,
+                                tuple(
+                                    sorted(
+                                        (package, tuple(extras))
+                                        for package, extras in context.items()
+                                    )
+                                ),
+                            )
+                            for name, context in supplemental_report_contexts.items()
+                        )
+                    ),
+                )
+                if supplemental_state in seen_supplemental_states:
+                    raise ValueError(
+                        f"supplemental marker report state did not converge for {target_name}"
+                    )
+                seen_supplemental_states.add(supplemental_state)
+                reports_to_refilter = [
+                    name
+                    for name in supplemental_reports
+                    if supplemental_report_contexts.get(name) != active_extra_context
+                ]
+                if reports_to_refilter:
+                    for name in reports_to_refilter:
+                        supplemental_reports[name] = filter_supplemental_report_for_target(
+                            supplemental_raw_reports[name],
+                            name,
+                            requested_marker_extras[name],
+                            target_environment,
+                            target_name,
+                            active_extra_context,
+                        )
+                        supplemental_report_contexts[name] = dict(active_extra_context)
+                    continue
+                marker_requirements = marker_gated_requirements_for_target(
+                    install_records,
+                    locked,
+                    target_environment,
+                    target_name,
+                    requested_marker_extras,
+                    target_root_packages,
+                )
+                desired_marker_requirements = {
+                    name: (
+                        version,
+                        tuple(sorted(set(extras).union(active_extras_by_package.get(name, ())))),
+                    )
+                    for name, (version, extras) in marker_requirements.items()
+                }
+                obsolete_marker_reports = sorted(
+                    set(supplemental_reports).difference(desired_marker_requirements)
+                )
+                if obsolete_marker_reports:
+                    for name in obsolete_marker_reports:
+                        del supplemental_reports[name]
+                        del supplemental_raw_reports[name]
+                        del supplemental_report_contexts[name]
+                        del requested_marker_extras[name]
+                    continue
+                pending: list[tuple[str, str, tuple[str, ...]]] = []
+                for name, (version, extras) in sorted(desired_marker_requirements.items()):
+                    requested_extras = requested_marker_extras.get(name, ())
+                    if name not in resolved or extras != requested_extras:
+                        pending.append((name, version, extras))
+                if not pending:
+                    break
+                for name, version, extras in pending:
+                    marker_request_number += 1
+                    marker_input = Path(directory) / f"{target_name}-marker-{marker_request_number}.in"
+                    marker_input.write_text(
+                        marker_resolution_requirement(name, version, extras) + "\n",
+                        encoding="utf-8",
+                    )
+                    marker_report = resolve_target(
+                        python,
+                        target_name,
+                        target_args,
+                        target_environment,
+                        marker_input,
+                        f"{target_name}-marker-{marker_request_number}",
+                    )
+                    marker_resolved = resolved_requirements(resolution_install_records(marker_report))
+                    if marker_resolved.get(name) != version:
+                        raise ValueError(
+                            f"marker-gated package {name}=={version} was not resolved for {target_name}"
+                        )
+                    requested_marker_extras[name] = extras
+                    supplemental_raw_reports[name] = marker_report
+                    supplemental_reports[name] = filter_supplemental_report_for_target(
+                        marker_report,
+                        name,
+                        extras,
+                        target_environment,
+                        target_name,
+                    )
+                    supplemental_report_contexts[name] = {}
+            reports.extend([base_report, *supplemental_reports.values()])
+        validate_resolved_requirements_lock(requirements_input, lock, tuple(reports))
+
+
 def tool_versions(tool_python: Path, env: dict[str, str], cwd: Path) -> dict[str, str]:
     code = "import importlib.metadata,json; print(json.dumps({" + ",".join(
         f"{module!r}:importlib.metadata.version({distribution!r})"
@@ -327,6 +1628,11 @@ def make_evidence(
     effective = status or ("Passed" if code == 0 else "Failed")
     sanitized = sanitize(output, roots)
     reason = sanitized[-1000:] or "Required validation did not complete."
+    # Callers record this immediately after the command returns, so the measured
+    # duration places the start; stamping both ends here would report a multi-second
+    # run with near-identical timestamps.
+    completed_at = datetime.now(UTC)
+    started_at = completed_at - timedelta(seconds=duration)
     return {
         "schemaVersion": "1.1.0",
         "name": name,
@@ -336,8 +1642,8 @@ def make_evidence(
         "evidenceSource": "Automated",
         "command": sanitize(" ".join(command), roots),
         "workingDirectory": "trusted-isolated-workspace",
-        "startedAtUtc": utc(),
-        "completedAtUtc": utc(),
+        "startedAtUtc": started_at.isoformat().replace("+00:00", "Z"),
+        "completedAtUtc": completed_at.isoformat().replace("+00:00", "Z"),
         "durationSeconds": round(duration, 3),
         "runtime": f"CPython {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
         "toolName": tool_name,
@@ -347,7 +1653,10 @@ def make_evidence(
         "warnings": [],
         "failureReason": reason if effective == "Failed" else None,
         "blockedReason": reason if effective == "Blocked" else None,
-        "details": {"sanitizedOutput": sanitized or "No command output.", **(details or {})},
+        "details": {
+            "sanitizedOutput": sanitized or "No command output.",
+            **sanitize_evidence_value(details or {}, roots),
+        },
     }
 
 
@@ -355,59 +1664,162 @@ def write_record(evidence_dir: Path, filename: str, record: Any) -> None:
     (evidence_dir / filename).write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
 
 
-def build_sbom(
-    metadata: dict[str, Any], wheel: Path, sdist: Path, runtime_lock: Path, generator_version: str
-) -> dict[str, Any]:
-    root_ref = f"pkg:pypi/{metadata['distribution']}@{metadata['version']}"
-    components = []
-    dependencies = []
-    for name, version in package_lines(runtime_lock):
-        ref = f"pkg:pypi/{name.lower().replace('_', '-')}@{version}"
-        components.append({"type": "library", "name": name, "version": version, "purl": ref, "bom-ref": ref})
-        dependencies.append(ref)
-    return {
-        "bomFormat": "CycloneDX",
+def verify_sbom_integrity(record: dict[str, Any], sbom_path: Path) -> bool:
+    """Fail a Passed SBOM record whose file was altered or removed after it was generated."""
+    if record.get("status") != "Passed":
+        return True
+    recorded = record.get("details", {}).get("sha256")
+    if sbom_path.is_file() and not sbom_path.is_symlink() and isinstance(recorded, str) and sha256(sbom_path) == recorded:
+        record["details"]["sha256Verified"] = True
+        return True
+    record["status"] = "Failed"
+    record["exitCode"] = 1
+    record["summary"] = f"{record['name']} failed."
+    record["failureReason"] = "The SBOM file was modified or removed after it was generated, so it no longer matches its recorded digest."
+    record["details"]["sha256Verified"] = False
+    return False
+
+
+def generate_sbom_record(
+    *,
+    name: str,
+    filename: str,
+    source_lock: Path,
+    source_lock_name: str,
+    sbom_pyproject: Path,
+    root_component: str,
+    tool_python: Path,
+    evidence_dir: Path,
+    work_root: Path,
+    env: dict[str, str],
+    version: str,
+    roots: list[Path],
+) -> tuple[dict[str, Any], bool]:
+    """Generate one CycloneDX SBOM and return its evidence record and whether it failed."""
+    sbom_path = evidence_dir / filename
+    sbom_command = module_command(
+        tool_python,
+        "cyclonedx_py",
+        "requirements",
+        str(source_lock),
+        "--pyproject",
+        str(sbom_pyproject),
+        "--sv",
+        "1.5",
+        "--output-reproducible",
+        "--output-file",
+        str(sbom_path),
+    )
+    sbom_code, sbom_output, sbom_duration = run(sbom_command, work_root, env)
+    details: dict[str, Any] = {
+        "sourceLock": source_lock_name,
         "specVersion": "1.5",
-        "serialNumber": f"urn:uuid:{hashlib.sha256((root_ref + sha256(wheel)).encode()).hexdigest()[:32]}",
-        "version": 1,
-        "metadata": {
-            "timestamp": utc(),
-            "tools": {"components": [{"type": "application", "name": "cyclonedx-bom", "version": generator_version}]},
-            "component": {
-                "type": "application",
-                "name": metadata["distribution"],
-                "version": metadata["version"],
-                "purl": root_ref,
-                "bom-ref": root_ref,
-                "hashes": [
-                    {"alg": "SHA-256", "content": sha256(wheel)},
-                    {"alg": "SHA-256", "content": sha256(sdist)},
-                ],
-            },
-        },
-        "components": components,
-        "dependencies": [{"ref": root_ref, "dependsOn": dependencies}],
+        "rootComponent": root_component,
     }
+    if sbom_code == 0:
+        try:
+            attach_sbom_root_dependencies(sbom_path)
+            # Recorded at creation so later modification of the file is detectable against this record.
+            details["sha256"] = sha256(sbom_path)
+        except ValueError as exc:
+            sbom_code = 1
+            sbom_output = f"{sbom_output}\nSBOM dependency graph validation failed: {exc}".strip()
+    record = make_evidence(
+        name,
+        "security",
+        sbom_command,
+        sbom_code,
+        sbom_output,
+        sbom_duration,
+        "cyclonedx-bom",
+        version,
+        roots,
+        details,
+    )
+    return record, sbom_code != 0
 
 
 def validate(args: argparse.Namespace) -> int:
+    # Isolated children ignore PYTHONDONTWRITEBYTECODE, so compile every library bytecode file now; nothing is left for
+    # them to write into the trusted directories after the baseline below.
+    sys.dont_write_bytecode = True
+    os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
+    compile_trusted_bytecode()
+    trusted_tools_before = trusted_tool_digests()
+    # Adopt orphaned descendants before any caller code runs so none can outlive the final cleanup unseen.
+    become_subreaper()
     original_project = args.project.absolute()
     if not original_project.exists() or not (original_project / "project-manifest.json").is_file():
         raise ValueError("project must be a governed Python project root")
     inspect_project_tree(original_project)
-    project, evidence_dir, dist_dir = prepare_work_root(original_project, args.work_root)
-    roots = [original_project.resolve(), args.work_root.resolve(), args.tool_python.resolve()]
     tool_python = args.tool_python.resolve(strict=True)
     tool_lock = args.tool_lock.resolve(strict=True)
+    tool_input = tool_lock.with_suffix(".in")
+    validate_requirements_lock(tool_input, tool_lock)
+    project, evidence_dir, dist_dir = prepare_work_root(original_project, args.work_root)
+    mypy_config = args.mypy_config.resolve(strict=True)
+    roots = [
+        original_project.resolve(),
+        args.work_root.resolve(),
+        tool_python,
+        tool_python.parent,
+        tool_python.parent.parent,
+        tool_lock,
+        tool_lock.parent,
+        mypy_config,
+        mypy_config.parent,
+    ]
     if is_within(tool_python, original_project.resolve()) or is_within(tool_lock, original_project.resolve()):
         raise ValueError("trusted tools and locks must be outside the caller project")
     runtime_lock = project / args.runtime_lock
     if runtime_lock.is_symlink() or not runtime_lock.is_file():
         raise ValueError("runtime dependency lock is missing or unsafe")
+    # Caller build hooks run before the lock is used for installation and the audit; remember it as the standards saw it.
+    runtime_lock_original = runtime_lock.read_bytes()
+    runtime_lock_altered = False
     metadata = parse_project_metadata(project)
+    toolchain_sbom_pyproject = write_toolchain_sbom_pyproject(args.work_root)
     env = trusted_env(args.work_root / "home")
     versions = tool_versions(tool_python, env, args.work_root)
     records: list[dict[str, Any]] = []
+    failed = False
+
+    # The toolchain SBOM describes only standards-owned inputs, so generate it before any caller
+    # code (lint configuration, build hooks, tests) can run and alter those inputs or the environment.
+    toolchain_sbom_record, toolchain_sbom_failed = generate_sbom_record(
+        name="Python toolchain SBOM",
+        filename="python-toolchain-sbom.cdx.json",
+        source_lock=tool_lock,
+        source_lock_name="requirements-ci.lock",
+        sbom_pyproject=toolchain_sbom_pyproject,
+        root_component=TOOLCHAIN_SBOM_PROJECT_NAME,
+        tool_python=tool_python,
+        evidence_dir=evidence_dir,
+        work_root=args.work_root,
+        env=env,
+        version=versions["cyclonedx_py"],
+        roots=roots,
+    )
+    records.append(toolchain_sbom_record)
+    failed |= toolchain_sbom_failed
+
+    # The project SBOM reads only the runtime lock and the project metadata as they are before any caller code runs.
+    project_sbom_record, project_sbom_failed = generate_sbom_record(
+        name="Python project SBOM",
+        filename="python-project-sbom.cdx.json",
+        source_lock=runtime_lock,
+        source_lock_name="requirements-runtime.lock",
+        sbom_pyproject=project / "pyproject.toml",
+        root_component=metadata["distribution"],
+        tool_python=tool_python,
+        evidence_dir=evidence_dir,
+        work_root=args.work_root,
+        env=env,
+        version=versions["cyclonedx_py"],
+        roots=roots,
+    )
+    records.append(project_sbom_record)
+    failed |= project_sbom_failed
 
     checks = [
         (
@@ -429,10 +1841,9 @@ def validate(args: argparse.Namespace) -> int:
             "lint",
             "python-type-check.json",
             "mypy",
-            module_command(tool_python, "mypy", "--config-file", str(args.mypy_config.resolve(strict=True)), str(project / "src")),
+            module_command(tool_python, "mypy", "--config-file", str(mypy_config), str(project / "src")),
         ),
     ]
-    failed = False
     for name, category, filename, tool, command in checks:
         code, output, duration = run(command, args.work_root, env)
         record = make_evidence(name, category, command, code, output, duration, tool, versions[tool], roots)
@@ -479,6 +1890,7 @@ def validate(args: argparse.Namespace) -> int:
         venv.EnvBuilder(with_pip=True, clear=True).create(test_venv)
         test_python = test_venv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
         test_env = trusted_env(args.work_root / "test-home")
+        runtime_lock_altered |= restore_trusted_file(runtime_lock, runtime_lock_original)
         install_tools = module_command(test_python, "pip", "install", "--no-input", "--only-binary=:all:", "--require-hashes", "--no-deps", "-r", str(tool_lock))
         install_code, install_output, install_duration = run(install_tools, args.work_root, test_env, 600)
         if install_code == 0 and package_lines(runtime_lock):
@@ -515,16 +1927,19 @@ def validate(args: argparse.Namespace) -> int:
             build_records.append(smoke_record)
             failed |= smoke_code != 0
 
-        sbom = build_sbom(metadata, wheel, sdist, runtime_lock, versions["cyclonedx_py"])
-        write_record(evidence_dir, "python-project-sbom.cdx.json", sbom)
-        sbom_record = make_evidence("Python project SBOM", "security", ["trusted-cyclonedx-generation"], 0, "CycloneDX application SBOM generated.", 0, "cyclonedx-bom", versions["cyclonedx_py"], roots, {"rootComponent": sbom["metadata"]["component"]["purl"]})
-        records.append(sbom_record)
 
     write_record(evidence_dir, "python-build.json", build_records)
     records.extend(build_records)
 
+    runtime_lock_altered |= restore_trusted_file(runtime_lock, runtime_lock_original)
     runtime_packages = package_lines(runtime_lock)
-    if runtime_packages:
+    # The audit is the one trusted command that runs after caller code, so prove the tooling is intact immediately
+    # before it runs; a caller could otherwise leave a module that restores itself once invoked.
+    tooling_changed = bool(changed_trusted_tools(trusted_tools_before))
+    if tooling_changed:
+        audit_record = make_evidence("Python dependency audit", "security", ["pip-audit", "requirements-runtime.lock"], None, "The dependency audit did not run because trusted validation tooling changed after caller code ran.", 0, "pip-audit", versions["pip_audit"], roots, status="Blocked")
+        failed = True
+    elif runtime_packages:
         audit_command = module_command(tool_python, "pip_audit", "--disable-pip", "--progress-spinner", "off", "--format", "json", "--requirement", str(runtime_lock))
         audit_code, audit_output, audit_duration = run(audit_command, args.work_root, env)
         if audit_code == 0:
@@ -542,6 +1957,28 @@ def validate(args: argparse.Namespace) -> int:
     records.append(audit_record)
     write_record(evidence_dir, "python-dependency-audit.json", audit_record)
 
+    # Every step that executes caller code has finished: stop everything it left running (the subreaper adopted any
+    # detached process), then confirm each early SBOM is still the file recorded.
+    if runtime_lock_altered:
+        records.append(make_evidence("Python runtime lock integrity", "security", ["runtime lock comparison"], 1, "The runtime dependency lock was changed while caller code ran.", 0, "python-project-validation.py", sys.version.split()[0], roots, status="Failed"))
+        failed = True
+    if terminate_descendants() != 0:
+        records.append(make_evidence("Python caller process cleanup", "security", ["terminate_descendants"], 1, "Caller processes were still running after cleanup.", 0, "python-project-validation.py", sys.version.split()[0], roots, status="Failed"))
+        failed = True
+    # Caller code runs with the runner's identity, so prove the toolchain, standard library and standards checkout that
+    # every trusted check executes are byte-for-byte what they were before it ran.
+    if tooling_changed or changed_trusted_tools(trusted_tools_before):
+        # The message is deliberately constant: nothing derived from a digest may reach the log or the records.
+        print("Trusted validation tooling changed while caller code ran.", file=sys.stderr)
+        records.append(make_evidence("Python trusted tooling integrity", "security", ["tree digest comparison"], 1, "Trusted validation tooling changed while caller code ran.", 0, "python-project-validation.py", sys.version.split()[0], roots, status="Failed"))
+        failed = True
+    for sbom_record, sbom_filename in (
+        (toolchain_sbom_record, "python-toolchain-sbom.cdx.json"),
+        (project_sbom_record, "python-project-sbom.cdx.json"),
+    ):
+        if not verify_sbom_integrity(sbom_record, evidence_dir / sbom_filename):
+            failed = True
+
     hosted = os.environ.get("GITHUB_ACTIONS") == "true"
     hosted_record = make_evidence("GitHub-hosted workflow execution", "workflow", ["GitHub Actions governed Python job"], 0 if hosted else None, "Hosted execution is active." if hosted else "Hosted execution was not performed locally.", 0, "GitHub Actions", os.environ.get("RUNNER_OS", "local"), roots, status="Passed" if hosted else "NotRun")
     records.append(hosted_record)
@@ -551,13 +1988,61 @@ def validate(args: argparse.Namespace) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--project", type=Path, required=True)
-    parser.add_argument("--work-root", type=Path, required=True)
-    parser.add_argument("--tool-python", type=Path, required=True)
+    lock_mode = parser.add_mutually_exclusive_group()
+    lock_mode.add_argument("--verify-tool-lock", action="store_true")
+    lock_mode.add_argument("--bootstrap-lock-parser", action="store_true")
+    parser.add_argument("--project", type=Path)
+    parser.add_argument("--work-root", type=Path)
+    parser.add_argument("--tool-python", type=Path)
     parser.add_argument("--tool-lock", type=Path, required=True)
     parser.add_argument("--runtime-lock", default="requirements-runtime.lock")
-    parser.add_argument("--mypy-config", type=Path, required=True)
+    parser.add_argument("--mypy-config", type=Path)
+    parser.add_argument("--resolver-python", type=Path)
+    parser.add_argument("--runtime-python", type=Path)
+    parser.add_argument("--lock-parser-output", type=Path)
     args = parser.parse_args()
+    if args.bootstrap_lock_parser:
+        if args.work_root is None or args.resolver_python is None or args.lock_parser_output is None:
+            parser.error("--bootstrap-lock-parser requires --work-root, --resolver-python, and --lock-parser-output")
+        try:
+            bootstrap_pinned_lock_metadata_parser(
+                args.resolver_python,
+                args.tool_lock,
+                args.work_root,
+                args.lock_parser_output,
+            )
+            return 0
+        except LockResolutionBlockedError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        except Exception as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+    if args.verify_tool_lock:
+        if args.work_root is None or args.resolver_python is None or args.runtime_python is None:
+            parser.error("--verify-tool-lock requires --work-root, --resolver-python, and --runtime-python")
+        try:
+            validate_requirements_lock_closure(
+                args.tool_lock.with_suffix(".in"),
+                args.tool_lock,
+                args.resolver_python,
+                args.runtime_python,
+                args.work_root,
+            )
+            return 0
+        except LockResolutionBlockedError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        except Exception as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+    missing = [
+        name
+        for name, value in (("--project", args.project), ("--work-root", args.work_root), ("--tool-python", args.tool_python), ("--mypy-config", args.mypy_config))
+        if value is None
+    ]
+    if missing:
+        parser.error(f"{' '.join(missing)} required unless a lock-verification mode is supplied")
     try:
         return validate(args)
     except Exception as exc:

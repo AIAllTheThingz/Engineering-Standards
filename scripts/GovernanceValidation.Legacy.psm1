@@ -607,19 +607,25 @@ function Test-RelativeRepositoryPath {
         [AllowNull()][string]$Value,
         [Parameter(Mandatory)][string]$Name,
         [Parameter(Mandatory)][string]$Path,
-        [string]$RequiredExtension
+        [string]$RequiredExtension,
+        # Exact Git pathnames may be whitespace-only; every other path keeps the blank-path rejection.
+        [switch]$AllowWhitespaceOnly
     )
 
     $results = [System.Collections.Generic.List[object]]::new()
-    if ([string]::IsNullOrWhiteSpace($Value)) {
+    if (($AllowWhitespaceOnly -and [string]::IsNullOrEmpty($Value)) -or (-not $AllowWhitespaceOnly -and [string]::IsNullOrWhiteSpace($Value))) {
         $results.Add((New-ValidationResult -Status Failed -Message "$Name must not be empty." -Path $Path))
         return @($results)
     }
     if (
         [System.IO.Path]::IsPathRooted($Value) -or
-        $Value -cmatch '^[A-Za-z]:' -or
-        $Value -cmatch '^[\\/]' -or
-        $Value.Contains('..')
+        # A drive prefix is only a root on Windows; on Unix 'C:module.py' is a legal relative name.
+        ($IsWindows -and $Value -cmatch '^[A-Za-z]:') -or
+        $Value.StartsWith('/', [StringComparison]::Ordinal) -or
+        ($IsWindows -and $Value.StartsWith('\', [StringComparison]::Ordinal)) -or
+        # Only a '..' path segment traverses; 'v1..v2.md' is an ordinary name.
+        $Value -cmatch '(^|/)\.\.(/|$)' -or
+        ($IsWindows -and $Value -cmatch '(^|\\)\.\.(\\|$)')
     ) {
         $results.Add((New-ValidationResult -Status Failed -Message "$Name must be a relative path that does not traverse outside the repository." -Path $Path))
     }
@@ -638,18 +644,16 @@ function Test-UniqueValues {
     param(
         [object[]]$Items,
         [Parameter(Mandatory)][string]$Name,
-        [Parameter(Mandatory)][string]$Path
+        [Parameter(Mandatory)][string]$Path,
+        [switch]$CaseSensitive
     )
 
     $results = [System.Collections.Generic.List[object]]::new()
-    $seen = @{}
+    $seen = [System.Collections.Generic.HashSet[string]]::new($(if ($CaseSensitive) { [StringComparer]::Ordinal } else { [StringComparer]::OrdinalIgnoreCase }))
     foreach ($item in @($Items)) {
         $key = [string]$item
-        if ($seen.ContainsKey($key)) {
+        if (-not $seen.Add($key)) {
             $results.Add((New-ValidationResult -Status Failed -Message "$Name contains duplicate value '$key'." -Path $Path))
-        }
-        else {
-            $seen[$key] = $true
         }
     }
     @($results)
@@ -884,12 +888,12 @@ function Test-GovernanceJsonDocument {
         if ($json.executionContext -eq 'GitHubActions' -and $null -ne $json.evidenceCommitSha) {
             $results.Add((New-ValidationResult -Status Failed -Message 'GitHubActions artifact evidence must not claim a committed evidence SHA.' -Path $Path))
         }
-        foreach ($item in @(Test-UniqueValues -Items @($json.changedFiles) -Name 'changedFiles' -Path $Path)) { $results.Add($item) }
+        foreach ($item in @(Test-UniqueValues -Items @($json.changedFiles) -Name 'changedFiles' -Path $Path -CaseSensitive)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.warnings) -Name 'warnings' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.knownLimitations) -Name 'knownLimitations' -Path $Path)) { $results.Add($item) }
         foreach ($item in @(Test-UniqueValues -Items @($json.remainingRisks) -Name 'remainingRisks' -Path $Path)) { $results.Add($item) }
         foreach ($changed in @($json.changedFiles)) {
-            foreach ($item in @(Test-RelativeRepositoryPath -Value $changed -Name 'changedFiles item' -Path $Path)) { $results.Add($item) }
+            foreach ($item in @(Test-RelativeRepositoryPath -Value $changed -Name 'changedFiles item' -Path $Path -AllowWhitespaceOnly)) { $results.Add($item) }
         }
         foreach ($test in @($json.tests)) {
             foreach ($item in @(Test-TestEvidenceObject -Test $test -Path $Path)) { $results.Add($item) }

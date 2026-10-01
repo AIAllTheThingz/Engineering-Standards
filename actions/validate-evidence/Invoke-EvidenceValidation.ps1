@@ -39,6 +39,175 @@ function Resolve-ExistingEvidencePathCasing {
     $current
 }
 
+function Test-RawBytePrefix {
+    param(
+        [Parameter(Mandatory)][byte[]]$Value,
+        [Parameter(Mandatory)][byte[]]$Prefix
+    )
+    if ($Value.Length -lt $Prefix.Length) { return $false }
+    for ($index = 0; $index -lt $Prefix.Length; $index++) {
+        if ($Value[$index] -ne $Prefix[$index]) { return $false }
+    }
+    return $true
+}
+
+function Get-TrustedRepositoryIdentity {
+    # The repository identity that gates this repository's special fingerprint pairing. It must not come from the
+    # receipt being validated: use the caller-supplied expectation, the Actions-provided repository, or the checkout's
+    # origin remote. An unknown identity pairs nothing.
+    param(
+        [string]$RepositoryRoot,
+        [string]$Expected
+    )
+    if (-not [string]::IsNullOrWhiteSpace($Expected)) { return $Expected }
+    if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_REPOSITORY)) { return $env:GITHUB_REPOSITORY }
+    $origin = [string](& git -C $RepositoryRoot remote get-url origin 2>$null)
+    if ($LASTEXITCODE -eq 0 -and $origin -match 'github\.com[:/]([^/]+)/([^/.]+)(\.git)?$') { return "$($Matches[1])/$($Matches[2])" }
+    return ''
+}
+
+function Get-ReceiptExclusionPath {
+    # Repository-relative location of the receipt: its directory (trailing slash) or, for a receipt at the
+    # repository root, the file itself. A receipt outside the source tree excludes nothing.
+    param(
+        [Parameter(Mandatory)][string]$GitRoot,
+        [AllowNull()][string]$ReceiptFullPath,
+        [AllowNull()][string]$Repository
+    )
+    if ([string]::IsNullOrWhiteSpace($ReceiptFullPath)) { return @() }
+    # Only Windows treats a backslash as a separator; on Linux it is a legal filename character.
+    $trimCharacters = if ($IsWindows) { [char[]]@('\', '/') } else { [char[]]@('/') }
+    $rootFull = [IO.Path]::GetFullPath($GitRoot).TrimEnd($trimCharacters)
+    $receiptFull = [IO.Path]::GetFullPath($ReceiptFullPath)
+    $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+    if (-not $receiptFull.StartsWith($rootFull + [IO.Path]::DirectorySeparatorChar, $comparison)) { return @() }
+    $relative = $receiptFull.Substring($rootFull.Length + 1)
+    if ($IsWindows) { $relative = $relative.Replace('\', '/') }
+    # This repository's two example receipts bind each other's trees. Pair their directories only for those exact
+    # receipt files in this repository; any other receipt, even inside those directories, excludes only its own directory.
+    $centralEvidenceDirectories = @('examples/python-project/evidence/', 'examples/bash-project/evidence/')
+    # Pair only for the two exact central receipt files, and only when the independently trusted repository identity
+    # (never the receipt's own repository field) is this repository.
+    $centralReceiptPaths = @('examples/python-project/evidence/local-completion-result.json', 'examples/bash-project/evidence/local-completion-result.json')
+    $isCentralRepository = [string]::Equals($Repository, 'AIAllTheThingz/Engineering-Standards', [StringComparison]::OrdinalIgnoreCase)
+    $isCentralReceipt = $isCentralRepository -and @($centralReceiptPaths | Where-Object { [string]::Equals($_, $relative, $comparison) }).Count -gt 0
+    if ($isCentralReceipt) { return $centralEvidenceDirectories }
+    $slash = $relative.LastIndexOf('/')
+    if ($slash -lt 0) { return @($relative) }
+    return @($relative.Substring(0, $slash + 1))
+}
+
+function Test-ExcludedReceiptPath {
+    param(
+        [Parameter(Mandatory)][byte[]]$Value,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Exclusions
+    )
+    foreach ($exclusion in $Exclusions) {
+        [byte[]]$bytes = $exclusion
+        if ($bytes[$bytes.Length - 1] -eq 47) {
+            if (Test-RawBytePrefix -Value $Value -Prefix $bytes) { return $true }
+        }
+        elseif ($Value.Length -eq $bytes.Length -and (Test-RawBytePrefix -Value $Value -Prefix $bytes)) { return $true }
+    }
+    return $false
+}
+
+function Get-RawGitTreeFingerprint {
+    param(
+        [Parameter(Mandatory)][string]$RepositoryRoot,
+        [Parameter(Mandatory)][string]$CommitSha,
+        [Parameter(Mandatory)][string]$FailurePrefix,
+        [string[]]$ExtraExcludedPaths = @()
+    )
+
+    $gitCommand = @(Get-Command git -CommandType Application -ErrorAction Stop)[0]
+    $startInfo = [Diagnostics.ProcessStartInfo]::new($gitCommand.Source)
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.CreateNoWindow = $true
+    foreach ($argument in @('-C', $RepositoryRoot, 'ls-tree', '-r', '--full-tree', '-z', $CommitSha)) {
+        [void]$startInfo.ArgumentList.Add($argument)
+    }
+    $process = [Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    $output = [IO.MemoryStream]::new()
+    try {
+        if (-not $process.Start()) { throw "$FailurePrefix could not start Git tree enumeration." }
+        $standardErrorTask = $process.StandardError.ReadToEndAsync()
+        $process.StandardOutput.BaseStream.CopyTo($output)
+        $process.WaitForExit()
+        $standardError = $standardErrorTask.GetAwaiter().GetResult()
+        if ($process.ExitCode -ne 0) { throw "$FailurePrefix could not enumerate Git tree content: $standardError" }
+        [byte[]]$treeBytes = $output.ToArray()
+    }
+    finally {
+        $output.Dispose()
+        $process.Dispose()
+    }
+
+    $receiptExclusions = @($ExtraExcludedPaths | Where-Object { -not [string]::IsNullOrEmpty($_) } | ForEach-Object { , [Text.Encoding]::UTF8.GetBytes($_) })
+    $recordHex = [Collections.Generic.List[string]]::new()
+    $segmentStart = 0
+    for ($index = 0; $index -le $treeBytes.Length; $index++) {
+        if ($index -lt $treeBytes.Length -and $treeBytes[$index] -ne 0) { continue }
+        if ($index -eq $segmentStart) {
+            $segmentStart = $index + 1
+            continue
+        }
+        [byte[]]$entry = $treeBytes[$segmentStart..($index - 1)]
+        $segmentStart = $index + 1
+        $tabIndex = [Array]::IndexOf($entry, [byte]9)
+        if ($tabIndex -le 0 -or $tabIndex -ge ($entry.Length - 1)) { throw "$FailurePrefix contains an unsupported tree entry." }
+        $header = [Text.Encoding]::ASCII.GetString($entry[0..($tabIndex - 1)])
+        $match = [regex]::Match($header, '^(?<mode>[0-7]{6}) (?<type>blob|commit) (?<object>[A-Fa-f0-9]{40}|[A-Fa-f0-9]{64})$')
+        if (-not $match.Success) { throw "$FailurePrefix contains an unsupported tree entry header." }
+        [byte[]]$pathBytes = $entry[($tabIndex + 1)..($entry.Length - 1)]
+        if ($pathBytes.Length -eq 0) { throw "$FailurePrefix contains an empty tree path." }
+        if ($receiptExclusions.Count -gt 0 -and (Test-ExcludedReceiptPath -Value $pathBytes -Exclusions $receiptExclusions)) { continue }
+        $recordPrefix = ('{0}' + [char]0 + '{1}' + [char]0 + '{2}' + [char]0) -f $match.Groups['mode'].Value, $match.Groups['type'].Value, $match.Groups['object'].Value.ToLowerInvariant()
+        [byte[]]$prefixBytes = [Text.Encoding]::ASCII.GetBytes($recordPrefix)
+        [byte[]]$recordBytes = New-Object byte[] ($prefixBytes.Length + $pathBytes.Length)
+        [Array]::Copy($prefixBytes, 0, $recordBytes, 0, $prefixBytes.Length)
+        [Array]::Copy($pathBytes, 0, $recordBytes, $prefixBytes.Length, $pathBytes.Length)
+        $recordHex.Add([Convert]::ToHexString($recordBytes).ToLowerInvariant())
+    }
+
+    $canonicalHex = $recordHex.ToArray()
+    [Array]::Sort($canonicalHex, [StringComparer]::Ordinal)
+    $payload = [IO.MemoryStream]::new()
+    try {
+        [byte[]]$headerBytes = [Text.Encoding]::ASCII.GetBytes("completion-evidence-content-v1`n")
+        $payload.Write($headerBytes, 0, $headerBytes.Length)
+        foreach ($hex in $canonicalHex) {
+            [byte[]]$recordBytes = [Convert]::FromHexString($hex)
+            $payload.Write($recordBytes, 0, $recordBytes.Length)
+            $payload.WriteByte(10)
+        }
+        return [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($payload.ToArray())).ToLowerInvariant()
+    }
+    finally {
+        $payload.Dispose()
+    }
+}
+
+function Get-RepositoryContentFingerprint {
+    param(
+        [Parameter(Mandatory)][string]$RepositoryPath,
+        [Parameter(Mandatory)][string]$CommitReference,
+        [AllowNull()][string]$ReceiptFullPath,
+        [AllowNull()][string]$ReceiptRepository
+    )
+    $gitRootOutput = @(& git -C $RepositoryPath rev-parse --show-toplevel 2>$null)
+    if ($LASTEXITCODE -ne 0 -or -not $gitRootOutput) { throw 'Could not resolve the Git root for completion-evidence content identity.' }
+    $gitRoot = ($gitRootOutput -join '').Trim()
+    $commitOutput = @(& git -C $gitRoot rev-parse --verify "$CommitReference^{commit}" 2>$null)
+    if ($LASTEXITCODE -ne 0 -or -not $commitOutput) { throw "Could not resolve commit '$CommitReference' for completion-evidence content identity." }
+    $commitSha = ($commitOutput -join '').Trim()
+    if ($commitSha -notmatch '^[A-Fa-f0-9]{40,64}$') { throw "Commit '$CommitReference' did not resolve to a Git object identifier." }
+    return Get-RawGitTreeFingerprint -RepositoryRoot $gitRoot -CommitSha $commitSha -FailurePrefix "Commit '$commitSha'" -ExtraExcludedPaths @(Get-ReceiptExclusionPath -GitRoot $gitRoot -ReceiptFullPath $ReceiptFullPath -Repository $ReceiptRepository)
+}
+
 try {
     $full = Resolve-SafePath -Root $root -ChildPath $EvidencePath
 }
@@ -86,6 +255,30 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
         $results.Add((New-ValidationResult -Status Failed -Message 'evidencePath must resolve to a directory.' -Path 'governance.config.json'))
     }
     $validatedSha = if ($evidence.validatedCommitSha) { [string]$evidence.validatedCommitSha } else { [string]$evidence.commitSha }
+    $validatedTag = $null
+    if ($evidence -is [System.Collections.IDictionary]) {
+        if ($evidence.Contains('validatedCommitTag') -and $evidence['validatedCommitTag']) {
+            $validatedTag = [string]$evidence['validatedCommitTag']
+        }
+    }
+    else {
+        $validatedTagProperty = $evidence.PSObject.Properties['validatedCommitTag']
+        if ($validatedTagProperty -and $validatedTagProperty.Value) {
+            $validatedTag = [string]$validatedTagProperty.Value
+        }
+    }
+    $validatedContentSha256 = $null
+    if ($evidence -is [System.Collections.IDictionary]) {
+        if ($evidence.Contains('validatedContentSha256') -and $evidence['validatedContentSha256']) {
+            $validatedContentSha256 = [string]$evidence['validatedContentSha256']
+        }
+    }
+    else {
+        $validatedContentProperty = $evidence.PSObject.Properties['validatedContentSha256']
+        if ($validatedContentProperty -and $validatedContentProperty.Value) {
+            $validatedContentSha256 = [string]$validatedContentProperty.Value
+        }
+    }
     $evidenceSha = if ($evidence.evidenceCommitSha) { [string]$evidence.evidenceCommitSha } else { $null }
     if ($ExpectedCommitSha -and $validatedSha -ne $ExpectedCommitSha) {
         $results.Add((New-ValidationResult -Status Failed -Message 'Commit SHA mismatch.' -Path $EvidencePath))
@@ -93,14 +286,76 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
     & git -C $root rev-parse --is-inside-work-tree 2>$null | Out-Null
     $hasGitRepository = ($LASTEXITCODE -eq 0)
     if ($hasGitRepository) {
-        foreach ($shaCheck in @(@{ name='validatedCommitSha'; value=$validatedSha }, @{ name='evidenceCommitSha'; value=$evidenceSha })) {
-            if (-not $shaCheck.value) { continue }
-            & git -C $root cat-file -e "$($shaCheck.value)^{commit}" 2>$null
-            if ($LASTEXITCODE -ne 0) {
-                $results.Add((New-ValidationResult -Status Failed -Message "$($shaCheck.name) does not exist in this repository." -Path $EvidencePath))
+        $validatedCommitExists = $false
+        if ($validatedSha) {
+            & git -C $root cat-file -e "$validatedSha^{commit}" 2>$null
+            $validatedCommitExists = ($LASTEXITCODE -eq 0)
+        }
+        $evidenceCommitExists = $false
+        if ($evidenceSha) {
+            & git -C $root cat-file -e "$evidenceSha^{commit}" 2>$null
+            $evidenceCommitExists = ($LASTEXITCODE -eq 0)
+            if (-not $evidenceCommitExists) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'evidenceCommitSha does not exist in this repository.' -Path $EvidencePath))
             }
         }
-        if ($validatedSha -and $evidenceSha) {
+        if (-not $validatedCommitExists) {
+            if ($evidence.executionContext -eq 'Local' -and $validatedContentSha256) {
+                try {
+                    $workingTreeChanges = @(& git -C $root status --porcelain=v1 --untracked-files=all 2>$null)
+                    if ($LASTEXITCODE -ne 0) {
+                        throw 'Could not inspect the working tree for squash-safe Local content validation.'
+                    }
+                    if ($workingTreeChanges.Count -gt 0) {
+                        throw 'squash-safe Local content validation requires a clean working tree.'
+                    }
+                    $currentContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference 'HEAD' -ReceiptFullPath $full -ReceiptRepository (Get-TrustedRepositoryIdentity -RepositoryRoot $root -Expected $ExpectedRepository)
+                    if ($currentContentSha256 -ine $validatedContentSha256) {
+                        throw 'validatedContentSha256 does not match the current repository content.'
+                    }
+                }
+                catch {
+                    $results.Add((New-ValidationResult -Status Failed -Message $_.Exception.Message -Path $EvidencePath))
+                }
+            }
+            else {
+                $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitSha does not exist in this repository.' -Path $EvidencePath))
+            }
+        }
+        elseif ($validatedContentSha256) {
+            try {
+                $validatedCommitContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference $validatedSha -ReceiptFullPath $full -ReceiptRepository (Get-TrustedRepositoryIdentity -RepositoryRoot $root -Expected $ExpectedRepository)
+                if ($validatedCommitContentSha256 -ine $validatedContentSha256) {
+                    throw 'validatedContentSha256 does not match the named validatedCommitSha content.'
+                }
+            }
+            catch {
+                $results.Add((New-ValidationResult -Status Failed -Message $_.Exception.Message -Path $EvidencePath))
+            }
+        }
+        if ($validatedTag) {
+            $tagReference = "refs/tags/$validatedTag"
+            & git -C $root check-ref-format $tagReference 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitTag is not a valid tag name.' -Path $EvidencePath))
+            }
+            else {
+                & git -C $root show-ref --verify --quiet $tagReference
+                if ($LASTEXITCODE -eq 0) {
+                    $tagType = @(& git -C $root cat-file -t $tagReference 2>$null)
+                    if ($LASTEXITCODE -ne 0 -or ($tagType -join '').Trim() -cne 'tag') {
+                        $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitTag must resolve to an annotated tag object.' -Path $EvidencePath))
+                    }
+                    else {
+                        $peeledTagCommit = @(& git -C $root rev-parse --verify "$tagReference^{}" 2>$null)
+                        if ($LASTEXITCODE -ne 0 -or -not $peeledTagCommit -or ($peeledTagCommit -join '').Trim() -ine $validatedSha) {
+                            $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitTag does not resolve to validatedCommitSha.' -Path $EvidencePath))
+                        }
+                    }
+                }
+            }
+        }
+        if ($validatedCommitExists -and $evidenceCommitExists) {
             & git -C $root merge-base --is-ancestor $validatedSha $evidenceSha 2>$null
             if ($LASTEXITCODE -ne 0) {
                 $results.Add((New-ValidationResult -Status Failed -Message 'validatedCommitSha must be an ancestor of or equal to evidenceCommitSha.' -Path $EvidencePath))
