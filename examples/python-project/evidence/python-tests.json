@@ -5,12 +5,12 @@
   "status": "Passed",
   "requiredValidation": true,
   "evidenceSource": "Automated",
-  "command": ".\\test-venv\\Scripts\\python.exe -I -m pytest -c nul --rootdir .\\caller -p no:cacheprovider --strict-config --strict-markers .\\caller\\tests",
+  "command": "./test-venv/bin/python -I -m pytest -c /dev/null --rootdir ./caller -p no:cacheprovider --strict-config --strict-markers ./caller/tests",
   "workingDirectory": "trusted-isolated-workspace",
-  "startedAtUtc": "2026-09-29T16:09:08.315646Z",
-  "completedAtUtc": "2026-09-29T16:09:08.315664Z",
-  "durationSeconds": 1.129,
-  "runtime": "CPython 3.13.2",
+  "startedAtUtc": "2026-10-01T00:16:59.131160Z",
+  "completedAtUtc": "2026-10-01T00:16:59.364322Z",
+  "durationSeconds": 0.233,
+  "runtime": "CPython 3.12.3",
   "toolVersion": "pytest/9.1.1",
   "exitCode": 0,
   "summary": "Python tests completed successfully.",
@@ -18,7 +18,7 @@
   "failureReason": null,
   "blockedReason": null,
   "details": {
-    "sanitizedOutput": "============================= test session starts =============================\nplatform win32 -- Python 3.13.2, pytest-9.1.1, pluggy-1.6.0\nrootdir: .\\caller\nconfigfile: \\\\.\\nul\ncollected 8 items\n\ncaller\\tests\\test_paths.py ........                                      [100%]\n\n============================== 8 passed in 0.29s ==============================\n",
+    "sanitizedOutput": "============================= test session starts ==============================\nplatform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0\nrootdir: ./caller\nconfigfile: ../../../dev/null\ncollected 8 items\n\ncaller/tests/test_paths.py ........                                      [100%]\n\n============================== 8 passed in 0.02s ===============================\n",
     "toolName": "pytest",
     "toolVersion": "9.1.1"
   }
