@@ -469,7 +469,11 @@ $validatedContentSha256 = Get-ValidatedContentFingerprint -RepositoryRoot $sourc
 function Test-GeneratedBuildOutputPath {
     param([string]$Path)
     $normalized = $Path
-    $normalized -match '(^|/)(bin|obj|dist)(/|$)' -or $normalized -match '^(coverage|TestResults)(/|$)'
+    # Windows paths are case-insensitive; on Unix 'Dist/' and 'src/Bin/' are ordinary source directories.
+    if ($IsWindows) {
+        return $normalized -match '(^|/)(bin|obj|dist)(/|$)' -or $normalized -match '^(coverage|TestResults)(/|$)'
+    }
+    $normalized -cmatch '(^|/)(bin|obj|dist)(/|$)' -or $normalized -cmatch '^(coverage|TestResults)(/|$)'
 }
 
 function Convert-ChangedFilePath {

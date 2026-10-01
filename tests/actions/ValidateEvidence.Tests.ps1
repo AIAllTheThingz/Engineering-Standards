@@ -1099,6 +1099,21 @@ Describe 'Validate evidence action' {
             }
         }
 
+        It 'matches generated-output directories case-sensitively on Unix' {
+            & $script:NewTempEvidence
+            $changedFiles = @('Dist/package.py', 'src/Bin/module.py', 'Obj/x.py', 'dist/artifact.whl', 'src/app.py')
+            & "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'Case-sensitive generated output.' -ArtifactPath 'evidence/report.json' -CommandsExecuted @('fixture') -ChangedFile $changedFiles
+            $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/generated.json') -Raw | ConvertFrom-Json
+            if ($IsWindows) {
+                @($generated.changedFiles) | Should -Be @('src/app.py')
+            }
+            else {
+                @($generated.changedFiles) | Should -Contain 'Dist/package.py'
+                @($generated.changedFiles) | Should -Contain 'src/Bin/module.py'
+                @($generated.changedFiles) | Should -Contain 'Obj/x.py'
+                @($generated.changedFiles) | Should -Not -Contain 'dist/artifact.whl'
+            }
+        }
         It 'preserves legal Git filenames that only look reserved' {
             & $script:NewTempEvidence
             $changedFiles = @('docs/v1..v2.md', 'unknown', 'src/app.py')
