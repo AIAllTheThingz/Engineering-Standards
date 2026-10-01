@@ -2275,3 +2275,12 @@ def test_caller_commands_cannot_write_bytecode_and_trusted_tools_are_verified_af
     require(source.index("pytest_command = ") < source.index("terminate_descendants()") < verification, "tools are verified too early")
     require("failed = True" in source[verification : verification + 400], "a changed toolchain must fail the run")
     require("terminate_descendants()" in inspect.getsource(validator.run), "run() must stop stragglers after every command")
+
+
+def test_library_bytecode_is_compiled_before_the_trusted_baseline_is_taken() -> None:
+    source = inspect.getsource(validator.validate)
+    compile_step = source.index("compile_trusted_bytecode()")
+    require(compile_step < source.index("trusted_tools_before = trusted_tool_digests()"), "bytecode is compiled after the baseline")
+    require(compile_step < source.index("build_command = "), "bytecode is compiled after caller code")
+    body = inspect.getsource(validator.compile_trusted_bytecode)
+    require("compileall.compile_dir" in body and "!= standards" in body, "the standards checkout must not be compiled in place")

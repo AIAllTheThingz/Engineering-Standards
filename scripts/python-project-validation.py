@@ -252,6 +252,16 @@ def trusted_tool_roots() -> list[Path]:
     return roots
 
 
+def compile_trusted_bytecode() -> None:
+    """Pre-compile the interpreter's libraries so no isolated child has bytecode left to write into them later."""
+    import compileall
+
+    standards = Path(__file__).resolve().parents[1]
+    for root in trusted_tool_roots():
+        if root != standards:
+            compileall.compile_dir(root, quiet=2, workers=0)
+
+
 def trusted_tool_digests() -> dict[str, str]:
     return {str(root): tree_digest(root) for root in trusted_tool_roots()}
 
@@ -1716,7 +1726,11 @@ def generate_sbom_record(
 
 
 def validate(args: argparse.Namespace) -> int:
+    # Isolated children ignore PYTHONDONTWRITEBYTECODE, so compile every library bytecode file now; nothing is left for
+    # them to write into the trusted directories after the baseline below.
     sys.dont_write_bytecode = True
+    os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
+    compile_trusted_bytecode()
     trusted_tools_before = trusted_tool_digests()
     # Adopt orphaned descendants before any caller code runs so none can outlive the final cleanup unseen.
     become_subreaper()
