@@ -2122,15 +2122,14 @@ def test_project_metadata_requires_governed_hatchling_version(tmp_path: Path) ->
         raise AssertionError("ungoverned Hatchling version was accepted")
 
 
-def test_toolchain_sbom_is_generated_before_any_caller_code_runs() -> None:
-    """The toolchain SBOM must not be produced after caller code could alter its inputs."""
+def test_both_sboms_are_generated_before_any_caller_code_runs() -> None:
+    """Neither SBOM may be produced after caller code could alter its inputs or the tool environment."""
     source = inspect.getsource(validator.validate)
     toolchain = source.index('name="Python toolchain SBOM"')
-    for caller_code_step in ("checks = [", "build_command = ", "pytest_command = ", 'name="Python project SBOM"'):
-        require(
-            toolchain < source.index(caller_code_step),
-            f"toolchain SBOM is generated after {caller_code_step!r}",
-        )
+    project = source.index('name="Python project SBOM"')
+    require(toolchain < project, "the project SBOM must follow the toolchain SBOM")
+    for caller_code_step in ("checks = [", "build_command = ", "pytest_command = ", "smoke_command = "):
+        require(project < source.index(caller_code_step), f"an SBOM is generated after {caller_code_step!r}")
 
 
 def test_toolchain_sbom_metadata_is_read_only_and_replaceable(tmp_path: Path) -> None:
@@ -2172,11 +2171,13 @@ def test_sbom_integrity_rejects_a_modified_removed_or_undigested_file(tmp_path: 
     require(validator.verify_sbom_integrity(already_failed, sbom), "a record that already failed must be left as is")
 
 
-def test_toolchain_sbom_integrity_is_verified_after_all_caller_code_has_run() -> None:
+def test_sbom_integrity_is_verified_after_all_caller_code_has_run() -> None:
     source = inspect.getsource(validator.validate)
-    verification = source.index("verify_sbom_integrity(toolchain_sbom_record")
+    verification = source.index("verify_sbom_integrity(sbom_record")
     for caller_code_step in ("build_command = ", "pytest_command = ", "smoke_command = "):
         require(
             source.index(caller_code_step) < verification,
             f"SBOM integrity is verified before {caller_code_step!r}",
         )
+    for record in ("toolchain_sbom_record", "project_sbom_record"):
+        require(record in source[verification - 300 : verification], f"{record} is not verified")

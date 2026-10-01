@@ -1645,6 +1645,24 @@ def validate(args: argparse.Namespace) -> int:
     records.append(toolchain_sbom_record)
     failed |= toolchain_sbom_failed
 
+    # The project SBOM reads only the runtime lock and the project metadata as they are before any caller code runs.
+    project_sbom_record, project_sbom_failed = generate_sbom_record(
+        name="Python project SBOM",
+        filename="python-project-sbom.cdx.json",
+        source_lock=runtime_lock,
+        source_lock_name="requirements-runtime.lock",
+        sbom_pyproject=project / "pyproject.toml",
+        root_component=metadata["distribution"],
+        tool_python=tool_python,
+        evidence_dir=evidence_dir,
+        work_root=args.work_root,
+        env=env,
+        version=versions["cyclonedx_py"],
+        roots=roots,
+    )
+    records.append(project_sbom_record)
+    failed |= project_sbom_failed
+
     checks = [
         (
             "Python Ruff",
@@ -1750,22 +1768,6 @@ def validate(args: argparse.Namespace) -> int:
             build_records.append(smoke_record)
             failed |= smoke_code != 0
 
-        project_sbom_record, project_sbom_failed = generate_sbom_record(
-            name="Python project SBOM",
-            filename="python-project-sbom.cdx.json",
-            source_lock=runtime_lock,
-            source_lock_name="requirements-runtime.lock",
-            sbom_pyproject=project / "pyproject.toml",
-            root_component=metadata["distribution"],
-            tool_python=tool_python,
-            evidence_dir=evidence_dir,
-            work_root=args.work_root,
-            env=env,
-            version=versions["cyclonedx_py"],
-            roots=roots,
-        )
-        records.append(project_sbom_record)
-        failed |= project_sbom_failed
 
     write_record(evidence_dir, "python-build.json", build_records)
     records.extend(build_records)
@@ -1789,9 +1791,13 @@ def validate(args: argparse.Namespace) -> int:
     records.append(audit_record)
     write_record(evidence_dir, "python-dependency-audit.json", audit_record)
 
-    # Every step that executes caller code has finished; confirm the early toolchain SBOM is still the file recorded.
-    if not verify_sbom_integrity(toolchain_sbom_record, evidence_dir / "python-toolchain-sbom.cdx.json"):
-        failed = True
+    # Every step that executes caller code has finished; confirm each early SBOM is still the file recorded.
+    for sbom_record, sbom_filename in (
+        (toolchain_sbom_record, "python-toolchain-sbom.cdx.json"),
+        (project_sbom_record, "python-project-sbom.cdx.json"),
+    ):
+        if not verify_sbom_integrity(sbom_record, evidence_dir / sbom_filename):
+            failed = True
 
     hosted = os.environ.get("GITHUB_ACTIONS") == "true"
     hosted_record = make_evidence("GitHub-hosted workflow execution", "workflow", ["GitHub Actions governed Python job"], 0 if hosted else None, "Hosted execution is active." if hosted else "Hosted execution was not performed locally.", 0, "GitHub Actions", os.environ.get("RUNNER_OS", "local"), roots, status="Passed" if hosted else "NotRun")
