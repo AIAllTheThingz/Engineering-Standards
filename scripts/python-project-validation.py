@@ -112,7 +112,7 @@ def trusted_env(home: Path) -> dict[str, str]:
             "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
         }
     )
-    return env | run_marker_env()
+    return env
 
 
 def run(
@@ -139,22 +139,41 @@ def run(
         return 124, f"Command exceeded {timeout} seconds: {exc}", time.monotonic() - started
 
 
-VALIDATION_RUN_MARKER = "STANDARDS_VALIDATION_RUN_ID"
-VALIDATION_RUN_ID = os.urandom(16).hex()
-SIGKILL = 9  # POSIX signal number; the /proc scan below only runs where /proc exists.
+SIGKILL = 9  # POSIX signal number; the process scan below only runs where /proc exists.
+PR_SET_CHILD_SUBREAPER = 36
 
 
-def run_marker_env() -> dict[str, str]:
-    """Tag every process started for this run so stragglers can be found later."""
-    return {VALIDATION_RUN_MARKER: VALIDATION_RUN_ID}
+def become_subreaper() -> bool:
+    """Make this process adopt every orphaned descendant, so a detached caller process cannot escape the process tree."""
+    if not sys.platform.startswith("linux"):
+        return False
+    import ctypes
+
+    return ctypes.CDLL(None, use_errno=True).prctl(PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0) == 0
 
 
-def read_process_environment(entry: Path) -> list[bytes]:
-    """Return a process's environment entries, or none when it is gone or unreadable."""
+def read_process_parent(entry: Path) -> tuple[int, str] | None:
+    """Return a process's parent id and state, or None when it is gone or unreadable."""
     try:
-        return (entry / "environ").read_bytes().split(b"\0")
-    except OSError:
-        return []
+        fields = (entry / "stat").read_text(encoding="utf-8", errors="replace").rsplit(")", 1)[1].split()
+        return int(fields[1]), fields[0]
+    except (OSError, IndexError, ValueError):
+        return None
+
+
+def live_descendants(proc_root: Path, root_pid: int) -> set[int]:
+    """Return every non-zombie process below root_pid, however deeply or recently it was detached."""
+    parents: dict[int, int] = {}
+    for entry in proc_root.iterdir():
+        parent = read_process_parent(entry) if entry.name.isdigit() else None
+        if parent is not None and parent[1] != "Z":
+            parents[int(entry.name)] = parent[0]
+    found: set[int] = set()
+    frontier = {root_pid}
+    while frontier:
+        frontier = {pid for pid, parent in parents.items() if parent in frontier and pid not in found}
+        found |= frontier
+    return found
 
 
 def kill_process(pid: int) -> int:
@@ -166,19 +185,31 @@ def kill_process(pid: int) -> int:
     return 1
 
 
-def terminate_marked_processes(run_id: str | None = None, proc_root: Path = Path("/proc")) -> int:
-    """Kill any process still carrying this run's marker, such as a child a caller detached."""
+def reap_children() -> None:
+    """Collect every exited child so adopted zombies do not linger."""
+    while True:
+        try:
+            if os.waitpid(-1, os.WNOHANG)[0] == 0:
+                return
+        except ChildProcessError:
+            return
+
+
+def terminate_descendants(proc_root: Path = Path("/proc"), root_pid: int | None = None, attempts: int = 100) -> int:
+    """Kill all descendants, including detached ones adopted by this subreaper; return how many remain alive."""
     if not proc_root.is_dir():
         return 0
-    marker = f"{VALIDATION_RUN_MARKER}={run_id or VALIDATION_RUN_ID}".encode()
-    terminated = 0
-    for entry in proc_root.iterdir():
-        if not entry.name.isdigit() or int(entry.name) == os.getpid():
-            continue
-        if marker not in read_process_environment(entry):
-            continue
-        terminated += kill_process(int(entry.name))
-    return terminated
+    root = os.getpid() if root_pid is None else root_pid
+    remaining = live_descendants(proc_root, root)
+    for _ in range(attempts):
+        if not remaining:
+            break
+        for pid in remaining:
+            kill_process(pid)
+        time.sleep(0.05)
+        reap_children()
+        remaining = live_descendants(proc_root, root)
+    return len(remaining)
 
 
 def sanitize_path_variants(value: str, path: str) -> str:
@@ -1635,6 +1666,8 @@ def generate_sbom_record(
 
 
 def validate(args: argparse.Namespace) -> int:
+    # Adopt orphaned descendants before any caller code runs so none can outlive the final cleanup unseen.
+    become_subreaper()
     original_project = args.project.absolute()
     if not original_project.exists() or not (original_project / "project-manifest.json").is_file():
         raise ValueError("project must be a governed Python project root")
@@ -1833,9 +1866,10 @@ def validate(args: argparse.Namespace) -> int:
     records.append(audit_record)
     write_record(evidence_dir, "python-dependency-audit.json", audit_record)
 
-    # Every step that executes caller code has finished: stop anything it detached, then confirm each early SBOM
-    # is still the file recorded.
-    terminate_marked_processes()
+    # Every step that executes caller code has finished: stop everything it left running (the subreaper adopted any
+    # detached process), then confirm each early SBOM is still the file recorded.
+    if terminate_descendants() != 0:
+        failed = True
     for sbom_record, sbom_filename in (
         (toolchain_sbom_record, "python-toolchain-sbom.cdx.json"),
         (project_sbom_record, "python-project-sbom.cdx.json"),
