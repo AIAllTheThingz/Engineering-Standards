@@ -1110,6 +1110,20 @@ Describe 'Validate evidence action' {
             @($generated.changedFileCategories.source) | Should -Contain 'unknown'
         }
 
+        It 'applies the same exact-path rules in semantic validation' {
+            Import-Module (Join-Path $PSScriptRoot '../../scripts/GovernanceValidation.psm1') -Force
+            foreach ($legal in @('docs/v1..v2.md', 'a..b', '..hidden/x')) {
+                @(Test-RelativeRepositoryPath -Value $legal -Name 'changedFiles item' -Path 'r.json').Count | Should -Be 0 -Because $legal
+            }
+            if (-not $IsWindows) { @(Test-RelativeRepositoryPath -Value 'C:module.py' -Name 'changedFiles item' -Path 'r.json').Count | Should -Be 0 }
+            foreach ($bad in @('../x', 'a/../b', 'a/..', '..', '/abs')) {
+                @(Test-RelativeRepositoryPath -Value $bad -Name 'changedFiles item' -Path 'r.json').Count | Should -BeGreaterThan 0 -Because $bad
+            }
+            @(Test-UniqueValues -Items @('src/Foo.py', 'src/foo.py') -Name 'changedFiles' -Path 'r.json' -CaseSensitive).Count | Should -Be 0
+            @(Test-UniqueValues -Items @('src/Foo.py', 'src/Foo.py') -Name 'changedFiles' -Path 'r.json' -CaseSensitive).Count | Should -Be 1
+            @(Test-UniqueValues -Items @('Alpha', 'alpha') -Name 'owners' -Path 'r.json').Count | Should -Be 1
+        }
+
         It 'uses an explicit complete change inventory when supplied' {
             & $script:NewTempEvidence
             $changedFiles = @(
