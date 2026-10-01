@@ -703,6 +703,14 @@ Describe 'Validate evidence action' {
                 }
             }
         }
+        It 'records a null validatedCommitTag, not an empty string, when no tag is supplied' {
+            & $script:NewTempEvidence
+            & pwsh -NoProfile -File "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'No tag supplied.' -TestResultPath 'evidence/test-results.json' -ArtifactPath @('evidence/report.json') -CommandsExecuted @('test command') | Out-Null
+            $LASTEXITCODE | Should -Be 0
+            $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/generated.json') -Raw
+            $generated | Should -Match '"validatedCommitTag":\s*null'
+            $generated | Should -Not -Match '"validatedCommitTag":\s*""'
+        }
         It 'separates content fingerprint record fields with real NUL bytes in both implementations' {
             foreach ($script in @('scripts/New-CompletionEvidence.ps1','actions/validate-evidence/Invoke-EvidenceValidation.ps1')) {
                 $source = Get-Content -LiteralPath (Join-Path "$PSScriptRoot/../.." $script) -Raw
@@ -1244,7 +1252,14 @@ Describe 'Validate evidence action' {
 
                 $receipt.validatedCommitTag | Should -BeNullOrEmpty
                 $receipt.status | Should -BeExactly 'NotRun'
-                $receipt.notRunReason | Should -Match 'Local validation was not rerun after the final source fixes'
+                if ($receiptPath -like '*python-project*') {
+                    # The Python receipt carries artifacts regenerated with the final validator; only hosted execution is NotRun.
+                    $receipt.notRunReason | Should -Match 'GitHub Actions PR validation was not run locally'
+                    @($receipt.knownLimitations) -join ' ' | Should -Match 'regenerat|generated on Linux'
+                }
+                else {
+                    $receipt.notRunReason | Should -Match 'Local validation was not rerun after the final source fixes'
+                }
 
                 $actualCategoryNames = @($receipt.changedFileCategories.PSObject.Properties.Name | Sort-Object)
                 $actualCategoryNames.Count | Should -Be $expectedCategoryNames.Count

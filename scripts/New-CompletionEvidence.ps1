@@ -314,7 +314,7 @@ function Get-ValidatedContentFingerprint {
     return Get-RawGitTreeFingerprint -RepositoryRoot $RepositoryRoot -CommitSha $CommitSha -FailurePrefix "Validated commit '$CommitSha'" -ExtraExcludedPaths $receiptExclusions
 }
 
-$validatedCommitTag = Resolve-ValidatedCommitTag -TagName $ValidatedCommitTag -RepositoryRoot $sourceRoot -CommitSha $validatedCommit
+$resolvedCommitTag = Resolve-ValidatedCommitTag -TagName $ValidatedCommitTag -RepositoryRoot $sourceRoot -CommitSha $validatedCommit
 $validatedContentSha256 = Get-ValidatedContentFingerprint -RepositoryRoot $sourceRoot -CommitSha $validatedCommit -ReceiptFullPath (Join-Path $root $OutputPath)
 $effectiveBranch = $env:GITHUB_REF_NAME
 if ($Branch) {
@@ -512,7 +512,7 @@ $evidence = [ordered]@{
     commitSha = $validatedCommit.Trim()
     validatedCommitSha = $validatedCommit.Trim()
     validatedContentSha256 = $validatedContentSha256
-    validatedCommitTag = $validatedCommitTag
+    validatedCommitTag = $resolvedCommitTag
     evidenceCommitSha = $(if ($EvidenceCommitSha) { $EvidenceCommitSha.Trim() } else { $null })
     branch = $effectiveBranch.Trim()
     pullRequest = $null
