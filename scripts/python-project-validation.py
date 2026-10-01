@@ -252,6 +252,18 @@ def trusted_tool_roots() -> list[Path]:
     return roots
 
 
+def restore_trusted_file(path: Path, original: bytes) -> bool:
+    """Rewrite a file caller code may have changed back to its original bytes; return True when it had been altered."""
+    if path.is_file() and not path.is_symlink() and path.read_bytes() == original:
+        return False
+    if path.is_dir() and not path.is_symlink():
+        shutil.rmtree(path)
+    else:
+        path.unlink(missing_ok=True)
+    path.write_bytes(original)
+    return True
+
+
 def compile_trusted_bytecode() -> None:
     """Pre-compile the interpreter's libraries so no isolated child has bytecode left to write into them later."""
     import compileall
@@ -1760,6 +1772,9 @@ def validate(args: argparse.Namespace) -> int:
     runtime_lock = project / args.runtime_lock
     if runtime_lock.is_symlink() or not runtime_lock.is_file():
         raise ValueError("runtime dependency lock is missing or unsafe")
+    # Caller build hooks run before the lock is used for installation and the audit; remember it as the standards saw it.
+    runtime_lock_original = runtime_lock.read_bytes()
+    runtime_lock_altered = False
     metadata = parse_project_metadata(project)
     toolchain_sbom_pyproject = write_toolchain_sbom_pyproject(args.work_root)
     env = trusted_env(args.work_root / "home")
@@ -1873,6 +1888,7 @@ def validate(args: argparse.Namespace) -> int:
         venv.EnvBuilder(with_pip=True, clear=True).create(test_venv)
         test_python = test_venv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
         test_env = trusted_env(args.work_root / "test-home")
+        runtime_lock_altered |= restore_trusted_file(runtime_lock, runtime_lock_original)
         install_tools = module_command(test_python, "pip", "install", "--no-input", "--only-binary=:all:", "--require-hashes", "--no-deps", "-r", str(tool_lock))
         install_code, install_output, install_duration = run(install_tools, args.work_root, test_env, 600)
         if install_code == 0 and package_lines(runtime_lock):
@@ -1913,6 +1929,7 @@ def validate(args: argparse.Namespace) -> int:
     write_record(evidence_dir, "python-build.json", build_records)
     records.extend(build_records)
 
+    runtime_lock_altered |= restore_trusted_file(runtime_lock, runtime_lock_original)
     runtime_packages = package_lines(runtime_lock)
     # The audit is the one trusted command that runs after caller code, so prove the tooling is intact immediately
     # before it runs; a caller could otherwise leave a module that restores itself once invoked.
@@ -1940,6 +1957,9 @@ def validate(args: argparse.Namespace) -> int:
 
     # Every step that executes caller code has finished: stop everything it left running (the subreaper adopted any
     # detached process), then confirm each early SBOM is still the file recorded.
+    if runtime_lock_altered:
+        records.append(make_evidence("Python runtime lock integrity", "security", ["runtime lock comparison"], 1, "The runtime dependency lock was changed while caller code ran.", 0, "python-project-validation.py", sys.version.split()[0], roots, status="Failed"))
+        failed = True
     if terminate_descendants() != 0:
         records.append(make_evidence("Python caller process cleanup", "security", ["terminate_descendants"], 1, "Caller processes were still running after cleanup.", 0, "python-project-validation.py", sys.version.split()[0], roots, status="Failed"))
         failed = True

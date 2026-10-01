@@ -2290,3 +2290,31 @@ def test_library_bytecode_is_compiled_before_the_trusted_baseline_is_taken() -> 
     require(compile_step < source.index("build_command = "), "bytecode is compiled after caller code")
     body = inspect.getsource(validator.compile_trusted_bytecode)
     require("compileall.compile_dir" in body and "!= standards" in body, "the standards checkout must not be compiled in place")
+
+
+def test_restore_trusted_file_repairs_and_reports_altered_files(tmp_path: Path) -> None:
+    lock = tmp_path / "requirements-runtime.lock"
+    original = b"example==1.0 --hash=sha256:abc\n"
+    lock.write_bytes(original)
+    require(validator.restore_trusted_file(lock, original) is False, "an unchanged file must not be reported")
+    lock.write_bytes(b"")
+    require(validator.restore_trusted_file(lock, original) is True, "an emptied file was not reported")
+    require(lock.read_bytes() == original, "an emptied file was not restored")
+    lock.unlink()
+    lock.symlink_to(tmp_path / "elsewhere") if hasattr(lock, "symlink_to") and sys.platform != "win32" else lock.write_bytes(b"x")
+    require(validator.restore_trusted_file(lock, original) is True, "a replaced file was not reported")
+    require(lock.read_bytes() == original and not lock.is_symlink(), "a replaced file was not restored")
+    lock.unlink()
+    lock.mkdir()
+    require(validator.restore_trusted_file(lock, original) is True and lock.read_bytes() == original, "a directory in its place was not repaired")
+
+
+def test_runtime_lock_is_restored_before_each_later_use_and_failures_are_recorded() -> None:
+    source = inspect.getsource(validator.validate)
+    original = source.index("runtime_lock_original = runtime_lock.read_bytes()")
+    require(original < source.index("build_command = "), "the lock is captured after caller code")
+    first = source.index("runtime_lock_altered |= restore_trusted_file(runtime_lock, runtime_lock_original)")
+    second = source.index("runtime_lock_altered |= restore_trusted_file(", first + 10)
+    require(source.index("build_command = ") < first < source.index("runtime_install = "), "the lock is not restored before installation")
+    require(second < source.index("audit_command = "), "the lock is not restored before the audit")
+    require('"Python runtime lock integrity"' in source and "if runtime_lock_altered:" in source, "tampering needs a Failed record")

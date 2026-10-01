@@ -342,10 +342,17 @@ Describe 'Governed Python project support' {
 
     It 'inventories every pushed commit when a new branch is pushed, and the whole tree when nothing precedes it' {
         $functionText = [regex]::Match($script:workflow, '(?ms)^ {12}function Get-CompletionChangedFiles \{.*?^ {12}\}\s*$').Value
-        $selectionText = [regex]::Match($script:workflow, '(?ms)^ {10}\$completionScopeBaseSha = \$null.*?^ {10}if \(\$completionChangedFiles\.Count -eq 0\)[^\r\n]*').Value
+        $snapshotText = [regex]::Match($script:workflow, '(?ms)- name: Snapshot completion scope before caller code runs.*?run: \|?
+(?<body>.*?)(?=^ {6}- name:)').Groups['body'].Value
+        $selectionText = [regex]::Match($script:workflow, '(?ms)^ {10}if \(\$env:SCOPE_OUTCOME -ne ''success''\).*?^ {10}if \(\$completionChangedFiles\.Count -eq 0\)[^
+]*').Value
         $functionText | Should -Not -BeNullOrEmpty
+        $snapshotText | Should -Not -BeNullOrEmpty
         $selectionText | Should -Not -BeNullOrEmpty
-        $runner = [scriptblock]::Create("param(`$completionSourceRoot, `$callerStage)`n$functionText`n$selectionText`n`$completionChangedFiles")
+        $snapshotText = $snapshotText -replace '(?m)^\s*\$callerStage = Join-Path \$env:GITHUB_WORKSPACE ''caller''?
+', ''
+        $snapshotRunner = [scriptblock]::Create("param(`$callerStage)`n$snapshotText")
+        $runner = [scriptblock]::Create("param(`$completionSourceRoot)`n$functionText`n$selectionText`n`$completionChangedFiles")
 
         function New-CommitFile {
             param($Repository, $Name, $Message)
@@ -354,16 +361,34 @@ Describe 'Governed Python project support' {
             & git -C $Repository commit --quiet -m $Message
             (& git -C $Repository rev-parse HEAD).Trim()
         }
-        function Invoke-Selection {
+        function Invoke-Snapshot {
             param($Repository, $Sha, $EventName, $Before, $DefaultBranch)
             $eventPath = Join-Path $TestDrive ("event-" + [guid]::NewGuid() + '.json')
             [ordered]@{ before = $Before; repository = [ordered]@{ default_branch = $DefaultBranch } } | ConvertTo-Json | Set-Content -LiteralPath $eventPath -Encoding utf8
-            $saved = @{ P = $env:GITHUB_EVENT_PATH; N = $env:GITHUB_EVENT_NAME; S = $env:GITHUB_SHA }
+            $outputPath = Join-Path $TestDrive ("output-" + [guid]::NewGuid() + '.txt')
+            $saved = @{ P = $env:GITHUB_EVENT_PATH; N = $env:GITHUB_EVENT_NAME; S = $env:GITHUB_SHA; O = $env:GITHUB_OUTPUT }
             try {
-                $env:GITHUB_EVENT_PATH = $eventPath; $env:GITHUB_EVENT_NAME = $EventName; $env:GITHUB_SHA = $Sha
-                @(& $runner $Repository $Repository)
+                $env:GITHUB_EVENT_PATH = $eventPath; $env:GITHUB_EVENT_NAME = $EventName; $env:GITHUB_SHA = $Sha; $env:GITHUB_OUTPUT = $outputPath
+                & $snapshotRunner $Repository
             }
-            finally { $env:GITHUB_EVENT_PATH = $saved.P; $env:GITHUB_EVENT_NAME = $saved.N; $env:GITHUB_SHA = $saved.S }
+            finally { $env:GITHUB_EVENT_PATH = $saved.P; $env:GITHUB_EVENT_NAME = $saved.N; $env:GITHUB_SHA = $saved.S; $env:GITHUB_OUTPUT = $saved.O }
+            $outputs = @{}
+            foreach ($line in Get-Content -LiteralPath $outputPath) { $name, $value = $line -split '=', 2; $outputs[$name] = $value }
+            $outputs
+        }
+        function Invoke-Selection {
+            param($Repository, $Sha, $EventName, $Before, $DefaultBranch)
+            $snapshot = Invoke-Snapshot $Repository $Sha $EventName $Before $DefaultBranch
+            Use-Snapshot $Repository $Sha $snapshot
+        }
+        function Use-Snapshot {
+            param($Repository, $Sha, $Snapshot)
+            $saved = @{ S = $env:GITHUB_SHA; O = $env:SCOPE_OUTCOME; B = $env:SCOPE_BASE_SHA; F = $env:SCOPE_FULL_TREE }
+            try {
+                $env:GITHUB_SHA = $Sha; $env:SCOPE_OUTCOME = 'success'; $env:SCOPE_BASE_SHA = $Snapshot['scope_base_sha']; $env:SCOPE_FULL_TREE = $Snapshot['scope_full_tree']
+                @(& $runner $Repository)
+            }
+            finally { $env:GITHUB_SHA = $saved.S; $env:SCOPE_OUTCOME = $saved.O; $env:SCOPE_BASE_SHA = $saved.B; $env:SCOPE_FULL_TREE = $saved.F }
         }
         $zeros = '0' * 40
 
@@ -397,6 +422,24 @@ Describe 'Governed Python project support' {
         $initialTip = New-CommitFile $initial 'two.txt' 'two'
         $files = Invoke-Selection $initial $initialTip 'push' $zeros 'main'
         @($files | Sort-Object) | Should -Be @('one.txt','two.txt')
+
+        # A push that leaves the tree unchanged has no delta: the whole validated tree is inventoried instead of failing.
+        & git -C $repository commit --quiet --allow-empty -m 'empty'
+        $emptyTip = (& git -C $repository rev-parse HEAD).Trim()
+        $files = Invoke-Selection $repository $emptyTip 'push' $tip 'main'
+        @($files | Sort-Object) | Should -Be @('first.txt','main-only.txt','second.txt','third.txt')
+
+        # Caller code can rewrite the event payload and the default-branch ref after the snapshot; the selection must not notice.
+        & git -C $repository update-ref refs/remotes/origin/main $main
+        $snapshot = Invoke-Snapshot $repository $tip 'push' $zeros 'main'
+        & git -C $repository update-ref refs/remotes/origin/main $tip
+        $files = Use-Snapshot $repository $tip $snapshot
+        @($files | Sort-Object) | Should -Be @('first.txt','second.txt','third.txt')
+        $selectionText | Should -Not -Match 'GITHUB_EVENT_PATH|refs/remotes'
+
+        # The snapshot is taken before any caller code can run.
+        $script:workflow.IndexOf('id: scope_snapshot') | Should -BeLessThan $script:workflow.IndexOf('id: functional')
+        $script:workflow | Should -Match '(?s)- name: Stage Python completion source metadata.*?SCOPE_OUTCOME: \$\{\{ steps\.scope_snapshot\.outcome \}\}'
 
         # An ordinary push keeps diffing against the previous tip.
         $files = Invoke-Selection $repository $tip 'push' $main 'main'
