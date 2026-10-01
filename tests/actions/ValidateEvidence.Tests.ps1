@@ -775,6 +775,7 @@ Describe 'Validate evidence action' {
             $cases = @(
                 @{ Receipt = 'examples/python-project/evidence/local-completion-result.json'; Trusted = 'AIAllTheThingz/Engineering-Standards'; SiblingDirectory = 'examples/bash-project/evidence'; SiblingChangeIgnored = $true },
                 @{ Receipt = 'examples/bash-project/evidence/local-completion-result.json'; Trusted = 'AIAllTheThingz/Engineering-Standards'; SiblingDirectory = 'examples/python-project/evidence'; SiblingChangeIgnored = $true },
+                @{ Receipt = 'examples/python-project/evidence/local-completion-result.json'; Trusted = 'aiallthethingz/engineering-standards'; SiblingDirectory = 'examples/bash-project/evidence'; SiblingChangeIgnored = $true },
                 @{ Receipt = 'examples/python-project/evidence/alternate-receipt.json'; Trusted = 'AIAllTheThingz/Engineering-Standards'; SiblingDirectory = 'examples/bash-project/evidence'; SiblingChangeIgnored = $false },
                 @{ Receipt = 'examples/python-project/evidence/local-completion-result.json'; Trusted = 'other-owner/Other-Repository'; SiblingDirectory = 'examples/bash-project/evidence'; SiblingChangeIgnored = $false },
                 @{ Receipt = 'examples/bash-project/evidence/local-completion-result.json'; Trusted = 'other-owner/Other-Repository'; SiblingDirectory = 'examples/python-project/evidence'; SiblingChangeIgnored = $false }
