@@ -112,7 +112,7 @@ def trusted_env(home: Path) -> dict[str, str]:
             "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
         }
     )
-    return env
+    return env | {"PYTHONDONTWRITEBYTECODE": "1"}
 
 
 def run(
@@ -134,8 +134,10 @@ def run(
             check=False,
             shell=False,
         )
+        terminate_descendants()
         return result.returncode, result.stdout[-12000:], time.monotonic() - started
     except subprocess.TimeoutExpired as exc:
+        terminate_descendants()
         return 124, f"Command exceeded {timeout} seconds: {exc}", time.monotonic() - started
 
 
@@ -210,6 +212,54 @@ def terminate_descendants(proc_root: Path = Path("/proc"), root_pid: int | None 
         reap_children()
         remaining = live_descendants(proc_root, root)
     return len(remaining)
+
+
+def tree_digest(root: Path) -> str:
+    """Digest every path, link target, mode and file content below root, ignoring only a top-level .git."""
+    digest = hashlib.sha256()
+    for directory, dirnames, filenames in os.walk(root):
+        dirnames.sort()
+        if Path(directory) == root:
+            dirnames[:] = [name for name in dirnames if name != ".git"]
+        for name in sorted(dirnames + filenames):
+            path = Path(directory) / name
+            try:
+                info = path.lstat()
+                if stat.S_ISLNK(info.st_mode):
+                    kind = f"link:{os.readlink(path)}"
+                elif stat.S_ISREG(info.st_mode):
+                    kind = f"file:{info.st_mode & 0o7777:o}:{sha256(path)}"
+                else:
+                    kind = f"other:{stat.S_IFMT(info.st_mode):o}"
+            except OSError as exc:
+                kind = f"unreadable:{exc.errno}"
+            digest.update(json.dumps([path.relative_to(root).as_posix(), kind]).encode("utf-8") + b"\n")
+    return digest.hexdigest()
+
+
+def trusted_tool_roots() -> list[Path]:
+    """Return the directories whose executables every trusted check runs: the toolchain, the standard library and standards."""
+    import sysconfig
+
+    candidates = [Path(__file__).resolve().parents[1], Path(sysconfig.get_path("stdlib")), Path(sysconfig.get_path("platstdlib"))]
+    if sys.prefix != sys.base_prefix:
+        candidates.append(Path(sys.prefix))
+    roots: list[Path] = []
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved.is_dir() and resolved not in roots:
+            roots.append(resolved)
+    return roots
+
+
+def trusted_tool_digests() -> dict[str, str]:
+    return {str(root): tree_digest(root) for root in trusted_tool_roots()}
+
+
+def changed_trusted_tools(before: dict[str, str]) -> list[str]:
+    """Return the trusted directories whose content differs from the digests taken before caller code ran."""
+    after = trusted_tool_digests()
+    return sorted(root for root in set(before) | set(after) if before.get(root) != after.get(root))
 
 
 def sanitize_path_variants(value: str, path: str) -> str:
@@ -1666,6 +1716,8 @@ def generate_sbom_record(
 
 
 def validate(args: argparse.Namespace) -> int:
+    sys.dont_write_bytecode = True
+    trusted_tools_before = trusted_tool_digests()
     # Adopt orphaned descendants before any caller code runs so none can outlive the final cleanup unseen.
     become_subreaper()
     original_project = args.project.absolute()
@@ -1869,6 +1921,12 @@ def validate(args: argparse.Namespace) -> int:
     # Every step that executes caller code has finished: stop everything it left running (the subreaper adopted any
     # detached process), then confirm each early SBOM is still the file recorded.
     if terminate_descendants() != 0:
+        failed = True
+    # Caller code runs with the runner's identity, so prove the toolchain, standard library and standards checkout that
+    # every trusted check executes are byte-for-byte what they were before it ran.
+    tampered = changed_trusted_tools(trusted_tools_before)
+    if tampered:
+        print("Trusted validation tooling changed while caller code ran: " + ", ".join(tampered), file=sys.stderr)
         failed = True
     for sbom_record, sbom_filename in (
         (toolchain_sbom_record, "python-toolchain-sbom.cdx.json"),

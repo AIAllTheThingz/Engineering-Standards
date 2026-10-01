@@ -2225,3 +2225,53 @@ def _cmdline(entry: Path) -> bytes:
         return (entry / "cmdline").read_bytes()
     except OSError:
         return b""
+
+
+def test_tree_digest_detects_modified_added_removed_and_relinked_files(tmp_path: Path) -> None:
+    root = tmp_path / "tools"
+    (root / "bin").mkdir(parents=True)
+    (root / ".git").mkdir()
+    tool = root / "bin" / "tool.py"
+    tool.write_text("print('ok')\n", encoding="utf-8")
+    baseline = validator.tree_digest(root)
+    (root / ".git" / "index").write_text("ignored\n", encoding="utf-8")
+    require(validator.tree_digest(root) == baseline, "a top-level .git change must not alter the digest")
+    tool.write_text("print('forged')\n", encoding="utf-8")
+    require(validator.tree_digest(root) != baseline, "a modified file was not detected")
+    tool.write_text("print('ok')\n", encoding="utf-8")
+    require(validator.tree_digest(root) == baseline, "restoring the file must restore the digest")
+    (root / "bin" / "extra.py").write_text("", encoding="utf-8")
+    require(validator.tree_digest(root) != baseline, "an added file was not detected")
+    (root / "bin" / "extra.py").unlink()
+    tool.unlink()
+    require(validator.tree_digest(root) != baseline, "a removed file was not detected")
+
+
+def test_changed_trusted_tools_names_the_modified_roots(tmp_path: Path, monkeypatch) -> None:
+    first = tmp_path / "first"
+    second = tmp_path / "second"
+    for root in (first, second):
+        root.mkdir()
+        (root / "tool.py").write_text("original\n", encoding="utf-8")
+    monkeypatch.setattr(validator, "trusted_tool_roots", lambda: [first, second])
+    before = validator.trusted_tool_digests()
+    require(validator.changed_trusted_tools(before) == [], "unchanged tools were reported as changed")
+    (second / "tool.py").write_text("forged\n", encoding="utf-8")
+    require(validator.changed_trusted_tools(before) == [str(second)], "only the modified root should be reported")
+
+
+def test_trusted_tool_roots_cover_standards_and_the_standard_library() -> None:
+    roots = validator.trusted_tool_roots()
+    require(VALIDATOR.resolve().parents[1] in roots, "the standards checkout is not covered")
+    require(Path(__import__("sysconfig").get_path("stdlib")).resolve() in roots, "the standard library is not covered")
+
+
+def test_caller_commands_cannot_write_bytecode_and_trusted_tools_are_verified_after_them() -> None:
+    require(validator.trusted_env(Path("home"))["PYTHONDONTWRITEBYTECODE"] == "1", "bytecode writes are not disabled")
+    source = inspect.getsource(validator.validate)
+    baseline = source.index("trusted_tools_before = trusted_tool_digests()")
+    verification = source.index("changed_trusted_tools(trusted_tools_before)")
+    require(baseline < source.index("become_subreaper()") < source.index("build_command = "), "baseline is taken too late")
+    require(source.index("pytest_command = ") < source.index("terminate_descendants()") < verification, "tools are verified too early")
+    require("failed = True" in source[verification : verification + 400], "a changed toolchain must fail the run")
+    require("terminate_descendants()" in inspect.getsource(validator.run), "run() must stop stragglers after every command")
