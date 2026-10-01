@@ -1914,7 +1914,13 @@ def validate(args: argparse.Namespace) -> int:
     records.extend(build_records)
 
     runtime_packages = package_lines(runtime_lock)
-    if runtime_packages:
+    # The audit is the one trusted command that runs after caller code, so prove the tooling is intact immediately
+    # before it runs; a caller could otherwise leave a module that restores itself once invoked.
+    tooling_changed = bool(changed_trusted_tools(trusted_tools_before))
+    if tooling_changed:
+        audit_record = make_evidence("Python dependency audit", "security", ["pip-audit", "requirements-runtime.lock"], None, "The dependency audit did not run because trusted validation tooling changed after caller code ran.", 0, "pip-audit", versions["pip_audit"], roots, status="Blocked")
+        failed = True
+    elif runtime_packages:
         audit_command = module_command(tool_python, "pip_audit", "--disable-pip", "--progress-spinner", "off", "--format", "json", "--requirement", str(runtime_lock))
         audit_code, audit_output, audit_duration = run(audit_command, args.work_root, env)
         if audit_code == 0:
@@ -1935,13 +1941,14 @@ def validate(args: argparse.Namespace) -> int:
     # Every step that executes caller code has finished: stop everything it left running (the subreaper adopted any
     # detached process), then confirm each early SBOM is still the file recorded.
     if terminate_descendants() != 0:
+        records.append(make_evidence("Python caller process cleanup", "security", ["terminate_descendants"], 1, "Caller processes were still running after cleanup.", 0, "python-project-validation.py", sys.version.split()[0], roots, status="Failed"))
         failed = True
     # Caller code runs with the runner's identity, so prove the toolchain, standard library and standards checkout that
     # every trusted check executes are byte-for-byte what they were before it ran.
-    tampered = changed_trusted_tools(trusted_tools_before)
-    if tampered:
-        # The message is deliberately constant: nothing derived from a digest may reach the log.
+    if tooling_changed or changed_trusted_tools(trusted_tools_before):
+        # The message is deliberately constant: nothing derived from a digest may reach the log or the records.
         print("Trusted validation tooling changed while caller code ran.", file=sys.stderr)
+        records.append(make_evidence("Python trusted tooling integrity", "security", ["tree digest comparison"], 1, "Trusted validation tooling changed while caller code ran.", 0, "python-project-validation.py", sys.version.split()[0], roots, status="Failed"))
         failed = True
     for sbom_record, sbom_filename in (
         (toolchain_sbom_record, "python-toolchain-sbom.cdx.json"),

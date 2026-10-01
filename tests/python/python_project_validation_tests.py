@@ -2270,10 +2270,16 @@ def test_caller_commands_cannot_write_bytecode_and_trusted_tools_are_verified_af
     require(validator.trusted_env(Path("home"))["PYTHONDONTWRITEBYTECODE"] == "1", "bytecode writes are not disabled")
     source = inspect.getsource(validator.validate)
     baseline = source.index("trusted_tools_before = trusted_tool_digests()")
-    verification = source.index("changed_trusted_tools(trusted_tools_before)")
+    pre_audit = source.index("tooling_changed = bool(changed_trusted_tools(trusted_tools_before))")
+    final = source.index("if tooling_changed or changed_trusted_tools(trusted_tools_before)")
     require(baseline < source.index("become_subreaper()") < source.index("build_command = "), "baseline is taken too late")
-    require(source.index("pytest_command = ") < source.index("terminate_descendants()") < verification, "tools are verified too early")
-    require("failed = True" in source[verification : verification + 400], "a changed toolchain must fail the run")
+    for caller_code_step in ("build_command = ", "pytest_command = ", "smoke_command = "):
+        require(source.index(caller_code_step) < pre_audit, f"tooling is verified before {caller_code_step!r}")
+    require(pre_audit < source.index("audit_command = "), "tooling must be verified immediately before the audit runs")
+    require(source.index("terminate_descendants()") < final, "the final verification must follow the process cleanup")
+    require("failed = True" in source[pre_audit : pre_audit + 700], "a changed toolchain must fail the run")
+    require('"Python trusted tooling integrity"' in source[final:] and 'status="Failed"' in source[final : final + 900], "an integrity failure needs an explicit Failed record")
+    require('"Python caller process cleanup"' in source, "a cleanup failure needs an explicit Failed record")
     require("terminate_descendants()" in inspect.getsource(validator.run), "run() must stop stragglers after every command")
 
 
