@@ -78,12 +78,13 @@ jobs:
             $current = $root
             foreach ($component in @($candidate -split '/')) {
               if ([string]::IsNullOrEmpty($component) -or $component -eq '.') { continue }
-              $current = Join-Path $current $component
-              $componentItem = Get-Item -LiteralPath $current -Force
-              if ($componentItem.LinkType -or ($componentItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'project-path must not contain a link or reparse-point component.' }
+              # Build and inspect the Unix path with .NET so a literal backslash in a directory name is not treated as a separator.
+              $current = [IO.Path]::Combine($current, $component)
+              $componentItem = if ([IO.Directory]::Exists($current)) { [IO.DirectoryInfo]::new($current) } elseif ([IO.File]::Exists($current)) { [IO.FileInfo]::new($current) } else { throw 'project-path does not exist beneath the caller checkout.' }
+              if ($componentItem.LinkTarget -or ($componentItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'project-path must not contain a link or reparse-point component.' }
             }
-            $resolvedRoot = (Resolve-Path -LiteralPath $root).Path
-            $resolvedProject = (Resolve-Path -LiteralPath $current).Path
+            $resolvedRoot = [IO.Path]::GetFullPath($root)
+            $resolvedProject = [IO.Path]::GetFullPath($current)
             if (-not ($resolvedProject -eq $resolvedRoot -or $resolvedProject.StartsWith($resolvedRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal))) { throw 'project-path escaped the caller checkout.' }
             [IO.File]::WriteAllText($projectPathFile, $resolvedProject, [Text.UTF8Encoding]::new($false))
           }

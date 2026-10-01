@@ -51,6 +51,21 @@ function Test-RawBytePrefix {
     return $true
 }
 
+function Get-TrustedRepositoryIdentity {
+    # The repository identity that gates this repository's special fingerprint pairing. It must not come from the
+    # receipt being validated: use the caller-supplied expectation, the Actions-provided repository, or the checkout's
+    # origin remote. An unknown identity pairs nothing.
+    param(
+        [string]$RepositoryRoot,
+        [string]$Expected
+    )
+    if (-not [string]::IsNullOrWhiteSpace($Expected)) { return $Expected }
+    if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_REPOSITORY)) { return $env:GITHUB_REPOSITORY }
+    $origin = [string](& git -C $RepositoryRoot remote get-url origin 2>$null)
+    if ($LASTEXITCODE -eq 0 -and $origin -match 'github\.com[:/]([^/]+)/([^/.]+)(\.git)?$') { return "$($Matches[1])/$($Matches[2])" }
+    return ''
+}
+
 function Get-ReceiptExclusionPath {
     # Repository-relative location of the receipt: its directory (trailing slash) or, for a receipt at the
     # repository root, the file itself. A receipt outside the source tree excludes nothing.
@@ -71,14 +86,11 @@ function Get-ReceiptExclusionPath {
     # This repository's two example receipts bind each other's trees. Pair their directories only for those exact
     # receipt files in this repository; any other receipt, even inside those directories, excludes only its own directory.
     $centralEvidenceDirectories = @('examples/python-project/evidence/', 'examples/bash-project/evidence/')
-    # Each central receipt is paired with the repository identity it records.
-    $centralReceipts = @(
-        @{ Path = 'examples/python-project/evidence/local-completion-result.json'; Repository = 'AIAllTheThingz/Engineering-Standards' },
-        @{ Path = 'examples/bash-project/evidence/local-completion-result.json'; Repository = 'example-org/bash-project' }
-    )
-    $isCentralReceipt = @($centralReceipts | Where-Object {
-        [string]::Equals($_.Path, $relative, $comparison) -and [string]::Equals($_.Repository, $Repository, [StringComparison]::Ordinal)
-    }).Count -gt 0
+    # Pair only for the two exact central receipt files, and only when the independently trusted repository identity
+    # (never the receipt's own repository field) is this repository.
+    $centralReceiptPaths = @('examples/python-project/evidence/local-completion-result.json', 'examples/bash-project/evidence/local-completion-result.json')
+    $isCentralRepository = [string]::Equals($Repository, 'AIAllTheThingz/Engineering-Standards', [StringComparison]::Ordinal)
+    $isCentralReceipt = $isCentralRepository -and @($centralReceiptPaths | Where-Object { [string]::Equals($_, $relative, $comparison) }).Count -gt 0
     if ($isCentralReceipt) { return $centralEvidenceDirectories }
     $slash = $relative.LastIndexOf('/')
     if ($slash -lt 0) { return @($relative) }
@@ -297,7 +309,7 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
                     if ($workingTreeChanges.Count -gt 0) {
                         throw 'squash-safe Local content validation requires a clean working tree.'
                     }
-                    $currentContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference 'HEAD' -ReceiptFullPath $full -ReceiptRepository ([string]$evidence.repository)
+                    $currentContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference 'HEAD' -ReceiptFullPath $full -ReceiptRepository (Get-TrustedRepositoryIdentity -RepositoryRoot $root -Expected $ExpectedRepository)
                     if ($currentContentSha256 -ine $validatedContentSha256) {
                         throw 'validatedContentSha256 does not match the current repository content.'
                     }
@@ -312,7 +324,7 @@ if (-not @($results | Where-Object status -eq 'Failed')) {
         }
         elseif ($validatedContentSha256) {
             try {
-                $validatedCommitContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference $validatedSha -ReceiptFullPath $full -ReceiptRepository ([string]$evidence.repository)
+                $validatedCommitContentSha256 = Get-RepositoryContentFingerprint -RepositoryPath $root -CommitReference $validatedSha -ReceiptFullPath $full -ReceiptRepository (Get-TrustedRepositoryIdentity -RepositoryRoot $root -Expected $ExpectedRepository)
                 if ($validatedCommitContentSha256 -ine $validatedContentSha256) {
                     throw 'validatedContentSha256 does not match the named validatedCommitSha content.'
                 }

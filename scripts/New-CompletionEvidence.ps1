@@ -177,6 +177,21 @@ function Test-RawBytePrefix {
     return $true
 }
 
+function Get-TrustedRepositoryIdentity {
+    # The repository identity that gates this repository's special fingerprint pairing. It must not come from the
+    # receipt being validated: use the caller-supplied expectation, the Actions-provided repository, or the checkout's
+    # origin remote. An unknown identity pairs nothing.
+    param(
+        [string]$RepositoryRoot,
+        [string]$Expected
+    )
+    if (-not [string]::IsNullOrWhiteSpace($Expected)) { return $Expected }
+    if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_REPOSITORY)) { return $env:GITHUB_REPOSITORY }
+    $origin = [string](& git -C $RepositoryRoot remote get-url origin 2>$null)
+    if ($LASTEXITCODE -eq 0 -and $origin -match 'github\.com[:/]([^/]+)/([^/.]+)(\.git)?$') { return "$($Matches[1])/$($Matches[2])" }
+    return ''
+}
+
 function Get-ReceiptExclusionPath {
     # Repository-relative location of the receipt: its directory (trailing slash) or, for a receipt at the
     # repository root, the file itself. A receipt outside the source tree excludes nothing.
@@ -197,14 +212,11 @@ function Get-ReceiptExclusionPath {
     # This repository's two example receipts bind each other's trees. Pair their directories only for those exact
     # receipt files in this repository; any other receipt, even inside those directories, excludes only its own directory.
     $centralEvidenceDirectories = @('examples/python-project/evidence/', 'examples/bash-project/evidence/')
-    # Each central receipt is paired with the repository identity it records.
-    $centralReceipts = @(
-        @{ Path = 'examples/python-project/evidence/local-completion-result.json'; Repository = 'AIAllTheThingz/Engineering-Standards' },
-        @{ Path = 'examples/bash-project/evidence/local-completion-result.json'; Repository = 'example-org/bash-project' }
-    )
-    $isCentralReceipt = @($centralReceipts | Where-Object {
-        [string]::Equals($_.Path, $relative, $comparison) -and [string]::Equals($_.Repository, $Repository, [StringComparison]::Ordinal)
-    }).Count -gt 0
+    # Pair only for the two exact central receipt files, and only when the independently trusted repository identity
+    # (never the receipt's own repository field) is this repository.
+    $centralReceiptPaths = @('examples/python-project/evidence/local-completion-result.json', 'examples/bash-project/evidence/local-completion-result.json')
+    $isCentralRepository = [string]::Equals($Repository, 'AIAllTheThingz/Engineering-Standards', [StringComparison]::Ordinal)
+    $isCentralReceipt = $isCentralRepository -and @($centralReceiptPaths | Where-Object { [string]::Equals($_, $relative, $comparison) }).Count -gt 0
     if ($isCentralReceipt) { return $centralEvidenceDirectories }
     $slash = $relative.LastIndexOf('/')
     if ($slash -lt 0) { return @($relative) }
@@ -451,7 +463,7 @@ function Get-OriginRepositoryName {
     return 'AIAllTheThingz/Engineering-Standards'
 }
 
-$receiptRepository = $(if ($Repository) { $Repository } elseif ($env:GITHUB_REPOSITORY) { $env:GITHUB_REPOSITORY } else { Get-OriginRepositoryName -RepositoryRoot $sourceRoot })
+$receiptRepository = Get-TrustedRepositoryIdentity -RepositoryRoot $sourceRoot
 $validatedContentSha256 = Get-ValidatedContentFingerprint -RepositoryRoot $sourceRoot -CommitSha $validatedCommit -ReceiptFullPath (Join-Path $root $OutputPath) -ReceiptRepository $receiptRepository
 
 function Test-GeneratedBuildOutputPath {
@@ -493,7 +505,7 @@ function Get-ChangedFileCategories {
         if ($path -match '(^|/)(\.github|schemas|actions|scripts)/' -or $path -match '\.(json|ya?ml|ps1|psm1|psd1|gitignore)$') { $categories.configuration += $path; continue }
         $categories.source += $path
     }
-    foreach ($key in @($categories.Keys)) { $categories[$key] = @($categories[$key] | Sort-Object -Unique) }
+    foreach ($key in @($categories.Keys)) { $categories[$key] = @($categories[$key] | Sort-Object -Unique -CaseSensitive) }
     $categories
 }
 
@@ -508,7 +520,7 @@ $changedFiles = @(
 if ($changedFiles.Count -eq 0 -and $commit -ne 'unknown') {
     $changedFiles = @(& git -C $sourceRoot diff-tree --no-commit-id --name-only -r $commit 2>$null | ForEach-Object { $_ })
 }
-$changedFiles = @($changedFiles | Where-Object { -not (Test-GeneratedBuildOutputPath -Path $_) } | Sort-Object -Unique)
+$changedFiles = @($changedFiles | Where-Object { -not (Test-GeneratedBuildOutputPath -Path $_) } | Sort-Object -Unique -CaseSensitive)
 if ($changedFiles.Count -eq 0) { $changedFiles = @('unknown') }
 $changedFileCategories = Get-ChangedFileCategories -Files $changedFiles
 $evidence = [ordered]@{

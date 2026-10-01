@@ -393,6 +393,36 @@ Describe 'Governed Python project support' {
         @($files | Sort-Object) | Should -Be @('first.txt','second.txt','third.txt')
     }
 
+    It 'validates an Ubuntu project path whose directory name contains a literal backslash' {
+        if ($IsWindows) {
+            Set-ItResult -Skipped -Because 'A directory name containing a backslash is a Linux-only fixture.'
+            return
+        }
+        $block = [regex]::Match($script:workflow, '(?ms)^ {10}\$inputStartedAt = .*?(?=^ {6}- name:)').Value
+        $block | Should -Not -BeNullOrEmpty
+        $workspace = Join-Path $TestDrive 'literal-backslash-workspace'
+        $work = Join-Path $TestDrive 'literal-backslash-work'
+        $caller = Join-Path $workspace 'caller'
+        $literalProject = $caller + '/ex' + [char]92 + 'ample/proj'
+        $decoyProject = $caller + '/ex/ample/proj'
+        [void][IO.Directory]::CreateDirectory($literalProject)
+        [void][IO.Directory]::CreateDirectory($decoyProject)
+        [void][IO.Directory]::CreateDirectory($work + '/evidence')
+        $saved = @{ W = $env:GITHUB_WORKSPACE; P = $env:PYTHON_WORK_ROOT; V = $env:CALLER_PYTHON_VERSION; C = $env:CALLER_PROJECT_PATH }
+        try {
+            $env:GITHUB_WORKSPACE = $workspace; $env:PYTHON_WORK_ROOT = $work
+            $env:CALLER_PYTHON_VERSION = '3.12.11'; $env:CALLER_PROJECT_PATH = 'ex' + [char]92 + 'ample/proj'
+            & ([scriptblock]::Create($block))
+            [IO.File]::ReadAllText($work + '/evidence/validated-project-path.txt') | Should -BeExactly ([IO.Path]::GetFullPath($literalProject)) -Because 'the literal backslash directory, not the slash-separated decoy, must be validated'
+
+            $env:CALLER_PROJECT_PATH = 'ex' + [char]92 + 'missing/proj'
+            { & ([scriptblock]::Create($block)) } | Should -Throw
+        }
+        finally {
+            $env:GITHUB_WORKSPACE = $saved.W; $env:PYTHON_WORK_ROOT = $saved.P; $env:CALLER_PYTHON_VERSION = $saved.V; $env:CALLER_PROJECT_PATH = $saved.C
+        }
+    }
+
     It 'preserves failure evidence when the functional runtime setup is unavailable' {
         $workspaceIndex = $script:workflow.IndexOf('Initialize Python evidence workspace')
         $resolverIndex = $script:workflow.IndexOf('Set up exact CPython 3.13.2 lock resolver')
