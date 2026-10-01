@@ -1926,7 +1926,8 @@ def validate(args: argparse.Namespace) -> int:
     # every trusted check executes are byte-for-byte what they were before it ran.
     tampered = changed_trusted_tools(trusted_tools_before)
     if tampered:
-        print("Trusted validation tooling changed while caller code ran: " + ", ".join(tampered), file=sys.stderr)
+        # The message is deliberately constant: nothing derived from a digest may reach the log.
+        print("Trusted validation tooling changed while caller code ran.", file=sys.stderr)
         failed = True
     for sbom_record, sbom_filename in (
         (toolchain_sbom_record, "python-toolchain-sbom.cdx.json"),
