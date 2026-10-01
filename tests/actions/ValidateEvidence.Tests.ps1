@@ -1102,7 +1102,7 @@ Describe 'Validate evidence action' {
         It 'preserves legal Git filenames that only look reserved' {
             & $script:NewTempEvidence
             $changedFiles = @('docs/v1..v2.md', 'unknown', 'src/app.py')
-            if (-not $IsWindows) { $changedFiles += 'C:module.py' }
+            if (-not $IsWindows) { $changedFiles += @('C:module.py', 'C:/module.py', '\module.py') }
             & "$PSScriptRoot/../../scripts/New-CompletionEvidence.ps1" -RepositoryPath $script:tempRoot -OutputPath 'evidence/generated.json' -Summary 'Legal reserved-looking path fixture.' -ArtifactPath 'evidence/report.json' -CommandsExecuted @('fixture') -ChangedFile $changedFiles
             $? | Should -BeTrue
             $generated = Get-Content -LiteralPath (Join-Path $script:tempRoot 'evidence/generated.json') -Raw | ConvertFrom-Json
@@ -1115,7 +1115,9 @@ Describe 'Validate evidence action' {
             foreach ($legal in @('docs/v1..v2.md', 'a..b', '..hidden/x')) {
                 @(Test-RelativeRepositoryPath -Value $legal -Name 'changedFiles item' -Path 'r.json').Count | Should -Be 0 -Because $legal
             }
-            if (-not $IsWindows) { @(Test-RelativeRepositoryPath -Value 'C:module.py' -Name 'changedFiles item' -Path 'r.json').Count | Should -Be 0 }
+            if (-not $IsWindows) {
+                foreach ($unixLegal in @('C:module.py', 'C:/module.py', '\module.py')) { @(Test-RelativeRepositoryPath -Value $unixLegal -Name 'changedFiles item' -Path 'r.json').Count | Should -Be 0 -Because $unixLegal }
+            }
             foreach ($bad in @('../x', 'a/../b', 'a/..', '..', '/abs')) {
                 @(Test-RelativeRepositoryPath -Value $bad -Name 'changedFiles item' -Path 'r.json').Count | Should -BeGreaterThan 0 -Because $bad
             }

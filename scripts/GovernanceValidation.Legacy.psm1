@@ -619,9 +619,11 @@ function Test-RelativeRepositoryPath {
         [System.IO.Path]::IsPathRooted($Value) -or
         # A drive prefix is only a root on Windows; on Unix 'C:module.py' is a legal relative name.
         ($IsWindows -and $Value -cmatch '^[A-Za-z]:') -or
-        $Value -cmatch '^[\\/]' -or
+        $Value.StartsWith('/', [StringComparison]::Ordinal) -or
+        ($IsWindows -and $Value.StartsWith('\', [StringComparison]::Ordinal)) -or
         # Only a '..' path segment traverses; 'v1..v2.md' is an ordinary name.
-        $Value -cmatch '(^|[\/])\.\.([\/]|$)'
+        $Value -cmatch '(^|/)\.\.(/|$)' -or
+        ($IsWindows -and $Value -cmatch '(^|\\)\.\.(\\|$)')
     ) {
         $results.Add((New-ValidationResult -Status Failed -Message "$Name must be a relative path that does not traverse outside the repository." -Path $Path))
     }

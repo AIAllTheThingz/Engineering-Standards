@@ -112,10 +112,10 @@ Describe 'JSON schema validation' {
         It 'accepts exact Git changed-file paths and rejects only traversal and roots' {
             $completionSchema = Get-Content -LiteralPath "$PSScriptRoot/../../schemas/completion-result.schema.json" -Raw | ConvertFrom-Json
             $pathSchema = $completionSchema.properties.changedFiles.items | ConvertTo-Json -Depth 10
-            foreach ($path in @('docs/v1..v2.md', 'a..b', "line`nfeed.md", 'C:module.py', 'unknown', 'a b/c.md', '..hidden/x')) {
+            foreach ($path in @('docs/v1..v2.md', 'a..b', "line`nfeed.md", 'C:module.py', 'C:/module.py', 'unknown', 'a b/c.md', '..hidden/x')) {
                 (ConvertTo-Json -InputObject $path | Test-Json -Schema $pathSchema) | Should -BeTrue -Because $path
             }
-            foreach ($path in @('../x', 'a/../b', 'a/..', '..', '/abs', 'C:/x')) {
+            foreach ($path in @('../x', 'a/../b', 'a/..', '..', '/abs')) {
                 (ConvertTo-Json -InputObject $path | Test-Json -Schema $pathSchema -ErrorAction SilentlyContinue) | Should -BeFalse -Because $path
             }
         }
