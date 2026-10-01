@@ -342,15 +342,12 @@ Describe 'Governed Python project support' {
 
     It 'inventories every pushed commit when a new branch is pushed, and the whole tree when nothing precedes it' {
         $functionText = [regex]::Match($script:workflow, '(?ms)^ {12}function Get-CompletionChangedFiles \{.*?^ {12}\}\s*$').Value
-        $snapshotText = [regex]::Match($script:workflow, '(?ms)- name: Snapshot completion scope before caller code runs.*?run: \|?
-(?<body>.*?)(?=^ {6}- name:)').Groups['body'].Value
-        $selectionText = [regex]::Match($script:workflow, '(?ms)^ {10}if \(\$env:SCOPE_OUTCOME -ne ''success''\).*?^ {10}if \(\$completionChangedFiles\.Count -eq 0\)[^
-]*').Value
+        $snapshotText = [regex]::Match($script:workflow, '(?ms)- name: Snapshot completion scope before caller code runs.*?run: \|\r?\n(?<body>.*?)(?=^ {6}- name:)').Groups['body'].Value
+        $selectionText = [regex]::Match($script:workflow, '(?ms)^ {10}if \(\$env:SCOPE_OUTCOME -ne ''success''\).*?^ {10}if \(\$completionChangedFiles\.Count -eq 0\)[^\r\n]*').Value
         $functionText | Should -Not -BeNullOrEmpty
         $snapshotText | Should -Not -BeNullOrEmpty
         $selectionText | Should -Not -BeNullOrEmpty
-        $snapshotText = $snapshotText -replace '(?m)^\s*\$callerStage = Join-Path \$env:GITHUB_WORKSPACE ''caller''?
-', ''
+        $snapshotText = $snapshotText -replace '(?m)^\s*\$callerStage = Join-Path \$env:GITHUB_WORKSPACE ''caller''\r?\n', ''
         $snapshotRunner = [scriptblock]::Create("param(`$callerStage)`n$snapshotText")
         $runner = [scriptblock]::Create("param(`$completionSourceRoot)`n$functionText`n$selectionText`n`$completionChangedFiles")
 
