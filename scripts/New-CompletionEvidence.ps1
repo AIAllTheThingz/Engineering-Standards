@@ -476,6 +476,8 @@ function Convert-ChangedFilePath {
     param([Parameter(Mandatory)][string]$Path)
 
     $normalized = $Path
+    # Only Windows treats a backslash as a separator; on Unix it is a legal literal filename character.
+    if ($IsWindows) { $normalized = $normalized.Replace('\', '/') }
     while ($normalized.StartsWith('./', [StringComparison]::Ordinal)) {
         $normalized = $normalized.Substring(2)
     }

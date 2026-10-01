@@ -101,7 +101,7 @@
         "string",
         "null"
       ],
-      "description": "Canonical SHA-256 identity of the validated Git tree excluding the self-referential checked-in Python and Bash completion-evidence payload directories. It lets Local receipt validation prove equivalent reviewed content after a squash merge removes the original validatedCommitSha object.",
+      "description": "Canonical SHA-256 identity of the validated Git tree excluding only the receipt's own self-referential directory (or, for a receipt at the repository root, the receipt file), derived from the receipt path; for this repository's two central example receipts, both example evidence directories are excluded because those receipts bind each other's trees. See governance/COMPLETION_EVIDENCE.md for the full rule. It lets Local receipt validation prove equivalent reviewed content after a squash merge removes the original validatedCommitSha object.",
       "pattern": "^[A-Fa-f0-9]{64}$"
     },
     "validatedCommitTag": {
