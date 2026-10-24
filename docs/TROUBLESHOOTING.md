@@ -303,6 +303,11 @@ reports, `python-project-sbom.cdx.json` for runtime dependencies, and
 `python-toolchain-sbom.cdx.json` for validation tools before retrying. Caller
 pytest/mypy/Ruff configuration is intentionally ignored by the trusted baseline.
 
+If lock verification reports the wrong pip version after a successful bootstrap,
+check that the recorded parser path still names the virtual environment's Python.
+Dereferencing its executable symlink selects the base interpreter and loses the
+hash-verified parser environment.
+
 ## Related
 
 - `docs/ADOPTION_GUIDE.md`
