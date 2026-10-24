@@ -1274,7 +1274,8 @@ def bootstrap_pinned_lock_metadata_parser(
     if not parser_python.is_file():
         raise ValueError("the verified lock metadata parser did not produce a Python executable")
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(str(parser_python.resolve()) + "\n", encoding="utf-8")
+    # Resolving the virtualenv symlink selects the base interpreter and loses its pinned pip.
+    output_path.write_text(str(parser_python.absolute()) + "\n", encoding="utf-8")
 
 
 def validate_requirements_lock_closure(
