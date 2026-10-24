@@ -691,7 +691,10 @@ def test_bootstrap_lock_metadata_parser_records_the_verified_parser_path(
     source_python.touch()
     parser_python = tmp_path / "lock-metadata-parser" / "python"
     parser_python.parent.mkdir()
-    parser_python.touch()
+    if sys.platform == "win32":
+        parser_python.touch()
+    else:
+        parser_python.symlink_to(source_python)
     output_path = tmp_path / "parser-path.txt"
     calls: list[tuple[Path, str, Path]] = []
 
@@ -710,7 +713,7 @@ def test_bootstrap_lock_metadata_parser_records_the_verified_parser_path(
     )
 
     require(calls == [(source_python, "lock metadata parser", tmp_path / "work" / "lock-metadata-parser")], "the parser bootstrap did not use the dedicated pinned resolver")
-    require(output_path.read_text(encoding="utf-8").strip() == str(parser_python.resolve()), "the parser bootstrap did not record the verified interpreter")
+    require(output_path.read_text(encoding="utf-8").strip() == str(parser_python.absolute()), "the parser bootstrap must preserve the virtualenv interpreter symlink")
 
 
 def test_pinned_lock_resolver_bootstraps_the_hash_pinned_pip(tmp_path: Path, monkeypatch) -> None:
