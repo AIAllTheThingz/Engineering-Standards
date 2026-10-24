@@ -19,7 +19,7 @@
         Node = @{
             Version = '22.17.0'
             SetupAction = 'actions/setup-node'
-            ActionSha = '820762786026740c76f36085b0efc47a31fe5020'
+            ActionSha = '949feb2413d6458794dcd2491c4babbbce0c15c1'
         }
         DotNet = @{
             Version = '8.0.411'

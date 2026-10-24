@@ -69,6 +69,37 @@ Describe 'Validator dependency integrity controls' {
         $workflow | Should -Not -Match '(?m)^\s*working-directory:\s*candidate(?:/|\\|\s|$)'
     }
 
+    It 'validates the evaluator against the locked Node action when its pin is <EvaluatorPin>' -ForEach @(
+        @{ EvaluatorPin='synchronized'; ExpectedFailures=0 },
+        @{ EvaluatorPin='mismatched'; ExpectedFailures=1 }
+    ) {
+        $fixtureGithub = New-Item -ItemType Directory -Path (Join-Path $testRoot '.github')
+        Copy-Item -LiteralPath (Join-Path $repoRoot '.github/dependencies') -Destination $fixtureGithub.FullName -Recurse
+        Copy-Item -LiteralPath (Join-Path $repoRoot '.github/workflows') -Destination $fixtureGithub.FullName -Recurse
+        Copy-Item -LiteralPath (Join-Path $repoRoot 'global.json') -Destination $testRoot
+        $fixtureLockPath = Join-Path $testRoot '.github/dependencies/validator-dependencies.psd1'
+        $lock = Import-ValidatorDependencyLock -Path $fixtureLockPath
+        $lockedSha = [string]$lock.Runtimes.Node.ActionSha
+        $replacementSha = '1111111111111111111111111111111111111111'
+        (Get-Content -LiteralPath $fixtureLockPath -Raw).Replace($lockedSha, $replacementSha) |
+            Set-Content -LiteralPath $fixtureLockPath -Encoding utf8
+        foreach ($workflowName in @('governance-ci-reusable.yml','governance-ci-candidate.yml','codex-skill-behavior.yml')) {
+            $workflowPath = Join-Path $testRoot ".github/workflows/$workflowName"
+            $workflow = Get-Content -LiteralPath $workflowPath -Raw
+            $workflow = [regex]::Replace($workflow, 'actions/setup-node@[0-9a-f]{40}', "actions/setup-node@$replacementSha")
+            if ($EvaluatorPin -eq 'mismatched' -and $workflowName -eq 'codex-skill-behavior.yml') {
+                $workflow = $workflow.Replace("actions/setup-node@$replacementSha", "actions/setup-node@$lockedSha")
+            }
+            Set-Content -LiteralPath $workflowPath -Value $workflow -Encoding utf8
+        }
+
+        & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Test-ValidatorDependencies.ps1') -Path $testRoot -OutputJson result.json | Out-Null
+        $LASTEXITCODE | Should -Be $ExpectedFailures
+        $report = Get-Content -LiteralPath (Join-Path $testRoot 'result.json') -Raw | ConvertFrom-Json
+        @($report.results | Where-Object { $_.ruleId -eq 'DEP022' -and $_.status -eq 'Failed' }).Count |
+            Should -Be $ExpectedFailures
+    }
+
     It 'requires exact evaluator provenance and CycloneDX artifact inventory' {
         $workflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github/workflows/codex-skill-behavior.yml') -Raw
         $workflow | Should -Match "nodeVersion\s+-cne\s+'v22\.17\.0'"

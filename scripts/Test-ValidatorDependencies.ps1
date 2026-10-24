@@ -126,8 +126,11 @@ try {
     }
     else {
         $codexWorkflowText = Get-Content -LiteralPath $codexWorkflowPath -Raw
-        if ($codexWorkflowText -notmatch 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020' -or
-            $codexWorkflowText -notmatch 'node-version:\s*22\.17\.0' -or
+        $nodeRuntime = $lock.Runtimes.Node
+        $nodeActionReference = [regex]::Escape("$($nodeRuntime.SetupAction)@$($nodeRuntime.ActionSha)")
+        $nodeVersion = 'node-version:\s*' + [regex]::Escape([string]$nodeRuntime.Version) + '(?:\s|$)'
+        if ($codexWorkflowText -notmatch $nodeActionReference -or
+            $codexWorkflowText -notmatch $nodeVersion -or
             $codexWorkflowText -notmatch 'Install-ValidatorRuntime\.ps1' -or
             $codexWorkflowText -notmatch 'npm ci --ignore-scripts --no-audit --no-fund' -or
             $codexWorkflowText -notmatch "codexVersion\s+-cne\s+'codex-cli 0\.144\.0-alpha\.4'" -or

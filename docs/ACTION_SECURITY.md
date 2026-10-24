@@ -145,7 +145,7 @@ Pinned actions currently used by this repository:
 
 - `actions/checkout`: `3d3c42e5aac5ba805825da76410c181273ba90b1`
 - `actions/setup-python`: `5fda3b95a4ea91299a34e894583c3862153e4b97`
-- `actions/setup-node`: `820762786026740c76f36085b0efc47a31fe5020`
+- `actions/setup-node`: `949feb2413d6458794dcd2491c4babbbce0c15c1` (v7.1.0)
 - `actions/setup-dotnet`: `a98b56852c35b8e3190ac28c8c2271da59106c68`
 - `actions/upload-artifact`: `ea165f8d65b6e75b540449e92b4886f43607fa02`
 
