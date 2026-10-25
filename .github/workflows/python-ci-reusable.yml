@@ -361,7 +361,7 @@ jobs:
           mkdir -p "$PYTHON_WORK_ROOT/evidence"
           started_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           started_epoch="$(date +%s)"
-          "$TOOL_PYTHON" -I -m pytest -c /dev/null --rootdir standards \
+          "$TOOL_PYTHON" -I -m pytest --no-header -c /dev/null --rootdir standards \
             -p no:cacheprovider standards/tests/python/python_project_validation_tests.py \
             2>&1 | tee "$PYTHON_WORK_ROOT/evidence/validator-regression.log"
           regression_exit_code="${PIPESTATUS[0]}"
@@ -673,7 +673,7 @@ jobs:
               status = if ($regressionOutcome -eq 'success') { 'Passed' } else { 'Failed' }
               requiredValidation = $true
               evidenceSource = 'Automated'
-              command = 'pytest -c /dev/null --rootdir standards -p no:cacheprovider standards/tests/python/python_project_validation_tests.py'
+              command = 'pytest --no-header -c /dev/null --rootdir standards -p no:cacheprovider standards/tests/python/python_project_validation_tests.py'
               workingDirectory = 'trusted-isolated-workspace'
               startedAtUtc = $regressionStartedAtUtc
               completedAtUtc = $regressionCompletedAtUtc
