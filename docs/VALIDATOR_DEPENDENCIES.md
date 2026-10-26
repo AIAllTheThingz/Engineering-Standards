@@ -46,7 +46,7 @@ lock.
 | Node.js | `22.17.0` | `actions/setup-node` pinned by full commit SHA; exact version is verified and the executable SHA-256 is recorded. |
 | .NET SDK | `8.0.411` | `actions/setup-dotnet` pinned by full commit SHA plus root `global.json` with roll-forward and prerelease disabled; exact version is verified and the executable SHA-256 is recorded. |
 | PyYAML | `6.0.3` | Binary wheel only; exact wheel SHA-256 is locked and pip uses `--require-hashes`, `--no-deps`, and a verified local cache for installation. |
-| Ruff | `0.15.22` | Official Astral PyPI manylinux X64 wheel, MIT license; exact filename and SHA-256 are locked and installed binary-only from the verified local cache. |
+| Ruff | `0.17.1` | Official Astral PyPI manylinux X64 wheel, MIT license; exact filename and SHA-256 are locked and installed binary-only from the verified local cache. |
 | ShellCheck | `0.11.0` | Official `koalaman/shellcheck` Linux X64 release archive, GPL-3.0; immutable release URL and SHA-256 are verified before bounded extraction. |
 | Pester | `5.7.1` | Exact PSGallery package URL, filename, version, module manifest, and package SHA-256 are locked and verified. |
 | PSScriptAnalyzer | `1.22.0` | Exact PSGallery package URL, filename, version, module manifest, and package SHA-256 are locked and verified. |
@@ -174,6 +174,11 @@ Hosted governance artifacts contain:
 
 Ruff is invoked through its exact isolated executable with `--isolated`,
 `--no-cache`, an explicit `E9,F,B,S` baseline, `--ignore-noqa`, and no fixes.
+The expected executable version comes from the standards checkout's PSD1 lock;
+caller-owned dependency files cannot change that identity check. Ruff 0.17.1's
+Linux X64 wheel was independently downloaded and its SHA-256 matched the
+[official PyPI release metadata](https://pypi.org/pypi/ruff/0.17.1/json):
+`a6ef98e51de8ef38082f90653ceeb84944bd7673783eea13e1647c5b9b064189`.
 ShellCheck uses the exact extracted executable, `/dev/null` as its rc file,
 external-source loading disabled, and warning-or-higher findings. Bash syntax is
 checked with the observed runner Bash in `--noprofile --norc -n` mode after
