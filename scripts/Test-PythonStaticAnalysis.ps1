@@ -17,13 +17,17 @@ $findings=[Collections.Generic.List[object]]::new(); $status='Failed'; $tools=[o
 try {
     if(-not $PythonPath){ $PythonPath=(Get-Command python -CommandType Application -ErrorAction Stop).Source }
     if(-not $RuffPath -or -not (Test-Path -LiteralPath $RuffPath -PathType Leaf)){ throw 'Trusted Ruff executable is unavailable; set VALIDATOR_RUFF_PATH to the verified installed executable.' }
+    $lock=Import-PowerShellDataFile -LiteralPath (Join-Path $PSScriptRoot '../.github/dependencies/validator-dependencies.psd1')
+    $ruffPackages=@($lock.Packages|Where-Object Name -eq 'Ruff')
+    if($ruffPackages.Count -ne 1 -or [string]$ruffPackages[0].Version -notmatch '^\d+\.\d+\.\d+$'){ throw 'Trusted Ruff dependency lock must contain one exact version.' }
+    $expectedRuffVersion=[string]$ruffPackages[0].Version
     $files=@(Get-TrustedSourceFiles -Root $root -Language Python -ExcludedRelativePath $exclusions)
     $selected=@($files|Where-Object{-not $_.excluded}); $paths=@($selected.path)
     $ast=Invoke-BoundedProcess -FilePath $PythonPath -ArgumentList @('-I',(Join-Path $PSScriptRoot 'python-static-ast.py')) -StandardInput (ConvertTo-Json -InputObject @($paths) -Compress) -TimeoutSeconds 60
     if($ast.timedOut){ throw 'Python AST parsing timed out.' }; if($ast.exitCode -ne 0){ throw "Python AST parser failed: $($ast.stderr)" }
     foreach($item in @($ast.stdout|ConvertFrom-Json)){ $rel=[IO.Path]::GetRelativePath($root,$item.path).Replace('\','/'); $findings.Add([ordered]@{tool='PythonAST';rule='SyntaxError';path=$rel;line=$item.line;message=$item.message}) }
     $version=Invoke-BoundedProcess -FilePath $RuffPath -ArgumentList @('--version')
-    if($version.exitCode -ne 0 -or $version.stdout.Trim() -ne 'ruff 0.15.22'){ throw "Trusted Ruff version mismatch; expected 'ruff 0.15.22'." }
+    if($version.exitCode -ne 0 -or $version.stdout.Trim() -ne "ruff $expectedRuffVersion"){ throw "Trusted Ruff version mismatch; expected 'ruff $expectedRuffVersion'." }
     if($paths.Count){
         $args=@('check','--isolated','--no-cache','--output-format','json','--select','E9,F,B,S','--ignore-noqa','--no-fix')+$paths
         $ruff=Invoke-BoundedProcess -FilePath $RuffPath -ArgumentList $args -TimeoutSeconds 60
@@ -51,7 +55,7 @@ try {
             $findings.Add([ordered]@{tool='Ruff';rule=$item.code;path=$rel;line=$item.location.row;message=$item.message})
         }
     }
-    $tools.python=[ordered]@{pathHash=(Get-FileHash -LiteralPath $PythonPath -Algorithm SHA256).Hash.ToLowerInvariant()}; $tools.ruff=[ordered]@{version='0.15.22';sha256=(Get-FileHash -LiteralPath $RuffPath -Algorithm SHA256).Hash.ToLowerInvariant()}
+    $tools.python=[ordered]@{pathHash=(Get-FileHash -LiteralPath $PythonPath -Algorithm SHA256).Hash.ToLowerInvariant()}; $tools.ruff=[ordered]@{version=$expectedRuffVersion;sha256=(Get-FileHash -LiteralPath $RuffPath -Algorithm SHA256).Hash.ToLowerInvariant()}
     $status=if($findings.Count){'Failed'}else{'Passed'}
 } catch { $findings.Add([ordered]@{tool='Validator';rule='PYV001';path='.';line=0;message=$_.Exception.Message}); $status=if($_.Exception.Message -match 'unavailable|timed out'){'Blocked'}else{'Failed'} }
 $report=[ordered]@{schemaVersion='1.0.0';status=$status;profile=$Profile;files=@($files|ForEach-Object{[ordered]@{path=$_.relativePath;bytes=$_.bytes;excluded=$_.excluded}});exclusions=@($exclusions);tools=$tools;findings=@($findings|Select-Object -First 500)}
