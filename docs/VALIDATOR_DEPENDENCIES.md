@@ -43,7 +43,7 @@ lock.
 | GitHub-hosted runner | `ubuntu-24.04`, `X64` | Versioned GitHub runner label; observed image OS and version are recorded. |
 | PowerShell | `7.4.11` | Official PowerShell GitHub release archive; archive SHA-256 is locked and verified before extraction. |
 | Python | `3.12.11` | `actions/setup-python` pinned by full commit SHA; exact version is verified and the executable SHA-256 is recorded. |
-| Node.js | `22.17.0` | `actions/setup-node` pinned by full commit SHA; exact version is verified and the executable SHA-256 is recorded. |
+| Node.js | `22.17.0` | `actions/setup-node` v7.1.0 pinned by full commit SHA in the dependency lock; the evaluator uses the same locked action and runtime. The exact version is verified and the executable SHA-256 is recorded. |
 | .NET SDK | `8.0.411` | `actions/setup-dotnet` pinned by full commit SHA plus root `global.json` with roll-forward and prerelease disabled; exact version is verified and the executable SHA-256 is recorded. |
 | PyYAML | `6.0.3` | Binary wheel only; exact wheel SHA-256 is locked and pip uses `--require-hashes`, `--no-deps`, and a verified local cache for installation. |
 | Ruff | `0.17.1` | Official Astral PyPI manylinux X64 wheel, MIT license; exact filename and SHA-256 are locked and installed binary-only from the verified local cache. |
