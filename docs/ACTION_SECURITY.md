@@ -147,7 +147,7 @@ Pinned actions currently used by this repository:
 - `actions/setup-python`: `5fda3b95a4ea91299a34e894583c3862153e4b97`
 - `actions/setup-node`: `949feb2413d6458794dcd2491c4babbbce0c15c1` (v7.1.0)
 - `actions/setup-dotnet`: `a98b56852c35b8e3190ac28c8c2271da59106c68`
-- `actions/upload-artifact`: `ea165f8d65b6e75b540449e92b4886f43607fa02`
+- `actions/upload-artifact`: `cf430e030ddbb5b0abf93d22962f4752f3646cd9` (v7.0.2)
 
 Changing these pins requires review of release notes, permissions, and supply-chain risk.
 
