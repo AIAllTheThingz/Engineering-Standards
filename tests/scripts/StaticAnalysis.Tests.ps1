@@ -40,6 +40,37 @@ Describe 'Trusted Python and Bash source discovery' {
 }
 
 Describe 'Static validator prerequisite honesty' {
+    It 'uses the standards-owned Ruff lock and rejects a different executable version' -ForEach @(
+        @{ ActualVersion='9.8.7'; ExpectedExit=0 },
+        @{ ActualVersion='9.8.6'; ExpectedExit=1 }
+    ) {
+        $fixture=Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        $scripts=Join-Path $fixture 'scripts';$dependencies=Join-Path $fixture '.github/dependencies'
+        $caller=Join-Path $fixture 'caller'
+        New-Item -ItemType Directory $scripts,$dependencies,$caller | Out-Null
+        Copy-Item (Join-Path $repoRoot 'scripts/Test-PythonStaticAnalysis.ps1') $scripts
+        Set-Content (Join-Path $dependencies 'validator-dependencies.psd1') "@{ Packages=@(@{ Name='Ruff'; Version='9.8.7' }) }"
+        # Synthetic process results isolate runtime identity from source discovery.
+        @'
+function Get-TrustedSourceFiles {
+    param($Root, $Language, $ExcludedRelativePath)
+    [pscustomobject]@{ path=(Join-Path $Root 'safe.py'); relativePath='safe.py'; excluded=$false; bytes=1 }
+}
+function Invoke-BoundedProcess {
+    param($FilePath, $ArgumentList, $StandardInput, $TimeoutSeconds)
+    @{ exitCode=0; stdout=$(if($ArgumentList -contains '--version'){'ruff ACTUAL_VERSION'}else{'[]'}); stderr=''; timedOut=$false }
+}
+'@.Replace('ACTUAL_VERSION',$ActualVersion) | Set-Content (Join-Path $scripts 'StaticAnalysisTools.psm1')
+        $executable=Join-Path $fixture 'synthetic-executable';Set-Content $executable 'synthetic'
+        New-Item -ItemType Directory (Join-Path $caller '.github/dependencies') | Out-Null
+        Set-Content (Join-Path $caller '.github/dependencies/validator-dependencies.psd1') "@{ Packages=@(@{ Name='Ruff'; Version='$ActualVersion' }) }"
+        & pwsh -NoProfile -File (Join-Path $scripts 'Test-PythonStaticAnalysis.ps1') -Path $caller -RuffPath $executable -PythonPath $executable -OutputJson result.json
+        $LASTEXITCODE | Should -Be $ExpectedExit
+        $report=Get-Content (Join-Path $caller 'result.json') -Raw | ConvertFrom-Json
+        if($ExpectedExit -eq 0){$report.tools.ruff.version | Should -BeExactly '9.8.7'}
+        else {$report.findings.message | Should -Match 'expected.*ruff 9\.8\.7'}
+    }
+
     It 'returns Blocked evidence when trusted Ruff is missing' {
         $root=Join-Path $TestDrive 'python-missing';New-Item -ItemType Directory $root|Out-Null;Set-Content (Join-Path $root 'safe.py') 'value = 1'
         & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Test-PythonStaticAnalysis.ps1') -Path $root -RuffPath (Join-Path $root 'missing-ruff') -OutputJson result.json
