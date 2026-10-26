@@ -1,7 +1,6 @@
 """Tests for safe path normalization."""
 
 import pytest
-
 from governed_paths import InvalidPath, normalize_relative_path
 
 
