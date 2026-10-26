@@ -267,7 +267,7 @@ jobs:
       - name: Upload Bash bootstrap failure evidence before enforcement
         id: bootstrap_failure_upload
         if: always() && steps.bootstrap.outcome != 'success' && steps.staging.outcome == 'success' && steps.normalization.outcome == 'success'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: bash-evidence-${{ github.run_id }}
           path: ${{ runner.temp }}/bash-functional/evidence/
@@ -277,7 +277,7 @@ jobs:
       - name: Upload Bash evidence before enforcement
         id: upload
         if: always() && steps.bootstrap.outcome == 'success' && steps.regression.outcome == 'success' && steps.normalization.outcome == 'success' && steps.completion.outcome == 'success' && steps.evidence.outcome == 'success'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: bash-evidence-${{ github.run_id }}
           path: ${{ runner.temp }}/bash-completion/evidence/
