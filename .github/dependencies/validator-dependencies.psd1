@@ -14,7 +14,7 @@
         Python = @{
             Version = '3.12.11'
             SetupAction = 'actions/setup-python'
-            ActionSha = '5fda3b95a4ea91299a34e894583c3862153e4b97'
+            ActionSha = '6d4fd22b20465ccc0f7354476588e8df7c9ca0e0'
         }
         Node = @{
             Version = '22.17.0'
