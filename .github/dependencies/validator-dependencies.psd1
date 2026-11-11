@@ -43,12 +43,12 @@
             Name = 'Ruff'
             Ecosystem = 'Python'
             InstallationKind = 'PythonWheel'
-            Version = '0.17.1'
-            SourceUri = 'https://files.pythonhosted.org/packages/62/86/5566290219708ce2928f3a29c4f843a1185b341ec6111c4631a33c5ceced/ruff-0.17.1-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl'
+            Version = '0.17.3'
+            SourceUri = 'https://files.pythonhosted.org/packages/f0/20/fecedea2209f574ab92033b344e01a7f0c2dc76c6d6d19a14c9f8141173f/ruff-0.17.3-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl'
             PackageIndexUri = 'https://pypi.org/simple'
-            PackageFile = 'ruff-0.17.1-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl'
-            Sha256 = 'a6ef98e51de8ef38082f90653ceeb84944bd7673783eea13e1647c5b9b064189'
-            Purl = 'pkg:pypi/ruff@0.17.1'
+            PackageFile = 'ruff-0.17.3-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl'
+            Sha256 = '7fa4b0f931cdbcb8a52044f370a3eb429fb42eb88807b0e800fcaa98dd42b24e'
+            Purl = 'pkg:pypi/ruff@0.17.3'
         }
         @{
             Name = 'ShellCheck'
