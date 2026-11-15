@@ -1,6 +1,6 @@
 build==1.6.1
 cyclonedx-bom==7.3.0
-hatchling==1.32.4
+hatchling==1.33.0
 mypy==2.4.0
 pip-audit==2.10.1
 pytest==9.1.1
