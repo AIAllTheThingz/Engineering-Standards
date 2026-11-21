@@ -2030,12 +2030,10 @@ def test_project_sbom_contains_runtime_dependencies_only() -> None:
 def test_toolchain_sbom_matches_governed_lock_requirements() -> None:
     """A stale inventory must not report prior build-backend versions or hashes."""
     root = Path(__file__).resolve().parents[2]
-    lock_text = (root / "examples" / "python-project" / "requirements-ci.lock").read_text(encoding="utf-8")
-    sbom = json.loads(
-        (root / "examples" / "python-project" / "evidence" / "python-toolchain-sbom.cdx.json").read_text(
-            encoding="utf-8"
-        )
-    )
+    example = root / "examples" / "python-project"
+    lock_text = (example / "requirements-ci.lock").read_text(encoding="utf-8")
+    sbom_path = example / "evidence" / "current" / "python-toolchain-sbom.cdx.json"
+    sbom = json.loads(sbom_path.read_text(encoding="utf-8"))
     root_component = sbom.get("metadata", {}).get("component", {})
     require(
         root_component.get("name") == "engineering-standards-python-toolchain",
@@ -2104,7 +2102,7 @@ def test_project_metadata_requires_governed_hatchling_version(tmp_path: Path) ->
     (package / "__init__.py").write_text("", encoding="utf-8")
     (project / "pyproject.toml").write_text(
         "[build-system]\n"
-        "requires = [\"hatchling==1.32.4\"]\n"
+        "requires = [\"hatchling==1.33.0\"]\n"
         "build-backend = \"hatchling.build\"\n\n"
         "[project]\n"
         "name = \"example-package\"\n"
@@ -2114,13 +2112,13 @@ def test_project_metadata_requires_governed_hatchling_version(tmp_path: Path) ->
     validator.parse_project_metadata(project)
 
     (project / "pyproject.toml").write_text(
-        (project / "pyproject.toml").read_text(encoding="utf-8").replace("1.32.4", "1.32.0"),
+        (project / "pyproject.toml").read_text(encoding="utf-8").replace("1.33.0", "1.32.4"),
         encoding="utf-8",
     )
     try:
         validator.parse_project_metadata(project)
     except ValueError as exc:
-        require("hatchling==1.32.4" in str(exc), "old Hatchling error omitted governed version")
+        require("hatchling==1.33.0" in str(exc), "old Hatchling error omitted governed version")
     else:
         raise AssertionError("ungoverned Hatchling version was accepted")
 

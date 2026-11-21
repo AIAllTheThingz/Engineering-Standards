@@ -557,7 +557,7 @@ def attach_sbom_root_dependencies(sbom_path: Path) -> None:
         raise ValueError(f"could not write generated SBOM: {exc}") from exc
 
 
-GOVERNED_HATCHLING_VERSION = "1.32.4"
+GOVERNED_HATCHLING_VERSION = "1.33.0"
 
 
 def parse_project_metadata(project: Path) -> dict[str, Any]:
